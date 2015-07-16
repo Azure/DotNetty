@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{8218C9EE-0A4A-432F-A12A-B54202F97B05}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DotNetty.Transport</RootNamespace>
+    <AssemblyName>DotNetty.Transport</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Bootstrapping\AbstractBootstrap.cs" />
+    <Compile Include="Bootstrapping\Bootstrap.cs" />
+    <Compile Include="Bootstrapping\BootstrapEventSource.cs" />
+    <Compile Include="Bootstrapping\DefaultNameResolver.cs" />
+    <Compile Include="Bootstrapping\INameResolver.cs" />
+    <Compile Include="Bootstrapping\ServerBootstrap.cs" />
+    <Compile Include="Channels\ChannelOutboundBuffer.cs" />
+    <Compile Include="Channels\AbstractChannel.cs" />
+    <Compile Include="Channels\AbstractChannelHandlerContext.cs" />
+    <Compile Include="Channels\ActionChannelInitializer.cs" />
+    <Compile Include="Channels\ChannelEventSource.cs" />
+    <Compile Include="Channels\ChannelException.cs" />
+    <Compile Include="Channels\ChannelHandlerAdapter.cs" />
+    <Compile Include="Channels\ChannelHandlerInvokerUtil.cs" />
+    <Compile Include="Channels\ChannelInitializer.cs" />
+    <Compile Include="Channels\ChannelOption.cs" />
+    <Compile Include="Channels\ChannelPipelineException.cs" />
+    <Compile Include="Channels\ConnectTimeoutException.cs" />
+    <Compile Include="Channels\DefaultChannelHandlerContext.cs" />
+    <Compile Include="Channels\DefaultChannelHandlerInvoker.cs" />
+    <Compile Include="Channels\DefaultChannelPipeline.cs" />
+    <Compile Include="Channels\DefaultMessageSizeEstimator.cs" />
+    <Compile Include="Channels\FixedRecvByteBufAllocator.cs" />
+    <Compile Include="Channels\MultithreadEventLoopGroup.cs" />
+    <Compile Include="Channels\IChannel.cs" />
+    <Compile Include="Channels\IChannelConfiguration.cs" />
+    <Compile Include="Channels\IChannelHandler.cs" />
+    <Compile Include="Channels\IChannelHandlerContext.cs" />
+    <Compile Include="Channels\IChannelHandlerInvoker.cs" />
+    <Compile Include="Channels\IChannelPipeline.cs" />
+    <Compile Include="Channels\IChannelUnsafe.cs" />
+    <Compile Include="Channels\IEventLoop.cs" />
+    <Compile Include="Channels\IEventLoopGroup.cs" />
+    <Compile Include="Channels\IMessageSizeEstimator.cs" />
+    <Compile Include="Channels\IMessageSizeEstimatorHandle.cs" />
+    <Compile Include="Channels\IRecvByteBufAllocator.cs" />
+    <Compile Include="Channels\IRecvByteBufAllocatorHandle.cs" />
+    <Compile Include="Channels\PausableChannelEventExecutor.cs" />
+    <Compile Include="Channels\PipelinePropagationAttribute.cs" />
+    <Compile Include="Channels\PropagationDirections.cs" />
+    <Compile Include="Channels\RejectedExecutionException.cs" />
+    <Compile Include="Channels\SingleThreadEventLoop.cs" />
+    <Compile Include="Channels\SkipAttribute.cs" />
+    <Compile Include="Channels\Sockets\AbstractSocketByteChannel.cs" />
+    <Compile Include="Channels\Sockets\AbstractSocketChannel.cs" />
+    <Compile Include="Channels\Sockets\AbstractSocketMessageChannel.cs" />
+    <Compile Include="Channels\Sockets\ChannelInputShutdownEvent.cs" />
+    <Compile Include="Channels\ConnectException.cs" />
+    <Compile Include="Channels\Sockets\DefaultServerSocketChannelConfig.cs" />
+    <Compile Include="Channels\Sockets\DefaultSocketChannelConfiguration.cs" />
+    <Compile Include="Channels\Sockets\IServerSocketChannel.cs" />
+    <Compile Include="Channels\Sockets\IServerSocketChannelConfiguration.cs" />
+    <Compile Include="Channels\Sockets\ISocketChannel.cs" />
+    <Compile Include="Channels\Sockets\ISocketChannelConfiguration.cs" />
+    <Compile Include="Channels\Sockets\SocketChannelAsyncOperation.cs" />
+    <Compile Include="Channels\Sockets\TcpServerSocketChannel.cs" />
+    <Compile Include="Channels\Sockets\TcpSocketChannel.cs" />
+    <Compile Include="Channels\Util.cs" />
+    <Compile Include="Channels\ClosedChannelException.cs" />
+    <Compile Include="Channels\NotYetConnectedException.cs" />
+    <Compile Include="Channels\IServerChannel.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Channels\Sockets\SocketAsyncOperationPayloadPool.cs" />
+    <Compile Include="Channels\DefaultChannelConfiguration.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj">
+      <Project>{5de3c557-48bf-4cdb-9f47-474d343dd841}</Project>
+      <Name>DotNetty.Buffers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj">
+      <Project>{de58fe41-5e99-44e5-86bc-fc9ed8761daf}</Project>
+      <Name>DotNetty.Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

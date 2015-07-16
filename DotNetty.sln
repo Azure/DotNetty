@@ -1,0 +1,90 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Common", "src\DotNetty.Common\DotNetty.Common.csproj", "{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F02D7F30-ABA7-4438-8D28-10898E731906}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Buffers", "src\DotNetty.Buffers\DotNetty.Buffers.csproj", "{5DE3C557-48BF-4CDB-9F47-474D343DD841}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Transport", "src\DotNetty.Transport\DotNetty.Transport.csproj", "{8218C9EE-0A4A-432F-A12A-B54202F97B05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Codecs", "src\DotNetty.Codecs\DotNetty.Codecs.csproj", "{2ABD244E-EF8F-460D-9C30-39116499E6E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Codecs.Mqtt", "src\DotNetty.Codecs.Mqtt\DotNetty.Codecs.Mqtt.csproj", "{58FFEA83-C956-49F9-9435-18332AD0E0D1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Common.Tests", "test\DotNetty.Common.Tests\DotNetty.Common.Tests.csproj", "{B509D8B8-BD4A-46B1-916B-685DE387D01B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Handlers", "src\DotNetty.Handlers\DotNetty.Handlers.csproj", "{09628314-F44E-445E-9F0D-CBE33B736AC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Tests.End2End", "test\DotNetty.Tests.End2End\DotNetty.Tests.End2End.csproj", "{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{D7797B37-D5F1-42BD-B59B-61D6A9E5BB33}"
+	ProjectSection(SolutionItems) = preProject
+		shared\dotnetty.com.pfx = shared\dotnetty.com.pfx
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Buffers.Tests", "test\DotNetty.Buffers.Tests\DotNetty.Buffers.Tests.csproj", "{94E10283-E26E-441A-A2A7-D9671A6E9818}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8218C9EE-0A4A-432F-A12A-B54202F97B05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8218C9EE-0A4A-432F-A12A-B54202F97B05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8218C9EE-0A4A-432F-A12A-B54202F97B05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8218C9EE-0A4A-432F-A12A-B54202F97B05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2ABD244E-EF8F-460D-9C30-39116499E6E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2ABD244E-EF8F-460D-9C30-39116499E6E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2ABD244E-EF8F-460D-9C30-39116499E6E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2ABD244E-EF8F-460D-9C30-39116499E6E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58FFEA83-C956-49F9-9435-18332AD0E0D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58FFEA83-C956-49F9-9435-18332AD0E0D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58FFEA83-C956-49F9-9435-18332AD0E0D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58FFEA83-C956-49F9-9435-18332AD0E0D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B509D8B8-BD4A-46B1-916B-685DE387D01B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B509D8B8-BD4A-46B1-916B-685DE387D01B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B509D8B8-BD4A-46B1-916B-685DE387D01B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B509D8B8-BD4A-46B1-916B-685DE387D01B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09628314-F44E-445E-9F0D-CBE33B736AC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09628314-F44E-445E-9F0D-CBE33B736AC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09628314-F44E-445E-9F0D-CBE33B736AC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09628314-F44E-445E-9F0D-CBE33B736AC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94E10283-E26E-441A-A2A7-D9671A6E9818}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94E10283-E26E-441A-A2A7-D9671A6E9818}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94E10283-E26E-441A-A2A7-D9671A6E9818}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94E10283-E26E-441A-A2A7-D9671A6E9818}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{5DE3C557-48BF-4CDB-9F47-474D343DD841} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{8218C9EE-0A4A-432F-A12A-B54202F97B05} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{2ABD244E-EF8F-460D-9C30-39116499E6E4} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{58FFEA83-C956-49F9-9435-18332AD0E0D1} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{B509D8B8-BD4A-46B1-916B-685DE387D01B} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
+		{09628314-F44E-445E-9F0D-CBE33B736AC3} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
+		{94E10283-E26E-441A-A2A7-D9671A6E9818} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
+	EndGlobalSection
+EndGlobal
