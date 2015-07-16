@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>DotNetty</id>
-    <version>0.1.0-alpha</version>
+    <version>0.1.2-alpha1</version>
     <title>DotNetty framework</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
