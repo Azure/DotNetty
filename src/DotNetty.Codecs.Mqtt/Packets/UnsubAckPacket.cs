@@ -9,5 +9,13 @@ namespace DotNetty.Codecs.Mqtt.Packets
         {
             get { return PacketType.UNSUBACK; }
         }
+
+        public static UnsubAckPacket InResponseTo(UnsubscribePacket unsubscribePacket)
+        {
+            return new UnsubAckPacket
+            {
+                PacketId = unsubscribePacket.PacketId
+            };
+        }
     }
 }

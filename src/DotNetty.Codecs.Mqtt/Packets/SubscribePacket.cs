@@ -7,6 +7,16 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
     public sealed class SubscribePacket : PacketWithId
     {
+        public SubscribePacket()
+        {
+        }
+
+        public SubscribePacket(int packetId, params SubscriptionRequest[] requests)
+        {
+            this.PacketId = packetId;
+            this.Requests = requests;
+        }
+
         public override PacketType PacketType
         {
             get { return PacketType.SUBSCRIBE; }
