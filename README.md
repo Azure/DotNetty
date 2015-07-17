@@ -4,3 +4,11 @@
 
 DotNetty is a port of [Netty](https://github.com/netty/netty), asynchronous event-driven network application framework for rapid development of maintainable high performance protocol servers & clients.
 
+## Contribute
+
+We gladly accept community contributions.
+
+* Issues: Please report bugs using the Issues section of GitHub
+* Source Code Contributions:
+ * Please follow the [Contribution Guidelines for Microsoft Azure](http://azure.github.io/guidelines.html) open source that details information on onboarding as a contributor
+ * See [C# Coding Style](https://github.com/Azure/DotNetty/wiki/C%23-Coding-Style) for reference on coding style.
