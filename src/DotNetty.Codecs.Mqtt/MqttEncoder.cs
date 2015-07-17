@@ -335,7 +335,7 @@ namespace DotNetty.Codecs.Mqtt
                 foreach (string topic in packet.TopicFilters)
                 {
                     byte[] topicFilterBytes = EncodeStringInUtf8(topic);
-                    payloadBufferSize += 2 + topicFilterBytes.Length + 1; // length, value, QoS
+                    payloadBufferSize += StringSizeLength + topicFilterBytes.Length; // length, value
                     encodedTopicFilters.Add(topicFilterBytes);
                 }
 

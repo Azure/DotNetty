@@ -14,7 +14,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
         public IReadOnlyList<QualityOfService> ReturnCodes { get; set; }
 
-        public static SubAckPacket Confirm(SubscribePacket subscribePacket, QualityOfService maxQoS)
+        public static SubAckPacket InResponseTo(SubscribePacket subscribePacket, QualityOfService maxQoS)
         {
             var subAckPacket = new SubAckPacket
             {

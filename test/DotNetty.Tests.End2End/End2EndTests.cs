@@ -160,21 +160,25 @@ namespace DotNetty.Tests.End2End
             Assert.Equal(ConnectReturnCode.Accepted, connAckPacket.ReturnCode);
 
             int subscribePacketId = GetRandomPacketId();
-            yield return TestScenarioStep.Message(new SubscribePacket
-            {
-                PacketId = subscribePacketId,
-                Requests = new[]
-                {
+            int unsubscribePacketId = GetRandomPacketId();
+            yield return TestScenarioStep.Messages(
+                new SubscribePacket(subscribePacketId,
                     new SubscriptionRequest(SubscribeTopicFilter1, QualityOfService.ExactlyOnce),
-                    new SubscriptionRequest(SubscribeTopicFilter2, QualityOfService.AtLeastOnce)
-                }
-            });
+                    new SubscriptionRequest(SubscribeTopicFilter2, QualityOfService.AtLeastOnce),
+                    new SubscriptionRequest("for/unsubscribe", QualityOfService.AtMostOnce)),
+                new UnsubscribePacket(unsubscribePacketId, "for/unsubscribe"));
 
             var subAckPacket = Assert.IsType<SubAckPacket>(currentMessageFunc());
             Assert.Equal(subscribePacketId, subAckPacket.PacketId);
-            Assert.Equal(2, subAckPacket.ReturnCodes.Count);
+            Assert.Equal(3, subAckPacket.ReturnCodes.Count);
             Assert.Equal(QualityOfService.ExactlyOnce, subAckPacket.ReturnCodes[0]);
             Assert.Equal(QualityOfService.AtLeastOnce, subAckPacket.ReturnCodes[1]);
+            Assert.Equal(QualityOfService.AtMostOnce, subAckPacket.ReturnCodes[2]);
+
+            yield return TestScenarioStep.MoreFeedbackExpected();
+
+            var unsubAckPacket = Assert.IsType<UnsubAckPacket>(currentMessageFunc());
+            Assert.Equal(unsubscribePacketId, unsubAckPacket.PacketId);
 
             int publishQoS1PacketId = GetRandomPacketId();
             yield return TestScenarioStep.Messages(
@@ -222,7 +226,12 @@ namespace DotNetty.Tests.End2End
             var subscribePacket = Assert.IsType<SubscribePacket>(currentMessageFunc());
             // todo verify
 
-            yield return TestScenarioStep.Message(SubAckPacket.Confirm(subscribePacket, QualityOfService.ExactlyOnce));
+            yield return TestScenarioStep.Message(SubAckPacket.InResponseTo(subscribePacket, QualityOfService.ExactlyOnce));
+
+            var unsubscribePacket = Assert.IsType<UnsubscribePacket>(currentMessageFunc());
+            // todo verify
+
+            yield return TestScenarioStep.Message(UnsubAckPacket.InResponseTo(unsubscribePacket));
 
             var publishQos0Packet = Assert.IsType<PublishPacket>(currentMessageFunc());
             // todo verify

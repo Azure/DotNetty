@@ -7,6 +7,16 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
     public sealed class UnsubscribePacket : PacketWithId
     {
+        public UnsubscribePacket()
+        {
+        }
+
+        public UnsubscribePacket(int packetId, params string[] topicFilters)
+        {
+            this.PacketId = packetId;
+            this.TopicFilters = topicFilters;
+        }
+
         public override PacketType PacketType
         {
             get { return PacketType.UNSUBSCRIBE; }

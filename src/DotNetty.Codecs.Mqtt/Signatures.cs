@@ -30,7 +30,7 @@ namespace DotNetty.Codecs.Mqtt
         public const byte PingReq = (int)PacketType.PINGREQ << 4;
         public const byte PingResp = (int)PacketType.PINGRESP << 4;
         public const byte Disconnect = (int)PacketType.DISCONNECT << 4;
-        public const byte Unsubscribe = (int)PacketType.UNSUBSCRIBE << 4;
+        public const byte Unsubscribe = ((int)PacketType.UNSUBSCRIBE << 4) | QoS1Signature;
         public const byte UnsubAck = (int)PacketType.UNSUBACK << 4;
     }
 }
