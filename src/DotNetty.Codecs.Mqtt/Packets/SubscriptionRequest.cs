@@ -3,10 +3,15 @@
 
 namespace DotNetty.Codecs.Mqtt.Packets
 {
-    public class SubscriptionRequest
+    using System;
+    using System.Diagnostics.Contracts;
+
+    public class SubscriptionRequest : IEquatable<SubscriptionRequest>
     {
         public SubscriptionRequest(string topicFilter, QualityOfService qualityOfService)
         {
+            Contract.Requires(!string.IsNullOrEmpty(topicFilter));
+
             this.TopicFilter = topicFilter;
             this.QualityOfService = qualityOfService;
         }
@@ -14,6 +19,12 @@ namespace DotNetty.Codecs.Mqtt.Packets
         public string TopicFilter { get; private set; }
 
         public QualityOfService QualityOfService { get; private set; }
+
+        public bool Equals(SubscriptionRequest other)
+        {
+            return this.QualityOfService == other.QualityOfService
+                && this.TopicFilter.Equals(other.TopicFilter, StringComparison.Ordinal);
+        }
 
         public override string ToString()
         {

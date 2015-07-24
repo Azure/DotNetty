@@ -35,6 +35,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Properties\Friends.cs" />
     <Compile Include="MqttEventSource.cs" />
     <Compile Include="MqttDecoder.cs" />
     <Compile Include="MqttEncoder.cs" />

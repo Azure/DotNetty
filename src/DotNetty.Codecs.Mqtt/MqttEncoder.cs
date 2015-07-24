@@ -41,7 +41,7 @@ namespace DotNetty.Codecs.Mqtt
         /// @param packet MQTT packet to encode
         /// @return ByteBuf with encoded bytes
         /// </summary>
-        static void DoEncode(IByteBufferAllocator bufferAllocator, Packet packet, List<object> output)
+        internal static void DoEncode(IByteBufferAllocator bufferAllocator, Packet packet, List<object> output)
         {
             switch (packet.PacketType)
             {
@@ -95,7 +95,7 @@ namespace DotNetty.Codecs.Mqtt
             if (packet.HasWill)
             {
                 // Will topic and message
-                string willTopic = packet.WillTopic;
+                string willTopic = packet.WillTopicName;
                 willTopicBytes = EncodeStringInUtf8(willTopic);
                 willMessage = packet.WillMessage;
                 payloadBufferSize += StringSizeLength + willTopicBytes.Length;
@@ -155,18 +155,22 @@ namespace DotNetty.Codecs.Mqtt
                 buf.WriteShort(willTopicBytes.Length);
                 buf.WriteBytes(willTopicBytes, 0, willTopicBytes.Length);
                 buf.WriteShort(willMessage.ReadableBytes);
-                buf.WriteBytes(willMessage);
+                if (willMessage.IsReadable())
+                {
+                    buf.WriteBytes(willMessage);
+                }
                 willMessage.Release();
             }
             if (packet.HasUsername)
             {
                 buf.WriteShort(userNameBytes.Length);
                 buf.WriteBytes(userNameBytes, 0, userNameBytes.Length);
-            }
-            if (packet.HasPassword)
-            {
-                buf.WriteShort(passwordBytes.Length);
-                buf.WriteBytes(passwordBytes, 0, passwordBytes.Length);
+                
+                if (packet.HasPassword)
+                {
+                    buf.WriteShort(passwordBytes.Length);
+                    buf.WriteBytes(passwordBytes, 0, passwordBytes.Length);
+                }
             }
 
             output.Add(buf);
@@ -219,7 +223,7 @@ namespace DotNetty.Codecs.Mqtt
 
         static void EncodePublishMessage(IByteBufferAllocator bufferAllocator, PublishPacket packet, List<object> output)
         {
-            IByteBuffer payload = packet.Payload;
+            IByteBuffer payload = packet.Payload ?? Unpooled.Empty;
 
             string topicName = packet.TopicName;
             Util.ValidateTopicName(topicName);

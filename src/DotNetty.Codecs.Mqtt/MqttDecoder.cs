@@ -5,6 +5,7 @@ namespace DotNetty.Codecs.Mqtt
 {
     using System;
     using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Mqtt.Packets;
@@ -14,19 +15,15 @@ namespace DotNetty.Codecs.Mqtt
     {
         public enum ParseState
         {
-            FixedHeader,
-            VariableHeader,
-            Payload,
-            BadMessage
+            Ready,
+            Failed
         }
 
         readonly bool isServer;
         readonly int maxMessageSize;
-        Packet currentPacket; // todo: as we keep whole message, it might keep references to resources for a while (until extra bytes are read). Resources should be assigned right before checkpoints to avoid holding on to things that will be abandoned with next pass
-        int remainingLength;
 
         public MqttDecoder(bool isServer, int maxMessageSize)
-            : base(ParseState.FixedHeader)
+            : base(ParseState.Ready)
         {
             this.isServer = isServer;
             this.maxMessageSize = maxMessageSize;
@@ -38,45 +35,34 @@ namespace DotNetty.Codecs.Mqtt
             {
                 switch (this.State)
                 {
-                    case ParseState.FixedHeader:
-                        this.DecodeFixedHeader(input);
+                    case ParseState.Ready:
+                        Packet packet;
+
+                        if (!this.TryDecodePacket(input, context, out packet))
+                        {
+                            this.RequestReplay();
+                            return;
+                        }
+
+                        output.Add(packet);
+                        this.Checkpoint();
+                        if (MqttEventSource.Log.IsVerboseEnabled)
+                        {
+                            MqttEventSource.Log.Verbose("Decoded packet.", packet.ToString());
+                        }
                         break;
-                    case ParseState.VariableHeader:
-                        this.DecodeVariableHeader(input);
-                        break;
-                    case ParseState.Payload:
-                        this.DecodePayload(input);
-                        break;
-                    case ParseState.BadMessage:
+                    case ParseState.Failed:
                         // read out data until connection is closed
                         input.SkipBytes(input.ReadableBytes);
                         return;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-
-                if (!this.ReplayRequested)
-                {
-                    if (this.remainingLength > 0)
-                    {
-                        throw new DecoderException(string.Format("Declared remaining length is bigger than packet data size by {0}.", this.remainingLength));
-                    }
-
-                    // packet was decoded successfully => put it out
-                    Packet packet = this.currentPacket;
-                    output.Add(packet);
-                    this.currentPacket = null;
-                    this.Checkpoint(ParseState.FixedHeader);
-                    if (MqttEventSource.Log.IsVerboseEnabled)
-                    {
-                        MqttEventSource.Log.Verbose("Decoded packet.", packet.ToString());
-                    }
-                }
             }
             catch (DecoderException ex)
             {
                 input.SkipBytes(input.ReadableBytes);
-                this.Checkpoint(ParseState.BadMessage);
+                this.Checkpoint(ParseState.Failed);
                 if (MqttEventSource.Log.IsErrorEnabled)
                 {
                     MqttEventSource.Log.Error("Exception while decoding.", ex);
@@ -86,175 +72,112 @@ namespace DotNetty.Codecs.Mqtt
             }
         }
 
-        void DecodeFixedHeader(IByteBuffer buffer)
+        bool TryDecodePacket(IByteBuffer buffer, IChannelHandlerContext context, out Packet packet)
         {
-            if (!buffer.IsReadable(2))
+            if (!buffer.IsReadable(2)) // packet consists of at least 2 bytes
             {
-                // minimal packet consists of at least 2 bytes
-                this.RequestReplay();
-                return;
+                packet = null;
+                return false;
             }
 
             int signature = buffer.ReadByte();
 
-            BufferReadResult<int> remainingLengthResult = this.DecodeRemainingLength(buffer);
-            if (!remainingLengthResult.IsSuccessful)
+            int remainingLength;
+            if (!this.TryDecodeRemainingLength(buffer, out remainingLength) || !buffer.IsReadable(remainingLength))
             {
-                return;
+                packet = null;
+                return false;
             }
 
-            this.remainingLength = remainingLengthResult.Value;
+            packet = this.DecodePacketInternal(buffer, signature, ref remainingLength, context);
 
-            this.Checkpoint(ParseState.VariableHeader);
-
-            if (Signatures.IsPublish(signature))
+            if (remainingLength > 0)
             {
-                var qualityOfService = (QualityOfService)((signature >> 1) & 0x3); // take bits #1 and #2 ONLY and convert them into QoS value
+                throw new DecoderException(string.Format("Declared remaining length is bigger than packet data size by {0}.", remainingLength));
+            }
+
+            return true;
+        }
+
+        Packet DecodePacketInternal(IByteBuffer buffer, int packetSignature, ref int remainingLength, IChannelHandlerContext context)
+        {
+            if (Signatures.IsPublish(packetSignature))
+            {
+                var qualityOfService = (QualityOfService)((packetSignature >> 1) & 0x3); // take bits #1 and #2 ONLY and convert them into QoS value
                 if (qualityOfService == QualityOfService.Reserved)
                 {
                     throw new DecoderException(string.Format("Unexpected QoS value of {0} for {1} packet.", (int)qualityOfService, PacketType.PUBLISH));
                 }
 
-                bool duplicate = (signature & 0x8) == 0x8; // test bit#3
-                bool retain = (signature & 0x1) != 0; // test bit#0
+                bool duplicate = (packetSignature & 0x8) == 0x8; // test bit#3
+                bool retain = (packetSignature & 0x1) != 0; // test bit#0
                 var packet = new PublishPacket(qualityOfService, duplicate, retain);
-                this.currentPacket = packet;
-                this.DecodePublishVariableHeader(buffer, packet);
+                DecodePublishPacket(buffer, packet, ref remainingLength);
+                return packet;
             }
-            else
-            {
-                switch (signature) // strict match not only checks for valid message type but also validates values in flags part
-                {
-                    case Signatures.PubAck:
-                        var pubAckPacket = new PubAckPacket();
-                        this.currentPacket = pubAckPacket;
-                        this.DecodePacketIdVariableHeader(buffer, pubAckPacket, false);
-                        break;
-                    case Signatures.PubRec:
-                        var pubRecPacket = new PubRecPacket();
-                        this.currentPacket = pubRecPacket;
-                        this.DecodePacketIdVariableHeader(buffer, pubRecPacket, false);
-                        break;
-                    case Signatures.PubRel:
-                        var pubRelPacket = new PubRelPacket();
-                        this.currentPacket = pubRelPacket;
-                        this.DecodePacketIdVariableHeader(buffer, pubRelPacket, false);
-                        break;
-                    case Signatures.PubComp:
-                        var pubCompPacket = new PubCompPacket();
-                        this.currentPacket = pubCompPacket;
-                        this.DecodePacketIdVariableHeader(buffer, pubCompPacket, false);
-                        break;
-                    case Signatures.PingReq:
-                        this.ValidateServerPacketExpected(signature);
-                        this.currentPacket = PingReqPacket.Instance;
-                        break;
-                    case Signatures.Subscribe:
-                        this.ValidateServerPacketExpected(signature);
-                        var subscribePacket = new SubscribePacket();
-                        this.currentPacket = subscribePacket;
-                        this.DecodePacketIdVariableHeader(buffer, subscribePacket, true);
-                        break;
-                    case Signatures.Unsubscribe:
-                        this.ValidateServerPacketExpected(signature);
-                        var unsubscribePacket = new UnsubscribePacket();
-                        this.currentPacket = unsubscribePacket;
-                        this.DecodePacketIdVariableHeader(buffer, unsubscribePacket, true);
-                        break;
-                    case Signatures.Connect:
-                        this.ValidateServerPacketExpected(signature);
-                        this.currentPacket = new ConnectPacket();
-                        this.DecodeConnectVariableHeader(buffer);
-                        break;
-                    case Signatures.Disconnect:
-                        this.ValidateServerPacketExpected(signature);
-                        this.currentPacket = DisconnectPacket.Instance;
-                        break;
-                    case Signatures.ConnAck:
-                        this.ValidateClientPacketExpected(signature);
-                        this.currentPacket = new ConnAckPacket();
-                        this.DecodeConnAckVariableHeader(buffer);
-                        break;
-                    case Signatures.SubAck:
-                        this.ValidateClientPacketExpected(signature);
-                        var subAckPacket = new SubAckPacket();
-                        this.currentPacket = subAckPacket;
-                        this.DecodePacketIdVariableHeader(buffer, subAckPacket, true);
-                        break;
-                    case Signatures.UnsubAck:
-                        this.ValidateClientPacketExpected(signature);
-                        var unsubAckPacket = new UnsubAckPacket();
-                        this.currentPacket = unsubAckPacket;
-                        this.DecodePacketIdVariableHeader(buffer, unsubAckPacket, false);
-                        break;
-                    case Signatures.PingResp:
-                        this.ValidateClientPacketExpected(signature);
-                        this.currentPacket = PingRespPacket.Instance;
-                        break;
-                    default:
-                        throw new DecoderException(string.Format("First packet byte value of `{0}` is invalid.", signature));
-                }
-            }
-        }
 
-        void DecodeVariableHeader(IByteBuffer buffer)
-        {
-            switch (this.currentPacket.PacketType)
+            switch (packetSignature) // strict match checks for valid message type + correct values in flags part
             {
-                case PacketType.CONNECT:
-                    this.DecodeConnectVariableHeader(buffer);
-                    break;
-                case PacketType.CONNACK:
-                    this.DecodeConnAckVariableHeader(buffer);
-                    break;
-                case PacketType.PUBLISH:
-                    this.DecodePublishVariableHeader(buffer, (PublishPacket)this.currentPacket);
-                    break;
-                case PacketType.PUBACK:
-                case PacketType.PUBREC:
-                case PacketType.PUBREL:
-                case PacketType.PUBCOMP:
-                case PacketType.UNSUBACK:
-                    this.DecodePacketIdVariableHeader(buffer, (PacketWithId)this.currentPacket, false);
-                    break;
-                case PacketType.SUBSCRIBE:
-                case PacketType.SUBACK:
-                case PacketType.UNSUBSCRIBE:
-                    this.DecodePacketIdVariableHeader(buffer, (PacketWithId)this.currentPacket, true);
-                    break;
-                case PacketType.PINGREQ:
-                case PacketType.PINGRESP:
-                case PacketType.DISCONNECT:
-                    // Empty variable header
-                    if (this.remainingLength > 0)
-                    {
-                        throw new DecoderException(string.Format("Remaining Length for {0} packet must be 0. Actual value: {1}",
-                            this.currentPacket.PacketType, this.remainingLength));
-                    }
-                    break;
+                case Signatures.PubAck:
+                    var pubAckPacket = new PubAckPacket();
+                    DecodePacketIdVariableHeader(buffer, pubAckPacket, ref remainingLength);
+                    return pubAckPacket;
+                case Signatures.PubRec:
+                    var pubRecPacket = new PubRecPacket();
+                    DecodePacketIdVariableHeader(buffer, pubRecPacket, ref remainingLength);
+                    return pubRecPacket;
+                case Signatures.PubRel:
+                    var pubRelPacket = new PubRelPacket();
+                    DecodePacketIdVariableHeader(buffer, pubRelPacket, ref remainingLength);
+                    return pubRelPacket;
+                case Signatures.PubComp:
+                    var pubCompPacket = new PubCompPacket();
+                    DecodePacketIdVariableHeader(buffer, pubCompPacket, ref remainingLength);
+                    return pubCompPacket;
+                case Signatures.PingReq:
+                    this.ValidateServerPacketExpected(packetSignature);
+                    return PingReqPacket.Instance;
+                case Signatures.Subscribe:
+                    this.ValidateServerPacketExpected(packetSignature);
+                    var subscribePacket = new SubscribePacket();
+                    DecodePacketIdVariableHeader(buffer, subscribePacket, ref remainingLength);
+                    DecodeSubscribePayload(buffer, subscribePacket, ref remainingLength);
+                    return subscribePacket;
+                case Signatures.Unsubscribe:
+                    this.ValidateServerPacketExpected(packetSignature);
+                    var unsubscribePacket = new UnsubscribePacket();
+                    DecodePacketIdVariableHeader(buffer, unsubscribePacket, ref remainingLength);
+                    DecodeUnsubscribePayload(buffer, unsubscribePacket, ref remainingLength);
+                    return unsubscribePacket;
+                case Signatures.Connect:
+                    this.ValidateServerPacketExpected(packetSignature);
+                    var connectPacket = new ConnectPacket();
+                    DecodeConnectPacket(buffer, connectPacket, ref remainingLength, context);
+                    return connectPacket;
+                case Signatures.Disconnect:
+                    this.ValidateServerPacketExpected(packetSignature);
+                    return DisconnectPacket.Instance;
+                case Signatures.ConnAck:
+                    this.ValidateClientPacketExpected(packetSignature);
+                    var connAckPacket = new ConnAckPacket();
+                    DecodeConnAckPacket(buffer, connAckPacket, ref remainingLength);
+                    return connAckPacket;
+                case Signatures.SubAck:
+                    this.ValidateClientPacketExpected(packetSignature);
+                    var subAckPacket = new SubAckPacket();
+                    DecodePacketIdVariableHeader(buffer, subAckPacket, ref remainingLength);
+                    DecodeSubAckPayload(buffer, subAckPacket, ref remainingLength);
+                    return subAckPacket;
+                case Signatures.UnsubAck:
+                    this.ValidateClientPacketExpected(packetSignature);
+                    var unsubAckPacket = new UnsubAckPacket();
+                    DecodePacketIdVariableHeader(buffer, unsubAckPacket, ref remainingLength);
+                    return unsubAckPacket;
+                case Signatures.PingResp:
+                    this.ValidateClientPacketExpected(packetSignature);
+                    return PingRespPacket.Instance;
                 default:
-                    throw new NotSupportedException("Unknown message type: " + this.currentPacket.PacketType);
-            }
-        }
-
-        void DecodePayload(IByteBuffer buffer)
-        {
-            switch (this.currentPacket.PacketType)
-            {
-                case PacketType.SUBSCRIBE:
-                    this.DecodeSubscribePayload(buffer);
-                    break;
-                case PacketType.SUBACK:
-                    this.DecodeSubAckPayload(buffer);
-                    break;
-                case PacketType.UNSUBSCRIBE:
-                    this.DecodeUnsubscribePayload(buffer);
-                    break;
-                case PacketType.PUBLISH:
-                    this.DecodePublishPayload(buffer, (PublishPacket)this.currentPacket);
-                    break;
-                default:
-                    throw new InvalidOperationException("Unexpected transition to reading payload for packet of type " + this.currentPacket.PacketType);
+                    throw new DecoderException(string.Format("First packet byte value of `{0}` is invalid.", packetSignature));
             }
         }
 
@@ -274,7 +197,7 @@ namespace DotNetty.Codecs.Mqtt
             }
         }
 
-        BufferReadResult<int> DecodeRemainingLength(IByteBuffer buffer)
+        bool TryDecodeRemainingLength(IByteBuffer buffer, out int value)
         {
             int readable = buffer.ReadableBytes;
 
@@ -286,8 +209,8 @@ namespace DotNetty.Codecs.Mqtt
             {
                 if (readable < read + 1)
                 {
-                    this.RequestReplay();
-                    return BufferReadResult<int>.NoValue;
+                    value = default(int);
+                    return false;
                 }
                 digit = buffer.ReadByte();
                 result += (digit & 0x7f) * multiplier;
@@ -298,78 +221,63 @@ namespace DotNetty.Codecs.Mqtt
 
             if (read == 4 && (digit & 0x80) != 0)
             {
-                throw new DecoderException("Remaining length exceeds 4 bytes in length (" + this.currentPacket.PacketType + ')');
+                throw new DecoderException("Remaining length exceeds 4 bytes in length");
             }
 
             int completeMessageSize = result + 1 + read;
             if (completeMessageSize > this.maxMessageSize)
             {
-                throw new InvalidOperationException("Message is too big: " + completeMessageSize);
+                throw new DecoderException("Message is too big: " + completeMessageSize);
             }
 
-            return new BufferReadResult<int>(result, read);
+            value = result;
+            return true;
         }
 
-        void DecodeConnectVariableHeader(IByteBuffer buffer)
+        static void DecodeConnectPacket(IByteBuffer buffer, ConnectPacket packet, ref int remainingLength, IChannelHandlerContext context)
         {
-            var packet = (ConnectPacket)this.currentPacket;
-            BufferReadResult<string> protocolResult = this.DecodeString(buffer, this.remainingLength);
-            if (!protocolResult.IsSuccessful)
+            string protocolName = DecodeString(buffer, ref remainingLength);
+            if (!Util.ProtocolName.Equals(protocolName, StringComparison.Ordinal))
             {
-                return;
-            }
-            if (protocolResult.Value != Util.ProtocolName)
-            {
-                // todo: this assumes channel is 100% dedicated to MQTT, i.e. MQTT is not detected on the wire, it is assumed
-                throw new DecoderException(string.Format("Unexpected protocol name. Expected: {0}. Actual: {1}", Util.ProtocolName, protocolResult.Value));
+                throw new DecoderException(string.Format("Unexpected protocol name. Expected: {0}. Actual: {1}", Util.ProtocolName, protocolName));
             }
             packet.ProtocolName = Util.ProtocolName;
 
-            int bytesConsumed = protocolResult.BytesConsumed;
+            DecreaseRemainingLength(ref remainingLength, 1);
+            packet.ProtocolLevel = buffer.ReadByte();
 
-            const int HeaderRemainderLength = 4;
-            if (this.remainingLength - bytesConsumed < HeaderRemainderLength)
+            if (packet.ProtocolLevel != Util.ProtocolLevel)
             {
-                throw new DecoderException(string.Format("Remaining length value is not big enough to fit variable header. Expected: {0} or more. Actual: {1}",
-                    (bytesConsumed + HeaderRemainderLength), this.remainingLength));
+                var connAckPacket = new ConnAckPacket();
+                connAckPacket.ReturnCode = ConnectReturnCode.RefusedUnacceptableProtocolVersion;
+                context.WriteAndFlushAsync(connAckPacket);
+                throw new DecoderException(string.Format("Unexpected protocol level. Expected: {0}. Actual: {1}", Util.ProtocolLevel, packet.ProtocolLevel));
             }
 
-            if (!buffer.IsReadable(HeaderRemainderLength))
-            {
-                this.RequestReplay();
-                return;
-            }
-
-            packet.ProtocolVersion = buffer.ReadByte();
-            bytesConsumed += 1;
-
-            //if (protocolLevel != ProtocolLevel) // todo: move to logic: need to respond with CONNACK 0x01
-            //{
-            //    throw new DecoderException(string.Format("Unexpected protocol level. Expected: {0}. Actual: {1}", ProtocolLevel, protocolLevel));
-            //}
-
+            DecreaseRemainingLength(ref remainingLength, 1);
             int connectFlags = buffer.ReadByte();
-            bytesConsumed += 1;
 
             packet.CleanSession = (connectFlags & 0x02) == 0x02;
 
             bool hasWill = (connectFlags & 0x04) == 0x04;
             if (hasWill)
             {
+                packet.HasWill = true;
                 packet.WillRetain = (connectFlags & 0x20) == 0x20;
                 packet.WillQualityOfService = (QualityOfService)((connectFlags & 0x18) >> 3);
                 if (packet.WillQualityOfService == QualityOfService.Reserved)
                 {
                     throw new DecoderException(string.Format("[MQTT-3.1.2-14] Unexpected Will QoS value of {0}.", (int)packet.WillQualityOfService));
                 }
+                packet.WillTopicName = string.Empty;
             }
             else if ((connectFlags & 0x38) != 0) // bits 3,4,5 [MQTT-3.1.2-11]
             {
                 throw new DecoderException("[MQTT-3.1.2-11]");
             }
 
-            bool hasUsername = (connectFlags & 0x80) == 0x80;
-            bool hasPassword = (connectFlags & 0x40) == 0x40;
+            packet.HasUsername = (connectFlags & 0x80) == 0x80;
+            packet.HasPassword = (connectFlags & 0x40) == 0x40;
             if (packet.HasPassword && !packet.HasUsername)
             {
                 throw new DecoderException("[MQTT-3.1.2-22]");
@@ -379,185 +287,82 @@ namespace DotNetty.Codecs.Mqtt
                 throw new DecoderException("[MQTT-3.1.2-3]");
             }
 
-            BufferReadResult<int> keepAliveResult = this.DecodeShort(buffer);
-            bytesConsumed += keepAliveResult.BytesConsumed;
-            packet.KeepAliveInSeconds = keepAliveResult.Value;
+            packet.KeepAliveInSeconds = DecodeUnsignedShort(buffer, ref remainingLength);
 
-            this.remainingLength -= bytesConsumed;
-
-            this.DecodeConnectPayload(buffer, hasWill, hasUsername, hasPassword);
-        }
-
-        void DecodeConnAckVariableHeader(IByteBuffer buffer)
-        {
-            if (!buffer.IsReadable(2))
-            {
-                this.RequestReplay();
-                return;
-            }
-
-            var packet = (ConnAckPacket)this.currentPacket;
-
-            int ackData = buffer.ReadUnsignedShort();
-            packet.SessionPresent = ((ackData >> 8) & 0x1) != 0;
-            packet.ReturnCode = (ConnectReturnCode)(ackData & 0xFF);
-            this.remainingLength -= 2;
-        }
-
-        void DecodePublishVariableHeader(IByteBuffer buffer, PublishPacket packet)
-        {
-            BufferReadResult<string> topicNameResult = this.DecodeString(buffer, this.remainingLength, 1);
-            if (!topicNameResult.IsSuccessful)
-            {
-                return;
-            }
-            string topicName = topicNameResult.Value;
-            Util.ValidateTopicName(topicName);
-            int bytesConsumed = topicNameResult.BytesConsumed;
-
-            packet.TopicName = topicName;
-            if (this.currentPacket.QualityOfService > QualityOfService.AtMostOnce)
-            {
-                BufferReadResult<int> packetIdResult = this.DecodePacketId(buffer, this.remainingLength - bytesConsumed);
-                if (!packetIdResult.IsSuccessful)
-                {
-                    return;
-                }
-                packet.PacketId = packetIdResult.Value;
-                bytesConsumed += packetIdResult.BytesConsumed;
-            }
-
-            this.remainingLength -= bytesConsumed;
-            this.Checkpoint(ParseState.Payload);
-
-            this.DecodePublishPayload(buffer, packet); // fall-through
-        }
-
-        void DecodePacketIdVariableHeader(IByteBuffer buffer, PacketWithId packet, bool expectPayload)
-        {
-            BufferReadResult<int> packetIdResult = this.DecodePacketId(buffer, this.remainingLength);
-            if (!packetIdResult.IsSuccessful)
-            {
-                return;
-            }
-
-            packet.PacketId = packetIdResult.Value;
-
-            this.remainingLength -= packetIdResult.BytesConsumed;
-
-            if (expectPayload)
-            {
-                this.Checkpoint(ParseState.Payload);
-
-                this.DecodePayload(buffer); // fall-through
-            }
-        }
-
-        BufferReadResult<int> DecodePacketId(IByteBuffer buffer, int currentRemainingLength)
-        {
-            if (currentRemainingLength < 2)
-            {
-                throw new DecoderException(string.Format("Remaining Length is not big enough to accomodate at least 2 bytes (for packet identifier). Available value: {0}",
-                    this.remainingLength));
-            }
-
-            BufferReadResult<int> packetIdResult = this.DecodeShort(buffer);
-            if (packetIdResult.IsSuccessful)
-            {
-                Util.ValidatePacketId(packetIdResult.Value);
-            }
-
-            return packetIdResult;
-        }
-
-        void DecodeConnectPayload(IByteBuffer buffer, bool hasWill, bool hasUsername, bool hasPassword)
-        {
-            var packet = (ConnectPacket)this.currentPacket;
-
-            BufferReadResult<string> clientIdResult = this.DecodeString(buffer, this.remainingLength);
-            if (!clientIdResult.IsSuccessful)
-            {
-                return;
-            }
-            string clientId = clientIdResult.Value;
+            string clientId = DecodeString(buffer, ref remainingLength);
             Util.ValidateClientId(clientId);
             packet.ClientId = clientId;
-            int bytesConsumed = clientIdResult.BytesConsumed;
 
             if (hasWill)
             {
-                BufferReadResult<string> willTopicResult = this.DecodeString(buffer, this.remainingLength - bytesConsumed);
-                if (!willTopicResult.IsSuccessful)
-                {
-                    return;
-                }
-                packet.WillTopic = willTopicResult.Value;
-                BufferReadResult<int> willMessageLengthResult = this.DecodeShort(buffer);
-                if (!willMessageLengthResult.IsSuccessful)
-                {
-                    return;
-                }
-                int willMessageLength = willMessageLengthResult.Value;
-                if (!buffer.IsReadable(willMessageLength))
-                {
-                    this.RequestReplay();
-                    return;
-                }
+                packet.WillTopicName = DecodeString(buffer, ref remainingLength);
+                int willMessageLength = DecodeUnsignedShort(buffer, ref remainingLength);
+                DecreaseRemainingLength(ref remainingLength, willMessageLength);
                 packet.WillMessage = buffer.ReadBytes(willMessageLength);
-                bytesConsumed += willTopicResult.BytesConsumed + willMessageLengthResult.BytesConsumed + willMessageLength;
             }
 
-            if (hasUsername)
+            if (packet.HasUsername)
             {
-                BufferReadResult<string> usernameResult = this.DecodeString(buffer, this.remainingLength - bytesConsumed);
-                if (!usernameResult.IsSuccessful)
-                {
-                    return;
-                }
-                packet.Username = usernameResult.Value;
-                bytesConsumed += usernameResult.BytesConsumed;
+                packet.Username = DecodeString(buffer, ref remainingLength);
             }
 
-            if (hasPassword)
+            if (packet.HasPassword)
             {
-                BufferReadResult<string> passwordResult = this.DecodeString(buffer, this.remainingLength - bytesConsumed);
-                if (!passwordResult.IsSuccessful)
-                {
-                    return;
-                }
-                packet.Password = passwordResult.Value;
-                bytesConsumed += passwordResult.BytesConsumed;
+                packet.Password = DecodeString(buffer, ref remainingLength);
             }
-
-            this.remainingLength -= bytesConsumed;
         }
 
-        void DecodeSubscribePayload(IByteBuffer buffer)
+        static void DecodeConnAckPacket(IByteBuffer buffer, ConnAckPacket packet, ref int remainingLength)
+        {
+            int ackData = DecodeUnsignedShort(buffer, ref remainingLength);
+            packet.SessionPresent = ((ackData >> 8) & 0x1) != 0;
+            packet.ReturnCode = (ConnectReturnCode)(ackData & 0xFF);
+        }
+
+        static void DecodePublishPacket(IByteBuffer buffer, PublishPacket packet, ref int remainingLength)
+        {
+            string topicName = DecodeString(buffer, ref remainingLength, 1);
+            Util.ValidateTopicName(topicName);
+
+            packet.TopicName = topicName;
+            if (packet.QualityOfService > QualityOfService.AtMostOnce)
+            {
+                DecodePacketIdVariableHeader(buffer, packet, ref remainingLength);
+            }
+
+            IByteBuffer payload;
+            if (remainingLength > 0)
+            {
+                payload = buffer.ReadSlice(remainingLength);
+                payload.Retain();
+                remainingLength = 0;
+            }
+            else
+            {
+                payload = Unpooled.Empty;
+            }
+            packet.Payload = payload;
+        }
+
+        static void DecodePacketIdVariableHeader(IByteBuffer buffer, PacketWithId packet, ref int remainingLength)
+        {
+            packet.PacketId = DecodeUnsignedShort(buffer, ref remainingLength);
+        }
+
+        static void DecodeSubscribePayload(IByteBuffer buffer, SubscribePacket packet, ref int remainingLength)
         {
             var subscribeTopics = new List<SubscriptionRequest>();
-            int bytesConsumed = 0;
-            while (bytesConsumed < this.remainingLength)
+            while (remainingLength > 0)
             {
-                BufferReadResult<string> topicFilterResult = this.DecodeString(buffer, this.remainingLength - bytesConsumed);
-                if (!topicFilterResult.IsSuccessful)
-                {
-                    return;
-                }
-                string topicFilter = topicFilterResult.Value;
+                string topicFilter = DecodeString(buffer, ref remainingLength);
                 ValidateTopicFilter(topicFilter);
-                bytesConsumed += topicFilterResult.BytesConsumed;
 
-                if (!buffer.IsReadable())
-                {
-                    this.RequestReplay();
-                    return;
-                }
+                DecreaseRemainingLength(ref remainingLength, 1);
                 int qos = buffer.ReadByte();
                 if (qos >= (int)QualityOfService.Reserved)
                 {
-                    throw new DecoderException(string.Format("[MQTT-3.8.3-4] Requested QoS is not a valid value: {0}.", qos));
+                    throw new DecoderException(string.Format("[MQTT-3.8.3-4]. Invalid QoS value: {0}.", qos));
                 }
-                bytesConsumed++;
 
                 subscribeTopics.Add(new SubscriptionRequest(topicFilter, (QualityOfService)qos));
             }
@@ -567,10 +372,7 @@ namespace DotNetty.Codecs.Mqtt
                 throw new DecoderException("[MQTT-3.8.3-3]");
             }
 
-            var packet = (SubscribePacket)this.currentPacket;
             packet.Requests = subscribeTopics;
-
-            this.remainingLength = 0;
         }
 
         static void ValidateTopicFilter(string topicFilter)
@@ -581,60 +383,51 @@ namespace DotNetty.Codecs.Mqtt
                 throw new DecoderException("[MQTT-4.7.3-1]");
             }
 
-            for (int i = 0; i < length - 1; i++)
-            {
-                char c = topicFilter[i];
-                if (c == '+')
-                {
-                    if ((i > 0 && topicFilter[i - 1] != '/') || (i < length - 1 && topicFilter[i + 1] != '/'))
-                    {
-                        throw new DecoderException("[MQTT-4.7.1-3]");
-                    }
-                }
-                if (c == '#')
-                {
-                    if (i < length - 1 || (i > 0 && topicFilter[i - 1] != '/'))
-                    {
-                        throw new DecoderException("[MQTT-4.7.1-2]");
-                    }
-                }
-            }
-        }
-
-        void DecodeSubAckPayload(IByteBuffer buffer)
-        {
-            int length = this.remainingLength;
-            if (!buffer.IsReadable(length))
-            {
-                this.RequestReplay();
-                return;
-            }
-
-            var packet = (SubAckPacket)this.currentPacket;
-            var codes = new QualityOfService[length];
             for (int i = 0; i < length; i++)
             {
-                codes[i] = (QualityOfService)buffer.ReadByte();
+                char c = topicFilter[i];
+                switch (c)
+                {
+                    case '+':
+                        if ((i > 0 && topicFilter[i - 1] != '/') || (i < length - 1 && topicFilter[i + 1] != '/'))
+                        {
+                            throw new DecoderException(string.Format("[MQTT-4.7.1-3]. Invalid topic filter: {0}", topicFilter));
+                        }
+                        break;
+                    case '#':
+                        if (i < length - 1 || (i > 0 && topicFilter[i - 1] != '/'))
+                        {
+                            throw new DecoderException(string.Format("[MQTT-4.7.1-2]. Invalid topic filter: {0}", topicFilter));
+                        }
+                        break;
+                }
             }
-            packet.ReturnCodes = codes;
-
-            this.remainingLength = 0;
         }
 
-        void DecodeUnsubscribePayload(IByteBuffer buffer)
+        static void DecodeSubAckPayload(IByteBuffer buffer, SubAckPacket packet, ref int remainingLength)
+        {
+            var returnCodes = new QualityOfService[remainingLength];
+            for (int i = 0; i < remainingLength; i++)
+            {
+                var returnCode = (QualityOfService)buffer.ReadByte();
+                if (returnCode > QualityOfService.ExactlyOnce && returnCode != QualityOfService.Failure)
+                {
+                    throw new DecoderException(string.Format("[MQTT-3.9.3-2]. Invalid return code: {0}", returnCode));
+                }
+                returnCodes[i] = returnCode;
+            }
+            packet.ReturnCodes = returnCodes;
+
+            remainingLength = 0;
+        }
+
+        static void DecodeUnsubscribePayload(IByteBuffer buffer, UnsubscribePacket packet, ref int remainingLength)
         {
             var unsubscribeTopics = new List<string>();
-            int bytesConsumed = 0;
-            while (bytesConsumed < this.remainingLength)
+            while (remainingLength > 0)
             {
-                BufferReadResult<string> topicFilterResult = this.DecodeString(buffer, this.remainingLength - bytesConsumed);
-                if (!topicFilterResult.IsSuccessful)
-                {
-                    return;
-                }
-                string topicFilter = topicFilterResult.Value;
+                string topicFilter = DecodeString(buffer, ref remainingLength);
                 ValidateTopicFilter(topicFilter);
-                bytesConsumed += topicFilterResult.BytesConsumed;
                 unsubscribeTopics.Add(topicFilter);
             }
 
@@ -643,55 +436,31 @@ namespace DotNetty.Codecs.Mqtt
                 throw new DecoderException("[MQTT-3.10.3-2]");
             }
 
-            var packet = (UnsubscribePacket)this.currentPacket;
             packet.TopicFilters = unsubscribeTopics;
 
-            this.remainingLength = 0;
+            remainingLength = 0;
         }
 
-        void DecodePublishPayload(IByteBuffer buffer, PublishPacket packet)
+        static int DecodeUnsignedShort(IByteBuffer buffer, ref int remainingLength)
         {
-            if (!buffer.IsReadable(this.remainingLength))
-            {
-                // buffering whole packet payload in memory
-                this.RequestReplay();
-                return;
-            }
-
-            IByteBuffer payload = buffer.ReadSlice(this.remainingLength);
-            payload.Retain();
-            packet.Payload = payload;
-            this.remainingLength = 0;
+            DecreaseRemainingLength(ref remainingLength, 2);
+            return buffer.ReadUnsignedShort();
         }
 
-        BufferReadResult<int> DecodeShort(IByteBuffer buffer)
+        static string DecodeString(IByteBuffer buffer, ref int remainingLength)
         {
-            if (!buffer.IsReadable(2))
-            {
-                this.RequestReplay();
-                return BufferReadResult<int>.NoValue;
-            }
-
-            byte msb = buffer.ReadByte();
-            byte lsb = buffer.ReadByte();
-            return new BufferReadResult<int>(msb << 8 | lsb, 2);
+            return DecodeString(buffer, ref remainingLength, 0, int.MaxValue);
         }
 
-        BufferReadResult<string> DecodeString(IByteBuffer buffer, int currentRemainingLength, int minBytes = 0, int maxBytes = int.MaxValue)
+        static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes)
         {
-            BufferReadResult<int> sizeResult = this.DecodeShort(buffer);
-            if (!sizeResult.IsSuccessful)
-            {
-                return BufferReadResult<string>.NoValue;
-            }
+            return DecodeString(buffer, ref remainingLength, minBytes, int.MaxValue);
+        }
 
-            int size = sizeResult.Value;
-            int bytesConsumed = sizeResult.BytesConsumed;
-            if (size + bytesConsumed > currentRemainingLength)
-            {
-                throw new DecoderException(string.Format("String value is longer than might fit in current Remaining Length of {0}. Available bytes: {1}",
-                    currentRemainingLength - bytesConsumed, size));
-            }
+        static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes, int maxBytes)
+        {
+            int size = DecodeUnsignedShort(buffer, ref remainingLength);
+
             if (size < minBytes)
             {
                 throw new DecoderException(string.Format("String value is shorter than minimum allowed {0}. Advertised length: {1}", minBytes, size));
@@ -701,47 +470,28 @@ namespace DotNetty.Codecs.Mqtt
                 throw new DecoderException(string.Format("String value is longer than maximum allowed {0}. Advertised length: {1}", maxBytes, size));
             }
 
-            // todo: review why they did it
-            //if (size < minBytes || size > maxBytes)
-            //{
-            //    buffer.skipBytes(size);
-            //    numberOfBytesConsumed += size;
-            //    return new Result<String>(null, numberOfBytesConsumed);
-            //}
-
-            if (!buffer.IsReadable(size))
+            if (size == 0)
             {
-                this.RequestReplay();
-                return BufferReadResult<string>.NoValue;
+                return string.Empty;
             }
+
+            DecreaseRemainingLength(ref remainingLength, size);
 
             string value = Encoding.UTF8.GetString(buffer.Array, buffer.ArrayOffset + buffer.ReaderIndex, size);
             // todo: enforce string definition by MQTT spec
             buffer.SetReaderIndex(buffer.ReaderIndex + size);
-            bytesConsumed += size;
-            return new BufferReadResult<string>(value, bytesConsumed);
+            return value;
         }
 
-        struct BufferReadResult<T>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // we don't care about the method being on exception's stack so it's OK to inline
+        static void DecreaseRemainingLength(ref int remainingLength, int minExpectedLength)
         {
-            public readonly T Value;
-            public readonly int BytesConsumed;
-
-            public static BufferReadResult<T> NoValue
+            if (remainingLength < minExpectedLength)
             {
-                get { return new BufferReadResult<T>(default(T), 0); }
+                throw new DecoderException(string.Format("Current Remaining Length of {0} is smaller than expected {1}.",
+                    remainingLength, minExpectedLength));
             }
-
-            public BufferReadResult(T value, int bytesConsumed)
-            {
-                this.Value = value;
-                this.BytesConsumed = bytesConsumed;
-            }
-
-            public bool IsSuccessful
-            {
-                get { return this.BytesConsumed > 0; }
-            }
+            remainingLength -= minExpectedLength;
         }
     }
 }
