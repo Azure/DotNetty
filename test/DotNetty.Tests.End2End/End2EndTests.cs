@@ -152,7 +152,7 @@ namespace DotNetty.Tests.End2End
                 ClientId = ClientId,
                 Username = "testuser",
                 Password = "notsafe",
-                WillTopic = "last/word",
+                WillTopicName = "last/word",
                 WillMessage = Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes("oops"))
             });
 

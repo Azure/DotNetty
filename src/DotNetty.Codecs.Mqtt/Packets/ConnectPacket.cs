@@ -14,28 +14,19 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
         public string ProtocolName { get; set; }
 
-        public int ProtocolVersion { get; set; }
+        public int ProtocolLevel { get; set; }
 
         public bool CleanSession { get; set; }
 
-        public bool HasWill
-        {
-            get { return this.WillTopic != null; }
-        }
+        public bool HasWill { get; set; }
 
         public QualityOfService WillQualityOfService { get; set; }
 
         public bool WillRetain { get; set; }
 
-        public bool HasPassword
-        {
-            get { return this.Password != null; }
-        }
+        public bool HasPassword { get; set; }
 
-        public bool HasUsername
-        {
-            get { return this.Username != null; }
-        }
+        public bool HasUsername { get; set; }
 
         public int KeepAliveInSeconds { get; set; }
 
@@ -45,7 +36,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
         public string ClientId { get; set; }
 
-        public string WillTopic { get; set; }
+        public string WillTopicName { get; set; }
 
         public IByteBuffer WillMessage { get; set; }
     }

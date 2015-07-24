@@ -76,6 +76,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
         public IByteBufferHolder Copy()
         {
             var result = new PublishPacket(this.qos, this.duplicate, this.retainRequested);
+            result.TopicName = this.TopicName;
             result.Payload = this.Payload.Copy();
             return result;
         }
@@ -83,6 +84,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
         IByteBufferHolder IByteBufferHolder.Duplicate()
         {
             var result = new PublishPacket(this.qos, this.duplicate, this.retainRequested);
+            result.TopicName = this.TopicName;
             result.Payload = this.Payload.Duplicate();
             return result;
         }
