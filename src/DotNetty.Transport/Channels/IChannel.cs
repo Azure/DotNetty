@@ -9,6 +9,8 @@ namespace DotNetty.Transport.Channels
 
     public interface IChannel
     {
+        IChannelId Id { get; }
+
         IByteBufferAllocator Allocator { get; }
 
         IEventLoop EventLoop { get; }
