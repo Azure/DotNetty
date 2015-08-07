@@ -48,7 +48,7 @@ namespace DotNetty.Transport.Channels
         }
 
         [Skip]
-        public void ChannelWritabilityChanged(IChannelHandlerContext context)
+        public virtual void ChannelWritabilityChanged(IChannelHandlerContext context)
         {
             context.FireChannelWritabilityChanged();
         }
@@ -76,25 +76,25 @@ namespace DotNetty.Transport.Channels
         }
 
         [Skip]
-        public void Flush(IChannelHandlerContext context)
+        public virtual void Flush(IChannelHandlerContext context)
         {
             context.Flush();
         }
 
         [Skip]
-        public Task BindAsync(IChannelHandlerContext context, EndPoint localAddress)
+        public virtual Task BindAsync(IChannelHandlerContext context, EndPoint localAddress)
         {
             return context.BindAsync(localAddress);
         }
 
         [Skip]
-        public Task ConnectAsync(IChannelHandlerContext context, EndPoint remoteAddress, EndPoint localAddress)
+        public virtual Task ConnectAsync(IChannelHandlerContext context, EndPoint remoteAddress, EndPoint localAddress)
         {
             return context.ConnectAsync(remoteAddress, localAddress);
         }
 
         [Skip]
-        public Task DisconnectAsync(IChannelHandlerContext context)
+        public virtual Task DisconnectAsync(IChannelHandlerContext context)
         {
             return context.DisconnectAsync();
         }
@@ -111,9 +111,10 @@ namespace DotNetty.Transport.Channels
             context.FireExceptionCaught(exception);
         }
 
-        public Task DeregisterAsync(IChannelHandlerContext context)
+        [Skip]
+        public virtual Task DeregisterAsync(IChannelHandlerContext context)
         {
-            throw new NotImplementedException();
+            return context.DeregisterAsync();
         }
 
         [Skip]
