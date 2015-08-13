@@ -37,6 +37,9 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="AbstractByteBuffer.cs" />
     <Compile Include="AbstractByteBufferAllocator.cs" />
     <Compile Include="AbstractDerivedByteBuffer.cs" />
@@ -63,6 +66,9 @@
       <Project>{de58fe41-5e99-44e5-86bc-fc9ed8761daf}</Project>
       <Name>DotNetty.Common</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DotNetty.Buffers.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

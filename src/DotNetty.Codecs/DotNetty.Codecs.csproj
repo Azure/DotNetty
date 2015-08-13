@@ -39,6 +39,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="ByteToMessageDecoder.cs" />
     <Compile Include="CorruptedFrameException.cs" />
     <Compile Include="DecoderException.cs" />
@@ -62,6 +65,9 @@
       <Project>{8218c9ee-0a4a-432f-a12a-b54202f97b05}</Project>
       <Name>DotNetty.Transport</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DotNetty.Codecs.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
