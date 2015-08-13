@@ -35,6 +35,9 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="Concurrency\ExecutorEventSource.cs" />
     <Compile Include="Concurrency\ExecutorTaskScheduler.cs" />
     <Compile Include="Concurrency\IEventExecutor.cs" />
@@ -54,6 +57,9 @@
     <Compile Include="Utilities\RecyclableMpscLinkedQueueNode.cs" />
     <Compile Include="Utilities\ReferenceCountUtil.cs" />
     <Compile Include="Utilities\TaskEx.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DotNetty.Common.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
