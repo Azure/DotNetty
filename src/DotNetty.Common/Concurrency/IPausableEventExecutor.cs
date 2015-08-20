@@ -7,7 +7,7 @@ namespace DotNetty.Common.Concurrency
     /// Implement this interface if you need your {@link EventExecutor} implementation to be able
     /// to reject new work.
     /// </summary>
-    public interface IPausableEventExecutor : IEventExecutor
+    public interface IPausableEventExecutor : IWrappedEventExecutor
     {
         /// <summary>
         /// After a call to this method the {@link EventExecutor} may throw a {@link RejectedExecutionException} when

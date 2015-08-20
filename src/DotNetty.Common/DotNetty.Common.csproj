@@ -43,6 +43,7 @@
     <Compile Include="Concurrency\IEventExecutor.cs" />
     <Compile Include="Concurrency\IPausableEventExecutor.cs" />
     <Compile Include="Concurrency\IRunnable.cs" />
+    <Compile Include="Concurrency\IWrappedEventExecutor.cs" />
     <Compile Include="Concurrency\SingleThreadEventExecutor.cs" />
     <Compile Include="Concurrency\TaskCompletionSource.cs" />
     <Compile Include="IReferenceCounted.cs" />

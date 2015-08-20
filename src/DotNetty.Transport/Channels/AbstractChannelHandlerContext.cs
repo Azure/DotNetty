@@ -8,8 +8,10 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using System.Reflection;
     using System.Runtime.CompilerServices;
+    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Concurrency;
 
     abstract class AbstractChannelHandlerContext : IChannelHandlerContext
     {
@@ -71,8 +73,9 @@ namespace DotNetty.Transport.Channels
         internal volatile AbstractChannelHandlerContext Next;
         internal volatile AbstractChannelHandlerContext Prev;
 
-        readonly PropagationDirections skipPropagationFlags;
+        internal readonly PropagationDirections SkipPropagationFlags;
         readonly IChannelHandlerInvoker invoker;
+        volatile PausableChannelEventExecutor wrappedEventLoop;
 
         protected AbstractChannelHandlerContext(IChannelPipeline pipeline, IChannelHandlerInvoker invoker,
             string name, PropagationDirections skipPropagationDirections)
@@ -82,7 +85,7 @@ namespace DotNetty.Transport.Channels
 
             this.Channel = pipeline.Channel();
             this.invoker = invoker;
-            this.skipPropagationFlags = skipPropagationDirections;
+            this.SkipPropagationFlags = skipPropagationDirections;
             this.Name = name;
         }
 
@@ -94,6 +97,21 @@ namespace DotNetty.Transport.Channels
         }
 
         public bool Removed { get; internal set; }
+
+        public IEventExecutor Executor
+        {
+            get
+            {
+                if (this.invoker == null)
+                {
+                    return this.Channel.EventLoop;
+                }
+                else
+                {
+                    return this.WrappedEventLoop;
+                }
+            }
+        }
 
         public string Name { get; private set; }
 
@@ -110,6 +128,26 @@ namespace DotNetty.Transport.Channels
                     throw new NotImplementedException();
                     //return wrappedEventLoop();
                 }
+            }
+        }
+
+        PausableChannelEventExecutor WrappedEventLoop
+        {
+            get
+            {
+                PausableChannelEventExecutor wrapped = this.wrappedEventLoop;
+                if (wrapped == null)
+                {
+                    wrapped = new PausableChannelEventExecutor0(this);
+#pragma warning disable 420 // does not apply to Interlocked operations
+                    if (Interlocked.CompareExchange(ref this.wrappedEventLoop, wrapped, null) != null)
+#pragma warning restore 420
+                    {
+                        // Set in the meantime so we need to issue another volatile read
+                        return this.wrappedEventLoop;
+                    }
+                }
+                return wrapped;
             }
         }
 
@@ -255,7 +293,7 @@ namespace DotNetty.Transport.Channels
             {
                 ctx = ctx.Next;
             }
-            while ((ctx.skipPropagationFlags & PropagationDirections.Inbound) == PropagationDirections.Inbound);
+            while ((ctx.SkipPropagationFlags & PropagationDirections.Inbound) == PropagationDirections.Inbound);
             return ctx;
         }
 
@@ -266,13 +304,61 @@ namespace DotNetty.Transport.Channels
             {
                 ctx = ctx.Prev;
             }
-            while ((ctx.skipPropagationFlags & PropagationDirections.Outbound) == PropagationDirections.Outbound);
+            while ((ctx.SkipPropagationFlags & PropagationDirections.Outbound) == PropagationDirections.Outbound);
             return ctx;
         }
 
         public override string ToString()
         {
             return string.Format("{0} ({1}, {2})", typeof(IChannelHandlerContext).Name, this.Name, this.Channel);
+        }
+
+        class PausableChannelEventExecutor0 : PausableChannelEventExecutor
+        {
+            readonly AbstractChannelHandlerContext context;
+
+            public PausableChannelEventExecutor0(AbstractChannelHandlerContext context)
+            {
+                this.context = context;
+            }
+
+            public override void RejectNewTasks()
+            {
+                /**
+             * This cast is correct because {@link #channel()} always returns an {@link AbstractChannel} and
+             * {@link AbstractChannel#eventLoop()} always returns a {@link PausableChannelEventExecutor}.
+             */
+                ((PausableChannelEventExecutor)this.Channel.EventLoop).RejectNewTasks();
+            }
+
+            public override void AcceptNewTasks()
+            {
+                ((PausableChannelEventExecutor)this.Channel.EventLoop).AcceptNewTasks();
+            }
+
+            public override bool IsAcceptingNewTasks
+            {
+                get { return ((PausableChannelEventExecutor)this.Channel.EventLoop).IsAcceptingNewTasks; }
+            }
+
+            internal override IChannel Channel
+            {
+                get { return this.context.Channel; }
+            }
+
+            public override IEventExecutor Unwrap()
+            {
+                return this.UnwrapInvoker().Executor;
+            }
+
+            public IChannelHandlerInvoker UnwrapInvoker()
+            {
+                /**
+                 * {@link #invoker} can not be {@code null}, because {@link PausableChannelEventExecutor0} will only be
+                 * instantiated if {@link #invoker} is not {@code null}.
+                 */
+                return this.context.invoker;
+            }
         }
     }
 }

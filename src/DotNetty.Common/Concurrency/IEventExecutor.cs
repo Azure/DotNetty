@@ -21,6 +21,26 @@ namespace DotNetty.Common.Concurrency
 
         bool IsInEventLoop(Thread thread);
 
+        /// <summary>
+        ///     Returns an {@link IEventExecutor} that is not an {@link IWrappedEventExecutor}.
+        /// </summary>
+        /// <remarks>
+        ///     <ul>
+        ///         <li>
+        ///             A {@link IWrappedEventExecutor} implementing this method must return the underlying
+        ///             {@link IEventExecutor} while making sure that it's not a {@link IWrappedEventExecutor}
+        ///             (e.g. by multiple calls to {@link #unwrap()}).
+        ///         </li>
+        ///         <li>
+        ///             An {@link IEventExecutor} that is not a {@link IWrappedEventExecutor} must return a reference to itself.
+        ///         </li>
+        ///         <li>
+        ///             This method must not return null.
+        ///         </li>
+        ///     </ul>
+        /// </remarks>
+        IEventExecutor Unwrap();
+
         void Execute(IRunnable task);
 
         void Execute(Action<object> action, object state);

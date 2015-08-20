@@ -18,7 +18,7 @@ namespace DotNetty.Transport.Channels
 
         internal abstract IChannel Channel { get; }
 
-        public abstract IEventLoop Unwrap();
+        public abstract IEventExecutor Unwrap();
 
         public IEventExecutor Executor
         {
@@ -148,6 +148,7 @@ namespace DotNetty.Transport.Channels
         {
             return this.Unwrap().ShutdownGracefullyAsync(quietPeriod, timeout);
         }
+
 
         public Task TerminationCompletion
         {

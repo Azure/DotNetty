@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
     /// <summary>
     /// Invokes the event handler methods of {@link ChannelHandler}.
@@ -14,6 +15,11 @@ namespace DotNetty.Transport.Channels
     /// </summary>
     public interface IChannelHandlerInvoker
     {
+        /// <summary>
+        /// Returns the {@link IEventExecutor} which is used to execute an arbitrary task.
+        /// </summary>
+        IEventExecutor Executor { get; }
+
         /// <summary>
         /// Invokes {@link ChannelHandler#channelRegistered(ChannelHandlerContext)}. This method is not for a user
         /// but for the internal {@link ChannelHandlerContext} implementation. To trigger an event, use the methods in
