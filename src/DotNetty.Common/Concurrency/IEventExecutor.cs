@@ -9,62 +9,202 @@ namespace DotNetty.Common.Concurrency
 
     public interface IEventExecutor
     {
+        /// <summary>
+        /// Returns <c>true</c> if the current <see cref="Thread"/> belongs to this event loop,
+        /// <c>false</c> otherwise.
+        /// </summary>
+        /// <remarks>It is a convenient way to determine whether code can be executed directly or if it
+        /// should be posted for execution to this executor instance explicitly to ensure execution in the loop.</remarks>
         bool InEventLoop { get; }
 
+        /// <summary>
+        /// Returns <c>true</c> if and only if this executor is being shut down via <see cref="ShutdownGracefullyAsync()"/>.
+        /// </summary>
         bool IsShuttingDown { get; }
 
+        /// <summary>
+        /// Gets a <see cref="Task"/> object that represents the asynchronous completion of this executor's termination.
+        /// </summary>
         Task TerminationCompletion { get; }
 
+        /// <summary>
+        /// Returns <c>true</c> if this executor has been shut down, <c>false</c> otherwise.
+        /// </summary>
         bool IsShutdown { get; }
 
+        /// <summary>
+        /// Returns <c>true</c> if all tasks have completed following shut down.
+        /// </summary>
+        /// <remarks>
+        /// Note that <see cref="IsTerminated"/> is never <c>true</c> unless either <see cref="ShutdownGracefullyAsync()"/> or <see cref="ShutdownNow()"/> was called first.
+        /// </remarks>
         bool IsTerminated { get; }
 
+        /// <summary>
+        /// Returns <c>true</c> if the given <see cref="Thread"/> belongs to this event loop,
+        /// <c>false></c> otherwise.
+        /// </summary>
         bool IsInEventLoop(Thread thread);
 
         /// <summary>
         ///     Returns an {@link IEventExecutor} that is not an {@link IWrappedEventExecutor}.
         /// </summary>
         /// <remarks>
-        ///     <ul>
-        ///         <li>
-        ///             A {@link IWrappedEventExecutor} implementing this method must return the underlying
-        ///             {@link IEventExecutor} while making sure that it's not a {@link IWrappedEventExecutor}
-        ///             (e.g. by multiple calls to {@link #unwrap()}).
-        ///         </li>
-        ///         <li>
-        ///             An {@link IEventExecutor} that is not a {@link IWrappedEventExecutor} must return a reference to itself.
-        ///         </li>
-        ///         <li>
-        ///             This method must not return null.
-        ///         </li>
-        ///     </ul>
+        ///     <list type="bullet">
+        ///         <item>
+        ///             <description>
+        ///                 A <see cref="IWrappedEventExecutor" /> implementing this method must return the underlying
+        ///                 <see cref="IEventExecutor" /> while making sure that it's not a <see cref="IWrappedEventExecutor" />
+        ///                 (e.g. by multiple calls to <see cref="Unwrap()" />).
+        ///             </description>
+        ///         </item>
+        ///         <item>
+        ///             <description>
+        ///                 An <see cref="IEventExecutor" /> that is not a <see cref="IWrappedEventExecutor" /> must return a
+        ///                 reference to itself.
+        ///             </description>
+        ///         </item>
+        ///         <item>
+        ///             <description>
+        ///                 This method must not return null.
+        ///             </description>
+        ///         </item>
+        ///     </list>
         /// </remarks>
         IEventExecutor Unwrap();
 
+        /// <summary>
+        /// Executes the given task.
+        /// </summary>
+        /// <remarks>Threading specifics are determined by <c>IEventExecutor</c> implementation.</remarks>
         void Execute(IRunnable task);
 
+        /// <summary>
+        /// Executes the given action.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
+        /// different objects is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
         void Execute(Action<object> action, object state);
 
+        /// <summary>
+        /// Executes the given <paramref name="action"/>.
+        /// </summary>
+        /// <remarks>Threading specifics are determined by <c>IEventExecutor</c> implementation.</remarks>
         void Execute(Action action);
 
+        /// <summary>
+        /// Executes the given action.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
+        /// an action against different objects in different context is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        void Execute(Action<object, object> action, object context, object state);
+
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
+        /// different objects is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
         void Schedule(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
+        /// different objects is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
         void Schedule(Action<object> action, object state, TimeSpan delay);
 
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
         void Schedule(Action action, TimeSpan delay, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
         void Schedule(Action action, TimeSpan delay);
 
-        Task SubmitAsync(Func<object, Task> taskFunc, object state);
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
+        /// an action against different objects in different context is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        void Schedule(Action<object, object> action, object context, object state, TimeSpan delay);
 
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
+        /// an action against different objects in different context is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        void Schedule(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Executes the given action and returns <see cref="Task" /> indicating completion of execution.
+        /// </summary>
+        /// <remarks>
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
         Task SubmitAsync(Func<Task> taskFunc);
 
-        void Execute(Action<object, object> action, object state1, object state2);
+        /// <summary>
+        /// Executes the given action and returns <see cref="Task" /> indicating completion of execution.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
+        /// different objects is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        Task SubmitAsync(Func<object, Task> taskFunc, object state);
 
-        Task SubmitAsync(Func<object, object, Task> func, object state1, object state2);
+        /// <summary>
+        /// Executes the given action and returns <see cref="Task" /> indicating completion of execution.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
+        /// an action against different objects in different context is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        Task SubmitAsync(Func<object, object, Task> func, object context, object state);
 
+        /// <summary>
+        /// Shortcut method for <see cref="ShutdownGracefullyAsync(TimeSpan,TimeSpan)"/> with sensible default values.
+        /// </summary>
         Task ShutdownGracefullyAsync();
 
+        /// <summary>
+        /// Signals this executor that the caller wants the executor to be shut down.  Once this method is called,
+        /// <see cref="IsShuttingDown"/> starts to return <c>true</c>, and the executor prepares to shut itself down.
+        /// Unlike <see cref="Shutdown()"/>, graceful shutdown ensures that no tasks are submitted for <i>'the quiet period'</i>
+        /// (usually a couple seconds) before it shuts itself down.  If a task is submitted during the quiet period,
+        /// it is guaranteed to be accepted and the quiet period will start over.
+        /// </summary>
+        /// <param name="quietPeriod">the quiet period as described in the documentation.</param>
+        /// <param name="timeout">the maximum amount of time to wait until the executor <see cref="IsShutdown"/>
+        /// regardless if a task was submitted during the quiet period.</param>
+        /// <returns>the <see cref="TerminationCompletion"/> task.</returns>
         Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
     }
 }
