@@ -80,6 +80,24 @@ namespace DotNetty.Transport.Channels
             this.Unwrap().Schedule(action, state, delay);
         }
 
+        public void Schedule(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
+        {
+            if (!this.IsAcceptingNewTasks)
+            {
+                throw new RejectedExecutionException();
+            }
+            this.Unwrap().Schedule(action, context, state, delay, cancellationToken);
+        }
+
+        public void Schedule(Action<object, object> action, object context, object state, TimeSpan delay)
+        {
+            if (!this.IsAcceptingNewTasks)
+            {
+                throw new RejectedExecutionException();
+            }
+            this.Unwrap().Schedule(action, context, state, delay);
+        }
+
         public void Schedule(Action action, TimeSpan delay, CancellationToken cancellationToken)
         {
             if (!this.IsAcceptingNewTasks)
@@ -116,22 +134,22 @@ namespace DotNetty.Transport.Channels
             return this.Unwrap().SubmitAsync(taskFunc);
         }
 
-        public void Execute(Action<object, object> action, object state1, object state2)
+        public void Execute(Action<object, object> action, object context, object state)
         {
             if (!this.IsAcceptingNewTasks)
             {
                 throw new RejectedExecutionException();
             }
-            this.Unwrap().Execute(action, state1, state2);
+            this.Unwrap().Execute(action, context, state);
         }
 
-        public Task SubmitAsync(Func<object, object, Task> func, object state1, object state2)
+        public Task SubmitAsync(Func<object, object, Task> func, object context, object state)
         {
             if (!this.IsAcceptingNewTasks)
             {
                 throw new RejectedExecutionException();
             }
-            return this.Unwrap().SubmitAsync(func, state1, state2);
+            return this.Unwrap().SubmitAsync(func, context, state);
         }
 
         public bool IsShuttingDown
