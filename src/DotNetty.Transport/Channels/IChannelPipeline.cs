@@ -173,6 +173,7 @@ namespace DotNetty.Transport.Channels
     {
         /// <summary>
         /// Inserts a {@link ChannelHandler} at the first position of this pipeline.
+        /// </summary>
         ///
         /// @param name     the name of the handler to insert first. {@code null} to let the name auto-generated.
         /// @param handler  the handler to insert first
@@ -181,8 +182,17 @@ namespace DotNetty.Transport.Channels
         ///         if there's an entry with the same name already in the pipeline
         /// @throws NullPointerException
         ///         if the specified handler is {@code null}
+        IChannelPipeline AddFirst(string name, IChannelHandler handler);
+
+        /// <summary>
+        /// Inserts a {@link ChannelHandler} at the first position of this pipeline.
         /// </summary>
-        IChannelPipeline AddFirst(IChannelHandler handler);
+        /// <param name="invoker">the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods</param>
+        /// <param name="name">the name of the handler to insert first. <code>null</code> to let the name auto-generated.</param>
+        /// <param name="handler">the handler to insert first</param>
+        /// <exception cref="ArgumentException">if there's an entry with the same name already in the pipeline</exception>
+        /// <exception cref="ArgumentNullException">if the specified handler is <code>null</code></exception>
+        IChannelPipeline AddFirst(IChannelHandlerInvoker invoker, string name, IChannelHandler handler);
 
         /// <summary>
         /// Appends a {@link ChannelHandler} at the last position of this pipeline.
@@ -195,7 +205,75 @@ namespace DotNetty.Transport.Channels
         /// @throws NullPointerException
         ///         if the specified handler is {@code null}
         /// </summary>
-        IChannelPipeline AddLast(IChannelHandler handler);
+        IChannelPipeline AddLast(string name, IChannelHandler handler);
+
+        /// <summary>
+        ///     Appends a {@link ChannelHandler} at the last position of this pipeline.
+        /// </summary>
+        /// <param name="invoker">the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods</param>
+        /// <param name="name">the name of the handler to append. {@code null} to let the name auto-generated.</param>
+        /// <param name="handler">the handler to append</param>
+        /// <exception cref="ArgumentException">if there's an entry with the same name already in the pipeline</exception>
+        /// <exception cref="ArgumentNullException">if the specified handler is <code>null</code></exception>
+        IChannelPipeline AddLast(IChannelHandlerInvoker invoker, string name, IChannelHandler handler);
+
+        /// <summary>
+        ///     Inserts a {@link ChannelHandler} before an existing handler of this pipeline.
+        /// </summary>
+        /// <param name="baseName">the name of the existing handler</param>
+        /// <param name="name">the name of the handler to insert before. {@code null} to let the name auto-generated.</param>
+        /// <param name="handler">the handler to insert before</param>
+        /// @throws NoSuchElementException
+        /// if there's no such entry with the specified {@code baseName}
+        /// @throws IllegalArgumentException
+        /// if there's an entry with the same name already in the pipeline
+        /// @throws NullPointerException
+        /// if the specified baseName or handler is {@code null}
+        IChannelPipeline AddBefore(string baseName, string name, IChannelHandler handler);
+
+        /// <summary>
+        ///     Inserts a {@link ChannelHandler} before an existing handler of this pipeline.
+        /// </summary>
+        /// <param name="invoker">the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods</param>
+        /// <param name="baseName">the name of the existing handler</param>
+        /// <param name="name">the name of the handler to insert before. {@code null} to let the name auto-generated.</param>
+        /// <param name="handler">the handler to insert before</param>
+        /// @throws NoSuchElementException
+        /// if there's no such entry with the specified {@code baseName}
+        /// @throws IllegalArgumentException
+        /// if there's an entry with the same name already in the pipeline
+        /// @throws NullPointerException
+        /// if the specified baseName or handler is {@code null}
+        IChannelPipeline AddBefore(IChannelHandlerInvoker invoker, string baseName, string name, IChannelHandler handler);
+
+        /// <summary>
+        ///     Inserts a {@link ChannelHandler} after an existing handler of this pipeline.
+        /// </summary>
+        /// <param name="baseName">the name of the existing handler</param>
+        /// <param name="name">the name of the handler to insert after. {@code null} to let the name auto-generated.</param>
+        /// <param name="handler">the handler to insert after</param>
+        /// @throws NoSuchElementException
+        /// if there's no such entry with the specified {@code baseName}
+        /// @throws IllegalArgumentException
+        /// if there's an entry with the same name already in the pipeline
+        /// @throws NullPointerException
+        /// if the specified baseName or handler is {@code null}
+        IChannelPipeline AddAfter(string baseName, string name, IChannelHandler handler);
+
+        /// <summary>
+        ///     Inserts a {@link ChannelHandler} after an existing handler of this pipeline.
+        /// </summary>
+        /// <param name="invoker">the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods</param>
+        /// <param name="baseName">the name of the existing handler</param>
+        /// <param name="name">the name of the handler to insert after. {@code null} to let the name auto-generated.</param>
+        /// <param name="handler">the handler to insert after</param>
+        /// @throws NoSuchElementException
+        /// if there's no such entry with the specified {@code baseName}
+        /// @throws IllegalArgumentException
+        /// if there's an entry with the same name already in the pipeline
+        /// @throws NullPointerException
+        /// if the specified baseName or handler is {@code null}
+        IChannelPipeline AddAfter(IChannelHandlerInvoker invoker, string baseName, string name, IChannelHandler handler);
 
         /// <summary>
         /// Inserts a {@link ChannelHandler}s at the first position of this pipeline.
@@ -206,12 +284,30 @@ namespace DotNetty.Transport.Channels
         IChannelPipeline AddFirst(params IChannelHandler[] handlers);
 
         /// <summary>
+        /// Inserts a {@link ChannelHandler}s at the first position of this pipeline.
+        ///
+        /// @param invoker   the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods
+        /// @param handlers  the handlers to insert first
+        ///
+        /// </summary>
+        IChannelPipeline AddFirst(IChannelHandlerInvoker invoker, params IChannelHandler[] handlers);
+
+        /// <summary>
         /// Inserts a {@link ChannelHandler}s at the last position of this pipeline.
         ///
         /// @param handlers  the handlers to insert last
         ///
         /// </summary>
         IChannelPipeline AddLast(params IChannelHandler[] handlers);
+
+        /// <summary>
+        /// Inserts a {@link ChannelHandler}s at the last position of this pipeline.
+        ///
+        /// @param invoker   the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods
+        /// @param handlers  the handlers to insert last
+        ///
+        /// </summary>
+        IChannelPipeline AddLast(IChannelHandlerInvoker invoker, params IChannelHandler[] handlers);
 
         /// <summary>
         /// Removes the specified {@link ChannelHandler} from this pipeline.
@@ -224,6 +320,16 @@ namespace DotNetty.Transport.Channels
         ///         if the specified handler is {@code null}
         /// </summary>
         IChannelPipeline Remove(IChannelHandler handler);
+
+        /// <summary>
+        /// Removes the {@link ChannelHandler} with the specified name from this pipeline.
+        /// </summary>
+        /// <param name="name">the name under which the {@link ChannelHandler} was stored.</param>
+        /// <returns>the removed handler</returns>
+        /// 
+        /// <exception cref="ArgumentException">if there's no such handler with the specified name in this pipeline</exception>
+        /// <exception cref="ArgumentNullException">if the specified name is {@code null}</exception>
+        IChannelHandler Remove(string name);
 
         /// <summary>
         /// Removes the {@link ChannelHandler} of the specified type from this pipeline.
@@ -277,7 +383,22 @@ namespace DotNetty.Transport.Channels
         /// @throws NullPointerException
         ///         if the specified old handler or new handler is {@code null}
         /// </summary>
-        IChannelPipeline Replace(IChannelHandler oldHandler, IChannelHandler newHandler);
+        IChannelPipeline Replace(IChannelHandler oldHandler, string newName, IChannelHandler newHandler);
+
+        /// Replaces the {@link ChannelHandler} of the specified name with a new handler in this pipeline.
+        /// @param  oldName       the name of the {@link ChannelHandler} to be replaced
+        /// @param  newName       the name under which the replacement should be added.
+        ///                       {@code null} to use the same name with the handler being replaced.
+        /// @param  newHandler    the {@link ChannelHandler} which is used as replacement
+        /// @return the removed handler
+        /// @throws NoSuchElementException
+        ///         if the handler with the specified old name does not exist in this pipeline
+        /// @throws IllegalArgumentException
+        ///         if a handler with the specified new name already exists in this
+        ///         pipeline, except for the handler to be replaced
+        /// @throws NullPointerException
+        ///         if the specified old handler or new handler is {@code null}
+        IChannelHandler Replace(string oldName, string newName, IChannelHandler newHandler);
 
         /// <summary>
         /// Replaces the {@link ChannelHandler} of the specified type with a new handler in this pipeline.
@@ -298,7 +419,7 @@ namespace DotNetty.Transport.Channels
         /// @throws NullPointerException
         ///         if the specified old handler or new handler is {@code null}
         /// </summary>
-        T Replace<T>(IChannelHandler newHandler) where T : class, IChannelHandler;
+        T Replace<T>(string newName, IChannelHandler newHandler) where T : class, IChannelHandler;
 
         /// <summary>
         /// Returns the first {@link ChannelHandler} in this pipeline.
@@ -328,6 +449,10 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         IChannelHandlerContext LastContext();
 
+        /// <summary>Returns the {@link ChannelHandler} with the specified name in this pipeline.</summary>
+        /// <returns>the handler with the specified name. {@code null} if there's no such handler in this pipeline.</returns>
+        IChannelHandler Get(string name);
+
         /// <summary>
         /// Returns the {@link ChannelHandler} of the specified type in this
         /// pipeline.
@@ -345,6 +470,10 @@ namespace DotNetty.Transport.Channels
         ///         {@code null} if there's no such handler in this pipeline.
         /// </summary>
         IChannelHandlerContext Context(IChannelHandler handler);
+
+        /// <summary>Returns the context object of the {@link ChannelHandler} with the specified name in this pipeline.</summary>
+        /// <returns>the context object of the handler with the specified name. {@code null} if there's no such handler in this pipeline.</returns>
+        IChannelHandlerContext Context(string name);
 
         /// <summary>
         /// Returns the context object of the {@link ChannelHandler} of the

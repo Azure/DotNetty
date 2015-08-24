@@ -119,6 +119,11 @@ namespace DotNetty.Common.Concurrency
             return this.thread == t;
         }
 
+        public IEventExecutor Unwrap()
+        {
+            return this;
+        }
+
         public void Execute(IRunnable task)
         {
             this.taskQueue.Enqueue(task);

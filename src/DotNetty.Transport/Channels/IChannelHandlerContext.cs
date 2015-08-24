@@ -7,12 +7,39 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Concurrency;
 
     public interface IChannelHandlerContext
     {
         IChannel Channel { get; }
 
         IByteBufferAllocator Allocator { get; }
+
+        /// <summary>
+        ///     Returns the {@link EventExecutor} which is used to execute an arbitrary task.
+        /// </summary>
+        IEventExecutor Executor { get; }
+
+        /// <summary>
+        ///     Returns the {@link IChannelHandlerInvoker} which is used to trigger an event for the associated
+        ///     {@link IChannelHandler}.
+        /// </summary>
+        /// <remarks>
+        ///     Note that the methods in {@link IChannelHandlerInvoker} are not intended to be called
+        ///     by a user. Use this method only to obtain the reference to the {@link IChannelHandlerInvoker}
+        ///     (and not calling its methods) unless you know what you are doing.
+        /// </remarks>
+        IChannelHandlerInvoker Invoker { get; }
+
+        /// <summary>
+        ///     The unique name of the {@link IChannelHandlerContext}.
+        /// </summary>
+        /// <remarks>
+        ///     The name was used when the {@link IChannelHandler}
+        ///     was added to the {@link IChannelPipeline}. This name can also be used to access the registered
+        ///     {@link IChannelHandler} from the {@link IChannelPipeline}.
+        /// </remarks>
+        string Name { get; }
 
         IChannelHandler Handler { get; }
 
