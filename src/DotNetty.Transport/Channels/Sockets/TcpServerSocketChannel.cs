@@ -170,7 +170,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         operation.Validate();
                         operation.AcceptSocket = null;
 
-                        var message = new TcpSocketChannel(ch, connectedSocket);
+                        var message = new TcpSocketChannel(ch, connectedSocket, true);
                         ch.ReadPending = false;
                         pipeline.FireChannelRead(message);
                         messageCount++;
@@ -186,7 +186,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         {
                             connectedSocket = null;
                             connectedSocket = ch.Socket.Accept();
-                            message = new TcpSocketChannel(ch, connectedSocket);
+                            message = new TcpSocketChannel(ch, connectedSocket, true);
                             pipeline.FireChannelRead(message);
 
                             // stop reading and remove op
