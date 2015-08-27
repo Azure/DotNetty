@@ -11,7 +11,7 @@ namespace DotNetty.Buffers
     {
 
         private static readonly char[] HexdumpTable = new char[256 * 4];
-        private static readonly string NEWLINE = StringUtil.NEWLINE;
+        private static readonly string Newline = StringUtil.NEWLINE;
         private static readonly string[] Byte2Hex = new string[256];
         private static readonly string[] HexPadding = new string[16];
         private static readonly string[] BytePadding = new string[16];
@@ -144,7 +144,7 @@ namespace DotNetty.Buffers
                          buf, dstIdx, 2);
             }
 
-            return new String(buf);
+            return new string(buf);
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace DotNetty.Buffers
                 Array.Copy(HexdumpTable, (array[srcIdx] & 0xFF) << 1, buf, dstIdx, 2);
             }
 
-            return new String(buf);
+            return new string(buf);
         }
 
         /// <summary>
@@ -502,8 +502,8 @@ namespace DotNetty.Buffers
             }
             dump.Append(
                               "         +-------------------------------------------------+" +
-                    NEWLINE + "         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |" +
-                    NEWLINE + "+--------+-------------------------------------------------+----------------+");
+                    Newline + "         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |" +
+                    Newline + "+--------+-------------------------------------------------+----------------+");
 
             int startIndex = offset;
             int fullRows = (int)((uint)length >> 4);
@@ -557,7 +557,7 @@ namespace DotNetty.Buffers
                 dump.Append('|');
             }
 
-            dump.Append(NEWLINE + "+--------+-------------------------------------------------+----------------+");
+            dump.Append(Newline + "+--------+-------------------------------------------------+----------------+");
         }
 
         /// <summary>

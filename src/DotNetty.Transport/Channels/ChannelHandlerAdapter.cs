@@ -48,7 +48,7 @@ namespace DotNetty.Transport.Channels
         }
 
         [Skip]
-        public void ChannelWritabilityChanged(IChannelHandlerContext context)
+        public virtual void ChannelWritabilityChanged(IChannelHandlerContext context)
         {
             context.FireChannelWritabilityChanged();
         }
