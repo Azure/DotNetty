@@ -334,9 +334,6 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public void FinishConnect(SocketChannelAsyncOperation operation)
             {
-                // Note this method is invoked by the event loop only if the connection attempt was
-                // neither cancelled nor timed out.
-
                 Contract.Assert(this.channel.EventLoop.InEventLoop);
 
                 AbstractSocketChannel ch = this.Channel;
