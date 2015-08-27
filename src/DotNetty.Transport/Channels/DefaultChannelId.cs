@@ -104,6 +104,7 @@ namespace DotNetty.Transport.Channels
         {
             DefaultChannelId id = new DefaultChannelId();
             id.Init();
+            
             return id;
         }
 
@@ -119,7 +120,7 @@ namespace DotNetty.Transport.Channels
                 foreach(NetworkInterface iface in NetworkInterface.GetAllNetworkInterfaces())
                 {
                     var addrs = iface.GetIPProperties().UnicastAddresses;
-                    var addr = addrs.Where(a=>!IPAddress.IsLoopback(a.Address)).FirstOrDefault();
+                    var addr = addrs.FirstOrDefault(a => !IPAddress.IsLoopback(a.Address));
                     if (addr!=null)
                     {
                         ifaces.Add(iface, addr.Address);
@@ -286,10 +287,11 @@ namespace DotNetty.Transport.Channels
             get {
 
                 string shortValue = this.shortValue;
-                if(shortValue==null)
+                if (shortValue == null)
                 {
                     this.shortValue = shortValue = ByteBufferUtil.HexDump(data, MachineIdLen + ProcessIdLen + SequenceLen + TimestampLen, RandomLen);
                 }
+                
                 return shortValue;
             }
         }
