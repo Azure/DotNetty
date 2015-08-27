@@ -48,9 +48,18 @@ namespace DotNetty.Transport.Channels.Sockets
         ///  @param socket    the {@link SocketChannel} which will be used
         /// </summary>
         public TcpSocketChannel(IChannel parent, Socket socket)
+            : this(parent, socket, false)
+        {
+        }
+
+        internal TcpSocketChannel(IChannel parent, Socket socket, bool connected)
             : base(parent, socket)
         {
             this.config = new TcpSocketChannelConfig(this, socket);
+            if (connected)
+            {
+                this.SetState(StateFlags.Active);
+            }
         }
 
         //public new IServerSocketChannel Parent
@@ -66,11 +75,6 @@ namespace DotNetty.Transport.Channels.Sockets
         public override IChannelConfiguration Configuration
         {
             get { return this.config; }
-        }
-
-        public override bool Active
-        {
-            get { return this.Socket.Connected; }
         }
 
         public override EndPoint LocalAddress
@@ -165,9 +169,9 @@ namespace DotNetty.Transport.Channels.Sockets
             }
             finally
             {
-                operation.RemoteEndPoint = null; // cleanup after connect
                 operation.Dispose();
             }
+            this.SetState(StateFlags.Active);
         }
 
         protected override void DoDisconnect()
@@ -178,7 +182,7 @@ namespace DotNetty.Transport.Channels.Sockets
         protected override void DoClose()
         {
             base.DoClose();
-            if (this.ResetState(StateFlags.Open))
+            if (this.ResetState(StateFlags.Open | StateFlags.Active))
             {
                 this.Socket.Shutdown(SocketShutdown.Both);
                 this.Socket.Close(0);

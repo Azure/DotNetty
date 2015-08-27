@@ -35,11 +35,15 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="Concurrency\ExecutorEventSource.cs" />
     <Compile Include="Concurrency\ExecutorTaskScheduler.cs" />
     <Compile Include="Concurrency\IEventExecutor.cs" />
     <Compile Include="Concurrency\IPausableEventExecutor.cs" />
     <Compile Include="Concurrency\IRunnable.cs" />
+    <Compile Include="Concurrency\IWrappedEventExecutor.cs" />
     <Compile Include="Concurrency\SingleThreadEventExecutor.cs" />
     <Compile Include="Concurrency\TaskCompletionSource.cs" />
     <Compile Include="IReferenceCounted.cs" />
@@ -56,6 +60,9 @@
     <Compile Include="Utilities\StringUtil.cs" />
     <Compile Include="Utilities\SystemPropertyUtil.cs" />
     <Compile Include="Utilities\TaskEx.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DotNetty.Common.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

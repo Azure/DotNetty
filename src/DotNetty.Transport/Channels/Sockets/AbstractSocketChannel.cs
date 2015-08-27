@@ -19,9 +19,9 @@ namespace DotNetty.Transport.Channels.Sockets
         protected enum StateFlags
         {
             Open = 1,
-            ReadScheduled = 2,
-            WriteScheduled = 4,
-            ActivationPending = 8
+            ReadScheduled = 1 << 1,
+            WriteScheduled = 1 << 2,
+            Active = 1 << 3
             // todo: add input shutdown and read pending here as well?
         }
 
@@ -71,6 +71,11 @@ namespace DotNetty.Transport.Channels.Sockets
         public override bool Open
         {
             get { return this.IsInState(StateFlags.Open); }
+        }
+
+        public override bool Active
+        {
+            get { return this.IsInState(StateFlags.Active); }
         }
 
         protected bool ReadPending
@@ -239,10 +244,6 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     else
                     {
-                        if (!wasActive)
-                        {
-                            ch.SetState(StateFlags.ActivationPending);
-                        }
                         ch.connectPromise = new TaskCompletionSource(remoteAddress);
 
                         // Schedule connect timeout.
@@ -341,7 +342,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 AbstractSocketChannel ch = this.Channel;
                 try
                 {
-                    bool wasActive = !ch.ResetState(StateFlags.ActivationPending);
+                    bool wasActive = ch.Active;
                     ch.DoFinishConnect(operation);
                     this.FulfillConnectPromise(wasActive);
                 }

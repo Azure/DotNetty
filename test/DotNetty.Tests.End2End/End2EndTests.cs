@@ -60,7 +60,8 @@ namespace DotNetty.Tests.End2End
                 .Option(ChannelOption.TcpNodelay, true)
                 .Handler(new ActionChannelInitializer<ISocketChannel>(ch =>
                 {
-                    ch.Pipeline.AddLast(TlsHandler.Client("dotnetty.com", null, (sender, certificate, chain, errors) => true));
+                    string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
+                    ch.Pipeline.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
                     ch.Pipeline.AddLast(new TestScenarioRunner(this.GetEchoClientScenario, testPromise));
                 }));
 
@@ -112,7 +113,8 @@ namespace DotNetty.Tests.End2End
                 .Option(ChannelOption.TcpNodelay, true)
                 .Handler(new ActionChannelInitializer<ISocketChannel>(ch =>
                 {
-                    ch.Pipeline.AddLast(TlsHandler.Client("dotnetty.com", null, (sender, certificate, chain, errors) => true));
+                    string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
+                    ch.Pipeline.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
                     ch.Pipeline.AddLast(
                         MqttEncoder.Instance,
                         new MqttDecoder(false, 256 * 1024),
