@@ -58,7 +58,7 @@ namespace DotNetty.Transport.Channels.Sockets
             this.config = new TcpSocketChannelConfig(this, socket);
             if (connected)
             {
-                this.SetState(StateFlags.Active);
+                this.OnConnected();
             }
         }
 
@@ -77,12 +77,12 @@ namespace DotNetty.Transport.Channels.Sockets
             get { return this.config; }
         }
 
-        public override EndPoint LocalAddress
+        protected override EndPoint LocalAddressInternal
         {
             get { return this.Socket.LocalEndPoint; }
         }
 
-        public override EndPoint RemoteAddress
+        protected override EndPoint RemoteAddressInternal
         {
             get { return this.Socket.RemoteEndPoint; }
         }
@@ -171,7 +171,16 @@ namespace DotNetty.Transport.Channels.Sockets
             {
                 operation.Dispose();
             }
+            this.OnConnected();
+        }
+
+        void OnConnected()
+        {
             this.SetState(StateFlags.Active);
+
+            // preserve local and remote addresses for later availability even if Socket fails
+            this.CacheLocalAddress();
+            this.CacheRemoteAddress();
         }
 
         protected override void DoDisconnect()
