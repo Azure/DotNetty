@@ -12,7 +12,7 @@ open Fake.TaskRunnerHelper
 //-------------------------------------------------------------------------------
 
 let product = "DotNetty"
-let authors = [ "Windows Azure" ]
+let authors = [ "Microsoft Azure" ]
 let copyright = "Copyright © 2015"
 let company = "DotNetty"
 let description = "High performance, reactive TCP / UDP socket middleware for .NET"
@@ -174,11 +174,8 @@ let createNugetPackages _ =
 
     ensureDirectory nugetDir
     for nuspec in !! "src/**/*.nuspec" do
-        let ourWorkingDir = getDirName workingDir dirName
         printfn "Creating nuget packages for %s" nuspec
         
-        ensureDirectory ourWorkingDir
-
         let project = Path.GetFileNameWithoutExtension nuspec 
         let projectDir = Path.GetDirectoryName nuspec
         let projectFile = (!! (projectDir @@ project + ".*sproj")) |> Seq.head
@@ -207,9 +204,10 @@ let createNugetPackages _ =
                 nuspec
 
         // Copy dll, pdb and xml to libdir = workingDir/lib/net45/
-        let libDir = ourWorkingDir @@ @"lib\net45"
+        let libDir = workingDir @@ @"lib\net45"
         printfn "Creating output directory %s" libDir
         ensureDirectory libDir
+        CleanDir libDir
         !! (releaseDir @@ project + ".dll")
         ++ (releaseDir @@ project + ".pdb")
         ++ (releaseDir @@ project + ".xml")
@@ -217,7 +215,7 @@ let createNugetPackages _ =
 
         // Copy all src-files (.cs and .fs files) to workingDir/src
         let nugetSrcDir = workingDir @@ @"src/"
-        // CreateDir nugetSrcDir
+        CleanDir nugetSrcDir
 
         let isCs = hasExt ".cs"
         let isFs = hasExt ".fs"
