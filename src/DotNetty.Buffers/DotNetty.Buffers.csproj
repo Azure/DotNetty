@@ -50,10 +50,13 @@
     <Compile Include="CompositeByteBuffer.cs" />
     <Compile Include="DuplicatedByteBuffer.cs" />
     <Compile Include="EmptyByteBuffer.cs" />
+    <Compile Include="PoolArena.cs" />
+    <Compile Include="PoolChunk.cs" />
     <Compile Include="PooledByteBuffer.cs" />
     <Compile Include="IByteBuffer.cs" />
     <Compile Include="IByteBufferAllocator.cs" />
     <Compile Include="IllegalReferenceCountException.cs" />
+    <Compile Include="PoolSubpage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SlicedByteBuffer.cs" />
     <Compile Include="PooledByteBufferAllocator.cs" />
