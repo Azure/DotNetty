@@ -3,43 +3,68 @@
 
 namespace DotNetty.Buffers
 {
-    using System.Diagnostics;
-    using System.Diagnostics.Contracts;
+    using System;        
+    using System.Threading;
     using DotNetty.Common;
 
     public class PooledByteBufferAllocator : AbstractByteBufferAllocator
     {
-        readonly ThreadLocalPool<PooledByteBuffer> pool;
+        private const int MIN_PAGE_SIZE = 4096;
 
-        public PooledByteBufferAllocator(int maxPooledBufSize, int maxLocalPoolSize)
+        private static readonly int DEFAULT_NUM_ARENA = Environment.ProcessorCount;
+        private static readonly int DEFAULT_PAGE_SIZE = 4096;
+        private static readonly int DEFAULT_MAX_ORDER = 11;
+        private static readonly int MAX_CHUNK_SIZE = 1073741824;//512M
+
+        private PoolArena[] _arenas;
+        private int _seqNum;
+
+        public PooledByteBufferAllocator()
+            : this(DEFAULT_NUM_ARENA, DEFAULT_PAGE_SIZE, DEFAULT_MAX_ORDER)
         {
-            Contract.Requires(maxLocalPoolSize > maxPooledBufSize);
-
-            this.MaxPooledBufSize = maxPooledBufSize;
-            this.pool = new ThreadLocalPool<PooledByteBuffer>(
-                handle => new PooledByteBuffer(handle, this, maxPooledBufSize, int.MaxValue),
-                maxLocalPoolSize / maxPooledBufSize,
-                false); // todo: prepare
         }
 
-        [Conditional("TRACE")]
-        public void LogUsage()
+        public PooledByteBufferAllocator(int numberArenas, int pageSize, int maxOrder)
         {
-            this.pool.LogUsage("pooled buffers available");
+            if (numberArenas <= 0)
+            {
+                throw new ArgumentOutOfRangeException("numberArenas", "numberArenas must be greater than 0.");
+            }
+            if (pageSize < MIN_PAGE_SIZE)
+            {
+                throw new ArgumentException("pageSize", string.Format("pageSize cannot be less than {0}", MIN_PAGE_SIZE));
+            }
+            if ((pageSize & pageSize - 1) != 0)
+            {
+                throw new ArgumentException("pageSize shoud be power of 2.");
+            }
+            if (maxOrder > 14)
+            {
+                throw new ArgumentException("maxOrder: " + maxOrder + " (expected: 0-14)");
+            }
+            if ((pageSize << maxOrder) > MAX_CHUNK_SIZE)
+            {
+                throw new ArgumentException(String.Format("pageSize ({0}) << maxOrder ({1}) must not exceed {2}", pageSize, maxOrder, MAX_CHUNK_SIZE));
+            }
+            _arenas = new PoolArena[numberArenas];
+            var chunkSize = pageSize << maxOrder;
+            for (var i = 0; i < numberArenas; i++)
+            {
+                _arenas[i] = new PoolArena(this, pageSize, maxOrder, chunkSize);
+            }
         }
-
-        public int MaxPooledBufSize { get; private set; }
 
         protected override IByteBuffer NewBuffer(int initialCapacity, int maxCapacity)
         {
-            if (initialCapacity > this.MaxPooledBufSize)
-            {
-                return new UnpooledHeapByteBuffer(this, initialCapacity, maxCapacity);
-            }
-
-            PooledByteBuffer buffer = this.pool.Take();
-            buffer.Init();
+            var arena = this.NextArenaToUses();
+            var buffer = arena.Allocate(initialCapacity, maxCapacity);
             return buffer;
+        }
+
+        private PoolArena NextArenaToUses()
+        {
+            var index = (uint)Interlocked.Increment(ref _seqNum) % _arenas.Length;
+            return _arenas[index];
         }
     }
 }
