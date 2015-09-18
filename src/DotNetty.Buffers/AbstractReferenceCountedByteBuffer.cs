@@ -10,7 +10,7 @@ namespace DotNetty.Buffers
     public abstract class AbstractReferenceCountedByteBuffer : AbstractByteBuffer
     {
 #pragma warning disable 420
-        volatile int _refCounted = 1;
+        volatile int referenceCount = 1;
 
         protected AbstractReferenceCountedByteBuffer(int maxCapacity)
             : base(maxCapacity)
@@ -19,19 +19,19 @@ namespace DotNetty.Buffers
 
         public override int ReferenceCount
         {
-            get { return this._refCounted; }
+            get { return this.referenceCount; }
         }
 
         protected void SetReferenceCount(int value)
-        {            
-            Interlocked.Exchange(ref _refCounted, value);
+        {
+            this.referenceCount = value;
         }
 
         public override IReferenceCounted Retain()
         {
             while (true)
             {
-                int refCnt = this._refCounted;
+                int refCnt = this.referenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, 1);
@@ -41,7 +41,7 @@ namespace DotNetty.Buffers
                     throw new IllegalReferenceCountException(int.MaxValue, 1);
                 }
 
-                if (Interlocked.CompareExchange(ref this._refCounted, refCnt + 1, refCnt) == refCnt)
+                if (Interlocked.CompareExchange(ref this.referenceCount, refCnt + 1, refCnt) == refCnt)
                 {
                     break;
                 }
@@ -58,7 +58,7 @@ namespace DotNetty.Buffers
 
             while (true)
             {
-                int refCnt = this._refCounted;
+                int refCnt = this.referenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, increment);
@@ -68,7 +68,7 @@ namespace DotNetty.Buffers
                     throw new IllegalReferenceCountException(refCnt, increment);
                 }
 
-                if (Interlocked.CompareExchange(ref this._refCounted, refCnt + increment, refCnt) == refCnt)
+                if (Interlocked.CompareExchange(ref this.referenceCount, refCnt + increment, refCnt) == refCnt)
                 {
                     break;
                 }
@@ -80,13 +80,13 @@ namespace DotNetty.Buffers
         {
             while (true)
             {
-                int refCnt = this._refCounted;
+                int refCnt = this.referenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, -1);
                 }
 
-                if (Interlocked.CompareExchange(ref this._refCounted, refCnt - 1, refCnt) == refCnt)
+                if (Interlocked.CompareExchange(ref this.referenceCount, refCnt - 1, refCnt) == refCnt)
                 {
                     if (refCnt == 1)
                     {
@@ -107,13 +107,13 @@ namespace DotNetty.Buffers
 
             while (true)
             {
-                int refCnt = this._refCounted;
+                int refCnt = this.referenceCount;
                 if (refCnt < decrement)
                 {
                     throw new IllegalReferenceCountException(refCnt, -decrement);
                 }
 
-                if (Interlocked.CompareExchange(ref this._refCounted, refCnt - decrement, refCnt) == refCnt)
+                if (Interlocked.CompareExchange(ref this.referenceCount, refCnt - decrement, refCnt) == refCnt)
                 {
                     if (refCnt == decrement)
                     {
