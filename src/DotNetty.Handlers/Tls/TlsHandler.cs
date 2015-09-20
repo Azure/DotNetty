@@ -314,7 +314,7 @@ namespace DotNetty.Handlers.Tls
                 else
                 {
                     // post to executor to break the stack (avoiding stack overflow)
-                    self.capturedContext.Channel.EventLoop.Execute(WriteFromQueueAction, self);
+                    self.capturedContext.Executor.Execute(WriteFromQueueAction, self);
                     // todo: evaluate if separate path for sync completion makes sense
                 }
             }

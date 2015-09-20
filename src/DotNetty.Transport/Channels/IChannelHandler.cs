@@ -89,6 +89,7 @@ namespace DotNetty.Transport.Channels
         [PipelinePropagation(PropagationDirections.Inbound)]
         void ExceptionCaught(IChannelHandlerContext context, Exception exception);
 
+        [PipelinePropagation(PropagationDirections.Outbound)]
         Task DeregisterAsync(IChannelHandlerContext context);
 
         [PipelinePropagation(PropagationDirections.Outbound)]

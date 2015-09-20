@@ -11,7 +11,7 @@ namespace DotNetty.Transport.Channels
 
         public DefaultChannelHandlerContext(
             DefaultChannelPipeline pipeline, IChannelHandlerInvoker invoker, string name, IChannelHandler handler)
-            : base(pipeline, invoker, name ?? "<null>", GetSkipPropagationFlags(handler))
+            : base(pipeline, invoker, name, GetSkipPropagationFlags(handler))
         {
             Contract.Requires(handler != null);
 

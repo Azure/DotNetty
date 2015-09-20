@@ -659,15 +659,16 @@ namespace DotNetty.Buffers
         {
             int readTotal = 0;
             int read;
-            int localWriterIndex = this.ArrayOffset + this.WriterIndex;
+            int startWriterIndex = this.WriterIndex;
+            int offset = this.ArrayOffset + startWriterIndex;
             do
             {
-                read = await stream.ReadAsync(this.Array, localWriterIndex + readTotal, length - readTotal, cancellationToken);
+                read = await stream.ReadAsync(this.Array, offset + readTotal, length - readTotal, cancellationToken);
                 readTotal += read;
             }
             while (read > 0 && readTotal < length);
 
-            this.SetWriterIndex(localWriterIndex + readTotal);
+            this.SetWriterIndex(startWriterIndex + readTotal);
             return readTotal;
         }
 
@@ -699,12 +700,18 @@ namespace DotNetty.Buffers
 
         public virtual byte[] ToArray()
         {
-            if (this.HasArray)
+            int readableBytes = this.ReadableBytes;
+            if (readableBytes == 0)
             {
-                return this.Array.Slice(this.ArrayOffset + this.ReaderIndex, this.ReadableBytes);
+                return ByteArrayExtensions.Empty;
             }
 
-            var bytes = new byte[this.ReadableBytes];
+            if (this.HasArray)
+            {
+                return this.Array.Slice(this.ArrayOffset + this.ReaderIndex, readableBytes);
+            }
+
+            var bytes = new byte[readableBytes];
             this.GetBytes(this.ReaderIndex, bytes);
             return bytes;
         }

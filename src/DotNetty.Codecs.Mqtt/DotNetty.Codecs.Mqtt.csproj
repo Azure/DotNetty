@@ -35,6 +35,9 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="MqttEventSource.cs" />
     <Compile Include="MqttDecoder.cs" />
@@ -80,6 +83,9 @@
       <Project>{8218c9ee-0a4a-432f-a12a-b54202f97b05}</Project>
       <Name>DotNetty.Transport</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DotNetty.Codecs.Mqtt.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

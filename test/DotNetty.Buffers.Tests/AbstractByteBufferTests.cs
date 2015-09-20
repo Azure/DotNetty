@@ -29,7 +29,7 @@ namespace DotNetty.Buffers.Tests
                 read = await buffer.WriteBytesAsync(stream, CopyLength);
             }
             Assert.Equal(CopyLength, read);
-            Assert.True(ByteBufferUtil.Equals(new UnpooledHeapByteBuffer(UnpooledByteBufferAllocator.Default, bytes.Slice(0, CopyLength), int.MaxValue), buffer));
+            Assert.True(ByteBufferUtil.Equals(Unpooled.WrappedBuffer(bytes.Slice(0, CopyLength)), buffer));
         }
     }
 }

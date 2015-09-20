@@ -964,19 +964,24 @@ namespace DotNetty.Transport.Channels
                 get { return this.isAcceptingNewTasks; }
             }
 
-            public override IEventLoop Unwrap()
+            public override IEventExecutor Unwrap()
+            {
+                return this.Unwrapped;
+            }
+
+            IEventLoop IEventLoop.Unwrap()
             {
                 return this.Unwrapped;
             }
 
             public IChannelHandlerInvoker Invoker
             {
-                get { return this.Unwrap().Invoker; }
+                get { return this.Unwrapped.Invoker; }
             }
 
             public Task RegisterAsync(IChannel c)
             {
-                return this.Unwrap().RegisterAsync(c);
+                return this.Unwrapped.RegisterAsync(c);
             }
 
             internal override IChannel Channel
