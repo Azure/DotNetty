@@ -208,18 +208,27 @@ namespace DotNetty.Transport.Channels.Sockets
             SocketError errorCode;
             int received = this.Socket.Receive(byteBuf.Array, byteBuf.ArrayOffset + byteBuf.WriterIndex, byteBuf.WritableBytes, SocketFlags.None, out errorCode);
 
-            if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
+            switch (errorCode)
             {
-                throw new SocketException((int)errorCode);
+                case SocketError.Success:
+                    if (received == 0)
+                    {
+                        return -1; // indicate that socket was closed
+                    }
+                    break;
+                case SocketError.WouldBlock:
+                    if (received == 0)
+                    {
+                        return 0;
+                    }
+                    break;
+                default:
+                    throw new SocketException((int)errorCode);
             }
 
-            if (received > 0)
-            {
-                byteBuf.SetWriterIndex(byteBuf.WriterIndex + received);
-            }
+            byteBuf.SetWriterIndex(byteBuf.WriterIndex + received);
 
             return received;
-            //return byteBuf.writeBytes(javaChannel(), byteBuf.writableBytes());
         }
 
         protected override int DoWriteBytes(IByteBuffer buf)
