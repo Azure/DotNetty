@@ -17,7 +17,7 @@ namespace DotNetty.Transport.Channels
     {
         static readonly TimeSpan DefaultConnectTimeout = TimeSpan.FromSeconds(30);
 
-        volatile IByteBufferAllocator allocator = UnpooledByteBufferAllocator.Default;
+        volatile IByteBufferAllocator allocator = ByteBufferUtil.DefaultAllocator;
         volatile IRecvByteBufAllocator recvByteBufAllocator = FixedRecvByteBufAllocator.Default;
         volatile IMessageSizeEstimator messageSizeEstimator = DefaultMessageSizeEstimator.Default;
 

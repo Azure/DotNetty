@@ -11,7 +11,6 @@ namespace DotNetty.Common.Utilities
     public sealed class AtomicReference<T>
         where T : class
     {
-        // ReSharper disable once InconsistentNaming
         T atomicValue;
 
         /// <summary>

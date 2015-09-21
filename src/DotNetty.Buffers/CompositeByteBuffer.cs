@@ -427,7 +427,7 @@ namespace DotNetty.Buffers
                 switch (this.components.Count)
                 {
                     case 0:
-                        return ByteArrayExtensions.Empty;
+                        return ArrayExtensions.ZeroBytes;
                     case 1:
                         return this.components[0].Buffer.Array;
                     default:

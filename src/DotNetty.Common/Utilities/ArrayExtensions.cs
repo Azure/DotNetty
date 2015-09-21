@@ -9,11 +9,11 @@ namespace DotNetty.Common.Utilities
     /// <summary>
     ///     Extension methods used for slicing byte arrays
     /// </summary>
-    public static class ByteArrayExtensions
+    public static class ArrayExtensions
     {
-        public static readonly byte[] Empty = new byte[0];
+        public static readonly byte[] ZeroBytes = new byte[0];
 
-        public static byte[] Slice(this byte[] array, int length)
+        public static T[] Slice<T>(this T[] array, int length)
         {
             Contract.Requires(array != null);
 
@@ -24,7 +24,7 @@ namespace DotNetty.Common.Utilities
             return Slice(array, 0, length);
         }
 
-        public static byte[] Slice(this byte[] array, int index, int length)
+        public static T[] Slice<T>(this T[] array, int index, int length)
         {
             Contract.Requires(array != null);
 
@@ -32,17 +32,17 @@ namespace DotNetty.Common.Utilities
             {
                 throw new ArgumentOutOfRangeException(nameof(length), $"index: ({index}), length({length}) index + length cannot be longer than Array.length({array.Length})");
             }
-            var result = new byte[length];
+            var result = new T[length];
             Array.Copy(array, index, result, 0, length);
             return result;
         }
 
-        public static void SetRange(this byte[] array, int index, byte[] src)
+        public static void SetRange<T>(this T[] array, int index, T[] src)
         {
             SetRange(array, index, src, 0, src.Length);
         }
 
-        public static void SetRange(this byte[] array, int index, byte[] src, int srcIndex, int srcLength)
+        public static void SetRange<T>(this T[] array, int index, T[] src, int srcIndex, int srcLength)
         {
             Contract.Requires(array != null);
             Contract.Requires(src != null);
@@ -56,6 +56,24 @@ namespace DotNetty.Common.Utilities
             }
 
             Array.Copy(src, srcIndex, array, index, srcLength);
+        }
+
+        public static void Fill<T>(this T[] array, T value)
+        {
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = value;
+            }
+        }
+
+        public static void Fill<T>(this T[] array, int offset, int count, T value)
+        {
+            Contract.Requires(count + offset <= array.Length);
+
+            for (int i = offset; i < count + offset; i++)
+            {
+                array[i] = value;
+            }
         }
     }
 }

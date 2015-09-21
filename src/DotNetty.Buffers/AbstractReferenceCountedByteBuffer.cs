@@ -9,26 +9,22 @@ namespace DotNetty.Buffers
 
     public abstract class AbstractReferenceCountedByteBuffer : AbstractByteBuffer
     {
-#pragma warning disable 420
-        volatile int referenceCount = 1;
+        int referenceCount = 1;
 
         protected AbstractReferenceCountedByteBuffer(int maxCapacity)
             : base(maxCapacity)
         {
         }
 
-        public override int ReferenceCount => this.referenceCount;
+        public override int ReferenceCount => Volatile.Read(ref this.referenceCount);
 
-        protected void SetReferenceCount(int value)
-        {
-            this.referenceCount = value;
-        }
+        protected void SetReferenceCount(int value) => Volatile.Write(ref this.referenceCount, value);
 
         public override IReferenceCounted Retain()
         {
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, 1);
@@ -55,7 +51,7 @@ namespace DotNetty.Buffers
 
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, increment);
@@ -77,7 +73,7 @@ namespace DotNetty.Buffers
         {
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, -1);
@@ -104,7 +100,7 @@ namespace DotNetty.Buffers
 
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt < decrement)
                 {
                     throw new IllegalReferenceCountException(refCnt, -decrement);
@@ -122,15 +118,9 @@ namespace DotNetty.Buffers
             }
         }
 
-        public override IReferenceCounted Touch()
-        {
-            return this;
-        }
+        public override IReferenceCounted Touch() => this;
 
-        public override IReferenceCounted Touch(object hint)
-        {
-            return this;
-        }
+        public override IReferenceCounted Touch(object hint) => this;
 
         protected abstract void Deallocate();
     }

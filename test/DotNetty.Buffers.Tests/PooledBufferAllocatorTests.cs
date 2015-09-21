@@ -3,11 +3,13 @@
 
 namespace DotNetty.Buffers.Tests
 {
+    using DotNetty.Common.Utilities;
     using Xunit;
 
     public class PooledBufferAllocatorTests
     {
         [Theory]
+        [InlineData(8000, 32000, new[] { 1024, 0, 10 * 1024 })]
         [InlineData(16 * 1024, 10, new[] { 16 * 1024 - 100, 8 * 1024 })]
         [InlineData(16 * 1024, 0, new[] { 16 * 1024 - 100, 8 * 1024 })]
         [InlineData(1024, 2 * 1024, new[] { 16 * 1024 - 100, 8 * 1024 })]
@@ -15,7 +17,7 @@ namespace DotNetty.Buffers.Tests
         [InlineData(1024, 0, new[] { 1024, 0, 10 * 1024 })]
         public void PooledBufferGrowTest(int bufferSize, int startSize, int[] writeSizes)
         {
-            var alloc = new PooledByteBufferAllocator(bufferSize, int.MaxValue);
+            var alloc = new PooledByteBufferAllocator();
             IByteBuffer buffer = alloc.Buffer(startSize);
             int wrote = 0;
             foreach (int size in writeSizes)

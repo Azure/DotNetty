@@ -5,11 +5,11 @@ namespace DotNetty.Buffers
 {
     using DotNetty.Common;
 
-    sealed class SimpleLeakAwareByteBuf : WrappedByteBuffer
+    sealed class SimpleLeakAwareByteBuffer : WrappedByteBuffer
     {
         readonly IResourceLeak leak;
 
-        internal SimpleLeakAwareByteBuf(IByteBuffer buf, IResourceLeak leak)
+        internal SimpleLeakAwareByteBuffer(IByteBuffer buf, IResourceLeak leak)
             : base(buf)
         {
             this.leak = leak;
@@ -54,28 +54,28 @@ namespace DotNetty.Buffers
             }
             else
             {
-                return new SimpleLeakAwareByteBuf(base.WithOrder(endianness), this.leak);
+                return new SimpleLeakAwareByteBuffer(base.WithOrder(endianness), this.leak);
             }
         }
 
         public override IByteBuffer Slice()
         {
-            return new SimpleLeakAwareByteBuf(base.Slice(), this.leak);
+            return new SimpleLeakAwareByteBuffer(base.Slice(), this.leak);
         }
 
         public override IByteBuffer Slice(int index, int length)
         {
-            return new SimpleLeakAwareByteBuf(base.Slice(index, length), this.leak);
+            return new SimpleLeakAwareByteBuffer(base.Slice(index, length), this.leak);
         }
 
         public override IByteBuffer Duplicate()
         {
-            return new SimpleLeakAwareByteBuf(base.Duplicate(), this.leak);
+            return new SimpleLeakAwareByteBuffer(base.Duplicate(), this.leak);
         }
 
         public override IByteBuffer ReadSlice(int length)
         {
-            return new SimpleLeakAwareByteBuf(base.ReadSlice(length), this.leak);
+            return new SimpleLeakAwareByteBuffer(base.ReadSlice(length), this.leak);
         }
     }
 }
