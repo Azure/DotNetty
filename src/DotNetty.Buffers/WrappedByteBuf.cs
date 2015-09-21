@@ -581,26 +581,6 @@ namespace DotNetty.Buffers
         //    return this.buf.BytesBefore(index, length, value);
         //}
 
-        //public virtual int ForEachByte(ByteProcessor processor)
-        //{
-        //    return this.buf.ForEachByte(processor);
-        //}
-
-        //public virtual int ForEachByte(int index, int length, ByteProcessor processor)
-        //{
-        //    return this.buf.ForEachByte(index, length, processor);
-        //}
-
-        //public virtual int ForEachByteDesc(ByteProcessor processor)
-        //{
-        //    return this.buf.ForEachByteDesc(processor);
-        //}
-
-        //public virtual int ForEachByteDesc(int index, int length, ByteProcessor processor)
-        //{
-        //    return this.buf.ForEachByteDesc(index, length, processor);
-        //}
-
         public virtual IByteBuffer Copy()
         {
             return this.Buf.Copy();
@@ -646,17 +626,6 @@ namespace DotNetty.Buffers
             get { return this.Buf.ArrayOffset; }
         }
 
-        // todo: port: complete
-        //    public virtual String toString(Charset charset)
-        //    {
-        //        return buf.toString(charset);
-        //    }
-
-        //public virtual String toString(int index, int length, Charset charset)
-        //    {
-        //        return buf.ToString(index, length, charset);
-        //    }
-
         public override int GetHashCode()
         {
             return this.Buf.GetHashCode();
@@ -667,11 +636,15 @@ namespace DotNetty.Buffers
             return this.Buf.Equals(obj);
         }
 
-        // todo: port: complete
-        //public virtual int CompareTo(IByteBuffer buffer)
-        //{
-        //    return this.buf.CompareTo(buffer);
-        //}
+        public bool Equals(IByteBuffer buffer)
+        {
+            return this.Buf.Equals(buffer);
+        }
+
+        public virtual int CompareTo(IByteBuffer buffer)
+        {
+            return this.Buf.CompareTo(buffer);
+        }
 
         public override string ToString()
         {
@@ -729,32 +702,32 @@ namespace DotNetty.Buffers
 
         public int ForEachByte(ByteProcessor processor)
         {
-            return this.ForEachByte(processor);
+            return this.Buf.ForEachByte(processor);
         }
 
         public int ForEachByte(int index, int length, ByteProcessor processor)
         {
-            return this.ForEachByte(index, length, processor);
+            return this.Buf.ForEachByte(index, length, processor);
         }
 
         public int ForEachByteDesc(ByteProcessor processor)
         {
-            return this.ForEachByteDesc(processor);
+            return this.Buf.ForEachByteDesc(processor);
         }
 
         public int ForEachByteDesc(int index, int length, ByteProcessor processor)
         {
-            return this.ForEachByteDesc(processor);
+            return this.Buf.ForEachByteDesc(processor);
         }
 
         public virtual string ToString(Encoding encoding)
         {
-            return Buf.ToString(encoding);
+            return this.Buf.ToString(encoding);
         }
 
         public virtual string ToString(int index, int length, Encoding encoding)
         {
-            return Buf.ToString(index, length, encoding);
+            return this.Buf.ToString(index, length, encoding);
         }
     }
 }

@@ -23,7 +23,7 @@ namespace DotNetty.Buffers
                     leak = AbstractByteBuffer.LeakDetector.Open(buf);
                     if (leak != null)
                     {
-                        buf = new SimpleLeakAwareByteBuf(buf, leak);
+                        buf = new SimpleLeakAwareByteBuffer(buf, leak);
                     }
                     break;
                 case ResourceLeakDetector.DetectionLevel.Advanced:
@@ -31,7 +31,7 @@ namespace DotNetty.Buffers
                     leak = AbstractByteBuffer.LeakDetector.Open(buf);
                     if (leak != null)
                     {
-                        buf = new AdvancedLeakAwareByteBuf(buf, leak);
+                        buf = new AdvancedLeakAwareByteBuffer(buf, leak);
                     }
                     break;
                 case ResourceLeakDetector.DetectionLevel.Disabled:
