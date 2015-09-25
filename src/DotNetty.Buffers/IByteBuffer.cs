@@ -245,6 +245,26 @@ namespace DotNetty.Buffers
         /// <exception cref="IndexOutOfRangeException">if the specified <see cref="index"/> is less than <c>0</c> or <c>index + 1</c> greater than <see cref="Capacity"/></exception>
         IByteBuffer GetBytes(int index, byte[] destination, int dstIndex, int length);
 
+        ///  <summary>
+        ///  Transfers this buffer's data to the specified stream starting at the
+        ///  specified absolute <c>index</c>.
+        ///  </summary>
+        ///  <remarks>
+        ///  This method does not modify <c>readerIndex</c> or <c>writerIndex</c> of
+        ///  this buffer.
+        ///  </remarks>
+        /// 
+        /// <param name="index">absolute index in this buffer to start getting bytes from</param>
+        /// <param name="destination">destination stream</param>
+        /// <param name="length">the number of bytes to transfer</param>
+
+        /// <exception cref="IndexOutOfRangeException">
+        ///          if the specified <c>index</c> is less than <c>0</c> or
+        ///          if <c>index + length</c> is greater than
+        ///             <c>this.capacity</c>
+        /// </exception> 
+        IByteBuffer GetBytes(int index, Stream destination, int length);
+
         /// <summary>
         /// Sets the specified boolean at the specified absolute <see cref="index"/> in this buffer.
         /// 
@@ -358,6 +378,23 @@ namespace DotNetty.Buffers
         IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length);
 
         /// <summary>
+        ///     Transfers the content of the specified source stream to this buffer
+        ///     starting at the specified absolute {@code index}.
+        ///     This method does not modify {@code readerIndex} or {@code writerIndex} of
+        ///     this buffer.
+        /// </summary>
+        /// <param name="index">absolute index in this byte buffer to start writing to</param>
+        /// <param name="src"></param>
+        /// <param name="length">number of bytes to transfer</param>
+        /// <param name="cancellationToken">cancellation token</param>
+        /// <returns>the actual number of bytes read in from the specified channel.</returns>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <c>index</c> is less than {@code 0} or
+        ///     if <c>index + length</c> is greater than <c>this.capacity</c>
+        /// </exception>
+        Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
+
+        /// <summary>
         /// Gets a boolean at the current <see cref="ReaderIndex"/> and increases the <see cref="ReaderIndex"/>
         /// by <c>1</c> in this buffer.
         /// </summary>
@@ -426,7 +463,7 @@ namespace DotNetty.Buffers
         /// starting at the curent <see cref="ReaderIndex"/> until the destination becomes
         /// non-writable and increases the <see cref="ReaderIndex"/> by the number of transferred bytes.
         /// </summary>
-        /// <exception cref="IndexOutOfRangeException">if <see cref="destination.WritableBytes"/> is greaer than <see cref="ReadableBytes"/>.</exception>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="destination.WritableBytes"/> is greater than <see cref="ReadableBytes"/>.</exception>
         IByteBuffer ReadBytes(IByteBuffer destination);
 
         IByteBuffer ReadBytes(IByteBuffer destination, int length);
@@ -437,6 +474,8 @@ namespace DotNetty.Buffers
 
         IByteBuffer ReadBytes(byte[] destination, int dstIndex, int length);
 
+        IByteBuffer ReadBytes(Stream destination, int length);
+            
         /// <summary>
         /// Increases the current <see cref="ReaderIndex"/> by the specified <see cref="length"/> in this buffer.
         /// </summary>
@@ -515,8 +554,8 @@ namespace DotNetty.Buffers
 
         IByteBuffer ReadSlice(int length);
 
-        Task<int> WriteBytesAsync(Stream stream, int length);
+        Task WriteBytesAsync(Stream stream, int length);
 
-        Task<int> WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
+        Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
     }
 }

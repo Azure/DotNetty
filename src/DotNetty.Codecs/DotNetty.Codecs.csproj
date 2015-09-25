@@ -43,6 +43,7 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="ByteToMessageDecoder.cs" />
+    <Compile Include="CodecException.cs" />
     <Compile Include="CorruptedFrameException.cs" />
     <Compile Include="DecoderException.cs" />
     <Compile Include="EncoderException.cs" />
@@ -51,6 +52,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReplayingDecoder.cs" />
     <Compile Include="TooLongFrameException.cs" />
+    <Compile Include="UnsupportedMessageTypeException.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj">

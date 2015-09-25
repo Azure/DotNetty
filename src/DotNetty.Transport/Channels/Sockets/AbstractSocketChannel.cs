@@ -464,6 +464,18 @@ namespace DotNetty.Transport.Channels.Sockets
                 cancellation.Cancel();
                 this.connectCancellation = null;
             }
+
+            SocketChannelAsyncOperation readOp = this.readOperation;
+            if (readOp != null)
+            {
+                readOp.Dispose();
+            }
+
+            SocketChannelAsyncOperation writeOp = this.writeOperation;
+            if (writeOp != null)
+            {
+                writeOp.Dispose();
+            }
         }
     }
 }

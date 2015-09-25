@@ -298,6 +298,8 @@ namespace DotNetty.Buffers
 
         public abstract IByteBuffer GetBytes(int index, byte[] destination, int dstIndex, int length);
 
+        public abstract IByteBuffer GetBytes(int index, Stream destination, int length);
+
         public virtual IByteBuffer SetBoolean(int index, bool value)
         {
             this.SetByte(index, value ? 1 : 0);
@@ -399,6 +401,8 @@ namespace DotNetty.Buffers
         }
 
         public abstract IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length);
+
+        public abstract Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
 
         public virtual bool ReadBoolean()
         {
@@ -518,17 +522,18 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public virtual IByteBuffer ReadBytes(Stream destination, int length)
+        {
+            this.CheckReadableBytes(length);
+            this.GetBytes(this.ReaderIndex, destination, length);
+            this.ReaderIndex += length;
+            return this;
+        }
+
         public virtual IByteBuffer SkipBytes(int length)
         {
             this.CheckReadableBytes(length);
-            int newReaderIndex = this.ReaderIndex + length;
-            if (newReaderIndex > this.WriterIndex)
-            {
-                throw new IndexOutOfRangeException(string.Format(
-                    "length: {0} (expected: readerIndex({1}) + length <= writerIndex({2}))",
-                    length, this.ReaderIndex, this.WriterIndex));
-            }
-            this.ReaderIndex = newReaderIndex;
+            this.ReaderIndex += length;
             return this;
         }
 
@@ -641,7 +646,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public Task<int> WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken)
+        public async Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken)
         {
             this.EnsureAccessible();
             this.EnsureWritable(length);
@@ -650,46 +655,17 @@ namespace DotNetty.Buffers
                 throw new ArgumentOutOfRangeException("length");
             }
 
-            return this.HasArray && this.Array.Length > 0
-                ? this.WriteBytesToArrayAsync(stream, length, cancellationToken)
-                : this.WriteBytesThroughBufferAsync(stream, length, cancellationToken);
+            int writerIndex = this.WriterIndex;
+            int wrote = await this.SetBytesAsync(writerIndex, stream, length, cancellationToken);
+
+            Contract.Assert(writerIndex == this.WriterIndex);
+
+            this.SetWriterIndex(writerIndex + wrote);
         }
 
-        async Task<int> WriteBytesToArrayAsync(Stream stream, int length, CancellationToken cancellationToken)
+        public Task WriteBytesAsync(Stream stream, int length)
         {
-            int readTotal = 0;
-            int read;
-            int startWriterIndex = this.WriterIndex;
-            int offset = this.ArrayOffset + startWriterIndex;
-            do
-            {
-                read = await stream.ReadAsync(this.Array, offset + readTotal, length - readTotal, cancellationToken);
-                readTotal += read;
-            }
-            while (read > 0 && readTotal < length);
-
-            this.SetWriterIndex(startWriterIndex + readTotal);
-            return readTotal;
-        }
-
-        async Task<int> WriteBytesThroughBufferAsync(Stream stream, int length, CancellationToken cancellationToken)
-        {
-            int bufferCapacity = Math.Min(64 * 1024, length);
-            IByteBuffer buffer = Unpooled.Buffer(bufferCapacity);
-
-            Contract.Assert(buffer.HasArray);
-
-            int readTotal = 0;
-            int read;
-            do
-            {
-                read = await buffer.WriteBytesAsync(stream, bufferCapacity, cancellationToken);
-                buffer.ReadBytes(this, read)
-                    .DiscardReadBytes();
-            }
-            while (read == bufferCapacity);
-
-            return readTotal;
+            return this.WriteBytesAsync(stream, length, CancellationToken.None);
         }
 
         public abstract bool HasArray { get; }
@@ -853,11 +829,6 @@ namespace DotNetty.Buffers
             IByteBuffer slice = this.Slice(this.ReaderIndex, length);
             this.ReaderIndex += length;
             return slice;
-        }
-
-        public Task<int> WriteBytesAsync(Stream stream, int length)
-        {
-            return this.WriteBytesAsync(stream, length, CancellationToken.None);
         }
 
         public abstract int ReferenceCount { get; }
