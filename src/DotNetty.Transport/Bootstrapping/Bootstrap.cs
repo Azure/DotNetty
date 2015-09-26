@@ -146,7 +146,7 @@ namespace DotNetty.Transport.Bootstrapping
             {
                 resolvedAddress = await this.resolver.ResolveAsync(remoteAddress);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 channel.CloseAsync();
                 throw;
@@ -174,7 +174,7 @@ namespace DotNetty.Transport.Bootstrapping
                         await channel.ConnectAsync(remoteAddress, localAddress);
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     channel.CloseAsync();
                     throw;
