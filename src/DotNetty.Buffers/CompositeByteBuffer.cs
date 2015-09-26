@@ -7,6 +7,9 @@ namespace DotNetty.Buffers
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Diagnostics.Contracts;
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
     using DotNetty.Common.Utilities;
 
     public sealed class CompositeByteBuffer : AbstractReferenceCountedByteBuffer
@@ -686,6 +689,29 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public override IByteBuffer GetBytes(int index, Stream destination, int length)
+        {
+            this.CheckIndex(index, length);
+            if (length == 0)
+            {
+                return this;
+            }
+
+            int i = this.ToComponentIndex(index);
+            while (length > 0)
+            {
+                ComponentEntry c = this.components[i];
+                IByteBuffer s = c.Buffer;
+                int adjustment = c.Offset;
+                int localLength = Math.Min(length, s.Capacity - (index - adjustment));
+                s.GetBytes(index - adjustment, destination, localLength);
+                index += localLength;
+                length -= localLength;
+                i++;
+            }
+            return this;
+        }
+
         public override IByteBuffer GetBytes(int index, IByteBuffer dst, int dstIndex, int length)
         {
             this.CheckDstIndex(index, length, dstIndex, dst.Capacity);
@@ -801,6 +827,55 @@ namespace DotNetty.Buffers
                 i++;
             }
             return this;
+        }
+
+        public override async Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
+        {
+            this.CheckIndex(index, length);
+            if (length == 0)
+            {
+                return 0;
+                //return src.Read(EmptyArrays.EMPTY_BYTES);
+            }
+
+            int i = this.ToComponentIndex(index);
+            int readBytes = 0;
+
+            do
+            {
+                ComponentEntry c = this.components[i];
+                IByteBuffer s = c.Buffer;
+                int adjustment = c.Offset;
+                int localLength = Math.Min(length, s.Capacity - (index - adjustment));
+                int localReadBytes = await s.SetBytesAsync(index - adjustment, src, localLength, cancellationToken);
+                if (localReadBytes < 0)
+                {
+                    if (readBytes == 0)
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if (localReadBytes == localLength)
+                {
+                    index += localLength;
+                    length -= localLength;
+                    readBytes += localLength;
+                    i++;
+                }
+                else
+                {
+                    index += localReadBytes;
+                    length -= localReadBytes;
+                    readBytes += localReadBytes;
+                }
+            } while (length > 0);
+
+            return readBytes;
         }
 
         public override IByteBuffer SetBytes(int index, IByteBuffer src, int srcIndex, int length)

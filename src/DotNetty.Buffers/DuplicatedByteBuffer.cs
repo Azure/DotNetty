@@ -3,6 +3,10 @@
 
 namespace DotNetty.Buffers
 {
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Dervied buffer that forwards requests to the original underlying buffer
     /// </summary>
@@ -85,6 +89,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public override IByteBuffer GetBytes(int index, Stream destination, int length)
+        {
+            this.buffer.GetBytes(index, destination, length);
+            return this;
+        }
+
         public override IByteBuffer GetBytes(int index, IByteBuffer destination)
         {
             this.buffer.GetBytes(index, destination);
@@ -145,6 +155,11 @@ namespace DotNetty.Buffers
         {
             this.buffer.SetBytes(index, src, srcIndex, length);
             return this;
+        }
+
+        public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
+        {
+            return this.buffer.SetBytesAsync(index, src, length, cancellationToken);
         }
 
         public override bool HasArray
