@@ -55,12 +55,12 @@ namespace DotNetty.Transport.Channels.Sockets
             get { return this.Socket.IsBound; }
         }
 
-        public override EndPoint RemoteAddress
+        protected override EndPoint RemoteAddressInternal
         {
             get { return null; }
         }
 
-        public override EndPoint LocalAddress
+        protected override EndPoint LocalAddressInternal
         {
             get { return this.Socket.LocalEndPoint; }
         }
@@ -84,6 +84,8 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             this.Socket.Bind(localAddress);
             this.Socket.Listen(this.config.Backlog);
+
+            this.CacheLocalAddress();
         }
 
         protected override void DoClose()

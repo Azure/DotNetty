@@ -334,9 +334,6 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public void FinishConnect(SocketChannelAsyncOperation operation)
             {
-                // Note this method is invoked by the event loop only if the connection attempt was
-                // neither cancelled nor timed out.
-
                 Contract.Assert(this.channel.EventLoop.InEventLoop);
 
                 AbstractSocketChannel ch = this.Channel;
@@ -466,6 +463,18 @@ namespace DotNetty.Transport.Channels.Sockets
             {
                 cancellation.Cancel();
                 this.connectCancellation = null;
+            }
+
+            SocketChannelAsyncOperation readOp = this.readOperation;
+            if (readOp != null)
+            {
+                readOp.Dispose();
+            }
+
+            SocketChannelAsyncOperation writeOp = this.writeOperation;
+            if (writeOp != null)
+            {
+                writeOp.Dispose();
             }
         }
     }

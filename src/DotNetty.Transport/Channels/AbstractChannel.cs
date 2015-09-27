@@ -26,6 +26,8 @@ namespace DotNetty.Transport.Channels
         readonly DefaultChannelPipeline pipeline;
         readonly TaskCompletionSource closeFuture = new TaskCompletionSource();
 
+        volatile EndPoint localAddress;
+        volatile EndPoint remoteAddress;
         volatile PausableChannelEventLoop eventLoop;
         volatile bool registered;
 
@@ -102,9 +104,64 @@ namespace DotNetty.Transport.Channels
 
         public abstract bool DisconnectSupported { get; }
 
-        public abstract EndPoint LocalAddress { get; }
+        public EndPoint LocalAddress
+        {
+            get
+            {
+                EndPoint address = this.localAddress;
+                return address ?? this.CacheLocalAddress();
+            }
+        }
 
-        public abstract EndPoint RemoteAddress { get; }
+        public EndPoint RemoteAddress
+        {
+            get
+            {
+                EndPoint address = this.remoteAddress;
+                return address ?? this.CacheRemoteAddress();
+            }
+
+        }
+
+        protected abstract EndPoint LocalAddressInternal { get; }
+
+        protected void InvalidateLocalAddress()
+        {
+            this.localAddress = null;
+        }
+
+        protected EndPoint CacheLocalAddress()
+        {
+            try
+            {
+                return this.localAddress = this.LocalAddressInternal;
+            }
+            catch (Exception)
+            {
+                // Sometimes fails on a closed socket in Windows.
+                return null;
+            }
+        }
+
+        protected abstract EndPoint RemoteAddressInternal { get; }
+
+        protected void InvalidateRemoteAddress()
+        {
+            this.remoteAddress = null;
+        }
+
+        protected EndPoint CacheRemoteAddress()
+        {
+            try
+            {
+                return this.remoteAddress = this.RemoteAddressInternal;
+            }
+            catch (Exception)
+            {
+                // Sometimes fails on a closed socket in Windows.
+                return null;
+            }
+        }
 
         /// <summary>
         /// Reset the stored remoteAddress

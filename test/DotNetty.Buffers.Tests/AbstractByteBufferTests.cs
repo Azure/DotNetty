@@ -23,12 +23,12 @@ namespace DotNetty.Buffers.Tests
             random.NextBytes(bytes);
 
             IByteBuffer buffer = Unpooled.Buffer(BufferCapacity);
-            int read;
+            int initialWriterIndex = buffer.WriterIndex;
             using (var stream = new PortionedMemoryStream(bytes, Enumerable.Repeat(1, int.MaxValue).Select(_ => random.Next(1, 10240))))
             {
-                read = await buffer.WriteBytesAsync(stream, CopyLength);
+                await buffer.WriteBytesAsync(stream, CopyLength);
             }
-            Assert.Equal(CopyLength, read);
+            Assert.Equal(CopyLength, buffer.WriterIndex - initialWriterIndex);
             Assert.True(ByteBufferUtil.Equals(Unpooled.WrappedBuffer(bytes.Slice(0, CopyLength)), buffer));
         }
     }

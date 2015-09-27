@@ -86,6 +86,7 @@
     <Compile Include="Channels\IRecvByteBufAllocator.cs" />
     <Compile Include="Channels\IRecvByteBufAllocatorHandle.cs" />
     <Compile Include="Channels\PausableChannelEventExecutor.cs" />
+    <Compile Include="Channels\PendingWriteQueue.cs" />
     <Compile Include="Channels\PipelinePropagationAttribute.cs" />
     <Compile Include="Channels\PropagationDirections.cs" />
     <Compile Include="Channels\RejectedExecutionException.cs" />

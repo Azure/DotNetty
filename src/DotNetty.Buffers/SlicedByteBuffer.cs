@@ -4,6 +4,9 @@
 namespace DotNetty.Buffers
 {
     using System;
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     public sealed class SlicedByteBuffer : AbstractDerivedByteBuffer
     {
@@ -143,6 +146,13 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public override IByteBuffer GetBytes(int index, Stream destination, int length)
+        {
+            this.CheckIndex(index, length);
+            this.buffer.GetBytes(index + this.adjustment, destination, length);
+            return this;
+        }
+
         protected override void _SetByte(int index, int value)
         {
             this.buffer.SetByte(index + this.adjustment, value);
@@ -168,6 +178,12 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             this.buffer.SetBytes(index + this.adjustment, src, srcIndex, length);
             return this;
+        }
+
+        public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
+        {
+            this.CheckIndex(index, length);
+            return this.buffer.SetBytesAsync(index + this.adjustment, src, length, cancellationToken);
         }
 
         public override IByteBuffer SetBytes(int index, IByteBuffer src, int srcIndex, int length)

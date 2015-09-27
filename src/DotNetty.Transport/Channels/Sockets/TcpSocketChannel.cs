@@ -58,7 +58,7 @@ namespace DotNetty.Transport.Channels.Sockets
             this.config = new TcpSocketChannelConfig(this, socket);
             if (connected)
             {
-                this.SetState(StateFlags.Active);
+                this.OnConnected();
             }
         }
 
@@ -77,12 +77,12 @@ namespace DotNetty.Transport.Channels.Sockets
             get { return this.config; }
         }
 
-        public override EndPoint LocalAddress
+        protected override EndPoint LocalAddressInternal
         {
             get { return this.Socket.LocalEndPoint; }
         }
 
-        public override EndPoint RemoteAddress
+        protected override EndPoint RemoteAddressInternal
         {
             get { return this.Socket.RemoteEndPoint; }
         }
@@ -171,7 +171,16 @@ namespace DotNetty.Transport.Channels.Sockets
             {
                 operation.Dispose();
             }
+            this.OnConnected();
+        }
+
+        void OnConnected()
+        {
             this.SetState(StateFlags.Active);
+
+            // preserve local and remote addresses for later availability even if Socket fails
+            this.CacheLocalAddress();
+            this.CacheRemoteAddress();
         }
 
         protected override void DoDisconnect()
@@ -199,18 +208,27 @@ namespace DotNetty.Transport.Channels.Sockets
             SocketError errorCode;
             int received = this.Socket.Receive(byteBuf.Array, byteBuf.ArrayOffset + byteBuf.WriterIndex, byteBuf.WritableBytes, SocketFlags.None, out errorCode);
 
-            if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
+            switch (errorCode)
             {
-                throw new SocketException((int)errorCode);
+                case SocketError.Success:
+                    if (received == 0)
+                    {
+                        return -1; // indicate that socket was closed
+                    }
+                    break;
+                case SocketError.WouldBlock:
+                    if (received == 0)
+                    {
+                        return 0;
+                    }
+                    break;
+                default:
+                    throw new SocketException((int)errorCode);
             }
 
-            if (received > 0)
-            {
-                byteBuf.SetWriterIndex(byteBuf.WriterIndex + received);
-            }
+            byteBuf.SetWriterIndex(byteBuf.WriterIndex + received);
 
             return received;
-            //return byteBuf.writeBytes(javaChannel(), byteBuf.writableBytes());
         }
 
         protected override int DoWriteBytes(IByteBuffer buf)
