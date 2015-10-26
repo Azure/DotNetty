@@ -40,7 +40,6 @@
     </Compile>
     <Compile Include="Bootstrapping\AbstractBootstrap.cs" />
     <Compile Include="Bootstrapping\Bootstrap.cs" />
-    <Compile Include="Bootstrapping\BootstrapEventSource.cs" />
     <Compile Include="Bootstrapping\DefaultNameResolver.cs" />
     <Compile Include="Bootstrapping\INameResolver.cs" />
     <Compile Include="Bootstrapping\ServerBootstrap.cs" />
@@ -48,7 +47,6 @@
     <Compile Include="Channels\AbstractChannel.cs" />
     <Compile Include="Channels\AbstractChannelHandlerContext.cs" />
     <Compile Include="Channels\ActionChannelInitializer.cs" />
-    <Compile Include="Channels\ChannelEventSource.cs" />
     <Compile Include="Channels\ChannelException.cs" />
     <Compile Include="Channels\ChannelHandlerAdapter.cs" />
     <Compile Include="Channels\ChannelHandlerInvokerUtil.cs" />

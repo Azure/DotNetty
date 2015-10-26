@@ -5,15 +5,14 @@ namespace DotNetty.Common
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Threading;
 
     public class ThreadLocalPool
     {
-        public class Handle
+        public sealed class Handle
         {
-            internal object Value;
+            public object Value;
             internal readonly Stack Stack;
 
             internal Handle(Stack stack)
@@ -42,7 +41,7 @@ namespace DotNetty.Common
             }
         }
 
-        internal class Stack : Stack<Handle>
+        internal sealed class Stack : Stack<Handle>
         {
             public readonly ThreadLocalPool Owner;
             public readonly Thread Thread;
@@ -91,11 +90,7 @@ namespace DotNetty.Common
 
             this.preCreate = preCreate;
 
-#if TRACE
             this.threadLocal = new ThreadLocal<Stack>(this.InitializeStorage, true);
-#else
-            this.threadLocal = new ThreadLocal<ThreadLocalPool.Stack>(this.InitializeStorage);
-#endif
             this.valueFactory = valueFactory;
         }
 
@@ -110,18 +105,6 @@ namespace DotNetty.Common
                 }
             }
             return stack;
-        }
-
-        [Conditional("TRACE")]
-        public void LogUsage(string context)
-        {
-            // todo: perf counter or log
-            int bufferCountInStacks = 0;
-            foreach (Stack x in this.threadLocal.Values)
-            {
-                bufferCountInStacks += x.Count;
-            }
-            Console.WriteLine(context + ": " + bufferCountInStacks);
         }
 
         public T Take()

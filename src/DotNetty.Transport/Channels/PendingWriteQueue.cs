@@ -9,6 +9,7 @@ namespace DotNetty.Transport.Channels
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
     /**
@@ -19,7 +20,7 @@ namespace DotNetty.Transport.Channels
 
     public sealed class PendingWriteQueue
     {
-        //private static final InternalLogger logger = InternalLoggerFactory.getInstance(PendingWriteQueue.class);
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<PendingWriteQueue>();
 
         readonly IChannelHandlerContext ctx;
         readonly ChannelOutboundBuffer buffer;
@@ -300,7 +301,7 @@ namespace DotNetty.Transport.Channels
         {
             if ( /*!(promise instanceof VoidChannelPromise) && */!promise.TrySetException(cause))
             {
-                // todo: log logger.warn("Failed to mark a promise as failure because it's done already: {}", promise, cause);
+                Logger.Warn("Failed to mark a promise as failure because it's done already: {}", promise, cause);
             }
         }
 

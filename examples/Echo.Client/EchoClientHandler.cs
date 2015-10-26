@@ -33,7 +33,7 @@ namespace Echo.Client
             if (byteBuffer != null)
             {
                 this.buffer.Initialize();
-                byteBuffer.ReadBytes(this.buffer, 0, byteBuffer.ReadableBytes);
+                byteBuffer.Duplicate().ReadBytes(this.buffer, 0, byteBuffer.ReadableBytes);
                 string msg = Encoding.UTF8.GetString(this.buffer);
                 Console.WriteLine("Received from server: " + msg);
             }

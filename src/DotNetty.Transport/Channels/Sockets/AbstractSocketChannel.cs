@@ -11,10 +11,13 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
     public abstract class AbstractSocketChannel : AbstractChannel
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractSocketChannel>();
+
         [Flags]
         protected enum StateFlags
         {
@@ -58,9 +61,9 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
                 catch (SocketException ex2)
                 {
-                    if (ChannelEventSource.Log.IsWarningEnabled)
+                    if (Logger.WarnEnabled)
                     {
-                        ChannelEventSource.Log.Warning("Failed to close a partially initialized socket.", ex2);
+                        Logger.Warn("Failed to close a partially initialized socket.", ex2);
                     }
                 }
 

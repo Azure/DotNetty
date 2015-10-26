@@ -12,6 +12,7 @@ namespace DotNetty.Transport.Bootstrapping
     using System.Reflection;
     using System.Text;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
@@ -21,7 +22,7 @@ namespace DotNetty.Transport.Bootstrapping
     /// </summary>
     public class ServerBootstrap : AbstractBootstrap<ServerBootstrap, IServerChannel>
     {
-        //private static final InternalLogger logger = InternalLoggerFactory.getInstance(ServerBootstrap.class);
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ServerBootstrap>();
 
         readonly ConcurrentDictionary<ChannelOption, object> childOptions;
         // todo: attrs
@@ -138,12 +139,12 @@ namespace DotNetty.Transport.Bootstrapping
                 {
                     if (!channel.Configuration.SetOption(e.Key, e.Value))
                     {
-                        BootstrapEventSource.Log.Warning("Unknown channel option: " + e);
+                        Logger.Warn("Unknown channel option: " + e);
                     }
                 }
                 catch (Exception ex)
                 {
-                    BootstrapEventSource.Log.Warning("Failed to set a channel option: " + channel, ex);
+                    Logger.Warn("Failed to set a channel option: " + channel, ex);
                 }
             }
 
@@ -186,7 +187,7 @@ namespace DotNetty.Transport.Bootstrapping
             }
             if (this.childGroup == null)
             {
-                BootstrapEventSource.Log.Warning("childGroup is not set. Using parentGroup instead.");
+                Logger.Warn("childGroup is not set. Using parentGroup instead.");
                 this.childGroup = this.Group();
             }
             return this;
@@ -263,7 +264,7 @@ namespace DotNetty.Transport.Bootstrapping
                 {
                     if (!this.childOptionsSetupFunc(child.Configuration))
                     {
-                        BootstrapEventSource.Log.Warning("Not all configuration options could be set.");
+                        Logger.Warn("Not all configuration options could be set.");
                     }
                 }
 
@@ -287,7 +288,7 @@ namespace DotNetty.Transport.Bootstrapping
             static void ForceClose(IChannel child, Exception ex)
             {
                 child.Unsafe.CloseForcibly();
-                BootstrapEventSource.Log.Warning("Failed to register an accepted channel: " + child, ex);
+                Logger.Warn("Failed to register an accepted channel: " + child, ex);
             }
 
             public override void ExceptionCaught(IChannelHandlerContext ctx, Exception cause)

@@ -8,6 +8,7 @@ namespace DotNetty.Common.Concurrency
     using System.Diagnostics.Contracts;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
     public class SingleThreadEventExecutor : IEventExecutor
@@ -20,6 +21,9 @@ namespace DotNetty.Common.Concurrency
         const int ST_SHUTDOWN = 4;
         const int ST_TERMINATED = 5;
         const string DefaultWorkerThreadName = "SingleThreadEventExecutor worker";
+
+        static readonly IInternalLogger Logger =
+            InternalLoggerFactory.GetInstance<SingleThreadEventExecutor>();
 
         static readonly Action<object> DelegatingAction = action => ((Action)action)();
         static readonly TimeSpan DefaultShutdownQuietPeriod = TimeSpan.FromSeconds(2);
@@ -349,11 +353,10 @@ namespace DotNetty.Common.Concurrency
             // Check if confirmShutdown() was called at the end of the loop.
             if (success && this.gracefulShutdownStartTime == PreciseTimeSpan.Zero)
             {
-                ExecutorEventSource.Log.Error(
+                Logger.Error(
                     string.Format("Buggy {0} implementation; {1}.ConfirmShutdown() must be called " + "before run() implementation terminates.",
                         typeof(IEventExecutor).Name,
-                        typeof(SingleThreadEventExecutor).Name),
-                    (string)null);
+                        typeof(SingleThreadEventExecutor).Name));
             }
 
             try
@@ -378,7 +381,7 @@ namespace DotNetty.Common.Concurrency
                     Interlocked.Exchange(ref this.executionState, ST_TERMINATED);
                     if (!this.taskQueue.IsEmpty)
                     {
-                        ExecutorEventSource.Log.Warning(string.Format("An event executor terminated with non-empty task queue ({0})", this.taskQueue.Count));
+                        Logger.Warn(string.Format("An event executor terminated with non-empty task queue ({0})", this.taskQueue.Count));
                     }
 
                     //firstRun = true;
@@ -456,7 +459,7 @@ namespace DotNetty.Common.Concurrency
                 }
                 catch (Exception ex)
                 {
-                    ExecutorEventSource.Log.Warning("A task raised an exception.", ex);
+                    Logger.Warn("A task raised an exception.", ex);
                 }
 
                 task = this.PollTask();
@@ -488,7 +491,7 @@ namespace DotNetty.Common.Concurrency
                 }
                 catch (Exception ex)
                 {
-                    ExecutorEventSource.Log.Warning("A task raised an exception.", ex);
+                    Logger.Warn("A task raised an exception.", ex);
                 }
 
                 runTasks++;
@@ -677,7 +680,10 @@ namespace DotNetty.Common.Concurrency
 
             int IComparable<IScheduledRunnable>.CompareTo(IScheduledRunnable other)
             {
-                Contract.Requires(other != null);
+                if (other == null)
+                {
+                    return 1;
+                }
 
                 return this.Deadline.CompareTo(other.Deadline);
             }
@@ -718,7 +724,10 @@ namespace DotNetty.Common.Concurrency
 
             int IComparable<IScheduledRunnable>.CompareTo(IScheduledRunnable other)
             {
-                Contract.Requires(other != null);
+                if (other == null)
+                {
+                    return 1;
+                }
 
                 return this.Deadline.CompareTo(other.Deadline);
             }

@@ -4,6 +4,7 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Diagnostics.Contracts;
     using System.Threading;
     using System.Threading.Tasks;
 

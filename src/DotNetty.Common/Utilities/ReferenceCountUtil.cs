@@ -4,10 +4,11 @@
 namespace DotNetty.Common.Utilities
 {
     using System;
+    using DotNetty.Common.Internal.Logging;
 
     public sealed class ReferenceCountUtil
     {
-        //private static readonly InternalLogger logger = InternalLoggerFactory.getInstance(ReferenceCountUtil.class);
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ReferenceCountUtil>();
 
         /// <summary>
         /// Try to call {@link ReferenceCounted#retain()} if the specified message implements {@link ReferenceCounted}.
@@ -80,8 +81,7 @@ namespace DotNetty.Common.Utilities
             }
             catch (Exception ex)
             {
-                // todo: log
-                //logger.warn("Failed to release a message: {}", msg, t);
+                Logger.Warn("Failed to release a message: {}", msg, ex);
             }
         }
 
@@ -100,10 +100,10 @@ namespace DotNetty.Common.Utilities
             }
             catch (Exception ex)
             {
-                // todo: log
-                //if (logger.isWarnEnabled()) {
-                //    logger.warn("Failed to release a message: {} (decrement: {})", msg, decrement, t);
-                //}
+                if (Logger.WarnEnabled)
+                {
+                    Logger.Warn("Failed to release a message: {} (decrement: {})", msg, decrement, ex);
+                }
             }
         }
     }

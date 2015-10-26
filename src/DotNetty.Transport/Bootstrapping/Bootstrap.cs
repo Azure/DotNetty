@@ -9,6 +9,7 @@ namespace DotNetty.Transport.Bootstrapping
     using System.Net;
     using System.Text;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Transport.Channels;
 
     /// <summary>
@@ -20,6 +21,8 @@ namespace DotNetty.Transport.Bootstrapping
     /// </summary>
     public class Bootstrap : AbstractBootstrap<Bootstrap, IChannel>
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<Bootstrap>();
+
         static readonly INameResolver DefaultResolver = new DefaultNameResolver();
 
         volatile INameResolver resolver = DefaultResolver;
@@ -194,12 +197,12 @@ namespace DotNetty.Transport.Bootstrapping
                 {
                     if (!channel.Configuration.SetOption(e.Key, e.Value))
                     {
-                        BootstrapEventSource.Log.Warning("Unknown channel option: " + e);
+                        Logger.Warn("Unknown channel option: " + e);
                     }
                 }
                 catch (Exception ex)
                 {
-                    BootstrapEventSource.Log.Warning("Failed to set a channel option: " + channel, ex);
+                    Logger.Warn("Failed to set a channel option: " + channel, ex);
                 }
             }
 

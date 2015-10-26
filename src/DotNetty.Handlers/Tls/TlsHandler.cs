@@ -374,14 +374,14 @@ namespace DotNetty.Handlers.Tls
             catch (Exception ex)
             {
                 // todo: evaluate following:
-                // only log in debug mode as it most likely harmless and latest chrome still trigger
+                // only log in Debug mode as it most likely harmless and latest chrome still trigger
                 // this all the time.
                 //
                 // See https://github.com/netty/netty/issues/1340
                 //string msg = ex.Message;
                 //if (msg == null || !msg.contains("possible truncation attack"))
                 //{
-                //    logger.debug("{} SSLEngine.closeInbound() raised an exception.", ctx.channel(), e);
+                //    logger.Debug("{} SSLEngine.closeInbound() raised an exception.", ctx.channel(), e);
                 //}
             }
             this.NotifyHandshakeFailure(cause);

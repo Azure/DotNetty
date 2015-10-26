@@ -4,17 +4,24 @@
 namespace Echo.Server
 {
     using System;
+    using System.Diagnostics.Tracing;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    
+    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+
     class Program
     {
         static async Task RunServer()
         {
+            var eventListener = new ObservableEventListener();
+            eventListener.LogToConsole();
+            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
             try
@@ -45,6 +52,7 @@ namespace Echo.Server
             finally
             {
                 Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
+                eventListener.Dispose();
             }
         }
 
