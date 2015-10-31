@@ -11,11 +11,12 @@ namespace DotNetty.Transport.Channels
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
     public abstract class AbstractChannel : /*DefaultAttributeMap, */ IChannel
     {
-        //static readonly InternalLogger logger = InternalLoggerFactory.getInstance(AbstractChannel.class);
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractChannel>();
 
         protected static readonly ClosedChannelException ClosedChannelException = new ClosedChannelException();
         static readonly NotYetConnectedException NotYetConnectedException = new NotYetConnectedException();
@@ -441,12 +442,12 @@ namespace DotNetty.Transport.Channels
                     }
                     catch (Exception ex)
                     {
-                        ChannelEventSource.Log.Warning(
+                        Logger.Warn(
                             string.Format("Force-closing a channel whose registration task was not accepted by an event loop: {0}", this.channel),
                             ex);
                         this.CloseForcibly();
                         this.channel.closeFuture.Complete();
-                        Util.SafeSetFailure(promise, ex);
+                        Util.SafeSetFailure(promise, ex, Logger);
                     }
                 }
 
@@ -461,7 +462,7 @@ namespace DotNetty.Transport.Channels
                     // call was outside of the eventLoop
                     if (!promise.setUncancellable() || !this.EnsureOpen(promise))
                     {
-                        Util.SafeSetFailure(promise, ClosedChannelException);
+                        Util.SafeSetFailure(promise, ClosedChannelException, Logger);
                         return;
                     }
                     bool firstRegistration = this.neverRegistered;
@@ -469,7 +470,7 @@ namespace DotNetty.Transport.Channels
                     this.neverRegistered = false;
                     this.channel.registered = true;
                     this.channel.eventLoop.AcceptNewTasks();
-                    Util.SafeSetSuccess(promise);
+                    Util.SafeSetSuccess(promise, Logger);
                     this.channel.pipeline.FireChannelRegistered();
                     // Only fire a channelActive if the channel has never been registered. This prevents firing
                     // multiple channel actives if the channel is deregistered and re-registered.
@@ -483,7 +484,7 @@ namespace DotNetty.Transport.Channels
                     // Close the channel directly to avoid FD leak.
                     this.CloseForcibly();
                     this.channel.closeFuture.Complete();
-                    Util.SafeSetFailure(promise, t);
+                    Util.SafeSetFailure(promise, t, Logger);
                 }
             }
 
@@ -503,7 +504,7 @@ namespace DotNetty.Transport.Channels
                 //{
                 //    // Warn a user about the fact that a non-root user can't receive a
                 //    // broadcast packet on *nix if the socket is bound on non-wildcard address.
-                //    logger.warn(
+                //    logger.Warn(
                 //        "A non-root user can't receive a broadcast packet if the socket " +
                 //            "is not bound to a wildcard address; binding to a non-wildcard " +
                 //            "address (" + localAddress + ") anyway as requested.");
@@ -517,7 +518,7 @@ namespace DotNetty.Transport.Channels
                 }
                 catch (Exception t)
                 {
-                    Util.SafeSetFailure(promise, t);
+                    Util.SafeSetFailure(promise, t, Logger);
                     this.CloseIfClosed();
                     return promise.Task;
                 }
@@ -536,7 +537,7 @@ namespace DotNetty.Transport.Channels
 
             void SafeSetFailure(TaskCompletionSource promise, Exception cause)
             {
-                Util.SafeSetFailure(promise, cause);
+                Util.SafeSetFailure(promise, cause, Logger);
             }
 
             public Task DisconnectAsync()
@@ -572,7 +573,7 @@ namespace DotNetty.Transport.Channels
 
             void SafeSetSuccess(TaskCompletionSource promise)
             {
-                Util.SafeSetSuccess(promise);
+                Util.SafeSetSuccess(promise, Logger);
             }
 
             public Task CloseAsync() //CancellationToken cancellationToken)
@@ -601,7 +602,7 @@ namespace DotNetty.Transport.Channels
                 if (this.channel.closeFuture.Task.IsCompleted)
                 {
                     // Closed already.
-                    Util.SafeSetSuccess(promise);
+                    Util.SafeSetSuccess(promise, Logger);
                     return promise.Task;
                 }
 
@@ -697,7 +698,7 @@ namespace DotNetty.Transport.Channels
                 }
                 catch (Exception e)
                 {
-                    ChannelEventSource.Log.Warning("Failed to close a channel.", e);
+                    Logger.Warn("Failed to close a channel.", e);
                 }
             }
 
@@ -726,7 +727,7 @@ namespace DotNetty.Transport.Channels
                 }
                 catch (Exception t)
                 {
-                    ChannelEventSource.Log.Warning("Unexpected exception occurred while deregistering a channel.", t);
+                    Logger.Warn("Unexpected exception occurred while deregistering a channel.", t);
                     return TaskEx.FromException(t);
                 }
                 finally
@@ -872,7 +873,7 @@ namespace DotNetty.Transport.Channels
                     return true;
                 }
 
-                Util.SafeSetFailure(promise, ClosedChannelException);
+                Util.SafeSetFailure(promise, ClosedChannelException, Logger);
                 return false;
             }
 
@@ -909,7 +910,7 @@ namespace DotNetty.Transport.Channels
                 }
                 catch (RejectedExecutionException e)
                 {
-                    ChannelEventSource.Log.Warning("Can't invoke task later as EventLoop rejected it", e);
+                    Logger.Warn("Can't invoke task later as EventLoop rejected it", e);
                 }
             }
 

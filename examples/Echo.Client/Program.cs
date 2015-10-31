@@ -4,19 +4,27 @@
 namespace Echo.Client
 {
     using System;
+    using System.Diagnostics.Tracing;
     using System.Net;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    
+    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+
     class Program
     {
         static async Task RunClient()
         {
+            var eventListener = new ObservableEventListener();
+            eventListener.LogToConsole();
+            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+
             var group = new MultithreadEventLoopGroup();
+
             try
             {
                 var bootstrap = new Bootstrap();
@@ -47,6 +55,7 @@ namespace Echo.Client
             finally
             {
                 group.ShutdownGracefullyAsync().Wait(1000);
+                eventListener.Dispose();
             }
         }
 

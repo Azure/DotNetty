@@ -3,10 +3,7 @@
 
 namespace DotNetty.Tests.End2End
 {
-    using DotNetty.Codecs.Mqtt;
-    using DotNetty.Common.Concurrency;
-    using DotNetty.Transport.Bootstrapping;
-    using DotNetty.Transport.Channels;
+    using DotNetty.Common.Internal.Logging;
     using Microsoft.Practices.EnterpriseLibrary.SemanticLogging.Utility;
     using Xunit;
 
@@ -15,10 +12,7 @@ namespace DotNetty.Tests.End2End
         [Fact]
         public void VerifyEventSources()
         {
-            EventSourceAnalyzer.InspectAll(ExecutorEventSource.Log);
-            EventSourceAnalyzer.InspectAll(ChannelEventSource.Log);
-            EventSourceAnalyzer.InspectAll(BootstrapEventSource.Log);
-            EventSourceAnalyzer.InspectAll(MqttEventSource.Log);
+            EventSourceAnalyzer.InspectAll(DefaultEventSource.Log);
         }
     }
 }

@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using DotNetty.Common.Internal.Logging;
 
     /// <summary>
     /// A special {@link ChannelHandler} which offers an easy way to initialize a {@link Channel} once it was
@@ -33,7 +34,7 @@ namespace DotNetty.Transport.Channels
     public abstract class ChannelInitializer<T> : ChannelHandlerAdapter
         where T : IChannel
     {
-        //private static final InternalLogger logger = InternalLoggerFactory.getInstance(ChannelInitializer.class);
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ChannelInitializer<T>>();
 
         /// <summary>
         /// This method will be called once the {@link Channel} was registered. After the method returns this instance
@@ -49,7 +50,7 @@ namespace DotNetty.Transport.Channels
             get { return true; }
         }
 
-        public override sealed void ChannelRegistered(IChannelHandlerContext context)
+        public sealed override void ChannelRegistered(IChannelHandlerContext context)
         {
             IChannelPipeline pipeline = context.Channel.Pipeline;
             bool success = false;
@@ -62,7 +63,7 @@ namespace DotNetty.Transport.Channels
             }
             catch (Exception ex)
             {
-                ChannelEventSource.Log.Warning("Failed to initialize a channel. Closing: " + context.Channel, ex);
+                Logger.Warn("Failed to initialize a channel. Closing: " + context.Channel, ex);
             }
             finally
             {

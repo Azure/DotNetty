@@ -13,10 +13,13 @@ namespace DotNetty.Transport.Channels
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
     sealed class DefaultChannelPipeline : IChannelPipeline
     {
+        internal static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<DefaultChannelPipeline>();
+        
         static readonly ConditionalWeakTable<Type, string>[] NameCaches = CreateNameCaches();
 
         static ConditionalWeakTable<Type, string>[] CreateNameCaches()
@@ -476,9 +479,9 @@ namespace DotNetty.Transport.Channels
                 }
                 catch (Exception ex2)
                 {
-                    if (ChannelEventSource.Log.IsWarningEnabled)
+                    if (Logger.WarnEnabled)
                     {
-                        ChannelEventSource.Log.Warning("Failed to remove a handler: " + ctx.Name, ex2);
+                        Logger.Warn("Failed to remove a handler: " + ctx.Name, ex2);
                     }
                 }
 
@@ -954,7 +957,7 @@ namespace DotNetty.Transport.Channels
             {
                 try
                 {
-                    ChannelEventSource.Log.Warning(
+                    Logger.Warn(
                         "An ExceptionCaught() event was fired, and it reached at the tail of the pipeline. " +
                             "It usually means that no handler in the pipeline could handle the exception.",
                         exception);
@@ -975,7 +978,7 @@ namespace DotNetty.Transport.Channels
             {
                 try
                 {
-                    ChannelEventSource.Log.Verbose(
+                    Logger.Debug(
                         "Discarded inbound message {} that reached at the tail of the pipeline. " +
                             "Please check your pipeline configuration.", message.ToString());
                 }

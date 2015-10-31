@@ -68,10 +68,10 @@ namespace DotNetty.Transport.Channels
             }
             catch (Exception ex)
             {
-                if (ChannelEventSource.Log.IsWarningEnabled)
+                if (DefaultChannelPipeline.Logger.WarnEnabled)
                 {
-                    ChannelEventSource.Log.Warning("An exception was thrown by a user handler's exceptionCaught() method:", ex);
-                    ChannelEventSource.Log.Warning(".. and the cause of the exceptionCaught() was:", cause);
+                    DefaultChannelPipeline.Logger.Warn("An exception was thrown by a user handler's exceptionCaught() method:", ex);
+                    DefaultChannelPipeline.Logger.Warn(".. and the cause of the exceptionCaught() was:", cause);
                 }
             }
         }
@@ -227,9 +227,9 @@ namespace DotNetty.Transport.Channels
         {
             if (InExceptionCaught(cause))
             {
-                if (ChannelEventSource.Log.IsWarningEnabled)
+                if (DefaultChannelPipeline.Logger.WarnEnabled)
                 {
-                    ChannelEventSource.Log.Warning(
+                    DefaultChannelPipeline.Logger.Warn(
                         "An exception was thrown by a user handler " +
                             "while handling an exceptionCaught event", cause);
                 }

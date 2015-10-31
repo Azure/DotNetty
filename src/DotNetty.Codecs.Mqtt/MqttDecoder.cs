@@ -46,10 +46,6 @@ namespace DotNetty.Codecs.Mqtt
 
                         output.Add(packet);
                         this.Checkpoint();
-                        if (MqttEventSource.Log.IsVerboseEnabled)
-                        {
-                            MqttEventSource.Log.Verbose("Decoded packet.", packet.ToString());
-                        }
                         break;
                     case ParseState.Failed:
                         // read out data until connection is closed
@@ -59,16 +55,11 @@ namespace DotNetty.Codecs.Mqtt
                         throw new ArgumentOutOfRangeException();
                 }
             }
-            catch (DecoderException ex)
+            catch (DecoderException)
             {
                 input.SkipBytes(input.ReadableBytes);
                 this.Checkpoint(ParseState.Failed);
-                if (MqttEventSource.Log.IsErrorEnabled)
-                {
-                    MqttEventSource.Log.Error("Exception while decoding.", ex);
-                }
-
-                this.CloseAsync(context);
+                throw;
             }
         }
 

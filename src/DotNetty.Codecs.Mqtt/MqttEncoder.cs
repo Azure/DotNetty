@@ -21,11 +21,6 @@ namespace DotNetty.Codecs.Mqtt
         protected override void Encode(IChannelHandlerContext context, Packet message, List<object> output)
         {
             DoEncode(context.Allocator, message, output);
-
-            if (MqttEventSource.Log.IsVerboseEnabled)
-            {
-                MqttEventSource.Log.Verbose("Encoded packet.", message.ToString());
-            }
         }
 
         public override bool IsSharable

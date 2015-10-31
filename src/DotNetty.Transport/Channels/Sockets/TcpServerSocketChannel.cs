@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Net.Sockets;
+    using DotNetty.Common.Internal.Logging;
 
     /// <summary>
     /// A {@link io.netty.channel.socket.ServerSocketChannel} implementation which uses
@@ -14,6 +15,8 @@ namespace DotNetty.Transport.Channels.Sockets
     /// </summary>
     public class TcpServerSocketChannel : AbstractSocketChannel, IServerSocketChannel
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<TcpServerSocketChannel>();
+
         static readonly Action<object, object> ReadCompletedSyncCallback = OnReadCompletedSync;
 
         readonly IServerSocketChannelConfiguration config;
@@ -208,7 +211,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         var asSocketException = ex as SocketException;
                         if (asSocketException == null || asSocketException.SocketErrorCode != SocketError.WouldBlock)
                         {
-                            ChannelEventSource.Log.Warning("Failed to create a new channel from an accepted socket.", ex);
+                            Logger.Warn("Failed to create a new channel from an accepted socket.", ex);
                             if (connectedSocket != null)
                             {
                                 try
@@ -217,7 +220,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                 }
                                 catch (Exception ex2)
                                 {
-                                    ChannelEventSource.Log.Warning("Failed to close a socket.", ex2);
+                                    Logger.Warn("Failed to close a socket.", ex2);
                                 }
                             }
                             exception = ex;

@@ -115,10 +115,10 @@ namespace DotNetty.Transport.Channels
                 }
                 catch (Exception t)
                 {
-                    if (ChannelEventSource.Log.IsWarningEnabled)
+                    if (DefaultChannelPipeline.Logger.WarnEnabled)
                     {
-                        ChannelEventSource.Log.Warning("Failed to submit an exceptionCaught() event.", t);
-                        ChannelEventSource.Log.Warning("The exceptionCaught() event that was failed to submit was:", cause);
+                        DefaultChannelPipeline.Logger.Warn("Failed to submit an exceptionCaught() event.", t);
+                        DefaultChannelPipeline.Logger.Warn("The exceptionCaught() event that was failed to submit was:", cause);
                     }
                 }
             }

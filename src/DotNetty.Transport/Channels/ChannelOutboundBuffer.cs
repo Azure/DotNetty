@@ -9,12 +9,15 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
     public sealed class ChannelOutboundBuffer
     {
 #pragma warning disable 420 // all volatile fields are used with referenced in Interlocked methods only
 
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ChannelOutboundBuffer>();
+        
         //static readonly ThreadLocal<IByteBuffer[]> NIO_BUFFERS = new ThreadLocal<IByteBuffer[]>(() => new IByteBuffer[1024]);
 
         readonly IChannel channel;
@@ -231,7 +234,7 @@ namespace DotNetty.Transport.Channels
             {
                 // only release message, notify and decrement if it was not canceled before.
                 ReferenceCountUtil.SafeRelease(msg);
-                Util.SafeSetSuccess(promise);
+                Util.SafeSetSuccess(promise, Logger);
                 this.DecrementPendingOutboundBytes(size, false, true);
             }
 
@@ -270,10 +273,10 @@ namespace DotNetty.Transport.Channels
                 // only release message, fail and decrement if it was not canceled before.
                 ReferenceCountUtil.SafeRelease(msg);
 
-                Util.SafeSetFailure(promise, cause);
+                Util.SafeSetFailure(promise, cause, Logger);
                 if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
                 {
-                    ChannelEventSource.Log.Warning(string.Format("Failed to mark a promise as failure because it's done already: {0}", promise), cause);
+                    Logger.Warn(string.Format("Failed to mark a promise as failure because it's done already: {0}", promise), cause);
                 }
                 this.DecrementPendingOutboundBytes(size, false, notifyWritability);
             }
@@ -678,10 +681,10 @@ namespace DotNetty.Transport.Channels
                     if (!e.Cancelled)
                     {
                         ReferenceCountUtil.SafeRelease(e.Message);
-                        Util.SafeSetFailure(e.Promise, cause);
+                        Util.SafeSetFailure(e.Promise, cause, Logger);
                         if (e.Promise != TaskCompletionSource.Void && !e.Promise.TrySetException(cause))
                         {
-                            ChannelEventSource.Log.Warning(string.Format("Failed to mark a promise as failure because it's done already: {0}", e.Promise), cause);
+                            Logger.Warn(string.Format("Failed to mark a promise as failure because it's done already: {0}", e.Promise), cause);
                         }
                     }
                     e = e.RecycleAndGetNext();

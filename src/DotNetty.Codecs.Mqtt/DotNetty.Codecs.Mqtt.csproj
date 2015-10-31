@@ -39,7 +39,6 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Properties\Friends.cs" />
-    <Compile Include="MqttEventSource.cs" />
     <Compile Include="MqttDecoder.cs" />
     <Compile Include="MqttEncoder.cs" />
     <Compile Include="Packets\ConnAckPacket.cs" />

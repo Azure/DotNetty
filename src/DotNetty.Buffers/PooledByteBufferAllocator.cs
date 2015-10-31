@@ -3,7 +3,6 @@
 
 namespace DotNetty.Buffers
 {
-    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using DotNetty.Common;
 
@@ -20,12 +19,6 @@ namespace DotNetty.Buffers
                 handle => new PooledByteBuffer(handle, this, maxPooledBufSize, int.MaxValue),
                 maxLocalPoolSize / maxPooledBufSize,
                 false); // todo: prepare
-        }
-
-        [Conditional("TRACE")]
-        public void LogUsage()
-        {
-            this.pool.LogUsage("pooled buffers available");
         }
 
         public int MaxPooledBufSize { get; private set; }

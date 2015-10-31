@@ -5,6 +5,7 @@ namespace DotNetty.Tests.End2End
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.Tracing;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography.X509Certificates;
@@ -14,22 +15,28 @@ namespace DotNetty.Tests.End2End
     using DotNetty.Codecs.Mqtt;
     using DotNetty.Codecs.Mqtt.Packets;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
+    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
     using Xunit;
     using Xunit.Abstractions;
 
-    public class End2EndTests
+    public class End2EndTests : IDisposable
     {
         readonly ITestOutputHelper output;
         static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(10);
+        readonly ObservableEventListener eventListener;
         const int Port = 8009;
 
         public End2EndTests(ITestOutputHelper output)
         {
             this.output = output;
+            this.eventListener = new ObservableEventListener();
+            this.eventListener.LogToTestOutput(output);
+            this.eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
         }
 
         const string ClientId = "scenarioClient1";
@@ -324,6 +331,11 @@ namespace DotNetty.Tests.End2End
                 var responseMessage = Assert.IsAssignableFrom<IByteBuffer>(currentMessageFunc());
                 Assert.Equal(message, Encoding.UTF8.GetString(responseMessage.ToArray()));
             }
+        }
+
+        public void Dispose()
+        {
+            this.eventListener.Dispose();
         }
     }
 }
