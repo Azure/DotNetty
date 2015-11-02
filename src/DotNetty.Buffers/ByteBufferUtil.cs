@@ -7,18 +7,15 @@ namespace DotNetty.Buffers
     using System;
     using System.Text;
 
-    public class ByteBufferUtil
+    public static class ByteBufferUtil
     {
-
-        private static readonly char[] HexdumpTable = new char[256 * 4];
-        private static readonly string Newline = StringUtil.NEWLINE;
-        private static readonly string[] Byte2Hex = new string[256];
-        private static readonly string[] HexPadding = new string[16];
-        private static readonly string[] BytePadding = new string[16];
-        private static readonly char[] Byte2Char = new char[256];
-        private static readonly string[] HexDumpRowPrefixes = new string[(int)((uint)65536 >> 4)];
-
-
+        static readonly char[] HexdumpTable = new char[256 * 4];
+        static readonly string Newline = StringUtil.Newline;
+        static readonly string[] Byte2Hex = new string[256];
+        static readonly string[] HexPadding = new string[16];
+        static readonly string[] BytePadding = new string[16];
+        static readonly char[] Byte2Char = new char[256];
+        static readonly string[] HexDumpRowPrefixes = new string[(int)((uint)65536 >> 4)];
 
         static ByteBufferUtil()
         {
@@ -39,7 +36,7 @@ namespace DotNetty.Buffers
             for (int i = 0; i < HexPadding.Length; i++)
             {
                 int padding = HexPadding.Length - i;
-                StringBuilder buf = new StringBuilder(padding * 3);
+                var buf = new StringBuilder(padding * 3);
                 for (int j = 0; j < padding; j++)
                 {
                     buf.Append("   ");
@@ -51,7 +48,7 @@ namespace DotNetty.Buffers
             for (int i = 0; i < BytePadding.Length; i++)
             {
                 int padding = BytePadding.Length - i;
-                StringBuilder buf = new StringBuilder(padding);
+                var buf = new StringBuilder(padding);
                 for (int j = 0; j < padding; j++)
                 {
                     buf.Append(' ');
@@ -75,7 +72,7 @@ namespace DotNetty.Buffers
             // Generate the lookup table for the start-offset header in each row (up to 64KiB).
             for (int i = 0; i < HexDumpRowPrefixes.Length; i++)
             {
-                StringBuilder buf = new StringBuilder(12);
+                var buf = new StringBuilder(12);
                 buf.Append(Environment.NewLine);
                 buf.Append((i << 4 & 0xFFFFFFFFL | 0x100000000L).ToString("X2"));
                 buf.Insert(buf.Length - 9, '|');
@@ -110,7 +107,6 @@ namespace DotNetty.Buffers
 
             //THREAD_LOCAL_BUFFER_SIZE = SystemPropertyUtil.getInt("io.netty.threadLocalDirectBufferSize", 64 * 1024);
             //logger.debug("-Dio.netty.threadLocalDirectBufferSize: {}", THREAD_LOCAL_BUFFER_SIZE);
-
         }
 
         /// <summary>
@@ -129,9 +125,13 @@ namespace DotNetty.Buffers
         public static string HexDump(IByteBuffer buffer, int fromIndex, int length)
         {
             if (length < 0)
+            {
                 throw new ArgumentOutOfRangeException("length: " + length);
+            }
             if (length == 0)
+            {
                 return "";
+            }
             int endIndex = fromIndex + length;
             char[] buf = new char[length << 1];
 
@@ -140,8 +140,8 @@ namespace DotNetty.Buffers
             for (; srcIdx < endIndex; srcIdx++, dstIdx += 2)
             {
                 Array.Copy(
-                         HexdumpTable, buffer.GetByte(srcIdx) << 1,
-                         buf, dstIdx, 2);
+                    HexdumpTable, buffer.GetByte(srcIdx) << 1,
+                    buf, dstIdx, 2);
             }
 
             return new string(buf);
@@ -225,7 +225,6 @@ namespace DotNetty.Buffers
 
             return hashCode;
         }
-
 
         /// <summary>
         ///  Returns {@code true} if and only if the two specified buffers are
@@ -425,7 +424,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        //private static int firstIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
+        //static int firstIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
         //{
         //    fromIndex = Math.max(fromIndex, 0);
         //    if (fromIndex >= toIndex || buffer.capacity() == 0)
@@ -436,7 +435,7 @@ namespace DotNetty.Buffers
         //    return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
         //}
 
-        //private static int lastIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
+        //static int lastIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
         //{
         //    fromIndex = Math.min(fromIndex, buffer.capacity());
         //    if (fromIndex < 0 || buffer.capacity() == 0)
@@ -463,12 +462,12 @@ namespace DotNetty.Buffers
         {
             if (length == 0)
             {
-                return StringUtil.EMPTY_STRING;
+                return string.Empty;
             }
             else
             {
                 int rows = length / 16 + (length % 15 == 0 ? 0 : 1) + 4;
-                StringBuilder buf = new StringBuilder(rows * 80);
+                var buf = new StringBuilder(rows * 80);
                 AppendPrettyHexDump(buf, buffer, offset, length);
                 return buf.ToString();
             }
@@ -493,15 +492,15 @@ namespace DotNetty.Buffers
             if (offset < 0 || length > buf.Capacity - offset)
             {
                 throw new IndexOutOfRangeException(
-                        "expected: " + "0 <= offset(" + offset + ") <= offset + length(" + length
-                                                    + ") <= " + "buf.capacity(" + buf.Capacity + ')');
+                    "expected: " + "0 <= offset(" + offset + ") <= offset + length(" + length
+                        + ") <= " + "buf.capacity(" + buf.Capacity + ')');
             }
             if (length == 0)
             {
                 return;
             }
             dump.Append(
-                              "         +-------------------------------------------------+" +
+                "         +-------------------------------------------------+" +
                     Newline + "         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |" +
                     Newline + "+--------+-------------------------------------------------+----------------+");
 
@@ -563,7 +562,7 @@ namespace DotNetty.Buffers
         /// <summary>
         /// Appends the prefix of each hex dump row.  Uses the look-up table for the buffer <= 64 KiB.
         /// </summary>
-        private static void AppendHexDumpRowPrefix(StringBuilder dump, int row, int rowStartIndex)
+        static void AppendHexDumpRowPrefix(StringBuilder dump, int row, int rowStartIndex)
         {
             if (row < HexDumpRowPrefixes.Length)
             {
