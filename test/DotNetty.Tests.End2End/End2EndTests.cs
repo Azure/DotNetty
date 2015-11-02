@@ -76,6 +76,7 @@ namespace DotNetty.Tests.End2End
 
                 await Task.WhenAny(testPromise.Task, Task.Delay(TimeSpan.FromMinutes(1)));
                 Assert.True(testPromise.Task.IsCompleted);
+                testPromise.Task.Wait();
             }
             finally
             {

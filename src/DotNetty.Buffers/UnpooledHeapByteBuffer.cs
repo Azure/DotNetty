@@ -4,6 +4,9 @@
 namespace DotNetty.Buffers
 {
     using System.Diagnostics.Contracts;
+    using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     public class UnpooledHeapByteBuffer : AbstractReferenceCountedByteBuffer
     {
@@ -143,6 +146,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public override IByteBuffer GetBytes(int index, Stream destination, int length)
+        {
+            destination.Write(this.Array, this.ArrayOffset + this.ReaderIndex, this.ReadableBytes);
+            return this;
+        }
+
         public override IByteBuffer SetBytes(int index, IByteBuffer src, int srcIndex, int length)
         {
             this.CheckSrcIndex(index, length, srcIndex, src.Capacity);
@@ -162,6 +171,20 @@ namespace DotNetty.Buffers
             this.CheckSrcIndex(index, length, srcIndex, src.Length);
             System.Array.Copy(src, srcIndex, this.array, index, length);
             return this;
+        }
+        public override async Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
+        {
+            int readTotal = 0;
+            int read;
+            int offset = this.ArrayOffset + index;
+            do
+            {
+                read = await src.ReadAsync(this.Array, offset + readTotal, length - readTotal, cancellationToken);
+                readTotal += read;
+            }
+            while (read > 0 && readTotal < length);
+
+            return readTotal;
         }
 
         public override byte GetByte(int index)

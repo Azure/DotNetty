@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace DotNetty.Transport.Channels.Groups
 {
-    public interface IChannelGroup : ISet<IChannel>, IComparable<IChannelGroup>
+    public interface IChannelGroup : ICollection<IChannel>, IComparable<IChannelGroup>
     {
         /// <summary>
         /// Returns the name of this group.  A group name is purely for helping
@@ -17,7 +17,6 @@ namespace DotNetty.Transport.Channels.Groups
         Task WriteAsync(object message);
 
         Task WriteAsync(object message, IChannelMatcher matcher);
-
 
         IChannelGroup Flush();
 
@@ -35,7 +34,6 @@ namespace DotNetty.Transport.Channels.Groups
 
         Task CloseAsync(IChannelMatcher matcher);
 
-
         Task DeregisterAsync();
 
         Task DeregisterAsync(IChannelMatcher matcher);
@@ -43,7 +41,5 @@ namespace DotNetty.Transport.Channels.Groups
         Task NewCloseFuture();
 
         Task NewCloseFuture(IChannelMatcher matcher);
-
-
     }
 }

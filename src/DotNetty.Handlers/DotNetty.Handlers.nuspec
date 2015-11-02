@@ -7,8 +7,8 @@
     <authors>@authors@</authors>
     <owners>@authors@</owners>
     <description>TLS and other handler support DotNetty.</description>
-    <licenseUrl>https://github.com/Azure/DotNetty</licenseUrl>
-    <projectUrl>https://github.com/Azure/DotNetty/blob/dev/LICENSE.txt</projectUrl>
+    <licenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</licenseUrl>
+    <projectUrl>https://github.com/Azure/DotNetty/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <releaseNotes>@releaseNotes@</releaseNotes>
     <copyright>@copyright@</copyright>

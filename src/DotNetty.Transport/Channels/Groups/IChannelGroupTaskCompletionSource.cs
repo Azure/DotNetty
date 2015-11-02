@@ -15,10 +15,6 @@ namespace DotNetty.Transport.Channels.Groups
 
         bool IsPartialFailure();
 
-        ChannelGroupException Cause
-        {
-            get;
-        }
-       
+        ChannelGroupException Cause { get; }
     }
 }

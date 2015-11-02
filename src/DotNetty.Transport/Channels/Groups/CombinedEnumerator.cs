@@ -1,78 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace DotNetty.Transport.Channels.Groups
 {
-    public sealed class CombinedEnumerator<E> : IEnumerator<E> 
-    {
+    using System.Diagnostics.Contracts;
 
-        private readonly IEnumerator<E> e1;
-        private readonly IEnumerator<E> e2;
-        private IEnumerator<E> currentEnumerator;
+    public sealed class CombinedEnumerator<E> : IEnumerator<E>
+    {
+        readonly IEnumerator<E> e1;
+        readonly IEnumerator<E> e2;
+        IEnumerator<E> currentEnumerator;
 
         public CombinedEnumerator(IEnumerator<E> e1, IEnumerator<E> e2)
         {
-            if (e1 == null)
-                throw new ArgumentNullException("e1");
-            if (e2 == null)
-                throw new ArgumentNullException("e2");
+            Contract.Requires(e1 != null);
+            Contract.Requires(e2 != null);
             this.e1 = e1;
             this.e2 = e2;
             this.currentEnumerator = e1;
         }
 
-
-
-
         public E Current
         {
-            get
-            {
-                for(;;)
-                {
-                    try
-                    {
-                        return currentEnumerator.Current;
-                    }
-                    catch(InvalidOperationException)
-                    {
-                        if (currentEnumerator == e1)
-                            currentEnumerator = e2;
-                        else
-                            throw;
-                    }
-                }
-            }
+            get { return this.currentEnumerator.Current; }
         }
 
         public void Dispose()
         {
-            currentEnumerator.Dispose();
-            e1.Dispose();
-            e2.Dispose();
+            this.currentEnumerator.Dispose();
         }
 
         object System.Collections.IEnumerator.Current
         {
-            get { throw new NotImplementedException(); }
+            get { return this.Current; }
         }
 
         public bool MoveNext()
         {
-            for(;;)
+            for (;;)
             {
-                if (currentEnumerator.MoveNext())
+                if (this.currentEnumerator.MoveNext())
+                {
                     return true;
-                if (currentEnumerator == e1)
-                    currentEnumerator = e2;
+                }
+                if (this.currentEnumerator == this.e1)
+                {
+                    this.currentEnumerator = this.e2;
+                }
                 else
+                {
                     return false;
+                }
             }
         }
 
         public void Reset()
         {
-            currentEnumerator.Reset();
+            this.currentEnumerator.Reset();
         }
     }
 }

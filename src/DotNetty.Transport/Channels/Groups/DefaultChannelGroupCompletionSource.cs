@@ -7,28 +7,28 @@ using System.Threading.Tasks;
 
 namespace DotNetty.Transport.Channels.Groups
 {
-    public class DefaultChannelGroupCompletionSource : TaskCompletionSource<int> ,IChannelGroupTaskCompletionSource
+    public class DefaultChannelGroupCompletionSource : TaskCompletionSource<int>, IChannelGroupTaskCompletionSource
     {
-        private readonly IChannelGroup group;
-        private readonly Dictionary<IChannel,Task> futures;
-        private int successCount;
-        private int failureCount;
-        public DefaultChannelGroupCompletionSource(IChannelGroup group, Dictionary<IChannel, Task> futures/*, IEventExecutor executor*/)
-            :this(group,futures/*,executor*/,null)
+        readonly IChannelGroup group;
+        readonly Dictionary<IChannel, Task> futures;
+        int successCount;
+        int failureCount;
+
+        public DefaultChannelGroupCompletionSource(IChannelGroup group, Dictionary<IChannel, Task> futures /*, IEventExecutor executor*/)
+            : this(group, futures /*,executor*/, null)
         {
-            
         }
 
-        public DefaultChannelGroupCompletionSource(IChannelGroup group, Dictionary<IChannel, Task> futures/*, IEventExecutor executor*/, object state)
-            :base(state)
+        public DefaultChannelGroupCompletionSource(IChannelGroup group, Dictionary<IChannel, Task> futures /*, IEventExecutor executor*/, object state)
+            : base(state)
         {
             Contract.Requires(group != null);
             Contract.Requires(futures != null);
-            
+
             this.group = group;
-            foreach(var pair in futures)
+            foreach (var pair in futures)
             {
-                this.futures.Add(pair.Key,pair.Value);
+                this.futures.Add(pair.Key, pair.Value);
                 pair.Value.ContinueWith(x =>
                 {
                     bool success = x.IsCompleted && !x.IsFaulted && !x.IsCanceled;
@@ -36,31 +36,40 @@ namespace DotNetty.Transport.Channels.Groups
                     lock (this)
                     {
                         if (success)
-                            successCount++;
+                        {
+                            this.successCount++;
+                        }
                         else
-                            failureCount++;
+                        {
+                            this.failureCount++;
+                        }
 
-                        callSetDone = successCount + failureCount == this.futures.Count;
-                        Debug.Assert(successCount + failureCount <= this.futures.Count);
+                        callSetDone = this.successCount + this.failureCount == this.futures.Count;
+                        Debug.Assert(this.successCount + this.failureCount <= this.futures.Count);
                     }
 
                     if (callSetDone)
                     {
-                        if (failureCount > 0)
+                        if (this.failureCount > 0)
                         {
-                            List<KeyValuePair<IChannel, Exception>> failed = new List<KeyValuePair<IChannel, Exception>>();
-                            foreach (var ft in this.futures)
+                            var failed = new List<KeyValuePair<IChannel, Exception>>();
+                            foreach (KeyValuePair<IChannel, Task> ft in this.futures)
                             {
                                 IChannel c = ft.Key;
                                 Task f = ft.Value;
                                 if (f.IsFaulted || f.IsCanceled)
-                                    failed.Add(new KeyValuePair<IChannel, Exception>(c, f.Exception.InnerException));
+                                {
+                                    if (f.Exception != null)
+                                    {
+                                        failed.Add(new KeyValuePair<IChannel, Exception>(c, f.Exception.InnerException));
+                                    }
+                                }
                             }
-                            TrySetException(new ChannelGroupException(failed));
+                            this.TrySetException(new ChannelGroupException(failed));
                         }
                         else
                         {
-                            TrySetResult(0);
+                            this.TrySetResult(0);
                         }
                     }
                 });
@@ -68,17 +77,14 @@ namespace DotNetty.Transport.Channels.Groups
 
             // Done on arrival?
             if (futures.Count == 0)
-                TrySetResult(0);
-
+            {
+                this.TrySetResult(0);
+            }
         }
 
         public IChannelGroup Group
         {
-            get
-            {
-
-                return this.group;
-            }
+            get { return this.group; }
         }
 
         public Task Find(IChannel channel)
@@ -86,39 +92,35 @@ namespace DotNetty.Transport.Channels.Groups
             return this.futures[channel];
         }
 
-        
         public bool IsPartialSucess()
         {
-            lock(this)
+            lock (this)
             {
-                return successCount != 0 && successCount != futures.Count;
+                return this.successCount != 0 && this.successCount != this.futures.Count;
             }
         }
 
         public bool IsSucess()
         {
-            return base.Task.IsCompleted && !base.Task.IsFaulted && !base.Task.IsCanceled;
+            return this.Task.IsCompleted && !this.Task.IsFaulted && !this.Task.IsCanceled;
         }
 
         public bool IsPartialFailure()
         {
             lock (this)
             {
-                return failureCount != 0 && failureCount != futures.Count;
+                return this.failureCount != 0 && this.failureCount != this.futures.Count;
             }
         }
 
         public ChannelGroupException Cause
         {
-            get { return (ChannelGroupException)Task.Exception.InnerException; }
+            get { return (ChannelGroupException)this.Task.Exception.InnerException; }
         }
 
         public Task Current
         {
-            get
-            {
-                return this.futures.Values.GetEnumerator().Current;
-            }
+            get { return this.futures.Values.GetEnumerator().Current; }
         }
 
         public void Dispose()
