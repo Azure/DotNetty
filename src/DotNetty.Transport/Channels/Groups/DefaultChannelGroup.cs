@@ -168,7 +168,8 @@ namespace DotNetty.Transport.Channels.Groups
 
         public void CopyTo(IChannel[] array, int arrayIndex)
         {
-            throw new NotImplementedException();
+            this.ToArray().CopyTo(array, arrayIndex);
+            
         }
 
         public IChannel[] ToArray()
