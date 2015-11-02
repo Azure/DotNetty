@@ -8,32 +8,26 @@ namespace DotNetty.Common.Utilities
     /// <summary>
     /// String utility class.
     /// </summary>
-    public class StringUtil
+    public static class StringUtil
     {
-        public static readonly string EMPTY_STRING = "";
-        public static readonly string NEWLINE;
+        public static readonly string Newline;
 
-        public const char DOUBLE_QUOTE = '\"';
-        public const char COMMA = ',';
-        public const char LINE_FEED = '\n';
-        public const char CARRIAGE_RETURN = '\r';
-        public const char TAB = '\t';
+        public const char DoubleQuote = '\"';
+        public const char Comma = ',';
+        public const char LineFeed = '\n';
+        public const char CarriageReturn = '\r';
+        public const char Tab = '\t';
 
-        public const byte UPPER_CASE_TO_LOWER_CASE_ASCII_OFFSET = 'a' - 'A';
-        private static readonly string[] BYTE2HEX_PAD = new String[256];
-        private static readonly string[] BYTE2HEX_NOPAD = new String[256];
+        public const byte UpperCaseToLowerCaseAsciiOffset = 'a' - 'A';
+        static readonly string[] Byte2HexPad = new string[256];
+        static readonly string[] Byte2HexNopad = new string[256];
 
         /**
          * 2 - Quote character at beginning and end.
          * 5 - Extra allowance for anticipated escape characters that may be added.
         */
-        private static readonly int CSV_NUMBER_ESCAPE_CHARACTERS = 2 + 5;
-        private static readonly char PACKAGE_SEPARATOR_CHAR = '.';
-
-        private StringUtil()
-        {
-
-        }
+        static readonly int CsvNumberEscapeCharacters = 2 + 5;
+        static readonly char PackageSeparatorChar = '.';
 
         static StringUtil()
         {
@@ -50,93 +44,35 @@ namespace DotNetty.Common.Utilities
                 newLine = "\n";
             }
 
-            NEWLINE = newLine;
+            Newline = newLine;
 
             // Generate the lookup table that converts a byte into a 2-digit hexadecimal integer.
             int i;
             for (i = 0; i < 10; i++)
             {
-                StringBuilder buf = new StringBuilder(2);
+                var buf = new StringBuilder(2);
                 buf.Append('0');
                 buf.Append(i);
-                BYTE2HEX_PAD[i] = buf.ToString();
-                BYTE2HEX_NOPAD[i] = (i).ToString();
+                Byte2HexPad[i] = buf.ToString();
+                Byte2HexNopad[i] = (i).ToString();
             }
             for (; i < 16; i++)
             {
-                StringBuilder buf = new StringBuilder(2);
+                var buf = new StringBuilder(2);
                 char c = (char)('a' + i - 10);
                 buf.Append('0');
                 buf.Append(c);
-                BYTE2HEX_PAD[i] = buf.ToString();
-                BYTE2HEX_NOPAD[i] = c.ToString();/* String.valueOf(c);*/
+                Byte2HexPad[i] = buf.ToString();
+                Byte2HexNopad[i] = c.ToString(); /* String.valueOf(c);*/
             }
-            for (; i < BYTE2HEX_PAD.Length; i++)
+            for (; i < Byte2HexPad.Length; i++)
             {
-                StringBuilder buf = new StringBuilder(2);
-                buf.Append(i.ToString("X")/*Integer.toHexString(i)*/);
-                String str = buf.ToString();
-                BYTE2HEX_PAD[i] = str;
-                BYTE2HEX_NOPAD[i] = str;
+                var buf = new StringBuilder(2);
+                buf.Append(i.ToString("X") /*Integer.toHexString(i)*/);
+                string str = buf.ToString();
+                Byte2HexPad[i] = str;
+                Byte2HexNopad[i] = str;
             }
-        }
-
-
-        /// <summary>
-        /// Splits the specified {@link String} with the specified delimiter.  This operation is a simplified and optimized
-        /// version of {@link String#split(String)}.
-        /// </summary>              
-        public static string[] Split(string value, char delim)
-        {
-            int end = value.Length;
-            List<string> res = new List<string>();
-
-            int start = 0;
-            for (int i = 0; i < end; i++)
-            {
-                if (value[i] == delim)
-                {
-                    if (start == i)
-                    {
-                        res.Add(EMPTY_STRING);
-                    }
-                    else
-                    {
-                        res.Add(value.Substring(start, i));
-                    }
-                    start = i + 1;
-                }
-            }
-
-            if (start == 0)
-            { // If no delimiter was found in the value
-                res.Add(value);
-            }
-            else
-            {
-                if (start != end)
-                {
-                    // Add the last element if it's not empty.
-                    res.Add(value.Substring(start, end));
-                }
-                else
-                {
-                    // Truncate trailing empty elements.
-                    for (int i = res.Count - 1; i >= 0; i--)
-                    {
-                        if (res[i] == "")
-                        {
-                            res.Remove(res[i]);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return res.ToArray();
         }
 
         /// <summary>
@@ -151,7 +87,7 @@ namespace DotNetty.Common.Utilities
         public static string[] Split(string value, char delim, int maxParts)
         {
             int end = value.Length;
-            List<string> res = new List<string>();
+            var res = new List<string>();
 
             int start = 0;
             int cpt = 1;
@@ -161,7 +97,7 @@ namespace DotNetty.Common.Utilities
                 {
                     if (start == i)
                     {
-                        res.Add(EMPTY_STRING);
+                        res.Add(string.Empty);
                     }
                     else
                     {
@@ -173,7 +109,8 @@ namespace DotNetty.Common.Utilities
             }
 
             if (start == 0)
-            { // If no delimiter was found in the value
+            {
+                // If no delimiter was found in the value
                 res.Add(value);
             }
             else
@@ -211,14 +148,10 @@ namespace DotNetty.Common.Utilities
         /// <param name="value"></param>
         /// <param name="delim"></param>
         /// <returns></returns>
-        public static string SubstringAfter(String value, char delim)
+        public static string SubstringAfter(this string value, char delim)
         {
             int pos = value.IndexOf(delim);
-            if (pos >= 0)
-            {
-                return value.Substring(pos + 1);
-            }
-            return null;
+            return pos >= 0 ? value.Substring(pos + 1) : null;
         }
 
         /// <summary>
@@ -226,7 +159,7 @@ namespace DotNetty.Common.Utilities
         /// </summary>
         public static string ByteToHexStringPadded(int value)
         {
-            return BYTE2HEX_PAD[value & 0xff];
+            return Byte2HexPad[value & 0xff];
         }
 
         //    /**
@@ -240,7 +173,6 @@ namespace DotNetty.Common.Utilities
         //    }
         //    return buf;
         //}
-
 
         /// <summary>
         /// Converts the specified byte array into a hexadecimal value.
@@ -256,18 +188,21 @@ namespace DotNetty.Common.Utilities
         public static string ToHexStringPadded(byte[] src, int offset, int length)
         {
             int end = offset + length;
-            StringBuilder sb = new StringBuilder(length << 1);
+            var sb = new StringBuilder(length << 1);
             for (int i = offset; i < end; i++)
+            {
                 sb.Append(ByteToHexStringPadded(src[i]));
+            }
             return sb.ToString();
-
         }
 
         public static StringBuilder ToHexStringPadded(StringBuilder sb, byte[] src, int offset, int length)
         {
             int end = offset + length;
             for (int i = offset; i < end; i++)
+            {
                 sb.Append(ByteToHexStringPadded(src[i]));
+            }
             return sb;
         }
 
@@ -276,13 +211,12 @@ namespace DotNetty.Common.Utilities
         /// </summary>
         public static string ByteToHexString(int value)
         {
-            return BYTE2HEX_NOPAD[value & 0xff];
+            return Byte2HexNopad[value & 0xff];
         }
 
         public static StringBuilder ByteToHexString(StringBuilder buf, int value)
         {
             return buf.Append(ByteToHexString(value));
-
         }
 
         public static string ToHexString(byte[] src)
@@ -307,7 +241,9 @@ namespace DotNetty.Common.Utilities
         {
             Debug.Assert(length >= 0);
             if (length == 0)
+            {
                 return dst;
+            }
             int end = offset + length;
             int endMinusOne = end - 1;
             int i;
@@ -345,18 +281,18 @@ namespace DotNetty.Common.Utilities
             bool quoted = IsDoubleQuote(value[0]) && IsDoubleQuote(value[last]) && length != 1;
             bool foundSpecialCharacter = false;
             bool escapedDoubleQuote = false;
-            StringBuilder escaped = new StringBuilder(length + CSV_NUMBER_ESCAPE_CHARACTERS).Append(DOUBLE_QUOTE);
+            StringBuilder escaped = new StringBuilder(length + CsvNumberEscapeCharacters).Append(DoubleQuote);
             for (int i = 0; i < length; i++)
             {
                 char current = value[i];
                 switch (current)
                 {
-                    case DOUBLE_QUOTE:
+                    case DoubleQuote:
                         if (i == 0 || i == last)
                         {
                             if (!quoted)
                             {
-                                escaped.Append(DOUBLE_QUOTE);
+                                escaped.Append(DoubleQuote);
                             }
                             else
                             {
@@ -367,29 +303,29 @@ namespace DotNetty.Common.Utilities
                         {
                             bool isNextCharDoubleQuote = IsDoubleQuote(value[i + 1]);
                             if (!IsDoubleQuote(value[i - 1]) &&
-                                    (!isNextCharDoubleQuote || i + 1 == last))
+                                (!isNextCharDoubleQuote || i + 1 == last))
                             {
-                                escaped.Append(DOUBLE_QUOTE);
+                                escaped.Append(DoubleQuote);
                                 escapedDoubleQuote = true;
                             }
                             break;
                         }
                         break;
-                    case LINE_FEED:
-                    case CARRIAGE_RETURN:
-                    case COMMA:
+                    case LineFeed:
+                    case CarriageReturn:
+                    case Comma:
                         foundSpecialCharacter = true;
                         break;
                 }
                 escaped.Append(current);
             }
             return escapedDoubleQuote || foundSpecialCharacter && !quoted ?
-                    escaped.Append(DOUBLE_QUOTE).ToString() : value;
+                escaped.Append(DoubleQuote).ToString() : value;
         }
 
-        private static bool IsDoubleQuote(char c)
+        static bool IsDoubleQuote(char c)
         {
-            return c == DOUBLE_QUOTE;
+            return c == DoubleQuote;
         }
     }
 }

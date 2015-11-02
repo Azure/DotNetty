@@ -1,5 +1,4 @@
-﻿
-namespace DotNetty.Transport.Channels.Groups
+﻿namespace DotNetty.Transport.Channels.Groups
 {
     public interface IChannelMatcher
     {
