@@ -43,7 +43,7 @@ namespace DotNetty.Transport.Channels
         ///        the parent of this channel. {@code null} if there's no parent.
         /// </summary>
         protected AbstractChannel(IChannel parent)
-            : this(parent,DefaultChannelId.NewInstance())
+            : this(parent, DefaultChannelId.NewInstance())
         {
         }
         /// <summary>
@@ -320,7 +320,7 @@ namespace DotNetty.Transport.Channels
 
                 StringBuilder buf = new StringBuilder(96)
                     .Append("[id: 0x")
-                    .Append(Id.AsShortText)
+                    .Append(Id.AsShortText())
                     .Append(", ")
                     .Append(srcAddr)
                     .Append(active ? " => " : " :> ")
@@ -332,7 +332,7 @@ namespace DotNetty.Transport.Channels
             {
                 StringBuilder buf = new StringBuilder(64)
                     .Append("[id: 0x")
-                    .Append(Id.AsShortText)
+                    .Append(Id.AsShortText())
                     .Append(", ")
                     .Append(localAddr)
                     .Append(']');
@@ -342,7 +342,7 @@ namespace DotNetty.Transport.Channels
             {
                 StringBuilder buf = new StringBuilder(16)
                     .Append("[id: 0x")
-                    .Append(Id.AsShortText)
+                    .Append(Id.AsShortText())
                     .Append(']');
                 this.strVal = buf.ToString();
             }
