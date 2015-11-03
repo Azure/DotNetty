@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using DotNetty.Common.Utilities;
     using System;
+    using System.Diagnostics.Contracts;
     using System.Text;
 
     public static class ByteBufferUtil
@@ -80,8 +81,7 @@ namespace DotNetty.Buffers
                 HexDumpRowPrefixes[i] = buf.ToString();
             }
 
-            //TODO Import the rest!!!!
-
+            //todo: port
             //String allocType = SystemPropertyUtil.get(
             //    "io.netty.allocator.type", PlatformDependent.isAndroid() ? "unpooled" : "pooled");
             //allocType = allocType.toLowerCase(Locale.US).trim();
@@ -124,10 +124,7 @@ namespace DotNetty.Buffers
         /// </summary>
         public static string HexDump(IByteBuffer buffer, int fromIndex, int length)
         {
-            if (length < 0)
-            {
-                throw new ArgumentOutOfRangeException("length: " + length);
-            }
+            Contract.Requires(length >= 0);
             if (length == 0)
             {
                 return "";
@@ -162,10 +159,8 @@ namespace DotNetty.Buffers
         /// </summary>
         public static string HexDump(byte[] array, int fromIndex, int length)
         {
-            if (length < 0)
-            {
-                throw new ArgumentOutOfRangeException("length: " + length);
-            }
+            Contract.Requires(length >= 0);
+            
             if (length == 0)
             {
                 return "";
@@ -424,6 +419,7 @@ namespace DotNetty.Buffers
             }
         }
 
+        //todo: port
         //static int firstIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
         //{
         //    fromIndex = Math.max(fromIndex, 0);
@@ -435,6 +431,7 @@ namespace DotNetty.Buffers
         //    return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
         //}
 
+        ///todo: port
         //static int lastIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
         //{
         //    fromIndex = Math.min(fromIndex, buffer.capacity());

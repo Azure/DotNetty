@@ -5,6 +5,8 @@ using System.Text;
 
 namespace DotNetty.Common.Utilities
 {
+    using System.Diagnostics.Contracts;
+
     /// <summary>
     /// String utility class.
     /// </summary>
@@ -31,20 +33,7 @@ namespace DotNetty.Common.Utilities
 
         static StringUtil()
         {
-            // Determine the newline character of the current platform.
-            string newLine;
-            try
-            {
-                //newLine = new Formatter().format("%n").toString();
-                newLine = Environment.NewLine;
-            }
-            catch
-            {
-                // Should not reach here, but just in case.
-                newLine = "\n";
-            }
-
-            Newline = newLine;
+            Newline = Environment.NewLine;
 
             // Generate the lookup table that converts a byte into a 2-digit hexadecimal integer.
             int i;
@@ -162,6 +151,7 @@ namespace DotNetty.Common.Utilities
             return Byte2HexPad[value & 0xff];
         }
 
+        //todo: port
         //    /**
         // * Converts the specified byte value into a 2-digit hexadecimal integer and appends it to the specified buffer.
         // */
@@ -198,6 +188,7 @@ namespace DotNetty.Common.Utilities
 
         public static StringBuilder ToHexStringPadded(StringBuilder sb, byte[] src, int offset, int length)
         {
+            Contract.Requires((offset+length) <= src.Length);
             int end = offset + length;
             for (int i = offset; i < end; i++)
             {
@@ -209,12 +200,12 @@ namespace DotNetty.Common.Utilities
         /// <summary>
         /// Converts the specified byte value into a hexadecimal integer.
         /// </summary>
-        public static string ByteToHexString(int value)
+        public static string ByteToHexString(byte value)
         {
             return Byte2HexNopad[value & 0xff];
         }
 
-        public static StringBuilder ByteToHexString(StringBuilder buf, int value)
+        public static StringBuilder ByteToHexString(StringBuilder buf, byte value)
         {
             return buf.Append(ByteToHexString(value));
         }

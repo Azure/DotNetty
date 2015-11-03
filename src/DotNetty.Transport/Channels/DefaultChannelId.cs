@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Channels
     [Serializable]
     public class DefaultChannelId : IChannelId
     {
-        // static final InternalLogger logger = InternalLoggerFactory.getInstance(DefaultChannelId.class);
+        //static readonly InternalLogger logger = InternalLoggerFactory.GetInstance(typeof(DefaultChannelId));
         static readonly Regex MachineIdPattern = new Regex("^(?:[0-9a-fA-F][:-]?){6,8}$");
         const int MachineIdLen = 8;
         static readonly byte[] MachineId;
@@ -49,12 +49,18 @@ namespace DotNetty.Transport.Channels
             string customProcessId = SystemPropertyUtil.Get("io.netty.processId");
             if (customProcessId != null)
             {
-                int.TryParse(customProcessId, out processId);
+                if (!int.TryParse(customProcessId, out processId))
+                    processId = -1;
             }
             if (processId < 0 || processId > MaxProcessId)
             {
                 processId = -1;
+                //logger.warn("-Dio.netty.processId: {0} (malformed)", customProcessId);
             }
+            //else if (logger.IsDebugEnabled())
+            //{
+            //    logger.debug("-Dio.netty.processId: {0} (user-set)", processId);
+            //}
             if (processId < 0)
             {
                 processId = DefaultProcessId();
@@ -91,17 +97,9 @@ namespace DotNetty.Transport.Channels
 
         static int DefaultProcessId()
         {
-            int pId = -1;
-            try
-            {
-                pId = Process.GetCurrentProcess().Id;
-            }
-            catch
-            {
-                // ignored
-            }
-
-            if (pId < 0)
+            int pId = Process.GetCurrentProcess().Id;;
+            
+            if (pId <= 0)
             {
                 pId = ThreadLocalRandom.Value.Next(MaxProcessId + 1);
             }
@@ -112,7 +110,6 @@ namespace DotNetty.Transport.Channels
         {
             var id = new DefaultChannelId();
             id.Init();
-
             return id;
         }
 

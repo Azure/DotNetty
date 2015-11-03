@@ -2,6 +2,8 @@
 
 namespace DotNetty.Common.Utilities
 {
+    using System.Diagnostics.Contracts;
+
     /// <summary>
     /// A collection of utility methods to retrieve and parse the values of the .Net Environment properties.
     /// </summary>
@@ -19,14 +21,7 @@ namespace DotNetty.Common.Utilities
 
         public static string Get(string key, string def)
         {
-            if (key == null)
-            {
-                throw new ArgumentNullException("key");
-            }
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                throw new ArgumentException("key must be non empty");
-            }
+            Contract.Requires(string.IsNullOrWhiteSpace(key));
             string value = null;
             try
             {
