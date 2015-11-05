@@ -156,6 +156,8 @@
     <Compile Include="Utilities\PriorityQueue.cs" />
     <Compile Include="Utilities\RecyclableMpscLinkedQueueNode.cs" />
     <Compile Include="Utilities\ReferenceCountUtil.cs" />
+    <Compile Include="Utilities\StringUtil.cs" />
+    <Compile Include="Utilities\SystemPropertyUtil.cs" />
     <Compile Include="Utilities\TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>
