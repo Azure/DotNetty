@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels.Groups
 {
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
 
     public sealed class CombinedEnumerator<E> : IEnumerator<E>
@@ -29,7 +32,7 @@ namespace DotNetty.Transport.Channels.Groups
             this.currentEnumerator.Dispose();
         }
 
-        object System.Collections.IEnumerator.Current
+        object IEnumerator.Current
         {
             get { return this.Current; }
         }

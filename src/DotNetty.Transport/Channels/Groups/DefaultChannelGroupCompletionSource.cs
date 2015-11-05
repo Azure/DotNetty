@@ -1,18 +1,21 @@
-﻿using DotNetty.Common.Concurrency;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Contracts;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels.Groups
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Diagnostics.Contracts;
+    using System.Threading.Tasks;
+
     public class DefaultChannelGroupCompletionSource : TaskCompletionSource<int>, IChannelGroupTaskCompletionSource
     {
-        readonly IChannelGroup group;
         readonly Dictionary<IChannel, Task> futures;
-        int successCount;
+        readonly IChannelGroup group;
         int failureCount;
+        int successCount;
 
         public DefaultChannelGroupCompletionSource(IChannelGroup group, Dictionary<IChannel, Task> futures /*, IEventExecutor executor*/)
             : this(group, futures /*,executor*/, null)
@@ -26,7 +29,7 @@ namespace DotNetty.Transport.Channels.Groups
             Contract.Requires(futures != null);
 
             this.group = group;
-            foreach (var pair in futures)
+            foreach (KeyValuePair<IChannel, Task> pair in futures)
             {
                 this.futures.Add(pair.Key, pair.Value);
                 pair.Value.ContinueWith(x =>
@@ -128,7 +131,7 @@ namespace DotNetty.Transport.Channels.Groups
             this.futures.Values.GetEnumerator().Dispose();
         }
 
-        object System.Collections.IEnumerator.Current
+        object IEnumerator.Current
         {
             get { return this.futures.Values.GetEnumerator().Current; }
         }
@@ -140,7 +143,7 @@ namespace DotNetty.Transport.Channels.Groups
 
         public void Reset()
         {
-            ((System.Collections.IEnumerator)this.futures.Values.GetEnumerator()).Reset();
+            ((IEnumerator)this.futures.Values.GetEnumerator()).Reset();
         }
     }
 }

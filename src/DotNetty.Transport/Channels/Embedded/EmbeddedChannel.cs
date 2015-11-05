@@ -41,7 +41,16 @@ namespace DotNetty.Transport.Channels.Embedded
         /// Create a new instance with an empty pipeline.
         /// </summary>
         public EmbeddedChannel()
-            : this(EMPTY_HANDLERS)
+            : this(EmbeddedChannelId.Instance, EMPTY_HANDLERS)
+        {
+        }
+
+        /// <summary>
+        /// Create a new instance with an empty pipeline with the specified <see cref="IChannelId"/>.
+        /// </summary>
+        /// <param name="channelId">The <see cref="IChannelId"/> of this channel. </param>
+        public EmbeddedChannel(IChannelId channelId)
+            : this(channelId, EMPTY_HANDLERS)
         {
         }
 
@@ -52,7 +61,19 @@ namespace DotNetty.Transport.Channels.Embedded
         /// The <see cref="IChannelHandler"/>s that will be added to the <see cref="IChannelPipeline"/>
         /// </param>
         public EmbeddedChannel(params IChannelHandler[] handlers)
-            : base(null)
+            : this(EmbeddedChannelId.Instance, handlers)
+        {
+        }
+
+        /// <summary>
+        /// Create a new instance with the pipeline initialized with the specified handlers.
+        /// </summary>
+        /// <param name="id">The <see cref="IChannelId"/> of this channel.</param>
+        /// <param name="handlers">
+        /// The <see cref="IChannelHandler"/>s that will be added to the <see cref="IChannelPipeline"/>
+        /// </param>
+        public EmbeddedChannel(IChannelId id, params IChannelHandler[] handlers)
+            : base(null, id)
         {
             this.config = new DefaultChannelConfiguration(this);
             if (handlers == null)

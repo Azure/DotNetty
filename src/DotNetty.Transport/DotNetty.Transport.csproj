@@ -60,6 +60,7 @@
     <Compile Include="Channels\DefaultChannelPipeline.cs" />
     <Compile Include="Channels\DefaultMessageSizeEstimator.cs" />
     <Compile Include="Channels\Embedded\EmbeddedChannel.cs" />
+    <Compile Include="Channels\Embedded\EmbeddedChannelId.cs" />
     <Compile Include="Channels\Embedded\EmbeddedEventLoop.cs" />
     <Compile Include="Channels\Embedded\EmbeddedSocketAddress.cs" />
     <Compile Include="Channels\FixedRecvByteBufAllocator.cs" />

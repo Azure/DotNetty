@@ -1,29 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Common.Utilities
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
+    using System.Text;
 
     /// <summary>
-    /// String utility class.
+    ///     String utility class.
     /// </summary>
     public static class StringUtil
     {
-        public static readonly string Newline;
-
         public const char DoubleQuote = '\"';
         public const char Comma = ',';
         public const char LineFeed = '\n';
         public const char CarriageReturn = '\r';
         public const char Tab = '\t';
-
         public const byte UpperCaseToLowerCaseAsciiOffset = 'a' - 'A';
+        public static readonly string Newline;
         static readonly string[] Byte2HexPad = new string[256];
         static readonly string[] Byte2HexNopad = new string[256];
-
         /**
          * 2 - Quote character at beginning and end.
          * 5 - Extra allowance for anticipated escape characters that may be added.
@@ -65,9 +64,9 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Splits the specified {@link String} with the specified delimiter in maxParts maximum parts.
-        /// This operation is a simplified and optimized
-        /// version of {@link String#split(String, int)}.
+        ///     Splits the specified {@link String} with the specified delimiter in maxParts maximum parts.
+        ///     This operation is a simplified and optimized
+        ///     version of {@link String#split(String, int)}.
         /// </summary>
         /// <param name="value"></param>
         /// <param name="delim"></param>
@@ -130,9 +129,9 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Get the item after one char delim if the delim is found (else null).
-        /// This operation is a simplified and optimized
-        /// version of {@link String#split(String, int)}.
+        ///     Get the item after one char delim if the delim is found (else null).
+        ///     This operation is a simplified and optimized
+        ///     version of {@link String#split(String, int)}.
         /// </summary>
         /// <param name="value"></param>
         /// <param name="delim"></param>
@@ -144,7 +143,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        ///  Converts the specified byte value into a 2-digit hexadecimal integer.
+        ///     Converts the specified byte value into a 2-digit hexadecimal integer.
         /// </summary>
         public static string ByteToHexStringPadded(int value)
         {
@@ -165,7 +164,7 @@ namespace DotNetty.Common.Utilities
         //}
 
         /// <summary>
-        /// Converts the specified byte array into a hexadecimal value.
+        ///     Converts the specified byte array into a hexadecimal value.
         /// </summary>
         public static string ToHexStringPadded(byte[] src)
         {
@@ -173,7 +172,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Converts the specified byte array into a hexadecimal value.
+        ///     Converts the specified byte array into a hexadecimal value.
         /// </summary>
         public static string ToHexStringPadded(byte[] src, int offset, int length)
         {
@@ -188,7 +187,7 @@ namespace DotNetty.Common.Utilities
 
         public static StringBuilder ToHexStringPadded(StringBuilder sb, byte[] src, int offset, int length)
         {
-            Contract.Requires((offset+length) <= src.Length);
+            Contract.Requires((offset + length) <= src.Length);
             int end = offset + length;
             for (int i = offset; i < end; i++)
             {
@@ -198,7 +197,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Converts the specified byte value into a hexadecimal integer.
+        ///     Converts the specified byte value into a hexadecimal integer.
         /// </summary>
         public static string ByteToHexString(byte value)
         {
@@ -226,7 +225,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Converts the specified byte array into a hexadecimal value and appends it to the specified buffer.
+        ///     Converts the specified byte array into a hexadecimal value and appends it to the specified buffer.
         /// </summary>
         public static StringBuilder ToHexString(StringBuilder dst, byte[] src, int offset, int length)
         {
@@ -255,11 +254,13 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Escapes the specified value, if necessary according to
-        /// <a href="https://tools.ietf.org/html/rfc4180#section-2">RFC-4180</a>.
+        ///     Escapes the specified value, if necessary according to
+        ///     <a href="https://tools.ietf.org/html/rfc4180#section-2">RFC-4180</a>.
         /// </summary>
-        /// <param name="value">The value which will be escaped according to
-        /// <a href="https://tools.ietf.org/html/rfc4180#section-2">RFC-4180</a></param>
+        /// <param name="value">
+        ///     The value which will be escaped according to
+        ///     <a href="https://tools.ietf.org/html/rfc4180#section-2">RFC-4180</a>
+        /// </param>
         /// <returns>the escaped value if necessary, or the value unchanged</returns>
         public static string EscapeCsv(string value)
         {
@@ -299,7 +300,6 @@ namespace DotNetty.Common.Utilities
                                 escaped.Append(DoubleQuote);
                                 escapedDoubleQuote = true;
                             }
-                            break;
                         }
                         break;
                     case LineFeed:

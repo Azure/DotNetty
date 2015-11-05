@@ -1,11 +1,13 @@
-﻿using System;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Common.Utilities
 {
+    using System;
     using System.Diagnostics.Contracts;
 
     /// <summary>
-    /// A collection of utility methods to retrieve and parse the values of the .Net Environment properties.
+    ///     A collection of utility methods to retrieve and parse the values of the .Net Environment properties.
     /// </summary>
     public static class SystemPropertyUtil
     {
@@ -21,7 +23,7 @@ namespace DotNetty.Common.Utilities
 
         public static string Get(string key, string def)
         {
-            Contract.Requires(string.IsNullOrWhiteSpace(key));
+            Contract.Requires(!string.IsNullOrWhiteSpace(key));
             string value = null;
             try
             {

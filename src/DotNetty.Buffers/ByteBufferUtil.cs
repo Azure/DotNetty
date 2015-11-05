@@ -368,16 +368,6 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Toggles the endianness of the specified 16-bit long integer.
-        /// </summary>
-        public static short SwapShort(short value)
-        {
-            byte[] bytes = BitConverter.GetBytes(value);
-            Array.Reverse(bytes);
-            return BitConverter.ToInt16(bytes, 0);
-        }
-
-        /// <summary>
         ///  Toggles the endianness of the specified 64-bit long integer.
         /// </summary>
         public static long SwapLong(long value)
@@ -401,16 +391,6 @@ namespace DotNetty.Buffers
         public static short SwapShort(short value)
         {
             return (short)((((int)value & 0xFF) << 8) | (int)((value >> 8) & 0xFF));
-        }
-
-        /// <summary>
-        ///  Toggles the endianness of the specified 32-bit long integer.
-        /// </summary>
-        public static int SwapInt(int value)
-        {
-            byte[] bytes = BitConverter.GetBytes(value);
-            Array.Reverse(bytes);
-            return BitConverter.ToInt32(bytes, 0);
         }
 
         /// <summary>

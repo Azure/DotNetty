@@ -61,6 +61,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="Channel\DefaulChannelIdTest.cs" />
     <Compile Include="Channel\Embedded\EmbeddedChannelTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

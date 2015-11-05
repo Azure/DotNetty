@@ -1,14 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels.Groups
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+
     public interface IChannelGroup : ICollection<IChannel>, IComparable<IChannelGroup>
     {
         /// <summary>
-        /// Returns the name of this group.  A group name is purely for helping
-        /// you to distinguish one group from others.
+        ///     Returns the name of this group.  A group name is purely for helping
+        ///     you to distinguish one group from others.
         /// </summary>
         string Name { get; }
 

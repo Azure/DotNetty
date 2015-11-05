@@ -1,9 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels.Groups
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+
     public class ChannelGroupException : ChannelException, IEnumerable<KeyValuePair<IChannel, Exception>>
     {
         readonly IReadOnlyCollection<KeyValuePair<IChannel, Exception>> failed;
@@ -26,7 +30,7 @@ namespace DotNetty.Transport.Channels.Groups
             return this.failed.GetEnumerator();
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return this.failed.GetEnumerator();
         }

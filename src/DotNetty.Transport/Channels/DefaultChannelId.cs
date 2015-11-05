@@ -1,47 +1,49 @@
-﻿using DotNetty.Buffers;
-using DotNetty.Common.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Linq;
+    using System.Net;
+    using System.Net.NetworkInformation;
+    using System.Net.Sockets;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using System.Threading;
+    using DotNetty.Buffers;
+    using DotNetty.Common.Internal.Logging;
+    using DotNetty.Common.Utilities;
+
     [Serializable]
     public class DefaultChannelId : IChannelId
     {
-        //static readonly InternalLogger logger = InternalLoggerFactory.GetInstance(typeof(DefaultChannelId));
-        static readonly Regex MachineIdPattern = new Regex("^(?:[0-9a-fA-F][:-]?){6,8}$");
         const int MachineIdLen = 8;
-        static readonly byte[] MachineId;
         const int ProcessIdLen = 4;
         // Maximal value for 64bit systems is 2^22.  See man 5 proc.
         // See https://github.com/netty/netty/issues/2706
         const int MaxProcessId = 4194304;
-        static readonly int ProcessId;
         const int SequenceLen = 4;
         const int TimestampLen = 8;
         const int RandomLen = 4;
-
-        static int nextSequence = 0;
-
+        static readonly IInternalLogger logger = InternalLoggerFactory.GetInstance<DefaultChannelId>();
+        static readonly Regex MachineIdPattern = new Regex("^(?:[0-9a-fA-F][:-]?){6,8}$");
+        static readonly byte[] MachineId;
+        static readonly int ProcessId;
+        static int nextSequence;
         static int seed = (int)(Stopwatch.GetTimestamp() & 0xFFFFFFFF); //used to safly cast long to int, because the timestamp returned is long and it doesn't fit into an int
         static readonly ThreadLocal<Random> ThreadLocalRandom = new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed))); //used to simulate java ThreadLocalRandom
-
         readonly byte[] data = new byte[MachineIdLen + ProcessIdLen + SequenceLen + TimestampLen + RandomLen];
         int hashCode;
 
         [NonSerialized]
-        string shortValue;
+        string longValue;
 
         [NonSerialized]
-        string longValue;
+        string shortValue;
 
         static DefaultChannelId()
         {
@@ -50,17 +52,19 @@ namespace DotNetty.Transport.Channels
             if (customProcessId != null)
             {
                 if (!int.TryParse(customProcessId, out processId))
+                {
                     processId = -1;
+                }
             }
             if (processId < 0 || processId > MaxProcessId)
             {
                 processId = -1;
-                //logger.warn("-Dio.netty.processId: {0} (malformed)", customProcessId);
+                logger.Warn("-Dio.netty.processId: {0} (malformed)", customProcessId);
             }
-            //else if (logger.IsDebugEnabled())
-            //{
-            //    logger.debug("-Dio.netty.processId: {0} (user-set)", processId);
-            //}
+            else if (logger.DebugEnabled)
+            {
+                logger.Debug("-Dio.netty.processId: {0} (user-set)", processId);
+            }
             if (processId < 0)
             {
                 processId = DefaultProcessId();
@@ -83,11 +87,37 @@ namespace DotNetty.Transport.Channels
             MachineId = machineId;
         }
 
+        public string AsShortText()
+        {
+            string asShortText = this.shortValue;
+            if (asShortText == null)
+            {
+                this.shortValue = asShortText = ByteBufferUtil.HexDump(this.data, MachineIdLen + ProcessIdLen + SequenceLen + TimestampLen, RandomLen);
+            }
+
+            return asShortText;
+        }
+
+        public string AsLongText()
+        {
+            string asLongText = this.longValue;
+            if (asLongText == null)
+            {
+                this.longValue = asLongText = this.NewLongValue();
+            }
+            return asLongText;
+        }
+
+        public int CompareTo(IChannelId other)
+        {
+            return 0;
+        }
+
         static byte[] ParseMachineId(string value)
         {
             // Strip separators.
             value = value.Replace("[:-]", "");
-            byte[] machineId = new byte[MachineIdLen];
+            var machineId = new byte[MachineIdLen];
             for (int i = 0; i < value.Length; i += 2)
             {
                 machineId[i] = (byte)int.Parse(value.Substring(i, i + 2), NumberStyles.AllowHexSpecifier);
@@ -97,8 +127,9 @@ namespace DotNetty.Transport.Channels
 
         static int DefaultProcessId()
         {
-            int pId = Process.GetCurrentProcess().Id;;
-            
+            int pId = Process.GetCurrentProcess().Id;
+            ;
+
             if (pId <= 0)
             {
                 pId = ThreadLocalRandom.Value.Next(MaxProcessId + 1);
@@ -124,24 +155,24 @@ namespace DotNetty.Transport.Channels
             {
                 foreach (NetworkInterface iface in NetworkInterface.GetAllNetworkInterfaces())
                 {
-                    var addrs = iface.GetIPProperties().UnicastAddresses;
-                    var addr = addrs.FirstOrDefault(a => !IPAddress.IsLoopback(a.Address));
+                    UnicastIPAddressInformationCollection addrs = iface.GetIPProperties().UnicastAddresses;
+                    UnicastIPAddressInformation addr = addrs.FirstOrDefault(a => !IPAddress.IsLoopback(a.Address));
                     if (addr != null)
                     {
                         ifaces.Add(iface, addr.Address);
                     }
                 }
             }
-                //catch (SocketException e)
-                //{
-                //    logger.warn("Failed to retrieve the list of available network interfaces", e);
-                //}
+            catch (SocketException e)
+            {
+                logger.Warn("Failed to retrieve the list of available network interfaces", e);
+            }
             catch
             {
                 // ignored
             }
 
-            foreach (var entry in ifaces)
+            foreach (KeyValuePair<NetworkInterface, IPAddress> entry in ifaces)
             {
                 NetworkInterface iface = entry.Key;
                 IPAddress addr = entry.Value;
@@ -185,7 +216,7 @@ namespace DotNetty.Transport.Channels
             switch (bestMacAddr.Length)
             {
                 case 6: // EUI-48 - convert to EUI-64
-                    byte[] newAddr = new byte[MachineIdLen];
+                    var newAddr = new byte[MachineIdLen];
                     Array.Copy(bestMacAddr, 0, newAddr, 0, 3);
                     newAddr[3] = 0xFF;
                     newAddr[4] = 0xFE;
@@ -290,32 +321,6 @@ namespace DotNetty.Transport.Channels
             return 4;
         }
 
-        public string AsShortText()
-        {
-            string asShortText = this.shortValue;
-            if (asShortText == null)
-            {
-                this.shortValue = asShortText = ByteBufferUtil.HexDump(this.data, MachineIdLen + ProcessIdLen + SequenceLen + TimestampLen, RandomLen);
-            }
-
-            return asShortText;
-        }
-
-        public string AsLongText()
-        {
-            string asLongText = this.longValue;
-            if (asLongText == null)
-            {
-                this.longValue = asLongText = this.NewLongValue();
-            }
-            return asLongText;
-        }
-
-        public int CompareTo(IChannelId other)
-        {
-            return 0;
-        }
-
         string NewLongValue()
         {
             var buf = new StringBuilder(2 * this.data.Length + 5);
@@ -405,7 +410,7 @@ namespace DotNetty.Transport.Channels
                 return false;
             }
 
-            return Array.Equals(this.data, ((DefaultChannelId)obj).data);
+            return Equals(this.data, ((DefaultChannelId)obj).data);
         }
 
         public override string ToString()
