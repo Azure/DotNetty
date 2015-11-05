@@ -58,6 +58,9 @@
     <Compile Include="Channels\DefaultChannelHandlerInvoker.cs" />
     <Compile Include="Channels\DefaultChannelPipeline.cs" />
     <Compile Include="Channels\DefaultMessageSizeEstimator.cs" />
+    <Compile Include="Channels\Embedded\EmbeddedChannel.cs" />
+    <Compile Include="Channels\Embedded\EmbeddedEventLoop.cs" />
+    <Compile Include="Channels\Embedded\EmbeddedSocketAddress.cs" />
     <Compile Include="Channels\FixedRecvByteBufAllocator.cs" />
     <Compile Include="Channels\MultithreadEventLoopGroup.cs" />
     <Compile Include="Channels\IChannel.cs" />
@@ -75,8 +78,6 @@
     <Compile Include="Channels\IRecvByteBufAllocatorHandle.cs" />
     <Compile Include="Channels\PausableChannelEventExecutor.cs" />
     <Compile Include="Channels\PendingWriteQueue.cs" />
-    <Compile Include="Channels\PipelinePropagationAttribute.cs" />
-    <Compile Include="Channels\PropagationDirections.cs" />
     <Compile Include="Channels\RejectedExecutionException.cs" />
     <Compile Include="Channels\SingleThreadEventLoop.cs" />
     <Compile Include="Channels\SkipAttribute.cs" />
@@ -115,6 +116,7 @@
   <ItemGroup>
     <None Include="DotNetty.Transport.nuspec" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

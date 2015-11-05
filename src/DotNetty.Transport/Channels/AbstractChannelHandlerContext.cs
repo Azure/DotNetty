@@ -15,70 +15,159 @@ namespace DotNetty.Transport.Channels
 
     abstract class AbstractChannelHandlerContext : IChannelHandlerContext
     {
-        static readonly ConditionalWeakTable<Type, Tuple<PropagationDirections>> SkipTable = new ConditionalWeakTable<Type, Tuple<PropagationDirections>>();
+        internal const int MASK_HANDLER_ADDED = 1;
+        internal const int MASK_HANDLER_REMOVED = 1 << 1;
 
-        protected static PropagationDirections GetSkipPropagationFlags(IChannelHandler handler)
+        internal const int MASK_EXCEPTION_CAUGHT = 1 << 2;
+        internal const int MASK_CHANNEL_REGISTERED = 1 << 3;
+        internal const int MASK_CHANNEL_UNREGISTERED = 1 << 4;
+        internal const int MASK_CHANNEL_ACTIVE = 1 << 5;
+        internal const int MASK_CHANNEL_INACTIVE = 1 << 6;
+        internal const int MASK_CHANNEL_READ = 1 << 7;
+        internal const int MASK_CHANNEL_READ_COMPLETE = 1 << 8;
+        internal const int MASK_CHANNEL_WRITABILITY_CHANGED = 1 << 9;
+        internal const int MASK_USER_EVENT_TRIGGERED = 1 << 10;
+
+        internal const int MASK_BIND = 1 << 11;
+        internal const int MASK_CONNECT = 1 << 12;
+        internal const int MASK_DISCONNECT = 1 << 13;
+        internal const int MASK_CLOSE = 1 << 14;
+        internal const int MASK_DEREGISTER = 1 << 15;
+        internal const int MASK_READ = 1 << 16;
+        internal const int MASK_WRITE = 1 << 17;
+        internal const int MASK_FLUSH = 1 << 18;
+
+        internal const int MASKGROUP_INBOUND = MASK_EXCEPTION_CAUGHT |
+            MASK_CHANNEL_REGISTERED |
+            MASK_CHANNEL_UNREGISTERED |
+            MASK_CHANNEL_ACTIVE |
+            MASK_CHANNEL_INACTIVE |
+            MASK_CHANNEL_READ |
+            MASK_CHANNEL_READ_COMPLETE |
+            MASK_CHANNEL_WRITABILITY_CHANGED |
+            MASK_USER_EVENT_TRIGGERED;
+
+        internal const int MASKGROUP_OUTBOUND = MASK_BIND |
+            MASK_CONNECT |
+            MASK_DISCONNECT |
+            MASK_CLOSE |
+            MASK_DEREGISTER |
+            MASK_READ |
+            MASK_WRITE |
+            MASK_FLUSH;
+
+        static readonly ConditionalWeakTable<Type, Tuple<int>> SkipTable = new ConditionalWeakTable<Type, Tuple<int>>();
+
+        protected static int GetSkipPropagationFlags(IChannelHandler handler)
         {
-            Tuple<PropagationDirections> skipDirection = SkipTable.GetValue(
+            Tuple<int> skipDirection = SkipTable.GetValue(
                 handler.GetType(),
                 handlerType => Tuple.Create(CalculateSkipPropagationFlags(handlerType)));
 
-            return skipDirection == null ? PropagationDirections.None : skipDirection.Item1;
+            return skipDirection == null ? 0 : skipDirection.Item1;
         }
 
-        protected static PropagationDirections CalculateSkipPropagationFlags(Type handlerType)
+        protected static int CalculateSkipPropagationFlags(Type handlerType)
         {
-            bool skipOutbound = true;
-            bool skipInbound = true;
+            int flags = 0;
 
-            InterfaceMapping mapping = handlerType.GetInterfaceMap(typeof(IChannelHandler));
-            for (int index = 0; index < mapping.InterfaceMethods.Length && (skipInbound || skipOutbound); index++)
+            // this method should never throw
+            if (IsSkippable(handlerType, "HandlerAdded"))
             {
-                MethodInfo method = mapping.InterfaceMethods[index];
-                var propagationAttribute = method.GetCustomAttribute<PipelinePropagationAttribute>();
-                if (propagationAttribute == null)
-                {
-                    continue;
-                }
+                flags |= MASK_HANDLER_ADDED;
+            }
+            if (IsSkippable(handlerType, "HandlerRemoved"))
+            {
+                flags |= MASK_HANDLER_REMOVED;
+            }
+            if (IsSkippable(handlerType, "ExceptionCaught", typeof(Exception)))
+            {
+                flags |= MASK_EXCEPTION_CAUGHT;
+            }
+            if (IsSkippable(handlerType, "ChannelRegistered"))
+            {
+                flags |= MASK_CHANNEL_REGISTERED;
+            }
+            if (IsSkippable(handlerType, "ChannelUnregistered"))
+            {
+                flags |= MASK_CHANNEL_UNREGISTERED;
+            }
+            if (IsSkippable(handlerType, "ChannelActive"))
+            {
+                flags |= MASK_CHANNEL_ACTIVE;
+            }
+            if (IsSkippable(handlerType, "ChannelInactive"))
+            {
+                flags |= MASK_CHANNEL_INACTIVE;
+            }
+            if (IsSkippable(handlerType, "ChannelRead", typeof(object)))
+            {
+                flags |= MASK_CHANNEL_READ;
+            }
+            if (IsSkippable(handlerType, "ChannelReadComplete"))
+            {
+                flags |= MASK_CHANNEL_READ_COMPLETE;
+            }
+            if (IsSkippable(handlerType, "ChannelWritabilityChanged"))
+            {
+                flags |= MASK_CHANNEL_WRITABILITY_CHANGED;
+            }
+            if (IsSkippable(handlerType, "UserEventTriggered", typeof(object)))
+            {
+                flags |= MASK_USER_EVENT_TRIGGERED;
+            }
+            if (IsSkippable(handlerType, "BindAsync", typeof(EndPoint)))
+            {
+                flags |= MASK_BIND;
+            }
+            if (IsSkippable(handlerType, "ConnectAsync", typeof(EndPoint), typeof(EndPoint)))
+            {
+                flags |= MASK_CONNECT;
+            }
+            if (IsSkippable(handlerType, "DisconnectAsync"))
+            {
+                flags |= MASK_DISCONNECT;
+            }
+            if (IsSkippable(handlerType, "CloseAsync"))
+            {
+                flags |= MASK_CLOSE;
+            }
+            if (IsSkippable(handlerType, "DeregisterAsync"))
+            {
+                flags |= MASK_DEREGISTER;
+            }
+            if (IsSkippable(handlerType, "Read"))
+            {
+                flags |= MASK_READ;
+            }
+            if (IsSkippable(handlerType, "WriteAsync", typeof(object)))
+            {
+                flags |= MASK_WRITE;
+            }
+            if (IsSkippable(handlerType, "Flush"))
+            {
+                flags |= MASK_FLUSH;
+            }
+            return flags;
+        }
 
-                MethodInfo implMethod = mapping.TargetMethods[index];
-                if (implMethod.GetCustomAttribute<SkipAttribute>(false) == null)
-                {
-                    switch (propagationAttribute.Direction)
-                    {
-                        case PropagationDirections.Inbound:
-                            skipInbound = false;
-                            break;
-                        case PropagationDirections.Outbound:
-                            skipOutbound = false;
-                            break;
-                        default:
-                            throw new NotSupportedException(string.Format("PropagationDirection value of {0} is not supported.", propagationAttribute.Direction));
-                    }
-                }
-            }
-
-            var result = PropagationDirections.None;
-            if (skipInbound)
-            {
-                result |= PropagationDirections.Inbound;
-            }
-            if (skipOutbound)
-            {
-                result |= PropagationDirections.Outbound;
-            }
-            return result;
+        protected static bool IsSkippable(Type handlerType, string methodName, params Type[] paramTypes)
+        {
+            Type[] newParamTypes = new Type[paramTypes.Length + 1];
+            newParamTypes[0] = typeof(IChannelHandlerContext);
+            Array.Copy(paramTypes, 0, newParamTypes, 1, paramTypes.Length);
+            return handlerType.GetMethod(methodName, newParamTypes).GetCustomAttribute<SkipAttribute>(false) != null;
         }
 
         internal volatile AbstractChannelHandlerContext Next;
         internal volatile AbstractChannelHandlerContext Prev;
 
-        internal readonly PropagationDirections SkipPropagationFlags;
+        internal readonly int SkipPropagationFlags;
         readonly IChannelHandlerInvoker invoker;
         volatile PausableChannelEventExecutor wrappedEventLoop;
 
         protected AbstractChannelHandlerContext(IChannelPipeline pipeline, IChannelHandlerInvoker invoker,
-            string name, PropagationDirections skipPropagationDirections)
+            string name, int skipPropagationDirections)
         {
             Contract.Requires(pipeline != null);
             Contract.Requires(name != null);
@@ -293,7 +382,7 @@ namespace DotNetty.Transport.Channels
             {
                 ctx = ctx.Next;
             }
-            while ((ctx.SkipPropagationFlags & PropagationDirections.Inbound) == PropagationDirections.Inbound);
+            while ((ctx.SkipPropagationFlags & MASKGROUP_INBOUND) == MASKGROUP_INBOUND);
             return ctx;
         }
 
@@ -304,7 +393,7 @@ namespace DotNetty.Transport.Channels
             {
                 ctx = ctx.Prev;
             }
-            while ((ctx.SkipPropagationFlags & PropagationDirections.Outbound) == PropagationDirections.Outbound);
+            while ((ctx.SkipPropagationFlags & MASKGROUP_OUTBOUND) == MASKGROUP_OUTBOUND);
             return ctx;
         }
 

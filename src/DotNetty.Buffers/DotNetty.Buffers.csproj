@@ -57,6 +57,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SlicedByteBuffer.cs" />
     <Compile Include="PooledByteBufferAllocator.cs" />
+    <Compile Include="SwappedByteBuffer.cs" />
     <Compile Include="Unpooled.cs" />
     <Compile Include="UnpooledByteBufferAllocator.cs" />
     <Compile Include="UnpooledHeapByteBuffer.cs" />

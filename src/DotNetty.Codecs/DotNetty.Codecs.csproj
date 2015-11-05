@@ -48,6 +48,7 @@
     <Compile Include="DecoderException.cs" />
     <Compile Include="EncoderException.cs" />
     <Compile Include="LengthFieldBasedFrameDecoder.cs" />
+    <Compile Include="LengthFieldPrepender.cs" />
     <Compile Include="MessageToMessageEncoder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReplayingDecoder.cs" />

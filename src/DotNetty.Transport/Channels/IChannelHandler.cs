@@ -12,42 +12,32 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         /// The {@link Channel} of the {@link ChannelHandlerContext} was registered with its {@link EventLoop}
         /// </summary>
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ChannelRegistered(IChannelHandlerContext context);
 
         /// <summary>
         /// The {@link Channel} of the {@link ChannelHandlerContext} was unregistered from its {@link EventLoop}
         /// </summary>
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ChannelUnregistered(IChannelHandlerContext context);
 
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ChannelActive(IChannelHandlerContext context);
 
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ChannelInactive(IChannelHandlerContext context);
 
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ChannelRead(IChannelHandlerContext context, object message);
 
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ChannelReadComplete(IChannelHandlerContext context);
 
         /// <summary>
         /// Gets called once the writable state of a {@link Channel} changed. You can check the state with
         /// {@link Channel#isWritable()}.
         /// </summary>
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ChannelWritabilityChanged(IChannelHandlerContext context);
 
         void HandlerAdded(IChannelHandlerContext context);
 
         void HandlerRemoved(IChannelHandlerContext context);
 
-        [PipelinePropagation(PropagationDirections.Outbound)]
         Task WriteAsync(IChannelHandlerContext context, object message);
-
-        [PipelinePropagation(PropagationDirections.Outbound)]
         void Flush(IChannelHandlerContext context);
 
         /// <summary>
@@ -58,7 +48,6 @@ namespace DotNetty.Transport.Channels
         /// @param promise       the {@link ChannelPromise} to notify once the operation completes
         /// @throws Exception    thrown if an error accour
         /// </summary>
-        [PipelinePropagation(PropagationDirections.Outbound)]
         Task BindAsync(IChannelHandlerContext context, EndPoint localAddress);
 
         /// <summary>
@@ -70,7 +59,6 @@ namespace DotNetty.Transport.Channels
         /// @param promise           the {@link ChannelPromise} to notify once the operation completes
         /// @throws Exception        thrown if an error accour
         /// </summary>
-        [PipelinePropagation(PropagationDirections.Outbound)]
         Task ConnectAsync(IChannelHandlerContext context, EndPoint remoteAddress, EndPoint localAddress);
 
         /// <summary>
@@ -80,22 +68,15 @@ namespace DotNetty.Transport.Channels
         /// @param promise           the {@link ChannelPromise} to notify once the operation completes
         /// @throws Exception        thrown if an error accour
         /// </summary>
-        [PipelinePropagation(PropagationDirections.Outbound)]
         Task DisconnectAsync(IChannelHandlerContext context);
-
-        [PipelinePropagation(PropagationDirections.Outbound)]
         Task CloseAsync(IChannelHandlerContext context);
 
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void ExceptionCaught(IChannelHandlerContext context, Exception exception);
 
-        [PipelinePropagation(PropagationDirections.Outbound)]
         Task DeregisterAsync(IChannelHandlerContext context);
 
-        [PipelinePropagation(PropagationDirections.Outbound)]
         void Read(IChannelHandlerContext context);
 
-        [PipelinePropagation(PropagationDirections.Inbound)]
         void UserEventTriggered(IChannelHandlerContext context, object evt);
     }
 }

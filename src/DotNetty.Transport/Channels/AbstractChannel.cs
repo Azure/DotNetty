@@ -121,7 +121,6 @@ namespace DotNetty.Transport.Channels
                 EndPoint address = this.remoteAddress;
                 return address ?? this.CacheRemoteAddress();
             }
-
         }
 
         protected abstract EndPoint LocalAddressInternal { get; }
@@ -172,27 +171,27 @@ namespace DotNetty.Transport.Channels
             get { return this.registered; }
         }
 
-        public Task BindAsync(EndPoint localAddress)
+        public virtual Task BindAsync(EndPoint localAddress)
         {
             return this.pipeline.BindAsync(localAddress);
         }
 
-        public Task ConnectAsync(EndPoint remoteAddress)
+        public virtual Task ConnectAsync(EndPoint remoteAddress)
         {
             return this.pipeline.ConnectAsync(remoteAddress);
         }
 
-        public Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
+        public virtual Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
             return this.pipeline.ConnectAsync(remoteAddress, localAddress);
         }
 
-        public Task DisconnectAsync()
+        public virtual Task DisconnectAsync()
         {
             return this.pipeline.DisconnectAsync();
         }
 
-        public Task CloseAsync()
+        public virtual Task CloseAsync()
         {
             return this.pipeline.CloseAsync();
         }
@@ -256,7 +255,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// Create a new {@link AbstractUnsafe} instance which will be used for the life-time of the {@link Channel}
+        /// Create a new <see cref="AbstractUnsafe"/> instance which will be used for the life-time of the <see cref="IChannel"/>
         /// </summary>
         protected abstract IChannelUnsafe NewUnsafe();
 
@@ -365,7 +364,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// {@link Unsafe} implementation which sub-classes must extend and use.
+        /// <see cref="IChannelUnsafe"/> implementation which sub-classes must extend and use.
         /// </summary>
         protected abstract class AbstractUnsafe : IChannelUnsafe
         {

@@ -126,6 +126,8 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Properties\Friends.cs" />
+    <Compile Include="Concurrency\AbstractEventExecutor.cs" />
+    <Compile Include="Concurrency\AbstractScheduledEventExecutor.cs" />
     <Compile Include="Concurrency\ExecutorTaskScheduler.cs" />
     <Compile Include="Concurrency\IEventExecutor.cs" />
     <Compile Include="Concurrency\IPausableEventExecutor.cs" />
@@ -147,6 +149,7 @@
     <Compile Include="ThreadLocalObjectList.cs" />
     <Compile Include="ThreadLocalPool.cs" />
     <Compile Include="Timestamp.cs" />
+    <Compile Include="Utilities\AtomicReference.cs" />
     <Compile Include="Utilities\ByteArrayExtensions.cs" />
     <Compile Include="Utilities\DebugExtensions.cs" />
     <Compile Include="Utilities\MpscLinkedQueue.cs" />
@@ -158,7 +161,6 @@
   <ItemGroup>
     <None Include="DotNetty.Common.nuspec" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -4,10 +4,12 @@
 namespace DotNetty.Common.Utilities
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Linq;
 
-    public class PriorityQueue<T>
+    public class PriorityQueue<T> : IEnumerable<T>
         where T : class
     {
         readonly IComparer<T> comparer;
@@ -27,6 +29,11 @@ namespace DotNetty.Common.Utilities
         public PriorityQueue()
             : this(Comparer<T>.Default)
         {
+        }
+
+        public int Count
+        {
+            get { return this.count; }
         }
 
         public T Dequeue()
@@ -114,6 +121,25 @@ namespace DotNetty.Common.Utilities
                 index = childIndex;
             }
             this.items[index] = item;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (int i = 0; i < this.count; i++)
+            {
+                yield return this.items[i];
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+        public void Clear()
+        {
+            this.count = 0;
+            Array.Clear(this.items, 0, 0);
         }
     }
 }

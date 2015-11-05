@@ -31,7 +31,7 @@ namespace DotNetty.Buffers
 
             if (a.Order == b.Order)
             {
-                for (int i = longCount; i > 0; i --)
+                for (int i = longCount; i > 0; i--)
                 {
                     if (a.GetLong(aStartIndex) != b.GetLong(bStartIndex))
                     {
@@ -43,7 +43,7 @@ namespace DotNetty.Buffers
             }
             else
             {
-                for (int i = longCount; i > 0; i --)
+                for (int i = longCount; i > 0; i--)
                 {
                     if (a.GetLong(aStartIndex) != SwapLong(b.GetLong(bStartIndex)))
                     {
@@ -54,14 +54,14 @@ namespace DotNetty.Buffers
                 }
             }
 
-            for (int i = byteCount; i > 0; i --)
+            for (int i = byteCount; i > 0; i--)
             {
                 if (a.GetByte(aStartIndex) != b.GetByte(bStartIndex))
                 {
                     return false;
                 }
-                aStartIndex ++;
-                bStartIndex ++;
+                aStartIndex++;
+                bStartIndex++;
             }
 
             return true;
@@ -87,9 +87,25 @@ namespace DotNetty.Buffers
         /// </summary>
         public static long SwapLong(long value)
         {
-            byte[] bytes = BitConverter.GetBytes(value);
-            Array.Reverse(bytes);
-            return BitConverter.ToInt64(bytes, 0);
+            return (((long)SwapInt((int)value) & 0xFFFFFFFF) << 32)
+                | ((long)SwapInt((int)(value >> 32)) & 0xFFFFFFFF);
+        }
+
+        /// <summary>
+        /// Toggles the endianness of the specified 32-bit integer.
+        /// </summary>
+        public static int SwapInt(int value)
+        {
+            return (((int)SwapShort((short)value) & 0xFFFF) << 16)
+                | ((int)SwapShort((short)(value >> 16)) & 0xFFFF);
+        }
+
+        /// <summary>
+        /// Toggles the endianness of the specified 16-bit integer.
+        /// </summary>
+        public static short SwapShort(short value)
+        {
+            return (short)((((int)value & 0xFF) << 8) | (int)((value >> 8) & 0xFF));
         }
     }
 }
