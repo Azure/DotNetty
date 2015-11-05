@@ -37,31 +37,31 @@ namespace DotNetty.Transport.Channels
 
         string strVal;
 
-        ///// <summary>
-        // /// Creates a new instance.
-        // ///
-        // /// @param parent
-        // ///        the parent of this channel. {@code null} if there's no parent.
-        // /// </summary>
-        //protected AbstractChannel(IChannel parent)
-        //    : this(DefaultChannelId.NewInstance())
-        //{
-        //}
+        /// <summary>
+        /// Creates a new instance.
+        ///
+        /// @param parent
+        ///        the parent of this channel. {@code null} if there's no parent.
+        /// </summary>
+        protected AbstractChannel(IChannel parent)
+            : this(parent, DefaultChannelId.NewInstance())
+        {
+        }
         /// <summary>
         /// Creates a new instance.
         ///
         //* @param parent
         //*        the parent of this channel. {@code null} if there's no parent.
         /// </summary>
-        protected AbstractChannel(IChannel parent /*, ChannelId id*/)
+        protected AbstractChannel(IChannel parent , IChannelId id)
         {
             this.Parent = parent;
-            //this.Id = id;
+            this.Id = id;
             this.channelUnsafe = this.NewUnsafe();
             this.pipeline = new DefaultChannelPipeline(this);
         }
 
-        // todo: public ChannelId Id { get; private set; }
+        public IChannelId Id { get; private set; }
 
         public bool IsWritable
         {
@@ -259,14 +259,14 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         protected abstract IChannelUnsafe NewUnsafe();
 
-        //   /// <summary>
-        //* Returns the ID of this channel.
-        ///// </summary>
+           /// <summary>
+        /// Returns the ID of this channel.
+        /// </summary>
 
-        //public override int GetHashCode()
-        //{
-        //    return id.hashCode();
-        //}
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
 
         /// <summary>
         /// Returns {@code true} if and only if the specified object is identical
@@ -277,15 +277,15 @@ namespace DotNetty.Transport.Channels
             return this == o;
         }
 
-        //public int CompareTo(IChannel o)
-        //{
-        //    if (ReferenceEquals(this, o))
-        //    {
-        //        return 0;
-        //    }
+        public int CompareTo(IChannel o)
+        {
+            if (ReferenceEquals(this, o))
+            {
+                return 0;
+            }
 
-        //    return id().compareTo(o.id());
-        //}
+            return Id.CompareTo(o.Id);
+        }
 
         /// <summary>
         /// Returns the {@link String} representation of this channel.  The returned
@@ -320,7 +320,7 @@ namespace DotNetty.Transport.Channels
 
                 StringBuilder buf = new StringBuilder(96)
                     .Append("[id: 0x")
-                    //.Append(id.asShortText())
+                    .Append(Id.AsShortText())
                     .Append(", ")
                     .Append(srcAddr)
                     .Append(active ? " => " : " :> ")
@@ -332,7 +332,7 @@ namespace DotNetty.Transport.Channels
             {
                 StringBuilder buf = new StringBuilder(64)
                     .Append("[id: 0x")
-                    //.Append(id.asShortText())
+                    .Append(Id.AsShortText())
                     .Append(", ")
                     .Append(localAddr)
                     .Append(']');
@@ -342,7 +342,7 @@ namespace DotNetty.Transport.Channels
             {
                 StringBuilder buf = new StringBuilder(16)
                     .Append("[id: 0x")
-                    //.Append(id.asShortText())
+                    .Append(Id.AsShortText())
                     .Append(']');
                 this.strVal = buf.ToString();
             }
