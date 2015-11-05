@@ -168,6 +168,7 @@ namespace DotNetty.Codecs
   * </pre>
   * @see LengthFieldPrepender
   */
+
     public class LengthFieldBasedFrameDecoder : ByteToMessageDecoder
     {
         readonly ByteOrder byteOrder;
@@ -189,10 +190,9 @@ namespace DotNetty.Codecs
         /// greater than this value then <see cref="TooLongFrameException"/> will be thrown.</param>
         /// <param name="lengthFieldOffset">The offset of the length field.</param>
         /// <param name="lengthFieldLength">The length of the length field.</param>
-        public LengthFieldBasedFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength) 
+        public LengthFieldBasedFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength)
             : this(maxFrameLength, lengthFieldOffset, lengthFieldLength, 0, 0)
         {
-            
         }
 
         /// <summary>
@@ -207,7 +207,6 @@ namespace DotNetty.Codecs
         public LengthFieldBasedFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment, int initialBytesToStrip)
             : this(maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip, true)
         {
-            
         }
 
         /// <summary>
@@ -229,7 +228,8 @@ namespace DotNetty.Codecs
         /// </param>
         public LengthFieldBasedFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment, int initialBytesToStrip, bool failFast)
             : this(ByteOrder.BigEndian, maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip, failFast)
-        { }
+        {
+        }
 
         /// <summary>
         /// Create a new instance.
@@ -251,17 +251,25 @@ namespace DotNetty.Codecs
         /// </param>
         public LengthFieldBasedFrameDecoder(ByteOrder byteOrder, int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment, int initialBytesToStrip, bool failFast)
         {
-            if(maxFrameLength <= 0)
+            if (maxFrameLength <= 0)
+            {
                 throw new ArgumentOutOfRangeException("maxFrameLength", "maxFrameLength must be a positive integer: " + maxFrameLength);
-            if(lengthFieldOffset < 0)
+            }
+            if (lengthFieldOffset < 0)
+            {
                 throw new ArgumentOutOfRangeException("lengthFieldOffset", "lengthFieldOffset must be a non-negative integer: " + lengthFieldOffset);
-            if(initialBytesToStrip < 0)
+            }
+            if (initialBytesToStrip < 0)
+            {
                 throw new ArgumentOutOfRangeException("initialBytesToStrip", "initialBytesToStrip must be a non-negative integer: " + initialBytesToStrip);
-            if(lengthFieldOffset > maxFrameLength - lengthFieldLength)
+            }
+            if (lengthFieldOffset > maxFrameLength - lengthFieldLength)
+            {
                 throw new ArgumentOutOfRangeException("maxFrameLength", "maxFrameLength (" + maxFrameLength + ") " +
                     "must be equal to or greater than " +
                     "lengthFieldOffset (" + lengthFieldOffset + ") + " +
                     "lengthFieldLength (" + lengthFieldLength + ").");
+            }
 
             this.byteOrder = byteOrder;
             this.maxFrameLength = maxFrameLength;
@@ -302,7 +310,9 @@ namespace DotNetty.Codecs
             }
 
             if (input.ReadableBytes < this.lengthFieldEndOffset)
+            {
                 return null;
+            }
 
             int actualLengthFieldOffset = input.ReaderIndex + this.lengthFieldOffset;
             long frameLength = this.GetUnadjustedFrameLength(input, actualLengthFieldOffset, this.lengthFieldLength, this.byteOrder);
@@ -313,7 +323,7 @@ namespace DotNetty.Codecs
                 throw new CorruptedFrameException("negative pre-adjustment length field: " + frameLength);
             }
 
-            frameLength += this.lengthAdjustment - this.lengthFieldEndOffset;
+            frameLength += this.lengthAdjustment + this.lengthFieldEndOffset;
 
             if (frameLength < this.lengthFieldEndOffset)
             {
@@ -346,7 +356,9 @@ namespace DotNetty.Codecs
             // never overflows because it's less than maxFrameLength
             int frameLengthInt = (int)frameLength;
             if (input.ReadableBytes < frameLengthInt)
+            {
                 return null;
+            }
 
             if (this.initialBytesToStrip > frameLengthInt)
             {
@@ -442,8 +454,8 @@ namespace DotNetty.Codecs
             else
             {
                 throw new TooLongFrameException(
-                           "Adjusted frame length exceeds " + this.maxFrameLength +
-                           " - discarding");
+                    "Adjusted frame length exceeds " + this.maxFrameLength +
+                        " - discarding");
             }
         }
     }

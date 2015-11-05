@@ -19,7 +19,7 @@ namespace DotNetty.Transport.Channels
     sealed class DefaultChannelPipeline : IChannelPipeline
     {
         internal static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<DefaultChannelPipeline>();
-        
+
         static readonly ConditionalWeakTable<Type, string>[] NameCaches = CreateNameCaches();
 
         static ConditionalWeakTable<Type, string>[] CreateNameCaches()
@@ -450,7 +450,7 @@ namespace DotNetty.Transport.Channels
 
         void CallHandlerAdded(AbstractChannelHandlerContext ctx)
         {
-            if ((ctx.SkipPropagationFlags & PropagationDirections.Inbound /* todo .MASK_HANDLER_ADDED */) != 0)
+            if ((ctx.SkipPropagationFlags & AbstractChannelHandlerContext.MASK_HANDLER_ADDED) != 0)
             {
                 return;
             }
@@ -502,7 +502,7 @@ namespace DotNetty.Transport.Channels
 
         void CallHandlerRemoved(AbstractChannelHandlerContext ctx)
         {
-            if ((ctx.SkipPropagationFlags & PropagationDirections.Inbound /* todo .MASK_HANDLER_REMOVED*/) != 0)
+            if ((ctx.SkipPropagationFlags & AbstractChannelHandlerContext.MASK_HANDLER_REMOVED) != 0)
             {
                 return;
             }
@@ -925,10 +925,10 @@ namespace DotNetty.Transport.Channels
 
         sealed class TailContext : AbstractChannelHandlerContext, IChannelHandler
         {
-            static readonly PropagationDirections SkipPropagationDirections = CalculateSkipPropagationFlags(typeof(TailContext));
+            static readonly int SkipFlags = CalculateSkipPropagationFlags(typeof(TailContext));
 
             public TailContext(DefaultChannelPipeline pipeline)
-                : base(pipeline, null, "<null>", SkipPropagationDirections)
+                : base(pipeline, null, "<null>", SkipFlags)
             {
             }
 
@@ -1056,12 +1056,12 @@ namespace DotNetty.Transport.Channels
 
         sealed class HeadContext : AbstractChannelHandlerContext, IChannelHandler
         {
-            static readonly PropagationDirections SkipPropagationDirections = CalculateSkipPropagationFlags(typeof(HeadContext));
+            static readonly int SkipFlags = CalculateSkipPropagationFlags(typeof(HeadContext));
 
             readonly IChannel channel;
 
             public HeadContext(DefaultChannelPipeline pipeline)
-                : base(pipeline, null, "<null>", SkipPropagationDirections)
+                : base(pipeline, null, "<null>", SkipFlags)
             {
                 this.channel = pipeline.Channel();
             }

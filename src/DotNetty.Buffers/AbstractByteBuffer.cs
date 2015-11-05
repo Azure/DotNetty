@@ -18,6 +18,7 @@ namespace DotNetty.Buffers
     {
         int markedReaderIndex;
         int markedWriterIndex;
+        SwappedByteBuffer swappedByteBuffer;
 
         protected AbstractByteBuffer(int maxCapacity)
         {
@@ -710,7 +711,21 @@ namespace DotNetty.Buffers
             {
                 return this;
             }
-            throw new NotImplementedException("TODO: bring over SwappedByteBuf");
+            SwappedByteBuffer swappedBuf = this.swappedByteBuffer;
+            if (swappedBuf == null)
+            {
+                this.swappedByteBuffer = swappedBuf = this.NewSwappedByteBuffer();
+            }
+            return swappedBuf;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="SwappedByteBuffer"/> for this <see cref="IByteBuffer"/> instance.
+        /// </summary>
+        /// <returns>A <see cref="SwappedByteBuffer"/> for this buffer.</returns>
+        protected SwappedByteBuffer NewSwappedByteBuffer()
+        {
+            return new SwappedByteBuffer(this);
         }
 
         protected void AdjustMarkers(int decrement)
