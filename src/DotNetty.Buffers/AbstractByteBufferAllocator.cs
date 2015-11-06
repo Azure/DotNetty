@@ -4,6 +4,7 @@
 namespace DotNetty.Buffers
 {
     using System;
+    using DotNetty.Common;
 
     /// <summary>
     /// Abstract base class for <see cref="IByteBufferAllocator"/> instances
@@ -12,6 +13,34 @@ namespace DotNetty.Buffers
     {
         const int DefaultInitialCapacity = 256;
         const int DefaultMaxComponents = 16;
+
+        protected static IByteBuffer ToLeakAwareBuffer(IByteBuffer buf)
+        {
+            IResourceLeak leak;
+            switch (ResourceLeakDetector.Level)
+            {
+                case ResourceLeakDetector.DetectionLevel.Simple:
+                    leak = AbstractByteBuffer.LeakDetector.Open(buf);
+                    if (leak != null)
+                    {
+                        buf = new SimpleLeakAwareByteBuf(buf, leak);
+                    }
+                    break;
+                case ResourceLeakDetector.DetectionLevel.Advanced:
+                case ResourceLeakDetector.DetectionLevel.Paranoid:
+                    leak = AbstractByteBuffer.LeakDetector.Open(buf);
+                    if (leak != null)
+                    {
+                        buf = new AdvancedLeakAwareByteBuf(buf, leak);
+                    }
+                    break;
+                case ResourceLeakDetector.DetectionLevel.Disabled:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            return buf;
+        }
 
         readonly IByteBuffer emptyBuffer;
 

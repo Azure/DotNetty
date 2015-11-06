@@ -18,7 +18,7 @@ namespace DotNetty.Buffers
             this.pool = new ThreadLocalPool<PooledByteBuffer>(
                 handle => new PooledByteBuffer(handle, this, maxPooledBufSize, int.MaxValue),
                 maxLocalPoolSize / maxPooledBufSize,
-                false); // todo: prepare
+                false);
         }
 
         public int MaxPooledBufSize { get; private set; }
@@ -32,7 +32,8 @@ namespace DotNetty.Buffers
 
             PooledByteBuffer buffer = this.pool.Take();
             buffer.Init();
-            return buffer;
+
+            return ToLeakAwareBuffer(buffer);
         }
     }
 }

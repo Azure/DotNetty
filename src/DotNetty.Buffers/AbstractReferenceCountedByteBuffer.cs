@@ -125,6 +125,16 @@ namespace DotNetty.Buffers
             }
         }
 
+        public override IReferenceCounted Touch()
+        {
+            return this;
+        }
+
+        public override IReferenceCounted Touch(object hint)
+        {
+            return this;
+        }
+
         protected abstract void Deallocate();
     }
 }

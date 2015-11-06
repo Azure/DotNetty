@@ -3,6 +3,7 @@
 
 namespace DotNetty.Common.Internal.Logging
 {
+    using System;
     using System.Diagnostics.Contracts;
 
     /// <summary>
@@ -57,13 +58,23 @@ namespace DotNetty.Common.Internal.Logging
         }
 
         /// <summary>
-        /// Creates a new logger instance with the name of the specified class.
+        /// Creates a new logger instance with the name of the specified type.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="T">type where logger is used</typeparam>
+        /// <returns>logger instance</returns>
         public static IInternalLogger GetInstance<T>()
         {
-            return GetInstance(typeof(T).FullName);
+            return GetInstance(typeof(T));
+        }
+
+        /// <summary>
+        /// Creates a new logger instance with the name of the specified type.
+        /// </summary>
+        /// <param name="type">type where logger is used</param>
+        /// <returns>logger instance</returns>
+        public static IInternalLogger GetInstance(Type type)
+        {
+            return GetInstance(type.FullName);
         }
 
         /// <summary>
@@ -75,7 +86,6 @@ namespace DotNetty.Common.Internal.Logging
         {
             return DefaultFactory.NewInstance(name);
         }
-
         /// <summary>
         /// Creates a new logger instance with the specified name.
         /// </summary>

@@ -126,8 +126,15 @@ namespace DotNetty.Buffers
         /// It moves the bytes between <see cref="ReaderIndex"/> and <see cref="WriterIndex"/> to the 0th index,
         /// and sets <see cref="ReaderIndex"/> and <see cref="WriterIndex"/> to <c>0</c> and <c>oldWriterIndex - oldReaderIndex</c> respectively.
         /// </summary>
-        /// <returns></returns>
         IByteBuffer DiscardReadBytes();
+
+        /// <summary>
+        /// Similar to <see cref="DiscardReadBytes"/> except that this method might discard
+        /// some, all, or none of read bytes depending on its internal implementation to reduce
+        /// overall memory bandwidth consumption at the cost of potentially additional memory
+        /// consumption.
+        /// </summary>
+        IByteBuffer DiscardSomeReadBytes();
 
         /// <summary>
         /// Makes sure the number of <see cref="WritableBytes"/> is equal to or greater than
@@ -137,6 +144,27 @@ namespace DotNetty.Buffers
         /// <param name="minWritableBytes">The expected number of minimum writable bytes</param>
         /// <exception cref="IndexOutOfRangeException"> if <see cref="WriterIndex"/> + <see cref="minWritableBytes"/> > <see cref="MaxCapacity"/>.</exception>
         IByteBuffer EnsureWritable(int minWritableBytes);
+
+        /// <summary>
+        /// Tries to make sure the number of <see cref="WritableBytes"/>
+        /// is equal to or greater than the specified value. Unlike <see cref="EnsureWritable(int)"/>,
+        /// this method does not raise an exception but returns a code.
+        /// </summary>
+        /// <param name="minWritableBytes">the expected minimum number of writable bytes</param>
+        /// <param name="force">
+        /// When <see cref="WriterIndex"/> + <c>minWritableBytes</c> > <see cref="MaxCapacity"/>:
+        /// <ul>
+        /// <li><c>true</c> - the capacity of the buffer is expanded to <see cref="MaxCapacity"/></li>
+        /// <li><c>false</c> - the capacity of the buffer is unchanged</li>
+        /// </ul>
+        /// </param>
+        /// <returns>
+        /// <c>0</c> if the buffer has enough writable bytes, and its capacity is unchanged.
+        /// <c>1</c> if the buffer does not have enough bytes, and its capacity is unchanged.
+        /// <c>2</c> if the buffer has enough writable bytes, and its capacity has been increased.
+        /// <c>3</c> if the buffer does not have enough bytes, but its capacity has been increased to its maximum.
+        /// </returns>
+        int EnsureWritable(int minWritableBytes, bool force);
 
         /// <summary>
         /// Gets a boolean at the specified absolute <see cref="index"/> in this buffer.
@@ -295,7 +323,7 @@ namespace DotNetty.Buffers
         /// This method does not directly modify <see cref="ReaderIndex"/> or <see cref="WriterIndex"/> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">if the specified <see cref="index"/> is less than <c>0</c> or <c>index + 1</c> greater than <see cref="Capacity"/></exception>
-        IByteBuffer SetUnsignedShort(int index, int value);
+        IByteBuffer SetUnsignedShort(int index, ushort value);
 
         /// <summary>
         /// Sets the specified integer at the specified absolute <see cref="index"/> in this buffer.
@@ -488,7 +516,7 @@ namespace DotNetty.Buffers
 
         IByteBuffer WriteShort(int value);
 
-        IByteBuffer WriteUnsignedShort(int value);
+        IByteBuffer WriteUnsignedShort(ushort value);
 
         IByteBuffer WriteInt(int value);
 

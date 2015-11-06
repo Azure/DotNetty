@@ -50,12 +50,26 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
         public IReferenceCounted Retain()
         {
-            return this.Payload.Retain();
+            this.Payload.Retain();
+            return this;
         }
 
         public IReferenceCounted Retain(int increment)
         {
-            return this.Payload.Retain(increment);
+            this.Payload.Retain(increment);
+            return this;
+        }
+
+        public IReferenceCounted Touch()
+        {
+            this.Payload.Touch();
+            return this;
+        }
+
+        public IReferenceCounted Touch(object hint)
+        {
+            this.Payload.Touch(hint);
+            return this;
         }
 
         public bool Release()

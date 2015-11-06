@@ -381,8 +381,8 @@ namespace DotNetty.Buffers
         /// </summary>
         public static int SwapInt(int value)
         {
-            return (((int)SwapShort((short)value) & 0xFFFF) << 16)
-                | ((int)SwapShort((short)(value >> 16)) & 0xFFFF);
+            return ((SwapShort((short)value) & 0xFFFF) << 16)
+                | (SwapShort((short)(value >> 16)) & 0xFFFF);
         }
 
         /// <summary>
@@ -390,7 +390,7 @@ namespace DotNetty.Buffers
         /// </summary>
         public static short SwapShort(short value)
         {
-            return (short)((((int)value & 0xFF) << 8) | (int)((value >> 8) & 0xFF));
+            return (short)(((value & 0xFF) << 8) | (value >> 8) & 0xFF);
         }
 
         /// <summary>

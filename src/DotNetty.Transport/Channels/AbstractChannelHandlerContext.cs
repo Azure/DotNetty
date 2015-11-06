@@ -11,9 +11,11 @@ namespace DotNetty.Transport.Channels
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Utilities;
 
-    abstract class AbstractChannelHandlerContext : IChannelHandlerContext
+    abstract class AbstractChannelHandlerContext : IChannelHandlerContext, IResourceLeakHint
     {
         internal const int MASK_HANDLER_ADDED = 1;
         internal const int MASK_HANDLER_REMOVED = 1 << 1;
@@ -280,6 +282,7 @@ namespace DotNetty.Transport.Channels
         public IChannelHandlerContext FireChannelRead(object msg)
         {
             AbstractChannelHandlerContext target = this.FindContextInbound();
+            ReferenceCountUtil.Touch(msg, target);
             target.Invoker.InvokeChannelRead(target, msg);
             return this;
         }
@@ -321,6 +324,7 @@ namespace DotNetty.Transport.Channels
         public Task WriteAsync(object msg) // todo: cancellationToken?
         {
             AbstractChannelHandlerContext target = this.FindContextOutbound();
+            ReferenceCountUtil.Touch(msg, target);
             return target.Invoker.InvokeWriteAsync(target, msg);
         }
 
@@ -335,6 +339,7 @@ namespace DotNetty.Transport.Channels
         {
             AbstractChannelHandlerContext target;
             target = this.FindContextOutbound();
+            ReferenceCountUtil.Touch(message, target);
             Task writeFuture = target.Invoker.InvokeWriteAsync(target, message);
             target = this.FindContextOutbound();
             target.Invoker.InvokeFlush(target);
@@ -395,6 +400,11 @@ namespace DotNetty.Transport.Channels
             }
             while ((ctx.SkipPropagationFlags & MASKGROUP_OUTBOUND) == MASKGROUP_OUTBOUND);
             return ctx;
+        }
+
+        public string ToHintString()
+        {
+            return '\'' + this.Name + "' will handle the message from this point.";
         }
 
         public override string ToString()
