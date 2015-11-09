@@ -36,7 +36,7 @@ namespace DotNetty.Common.Concurrency
         readonly TimeSpan breakoutInterval;
         readonly PreciseTimeSpan preciseBreakoutInterval;
         PreciseTimeSpan lastExecutionTime;
-        readonly SemaphoreSlim semaphore = new SemaphoreSlim(0);
+        readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim();
         readonly TaskScheduler scheduler;
         readonly TaskCompletionSource terminationCompletionSource;
         PreciseTimeSpan gracefulShutdownStartTime;
@@ -131,9 +131,11 @@ namespace DotNetty.Common.Concurrency
         public void Execute(IRunnable task)
         {
             this.taskQueue.Enqueue(task);
-            this.semaphore.Release();
 
-            // todo: honor Running
+            if (!this.InEventLoop)
+            {
+                this.emptyEvent.Set();
+            }
         }
 
         public void Execute(Action<object> action, object state)
@@ -531,8 +533,8 @@ namespace DotNetty.Common.Concurrency
                     {
                         break;
                     }
+
                     this.taskQueue.Enqueue(scheduledTask);
-                    this.semaphore.Release();
                 }
             }
         }
@@ -563,27 +565,21 @@ namespace DotNetty.Common.Concurrency
 
         IRunnable PollTask()
         {
-            Debug.Assert(this.InEventLoop);
-            this.semaphore.Wait(this.breakoutInterval);
-            return this.taskQueue.Dequeue();
+            Contract.Assert(this.InEventLoop);
+
+            IRunnable task = this.taskQueue.Dequeue();
+            if (task == null)
+            {
+                this.emptyEvent.Reset();
+                if ((task = this.taskQueue.Dequeue()) == null // revisit queue as producer might have put a task in meanwhile
+                    && this.emptyEvent.Wait(this.breakoutInterval)) 
+                {
+                    task = this.taskQueue.Dequeue();
+                }
+            }
+
+            return task;
         }
-
-        //public void Shutdown(TimeSpan gracePeriod)
-        //{
-        //    this.Running = false;
-        //    this.Executor.Shutdown(gracePeriod);
-        //}
-
-        //public Task GracefulShutdown(TimeSpan gracePeriod)
-        //{
-        //    this.Shutdown(gracePeriod);
-        //    return TaskRunner.Delay(gracePeriod);
-        //}
-
-        //public void Stop()
-        //{
-        //    this.Executor.Shutdown();
-        //}
 
         #region IDisposable members
 
@@ -599,7 +595,6 @@ namespace DotNetty.Common.Concurrency
             {
                 if (isDisposing)
                 {
-                    //this.Shutdown(TimeSpan.Zero);
                     this.thread = null;
                 }
             }

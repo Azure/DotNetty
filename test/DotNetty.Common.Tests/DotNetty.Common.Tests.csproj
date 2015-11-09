@@ -44,6 +44,10 @@
       <HintPath>..\..\packages\Moq.4.2.1507.0118\lib\net40\Moq.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -75,7 +79,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="Concurrency\EventExecutorTests.cs" />
+    <Compile Include="Concurrency\SingleThreadEventExecutorTests.cs" />
     <Compile Include="Internal\Logging\InternalLoggerFactoryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -83,6 +87,10 @@
     <ProjectReference Include="..\..\src\DotNetty.Common\DotNetty.Common.csproj">
       <Project>{de58fe41-5e99-44e5-86bc-fc9ed8761daf}</Project>
       <Name>DotNetty.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DotNetty.Tests.Common\DotNetty.Tests.Common.csproj">
+      <Project>{edf30087-8b53-4432-84b8-d21bd9f49e95}</Project>
+      <Name>DotNetty.Tests.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
