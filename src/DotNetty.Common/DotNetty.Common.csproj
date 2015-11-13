@@ -125,6 +125,7 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Deque.cs" />
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="Concurrency\AbstractEventExecutor.cs" />
     <Compile Include="Concurrency\AbstractScheduledEventExecutor.cs" />
@@ -146,18 +147,22 @@
     <Compile Include="Internal\Logging\MessageFormatter.cs" />
     <Compile Include="IReferenceCounted.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="IResourceLeak.cs" />
+    <Compile Include="ResourceLeakDetector.cs" />
+    <Compile Include="IResourceLeakHint.cs" />
     <Compile Include="ThreadLocalObjectList.cs" />
     <Compile Include="ThreadLocalPool.cs" />
     <Compile Include="Timestamp.cs" />
     <Compile Include="Utilities\AtomicReference.cs" />
+    <Compile Include="Utilities\BitOps.cs" />
     <Compile Include="Utilities\ByteArrayExtensions.cs" />
     <Compile Include="Utilities\DebugExtensions.cs" />
     <Compile Include="Utilities\MpscLinkedQueue.cs" />
     <Compile Include="Utilities\PriorityQueue.cs" />
     <Compile Include="Utilities\RecyclableMpscLinkedQueueNode.cs" />
     <Compile Include="Utilities\ReferenceCountUtil.cs" />
+    <Compile Include="Internal\SystemPropertyUtil.cs" />
     <Compile Include="Utilities\StringUtil.cs" />
-    <Compile Include="Utilities\SystemPropertyUtil.cs" />
     <Compile Include="Utilities\TaskEx.cs" />
   </ItemGroup>
   <ItemGroup>

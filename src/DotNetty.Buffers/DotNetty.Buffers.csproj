@@ -40,6 +40,8 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="AdvancedLeakAwareByteBuf.cs" />
+    <Compile Include="SimpleLeakAwareByteBuf.cs" />
     <Compile Include="AbstractByteBuffer.cs" />
     <Compile Include="AbstractByteBufferAllocator.cs" />
     <Compile Include="AbstractDerivedByteBuffer.cs" />
@@ -61,6 +63,7 @@
     <Compile Include="Unpooled.cs" />
     <Compile Include="UnpooledByteBufferAllocator.cs" />
     <Compile Include="UnpooledHeapByteBuffer.cs" />
+    <Compile Include="WrappedByteBuf.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj">

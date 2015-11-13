@@ -146,17 +146,32 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer DiscardSomeReadBytes()
+        {
+            return this;
+        }
+
         public IByteBuffer EnsureWritable(int minWritableBytes)
         {
-            if (minWritableBytes < 0)
-            {
-                throw new ArgumentException("minWritableBytes: " + minWritableBytes + " (expected: >= 0)");
-            }
+            Contract.Requires(minWritableBytes >= 0);
+
             if (minWritableBytes != 0)
             {
                 throw new IndexOutOfRangeException();
             }
             return this;
+        }
+
+        public int EnsureWritable(int minWritableBytes, bool force)
+        {
+            Contract.Requires(minWritableBytes >= 0);
+
+            if (minWritableBytes == 0)
+            {
+                return 0;
+            }
+
+            return 1;
         }
 
         public bool GetBoolean(int index)
@@ -249,7 +264,7 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
-        public IByteBuffer SetUnsignedShort(int index, int value)
+        public IByteBuffer SetUnsignedShort(int index, ushort value)
         {
             throw new IndexOutOfRangeException();
         }
@@ -410,7 +425,7 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
-        public IByteBuffer WriteUnsignedShort(int value)
+        public IByteBuffer WriteUnsignedShort(ushort value)
         {
             throw new IndexOutOfRangeException();
         }
@@ -566,6 +581,16 @@ namespace DotNetty.Buffers
         }
 
         public IReferenceCounted Retain(int increment)
+        {
+            return this;
+        }
+
+        public IReferenceCounted Touch()
+        {
+            return this;
+        }
+
+        public IReferenceCounted Touch(object hint)
         {
             return this;
         }

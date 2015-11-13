@@ -22,6 +22,7 @@ namespace DotNetty.Buffers
         public SwappedByteBuffer(IByteBuffer buf)
         {
             Contract.Requires(buf != null);
+
             this.buf = buf;
             if (buf.Order == ByteOrder.BigEndian)
             {
@@ -33,16 +34,33 @@ namespace DotNetty.Buffers
             }
         }
 
-        public int ReferenceCount { get; private set; }
+        public int ReferenceCount
+        {
+            get { return this.ReferenceCount; }
+        }
 
         public IReferenceCounted Retain()
         {
-            return this.buf.Retain();
+            this.buf.Retain();
+            return this;
         }
 
         public IReferenceCounted Retain(int increment)
         {
-            return this.buf.Retain(increment);
+            this.buf.Retain(increment);
+            return this;
+        }
+
+        public IReferenceCounted Touch()
+        {
+            this.buf.Touch();
+            return this;
+        }
+
+        public IReferenceCounted Touch(object hint)
+        {
+            this.buf.Touch(hint);
+            return this;
         }
 
         public bool Release()
@@ -174,10 +192,20 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer DiscardSomeReadBytes()
+        {
+            throw new NotImplementedException();
+        }
+
         public IByteBuffer EnsureWritable(int minWritableBytes)
         {
             this.buf.EnsureWritable(minWritableBytes);
             return this;
+        }
+
+        public int EnsureWritable(int minWritableBytes, bool force)
+        {
+            throw new NotImplementedException();
         }
 
         public bool GetBoolean(int index)
@@ -285,11 +313,16 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer SetUnsignedShort(int index, ushort value)
+        {
+            throw new NotImplementedException();
+        }
+
         public IByteBuffer SetUnsignedShort(int index, int value)
         {
             unchecked
             {
-                this.buf.SetUnsignedShort(index, ByteBufferUtil.SwapShort((short)value));
+                this.buf.SetUnsignedShort(index, (ushort)ByteBufferUtil.SwapShort((short)value));
             }
             return this;
         }
@@ -474,13 +507,18 @@ namespace DotNetty.Buffers
 
         public IByteBuffer WriteShort(int value)
         {
-            this.buf.WriteShort(ByteBufferUtil.SwapInt(value));
+            this.buf.WriteShort(ByteBufferUtil.SwapShort((short)value));
             return this;
+        }
+
+        public IByteBuffer WriteUnsignedShort(ushort value)
+        {
+            throw new NotImplementedException();
         }
 
         public IByteBuffer WriteUnsignedShort(int value)
         {
-            this.buf.WriteUnsignedShort(ByteBufferUtil.SwapInt(value));
+            this.buf.WriteUnsignedShort(unchecked((ushort)ByteBufferUtil.SwapShort((short)value)));
             return this;
         }
 

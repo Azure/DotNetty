@@ -16,6 +16,8 @@ namespace DotNetty.Buffers
     /// </summary>
     public abstract class AbstractByteBuffer : IByteBuffer
     {
+        internal static readonly ResourceLeakDetector LeakDetector = ResourceLeakDetector.Create<IByteBuffer>();
+
         int markedReaderIndex;
         int markedWriterIndex;
         SwappedByteBuffer swappedByteBuffer;
@@ -159,6 +161,31 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public virtual IByteBuffer DiscardSomeReadBytes()
+        {
+            this.EnsureAccessible();
+            if (this.ReaderIndex == 0)
+            {
+                return this;
+            }
+
+            if (this.ReaderIndex == this.WriterIndex)
+            {
+                this.AdjustMarkers(this.ReaderIndex);
+                this.WriterIndex = this.ReaderIndex = 0;
+                return this;
+            }
+
+            if (this.ReaderIndex >= this.Capacity.RightUShift(1))
+            {
+                this.SetBytes(0, this, this.ReaderIndex, this.WriterIndex - this.ReaderIndex);
+                this.WriterIndex -= this.ReaderIndex;
+                this.AdjustMarkers(this.ReaderIndex);
+                this.ReaderIndex = 0;
+            }
+            return this;
+        }
+
         public virtual IByteBuffer EnsureWritable(int minWritableBytes)
         {
             if (minWritableBytes < 0)
@@ -185,6 +212,37 @@ namespace DotNetty.Buffers
             //Adjust to the new capacity
             this.AdjustCapacity(newCapacity);
             return this;
+        }
+
+        public int EnsureWritable(int minWritableBytes, bool force)
+        {
+            Contract.Ensures(minWritableBytes >= 0);
+
+            if (minWritableBytes <= this.WritableBytes)
+            {
+                return 0;
+            }
+
+            if (minWritableBytes > this.MaxCapacity - this.WriterIndex)
+            {
+                if (force)
+                {
+                    if (this.Capacity == this.MaxCapacity)
+                    {
+                        return 1;
+                    }
+
+                    this.AdjustCapacity(this.MaxCapacity);
+                    return 3;
+                }
+            }
+
+            // Normalize the current capacity to the power of 2.
+            int newCapacity = this.CalculateNewCapacity(this.WriterIndex + minWritableBytes);
+
+            // Adjust to the new capacity.
+            this.AdjustCapacity(newCapacity);
+            return 2;
         }
 
         int CalculateNewCapacity(int minNewCapacity)
@@ -323,7 +381,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public IByteBuffer SetUnsignedShort(int index, int value)
+        public IByteBuffer SetUnsignedShort(int index, ushort value)
         {
             this.SetShort(index, value);
             return this;
@@ -560,7 +618,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public IByteBuffer WriteUnsignedShort(int value)
+        public IByteBuffer WriteUnsignedShort(ushort value)
         {
             unchecked
             {
@@ -851,6 +909,10 @@ namespace DotNetty.Buffers
         public abstract IReferenceCounted Retain();
 
         public abstract IReferenceCounted Retain(int increment);
+
+        public abstract IReferenceCounted Touch();
+
+        public abstract IReferenceCounted Touch(object hint);
 
         public abstract bool Release();
 

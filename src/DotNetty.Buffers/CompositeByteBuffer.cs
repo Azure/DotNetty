@@ -10,6 +10,7 @@ namespace DotNetty.Buffers
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
     public sealed class CompositeByteBuffer : AbstractReferenceCountedByteBuffer
@@ -34,7 +35,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        //private readonly ResourceLeak leak;
+        readonly IResourceLeak leak;
         readonly IByteBufferAllocator allocator;
         readonly List<ComponentEntry> components = new List<ComponentEntry>();
         readonly int maxNumComponents;
@@ -49,7 +50,7 @@ namespace DotNetty.Buffers
 
             this.allocator = allocator;
             this.maxNumComponents = maxNumComponents;
-            //leak = leakDetector.open(this);
+            this.leak = LeakDetector.Open(this);
         }
 
         public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, params IByteBuffer[] buffers)
@@ -64,7 +65,7 @@ namespace DotNetty.Buffers
             this.AddComponents0(0, buffers);
             this.ConsolidateIfNeeded();
             this.SetIndex(0, this.Capacity);
-            //leak = leakDetector.open(this);
+            this.leak = LeakDetector.Open(this);
         }
 
         public CompositeByteBuffer(
@@ -79,7 +80,7 @@ namespace DotNetty.Buffers
             this.AddComponents0(0, buffers);
             this.ConsolidateIfNeeded();
             this.SetIndex(0, this.Capacity);
-            //leak = leakDetector.open(this);
+            this.leak = LeakDetector.Open(this);
         }
 
         /// <summary>
@@ -1175,6 +1176,29 @@ namespace DotNetty.Buffers
             return string.Format("{0}, components={1})", result, this.components.Count);
         }
 
+        public override IReferenceCounted Touch()
+        {
+            if (this.leak != null)
+            {
+                this.leak.Record();
+            }
+            return this;
+        }
+
+        public override IReferenceCounted Touch(object hint)
+        {
+            if (this.leak != null)
+            {
+                this.leak.Record(hint);
+            }
+            return this;
+        }
+
+        public override IByteBuffer DiscardSomeReadBytes()
+        {
+            return this.DiscardReadComponents();
+        }
+
         protected override void Deallocate()
         {
             if (this.freed)
@@ -1191,9 +1215,10 @@ namespace DotNetty.Buffers
                 this.components[i].FreeIfNecessary();
             }
 
-            //if (leak != null) {
-            //    leak.close();
-            //}
+            if (this.leak != null)
+            {
+                this.leak.Close();
+            }
         }
 
         public override IByteBuffer Unwrap()

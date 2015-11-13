@@ -15,11 +15,11 @@ namespace DotNetty.Transport.Channels
     using System.Text.RegularExpressions;
     using System.Threading;
     using DotNetty.Buffers;
+    using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using DotNetty.Common.Utilities;
 
     [Serializable]
-    public class DefaultChannelId : IChannelId
+    sealed class DefaultChannelId : IChannelId
     {
         const int MachineIdLen = 8;
         const int ProcessIdLen = 4;
@@ -29,7 +29,7 @@ namespace DotNetty.Transport.Channels
         const int SequenceLen = 4;
         const int TimestampLen = 8;
         const int RandomLen = 4;
-        static readonly IInternalLogger logger = InternalLoggerFactory.GetInstance<DefaultChannelId>();
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<DefaultChannelId>();
         static readonly Regex MachineIdPattern = new Regex("^(?:[0-9a-fA-F][:-]?){6,8}$");
         static readonly byte[] MachineId;
         static readonly int ProcessId;
@@ -59,11 +59,11 @@ namespace DotNetty.Transport.Channels
             if (processId < 0 || processId > MaxProcessId)
             {
                 processId = -1;
-                logger.Warn("-Dio.netty.processId: {0} (malformed)", customProcessId);
+                Logger.Warn("-Dio.netty.processId: {0} (malformed)", customProcessId);
             }
-            else if (logger.DebugEnabled)
+            else if (Logger.DebugEnabled)
             {
-                logger.Debug("-Dio.netty.processId: {0} (user-set)", processId);
+                Logger.Debug("-Dio.netty.processId: {0} (user-set)", processId);
             }
             if (processId < 0)
             {
@@ -128,7 +128,6 @@ namespace DotNetty.Transport.Channels
         static int DefaultProcessId()
         {
             int pId = Process.GetCurrentProcess().Id;
-            ;
 
             if (pId <= 0)
             {
@@ -165,7 +164,7 @@ namespace DotNetty.Transport.Channels
             }
             catch (SocketException e)
             {
-                logger.Warn("Failed to retrieve the list of available network interfaces", e);
+                Logger.Warn("Failed to retrieve the list of available network interfaces", e);
             }
             catch
             {

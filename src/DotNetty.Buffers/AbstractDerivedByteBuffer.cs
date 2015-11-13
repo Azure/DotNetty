@@ -5,6 +5,10 @@ namespace DotNetty.Buffers
 {
     using DotNetty.Common;
 
+    /// <summary>
+    ///     Abstract base class for <see cref="IByteBuffer" /> implementations that wrap another
+    ///     <see cref="IByteBuffer" />.
+    /// </summary>
     public abstract class AbstractDerivedByteBuffer : AbstractByteBuffer
     {
         protected AbstractDerivedByteBuffer(int maxCapacity)
@@ -12,29 +16,41 @@ namespace DotNetty.Buffers
         {
         }
 
-        public override int ReferenceCount
+        public sealed override int ReferenceCount
         {
             get { return this.Unwrap().ReferenceCount; }
         }
 
-        public override IReferenceCounted Retain()
+        public sealed override IReferenceCounted Retain()
         {
             this.Unwrap().Retain();
             return this;
         }
 
-        public override IReferenceCounted Retain(int increment)
+        public sealed override IReferenceCounted Retain(int increment)
         {
             this.Unwrap().Retain(increment);
             return this;
         }
 
-        public override bool Release()
+        public sealed override IReferenceCounted Touch()
+        {
+            this.Unwrap().Touch();
+            return this;
+        }
+
+        public sealed override IReferenceCounted Touch(object hint)
+        {
+            this.Unwrap().Touch(hint);
+            return this;
+        }
+
+        public sealed override bool Release()
         {
             return this.Unwrap().Release();
         }
 
-        public override bool Release(int decrement)
+        public sealed override bool Release(int decrement)
         {
             return this.Unwrap().Release(decrement);
         }
