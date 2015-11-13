@@ -976,7 +976,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// Schedule a read operation.
+        /// ScheduleAsync a read operation.
         /// </summary>
         protected abstract void DoBeginRead();
 

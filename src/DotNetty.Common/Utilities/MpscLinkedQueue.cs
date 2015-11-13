@@ -8,7 +8,7 @@ namespace DotNetty.Common.Utilities
     using System.Diagnostics.Contracts;
     using System.Threading;
 
-    class MpscLinkedQueue<T> : MpscLinkedQueueTailRef<T>, IEnumerable<T>
+    sealed class MpscLinkedQueue<T> : MpscLinkedQueueTailRef<T>, IEnumerable<T>
         where T : class
     {
 #pragma warning disable 169 // padded reference

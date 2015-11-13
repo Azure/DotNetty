@@ -7,7 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using System.Threading.Tasks;
 
-    public abstract class ChannelHandlerAdapter : IChannelHandler
+    public class ChannelHandlerAdapter : IChannelHandler
     {
         internal bool Added;
 

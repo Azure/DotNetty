@@ -255,7 +255,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         {
                             CancellationTokenSource cts = ch.connectCancellation = new CancellationTokenSource();
 
-                            ch.EventLoop.Schedule(
+                            ch.EventLoop.ScheduleAsync(
                                 c =>
                                 {
                                     // todo: make static / cache delegate?..

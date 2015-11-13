@@ -3,31 +3,30 @@
 
 namespace DotNetty.Common.Concurrency
 {
-    using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using DotNetty.Common.Utilities;
 
     public sealed class ExecutorTaskScheduler : TaskScheduler
     {
         readonly IEventExecutor executor;
         bool started;
-        readonly Action<object> executorCallback;
 
         public ExecutorTaskScheduler(IEventExecutor executor)
         {
             this.executor = executor;
-            this.executorCallback = this.ExecutorCallback;
         }
 
         protected override void QueueTask(Task task)
         {
             if (this.started)
             {
-                this.executor.Execute(this.executorCallback, task);
+                this.executor.Execute(new TaskQueueNode(this, task));
             }
             else
             {
-                // hack: 
+                // hack: enables this executor to be seen as default on Executor's worker thread.
+                // This is a special case for SingleThreadEventExecutor.Loop initiated task.
                 this.started = true;
                 this.TryExecuteTask(task);
             }
@@ -35,51 +34,44 @@ namespace DotNetty.Common.Concurrency
 
         protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
         {
-            //return false;
-            if (!this.executor.InEventLoop)
+            if (taskWasPreviouslyQueued || !this.executor.InEventLoop)
             {
                 return false;
             }
 
-            // If the task was previously queued, remove it from the queue 
-            if (taskWasPreviouslyQueued)
-            {
-                // Try to run the task.  
-                if (this.TryDequeue(task))
-                {
-                    return this.TryExecuteTask(task);
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return this.TryExecuteTask(task);
-            }
+            return this.TryExecuteTask(task);
         }
 
         protected override IEnumerable<Task> GetScheduledTasks()
         {
-            throw new NotSupportedException();
+            return null;
         }
 
         protected override bool TryDequeue(Task task)
         {
-            return this.executor.InEventLoop;
+            return false;
         }
 
-        void ExecutorCallback(object state)
+        sealed class TaskQueueNode : MpscLinkedQueueNode<IRunnable>, IRunnable
         {
-            var task = (Task)state;
+            readonly ExecutorTaskScheduler scheduler;
+            readonly Task task;
 
-            if (task.IsCompleted)
+            public TaskQueueNode(ExecutorTaskScheduler scheduler, Task task)
             {
-                return;
+                this.scheduler = scheduler;
+                this.task = task;
             }
 
-            this.TryExecuteTask(task);
+            public override IRunnable Value
+            {
+                get { return this; }
+            }
+
+            public void Run()
+            {
+                this.scheduler.TryExecuteTask(this.task);
+            }
         }
     }
 }

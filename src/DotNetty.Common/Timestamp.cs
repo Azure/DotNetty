@@ -21,6 +21,8 @@ namespace DotNetty.Common
 
         public static readonly PreciseTimeSpan Zero = new PreciseTimeSpan(0);
 
+        public static readonly PreciseTimeSpan MinusOne = new PreciseTimeSpan(-1);
+
         public static PreciseTimeSpan FromStart
         {
             get { return new PreciseTimeSpan(GetTimeChangeSinceStart()); }

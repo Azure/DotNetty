@@ -7,13 +7,16 @@ namespace DotNetty.Common.Concurrency
     using System.Diagnostics.Contracts;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
     using DotNetty.Common.Utilities;
 
     /// <summary>
-    /// Abstract base class for <see cref="IEventExecutor"/>s that need to support scheduling.
+    ///     Abstract base class for <see cref="IEventExecutor" />s that need to support scheduling.
     /// </summary>
     public abstract class AbstractScheduledEventExecutor : AbstractEventExecutor
     {
+        static readonly Action<object, object> AddScheduledTaskAction = (e, t) => ((AbstractScheduledEventExecutor)e).ScheduledTaskQueue.Enqueue((IScheduledRunnable)t);
+
         protected readonly PriorityQueue<IScheduledRunnable> ScheduledTaskQueue = new PriorityQueue<IScheduledRunnable>();
 
         // TODO: support for EventExecutorGroup
@@ -29,9 +32,8 @@ namespace DotNetty.Common.Concurrency
         }
 
         /// <summary>
-        /// Cancel all scheduled tasks
-        /// 
-        /// This method MUST be called only when <see cref="IEventExecutor.InEventLoop"/> is <c>true</c>.
+        ///     Cancel all scheduled tasks
+        ///     This method MUST be called only when <see cref="IEventExecutor.InEventLoop" /> is <c>true</c>.
         /// </summary>
         protected virtual void CancelScheduledTasks()
         {
@@ -45,7 +47,7 @@ namespace DotNetty.Common.Concurrency
             IScheduledRunnable[] tasks = scheduledTaskQueue.ToArray();
             foreach (IScheduledRunnable t in tasks)
             {
-                // TODO: cancellation support
+                t.Cancel();
             }
 
             this.ScheduledTaskQueue.Clear();
@@ -77,7 +79,7 @@ namespace DotNetty.Common.Concurrency
         protected PreciseTimeSpan NextScheduledTaskNanos()
         {
             IScheduledRunnable nextScheduledRunnable = this.PeekScheduledTask();
-            return nextScheduledRunnable == null ? PreciseTimeSpan.Zero : nextScheduledRunnable.Deadline;
+            return nextScheduledRunnable == null ? PreciseTimeSpan.MinusOne : nextScheduledRunnable.Deadline;
         }
 
         protected IScheduledRunnable PeekScheduledTask()
@@ -92,51 +94,46 @@ namespace DotNetty.Common.Concurrency
             return scheduledTask != null && scheduledTask.Deadline <= PreciseTimeSpan.FromStart;
         }
 
-        public override void Schedule(Action<object> action, object state, TimeSpan delay)
+        public override Task ScheduleAsync(Action action, TimeSpan delay, CancellationToken cancellationToken)
         {
-            this.Schedule(action, state, delay, CancellationToken.None);
-        }
-
-        public override void Schedule(Action action, TimeSpan delay)
-        {
-            this.Schedule(action, delay, CancellationToken.None);
-        }
-
-        public override void Schedule(Action action, TimeSpan delay, CancellationToken cancellationToken)
-        {
-            // todo: check for allocation
-            this.Schedule(_ => action(), null, delay, cancellationToken);
-        }
-
-        public override void Schedule(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
-        {
-            var queueNode = new ScheduledTask(action, state, PreciseTimeSpan.Deadline(delay), cancellationToken);
+            var scheduledTask = new ActionScheduledTask(action, PreciseTimeSpan.Deadline(delay), cancellationToken);
             if (this.InEventLoop)
             {
-                this.ScheduledTaskQueue.Enqueue(queueNode);
+                this.ScheduledTaskQueue.Enqueue(scheduledTask);
             }
             else
             {
-                this.Execute(e => ((AbstractScheduledEventExecutor)e).ScheduledTaskQueue.Enqueue(queueNode), this); // it is an allocation but it should not happen often (cross-thread scheduling)
+                this.Execute(AddScheduledTaskAction, this, scheduledTask);
             }
+            return scheduledTask.Completion;
         }
 
-        public override void Schedule(Action<object, object> action, object context, object state, TimeSpan delay)
+        public override Task ScheduleAsync(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
-            this.Schedule(action, context, state, delay, CancellationToken.None);
-        }
-
-        public override void Schedule(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
-        {
-            var queueNode = new ScheduledTaskWithContext(action, context, state, PreciseTimeSpan.Deadline(delay), cancellationToken);
+            var scheduledTask = new StateActionScheduledTask(action, state, PreciseTimeSpan.Deadline(delay), cancellationToken);
             if (this.InEventLoop)
             {
-                this.ScheduledTaskQueue.Enqueue(queueNode);
+                this.ScheduledTaskQueue.Enqueue(scheduledTask);
             }
             else
             {
-                this.Execute(e => ((AbstractScheduledEventExecutor)e).ScheduledTaskQueue.Enqueue(queueNode), this); // it is an allocation but it should not happen often (cross-thread scheduling)
+                this.Execute(AddScheduledTaskAction, this, scheduledTask);
             }
+            return scheduledTask.Completion;
+        }
+
+        public override Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
+        {
+            var scheduledTask = new StateActionWithContextScheduledTask(action, context, state, PreciseTimeSpan.Deadline(delay), cancellationToken);
+            if (this.InEventLoop)
+            {
+                this.ScheduledTaskQueue.Enqueue(scheduledTask);
+            }
+            else
+            {
+                this.Execute(AddScheduledTaskAction, this, scheduledTask);
+            }
+            return scheduledTask.Completion;
         }
 
         #region Scheduled task data structures
@@ -145,24 +142,31 @@ namespace DotNetty.Common.Concurrency
         {
             PreciseTimeSpan Deadline { get; }
 
-            //TODO: need an ability to cancel IScheduledRunnable directly
+            bool Cancel();
         }
 
-        protected class ScheduledTask : MpscLinkedQueueNode<IRunnable>, IScheduledRunnable
+        protected abstract class ScheduledTaskBase : MpscLinkedQueueNode<IRunnable>, IScheduledRunnable
         {
-            readonly Action<object> action;
-            readonly object state;
+            readonly TaskCompletionSource promise;
 
-            public ScheduledTask(Action<object> action, object state, PreciseTimeSpan deadline,
-                CancellationToken cancellationToken)
+            protected ScheduledTaskBase(PreciseTimeSpan deadline, TaskCompletionSource promise, CancellationToken cancellationToken)
             {
-                this.action = action;
-                this.state = state;
+                this.promise = promise;
                 this.Deadline = deadline;
                 this.CancellationToken = cancellationToken;
             }
 
             public PreciseTimeSpan Deadline { get; private set; }
+
+            public bool Cancel()
+            {
+                return this.promise.TrySetCanceled();
+            }
+
+            public Task Completion
+            {
+                get { return this.promise.Task; }
+            }
 
             public CancellationToken CancellationToken { get; private set; }
 
@@ -180,51 +184,79 @@ namespace DotNetty.Common.Concurrency
 
             public void Run()
             {
-                if (!this.CancellationToken.IsCancellationRequested)
+                if (this.CancellationToken.IsCancellationRequested)
                 {
-                    this.action(this.state);
+                    this.promise.TrySetCanceled();
+                    return;
                 }
+                if (this.Completion.IsCanceled)
+                {
+                    return;
+                }
+                try
+                {
+                    this.Execute();
+                    this.promise.TryComplete();
+                }
+                catch (Exception ex)
+                {
+                    // todo: check for fatal
+                    this.promise.TrySetException(ex);
+                }
+            }
+
+            protected abstract void Execute();
+        }
+
+        sealed class ActionScheduledTask : ScheduledTaskBase
+        {
+            readonly Action action;
+
+            public ActionScheduledTask(Action action, PreciseTimeSpan deadline, CancellationToken cancellationToken)
+                : base(deadline, new TaskCompletionSource(), cancellationToken)
+            {
+                this.action = action;
+            }
+
+            protected override void Execute()
+            {
+                this.action();
             }
         }
 
-        protected class ScheduledTaskWithContext : MpscLinkedQueueNode<IRunnable>, IScheduledRunnable
+        sealed class StateActionScheduledTask : ScheduledTaskBase
+        {
+            readonly Action<object> action;
+
+            public StateActionScheduledTask(Action<object> action, object state, PreciseTimeSpan deadline,
+                CancellationToken cancellationToken)
+                : base(deadline, new TaskCompletionSource(state), cancellationToken)
+            {
+                this.action = action;
+            }
+
+            protected override void Execute()
+            {
+                this.action(this.Completion.AsyncState);
+            }
+        }
+
+        sealed class StateActionWithContextScheduledTask : ScheduledTaskBase
         {
             readonly Action<object, object> action;
             readonly object context;
-            readonly object state;
 
-            public ScheduledTaskWithContext(Action<object, object> action, object context, object state, PreciseTimeSpan deadline,
-                CancellationToken cancellationToken)
+            public StateActionWithContextScheduledTask(Action<object, object> action, object context, object state,
+                PreciseTimeSpan deadline, CancellationToken cancellationToken)
+                : base(deadline, new TaskCompletionSource(state), cancellationToken)
             {
                 this.action = action;
                 this.context = context;
-                this.state = state;
-                this.Deadline = deadline;
-                this.CancellationToken = cancellationToken;
             }
 
-            public PreciseTimeSpan Deadline { get; private set; }
-
-            public CancellationToken CancellationToken { get; private set; }
-
-            int IComparable<IScheduledRunnable>.CompareTo(IScheduledRunnable other)
+            protected override void Execute()
             {
-                Contract.Requires(other != null);
-
-                return this.Deadline.CompareTo(other.Deadline);
-            }
-
-            public override IRunnable Value
-            {
-                get { return this; }
-            }
-
-            public void Run()
-            {
-                if (!this.CancellationToken.IsCancellationRequested)
-                {
-                    this.action(this.context, this.state);
-                }
+                this.action(this.context, this.Completion.AsyncState);
             }
         }
 
