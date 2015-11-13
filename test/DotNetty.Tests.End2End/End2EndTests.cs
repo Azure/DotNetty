@@ -5,7 +5,6 @@ namespace DotNetty.Tests.End2End
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.Tracing;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography.X509Certificates;
@@ -15,28 +14,22 @@ namespace DotNetty.Tests.End2End
     using DotNetty.Codecs.Mqtt;
     using DotNetty.Codecs.Mqtt.Packets;
     using DotNetty.Common.Concurrency;
-    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Tls;
+    using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
     using Xunit;
     using Xunit.Abstractions;
 
-    public class End2EndTests : IDisposable
+    public class End2EndTests : TestBase
     {
-        readonly ITestOutputHelper output;
         static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(10);
-        readonly ObservableEventListener eventListener;
         const int Port = 8009;
 
         public End2EndTests(ITestOutputHelper output)
+            : base(output)
         {
-            this.output = output;
-            this.eventListener = new ObservableEventListener();
-            this.eventListener.LogToTestOutput(output);
-            this.eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
         }
 
         const string ClientId = "scenarioClient1";
@@ -72,14 +65,14 @@ namespace DotNetty.Tests.End2End
                     ch.Pipeline.AddLast(new TestScenarioRunner(this.GetEchoClientScenario, testPromise));
                 }));
 
-            this.output.WriteLine("Configured Bootstrap: {0}", b);
+            this.Output.WriteLine("Configured Bootstrap: {0}", b);
 
             IChannel clientChannel = null;
             try
             {
                 clientChannel = await b.ConnectAsync(IPAddress.Loopback, Port);
 
-                this.output.WriteLine("Connected channel: {0}", clientChannel);
+                this.Output.WriteLine("Connected channel: {0}", clientChannel);
 
                 await Task.WhenAny(testPromise.Task, Task.Delay(TimeSpan.FromMinutes(1)));
                 Assert.True(testPromise.Task.IsCompleted);
@@ -92,9 +85,10 @@ namespace DotNetty.Tests.End2End
                 {
                     clientChannel.CloseAsync().Wait(TimeSpan.FromSeconds(5));
                 }
-                if (!Task.WaitAll(new[] { serverCloseTask, group.ShutdownGracefullyAsync() }, ShutdownTimeout))
+                group.ShutdownGracefullyAsync();
+                if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
-                    this.output.WriteLine("Loops didn't stop in time.");
+                    this.Output.WriteLine("Didn't stop in time.");
                 }
             }
         }
@@ -129,14 +123,14 @@ namespace DotNetty.Tests.End2End
                         new TestScenarioRunner(this.GetMqttClientScenario, testPromise));
                 }));
 
-            this.output.WriteLine("Configured Bootstrap: {0}", b);
+            this.Output.WriteLine("Configured Bootstrap: {0}", b);
 
             IChannel clientChannel = null;
             try
             {
                 clientChannel = await b.ConnectAsync(IPAddress.Loopback, Port);
 
-                this.output.WriteLine("Connected channel: {0}", clientChannel);
+                this.Output.WriteLine("Connected channel: {0}", clientChannel);
 
                 await Task.WhenAny(testPromise.Task, Task.Delay(TimeSpan.FromMinutes(1)));
                 Assert.True(testPromise.Task.IsCompleted);
@@ -148,9 +142,10 @@ namespace DotNetty.Tests.End2End
                 {
                     clientChannel.CloseAsync().Wait(TimeSpan.FromSeconds(5));
                 }
-                if (!Task.WaitAll(new[] { serverCloseTask, group.ShutdownGracefullyAsync() }, ShutdownTimeout))
+                group.ShutdownGracefullyAsync();
+                if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
-                    this.output.WriteLine("Loops didn't stop in time.");
+                    this.Output.WriteLine("Didn't stop in time.");
                 }
             }
         }
@@ -274,7 +269,7 @@ namespace DotNetty.Tests.End2End
         }
 
         /// <summary>
-        /// Starts Echo server.
+        ///     Starts Echo server.
         /// </summary>
         /// <returns>function to trigger closure of the server.</returns>
         async Task<Func<Task>> StartServerAsync(bool tcpNoDelay, Action<IChannel> childHandlerSetupAction, TaskCompletionSource testPromise)
@@ -292,11 +287,11 @@ namespace DotNetty.Tests.End2End
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(childHandlerSetupAction))
                     .ChildOption(ChannelOption.TcpNodelay, tcpNoDelay);
 
-                this.output.WriteLine("Configured ServerBootstrap: {0}", b);
+                this.Output.WriteLine("Configured ServerBootstrap: {0}", b);
 
                 IChannel serverChannel = await b.BindAsync(Port);
 
-                this.output.WriteLine("Bound server channel: {0}", serverChannel);
+                this.Output.WriteLine("Bound server channel: {0}", serverChannel);
 
                 started = true;
 
@@ -308,7 +303,8 @@ namespace DotNetty.Tests.End2End
                     }
                     finally
                     {
-                        Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
+                        bossGroup.ShutdownGracefullyAsync();
+                        workerGroup.ShutdownGracefullyAsync();
                     }
                 };
             }
@@ -316,7 +312,8 @@ namespace DotNetty.Tests.End2End
             {
                 if (!started)
                 {
-                    Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
+                    bossGroup.ShutdownGracefullyAsync();
+                    workerGroup.ShutdownGracefullyAsync();
                 }
             }
         }
@@ -331,11 +328,6 @@ namespace DotNetty.Tests.End2End
                 var responseMessage = Assert.IsAssignableFrom<IByteBuffer>(currentMessageFunc());
                 Assert.Equal(message, Encoding.UTF8.GetString(responseMessage.ToArray()));
             }
-        }
-
-        public void Dispose()
-        {
-            this.eventListener.Dispose();
         }
     }
 }
