@@ -9,15 +9,12 @@ namespace DotNetty.Common.Concurrency
     using DotNetty.Common.Utilities;
 
     /// <summary>
-    /// Abstract base class for <see cref="IEventExecutor"/> implementations
+    ///     Abstract base class for <see cref="IEventExecutor" /> implementations
     /// </summary>
     public abstract class AbstractEventExecutor : IEventExecutor
     {
         protected static readonly TimeSpan DefaultShutdownQuietPeriod = TimeSpan.FromSeconds(2);
         protected static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(15);
-        protected static readonly Action<object> DelegatingAction = action => ((Action)action)();
-
-        readonly MpscLinkedQueue<IRunnable> taskQueue = new MpscLinkedQueue<IRunnable>();
 
         //TODO: support for EventExecutorGroup
 
@@ -45,110 +42,83 @@ namespace DotNetty.Common.Concurrency
 
         public void Execute(Action<object> action, object state)
         {
-            this.Execute(new TaskQueueNode(action, state));
+            this.Execute(new StateActionTaskQueueNode(action, state));
         }
 
         public void Execute(Action<object, object> action, object context, object state)
         {
-            this.Execute(new TaskQueueNodeWithContext(action, context, state));
+            this.Execute(new StateActionWithContextTaskQueueNode(action, context, state));
         }
 
         public void Execute(Action action)
         {
-            this.Execute(DelegatingAction, action);
+            this.Execute(new ActionTaskQueueNode(action));
         }
 
-        public virtual void Schedule(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
+        public virtual Task ScheduleAsync(Action action, TimeSpan delay)
+        {
+            return this.ScheduleAsync(action, delay, CancellationToken.None);
+        }
+
+        public virtual Task ScheduleAsync(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
 
-        public virtual void Schedule(Action<object> action, object state, TimeSpan delay)
+        public virtual Task ScheduleAsync(Action<object> action, object state, TimeSpan delay)
+        {
+            return this.ScheduleAsync(action, state, delay, CancellationToken.None);
+        }
+
+        public virtual Task ScheduleAsync(Action action, TimeSpan delay, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
 
-        public virtual void Schedule(Action action, TimeSpan delay, CancellationToken cancellationToken)
+        public virtual Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay)
+        {
+            return this.ScheduleAsync(action, context, state, delay, CancellationToken.None);
+        }
+
+        public virtual Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
 
-        public virtual void Schedule(Action action, TimeSpan delay)
+        public Task<T> SubmitAsync<T>(Func<T> func)
         {
-            throw new NotSupportedException();
+            return this.SubmitAsync(func, CancellationToken.None);
         }
 
-        public virtual void Schedule(Action<object, object> action, object context, object state, TimeSpan delay)
+        public Task<T> SubmitAsync<T>(Func<T> func, CancellationToken cancellationToken)
         {
-            throw new NotSupportedException();
+            var node = new FuncSubmitQueueNode<T>(func, cancellationToken);
+            this.Execute(node);
+            return node.Completion;
         }
 
-        public virtual void Schedule(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
+        public Task<T> SubmitAsync<T>(Func<object, T> func, object state)
         {
-            throw new NotSupportedException();
+            return this.SubmitAsync(func, state, CancellationToken.None);
         }
 
-        public Task SubmitAsync(Func<object, Task> func, object state)
+        public Task<T> SubmitAsync<T>(Func<object, T> func, object state, CancellationToken cancellationToken)
         {
-            var tcs = new TaskCompletionSource(state);
-            // todo: allocation?
-            this.Execute(async _ =>
-            {
-                var asTcs = (TaskCompletionSource)_;
-                try
-                {
-                    await func(asTcs.Task.AsyncState);
-                    asTcs.TryComplete();
-                }
-                catch (Exception ex)
-                {
-                    // todo: support cancellation
-                    asTcs.TrySetException(ex);
-                }
-            }, tcs);
-            return tcs.Task;
+            var node = new StateFuncSubmitQueueNode<T>(func, state, cancellationToken);
+            this.Execute(node);
+            return node.Completion;
         }
 
-        public Task SubmitAsync(Func<Task> func)
+        public Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state)
         {
-            var tcs = new TaskCompletionSource();
-            // todo: allocation?
-            this.Execute(async _ =>
-            {
-                var asTcs = (TaskCompletionSource)_;
-                try
-                {
-                    await func();
-                    asTcs.TryComplete();
-                }
-                catch (Exception ex)
-                {
-                    // todo: support cancellation
-                    asTcs.TrySetException(ex);
-                }
-            }, tcs);
-            return tcs.Task;
+            return this.SubmitAsync(func, context, state, CancellationToken.None);
         }
 
-        public Task SubmitAsync(Func<object, object, Task> func, object context, object state)
+        public Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state, CancellationToken cancellationToken)
         {
-            var tcs = new TaskCompletionSource(context);
-            // todo: allocation?
-            this.Execute(async (s1, s2) =>
-            {
-                var asTcs = (TaskCompletionSource)s1;
-                try
-                {
-                    await func(asTcs.Task.AsyncState, s2);
-                    asTcs.TryComplete();
-                }
-                catch (Exception ex)
-                {
-                    // todo: support cancellation
-                    asTcs.TrySetException(ex);
-                }
-            }, tcs, state);
-            return tcs.Task;
+            var node = new StateFuncWithContextSubmitQueueNode<T>(func, context, state, cancellationToken);
+            this.Execute(node);
+            return node.Completion;
         }
 
         public Task ShutdownGracefullyAsync()
@@ -160,49 +130,153 @@ namespace DotNetty.Common.Concurrency
 
         #region Queuing data structures
 
-        sealed class TaskQueueNode : MpscLinkedQueueNode<IRunnable>, IRunnable
+        protected abstract class RunnableQueueNode : MpscLinkedQueueNode<IRunnable>, IRunnable
         {
-            readonly Action<object> action;
-            readonly object state;
-
-            public TaskQueueNode(Action<object> action, object state)
-            {
-                this.action = action;
-                this.state = state;
-            }
+            public abstract void Run();
 
             public override IRunnable Value
             {
                 get { return this; }
             }
+        }
 
-            public void Run()
+        sealed class ActionTaskQueueNode : RunnableQueueNode
+        {
+            readonly Action action;
+
+            public ActionTaskQueueNode(Action action)
+            {
+                this.action = action;
+            }
+
+            public override void Run()
+            {
+                this.action();
+            }
+        }
+
+        sealed class StateActionTaskQueueNode : RunnableQueueNode
+        {
+            readonly Action<object> action;
+            readonly object state;
+
+            public StateActionTaskQueueNode(Action<object> action, object state)
+            {
+                this.action = action;
+                this.state = state;
+            }
+
+            public override void Run()
             {
                 this.action(this.state);
             }
         }
 
-        sealed class TaskQueueNodeWithContext : MpscLinkedQueueNode<IRunnable>, IRunnable
+        sealed class StateActionWithContextTaskQueueNode : RunnableQueueNode
         {
             readonly Action<object, object> action;
             readonly object context;
             readonly object state;
 
-            public TaskQueueNodeWithContext(Action<object, object> action, object context, object state)
+            public StateActionWithContextTaskQueueNode(Action<object, object> action, object context, object state)
             {
                 this.action = action;
                 this.context = context;
                 this.state = state;
             }
 
-            public override IRunnable Value
-            {
-                get { return this; }
-            }
-
-            public void Run()
+            public override void Run()
             {
                 this.action(this.context, this.state);
+            }
+        }
+
+        abstract class FuncQueueNodeBase<T> : RunnableQueueNode
+        {
+            readonly TaskCompletionSource<T> promise;
+            readonly CancellationToken cancellationToken;
+
+            protected FuncQueueNodeBase(TaskCompletionSource<T> promise, CancellationToken cancellationToken)
+            {
+                this.promise = promise;
+                this.cancellationToken = cancellationToken;
+            }
+
+            public Task<T> Completion
+            {
+                get { return this.promise.Task; }
+            }
+
+            public override void Run()
+            {
+                if (this.cancellationToken.IsCancellationRequested)
+                {
+                    this.promise.TrySetCanceled();
+                    return;
+                }
+
+                try
+                {
+                    T result = this.Call();
+                    this.promise.TrySetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    // todo: handle fatal
+                    this.promise.TrySetException(ex);
+                }
+            }
+
+            protected abstract T Call();
+        }
+
+        sealed class FuncSubmitQueueNode<T> : FuncQueueNodeBase<T>
+        {
+            readonly Func<T> func;
+
+            public FuncSubmitQueueNode(Func<T> func, CancellationToken cancellationToken)
+                : base(new TaskCompletionSource<T>(), cancellationToken)
+            {
+                this.func = func;
+            }
+
+            protected override T Call()
+            {
+                return this.func();
+            }
+        }
+
+        sealed class StateFuncSubmitQueueNode<T> : FuncQueueNodeBase<T>
+        {
+            readonly Func<object, T> func;
+
+            public StateFuncSubmitQueueNode(Func<object, T> func, object state, CancellationToken cancellationToken)
+                : base(new TaskCompletionSource<T>(state), cancellationToken)
+            {
+                this.func = func;
+            }
+
+            protected override T Call()
+            {
+                return this.func(this.Completion.AsyncState);
+            }
+        }
+
+        sealed class StateFuncWithContextSubmitQueueNode<T> : FuncQueueNodeBase<T>
+        {
+            readonly Func<object, object, T> func;
+            readonly object context;
+
+            public StateFuncWithContextSubmitQueueNode(Func<object, object, T> func, object context, object state, CancellationToken cancellationToken)
+                : base(new TaskCompletionSource<T>(state), cancellationToken)
+            {
+                this.func = func;
+                this.context = context;
+            }
+
+            protected override T Call()
+            {
+                return this.func(this.context, this.Completion.AsyncState);
             }
         }
 

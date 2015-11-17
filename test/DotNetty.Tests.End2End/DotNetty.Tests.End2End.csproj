@@ -111,7 +111,7 @@
       <Name>DotNetty.Transport</Name>
     </ProjectReference>
     <ProjectReference Include="..\DotNetty.Tests.Common\DotNetty.Tests.Common.csproj">
-      <Project>{EDF30087-8B53-4432-84B8-D21BD9F49E95}</Project>
+      <Project>{edf30087-8b53-4432-84b8-d21bd9f49e95}</Project>
       <Name>DotNetty.Tests.Common</Name>
     </ProjectReference>
   </ItemGroup>

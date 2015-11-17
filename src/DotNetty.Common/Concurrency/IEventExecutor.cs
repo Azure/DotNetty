@@ -4,7 +4,6 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
-    using System.Diagnostics.Contracts;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -48,7 +47,7 @@ namespace DotNetty.Common.Concurrency
         bool IsInEventLoop(Thread thread);
 
         /// <summary>
-        ///     Returns an {@link IEventExecutor} that is not an {@link IWrappedEventExecutor}.
+        ///     Returns an <see cref="IEventExecutor" /> that is not an <see cref="IWrappedEventExecutor" />.
         /// </summary>
         /// <remarks>
         ///     <list type="bullet">
@@ -114,7 +113,7 @@ namespace DotNetty.Common.Concurrency
         /// different objects is needed.
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        void Schedule(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken);
+        Task ScheduleAsync(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken);
 
         /// <summary>
         /// Schedules the given action for execution after the specified delay would pass.
@@ -124,7 +123,7 @@ namespace DotNetty.Common.Concurrency
         /// different objects is needed.
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        void Schedule(Action<object> action, object state, TimeSpan delay);
+        Task ScheduleAsync(Action<object> action, object state, TimeSpan delay);
 
         /// <summary>
         /// Schedules the given action for execution after the specified delay would pass.
@@ -132,7 +131,7 @@ namespace DotNetty.Common.Concurrency
         /// <remarks>
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        void Schedule(Action action, TimeSpan delay, CancellationToken cancellationToken);
+        Task ScheduleAsync(Action action, TimeSpan delay, CancellationToken cancellationToken);
 
         /// <summary>
         /// Schedules the given action for execution after the specified delay would pass.
@@ -140,17 +139,7 @@ namespace DotNetty.Common.Concurrency
         /// <remarks>
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        void Schedule(Action action, TimeSpan delay);
-
-        /// <summary>
-        /// Schedules the given action for execution after the specified delay would pass.
-        /// </summary>
-        /// <remarks>
-        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
-        /// an action against different objects in different context is needed.
-        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
-        /// </remarks>
-        void Schedule(Action<object, object> action, object context, object state, TimeSpan delay);
+        Task ScheduleAsync(Action action, TimeSpan delay);
 
         /// <summary>
         /// Schedules the given action for execution after the specified delay would pass.
@@ -160,35 +149,74 @@ namespace DotNetty.Common.Concurrency
         /// an action against different objects in different context is needed.
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        void Schedule(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken);
+        Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay);
 
         /// <summary>
-        /// Executes the given action and returns <see cref="Task" /> indicating completion of execution.
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
+        /// an action against different objects in different context is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Executes the given function and returns <see cref="Task{T}" /> indicating completion status and result of execution.
         /// </summary>
         /// <remarks>
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        Task SubmitAsync(Func<Task> taskFunc);
+        Task<T> SubmitAsync<T>(Func<T> func);
 
         /// <summary>
-        /// Executes the given action and returns <see cref="Task" /> indicating completion of execution.
+        /// Executes the given action and returns <see cref="Task{T}" /> indicating completion status and result of execution.
+        /// </summary>
+        /// <remarks>
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        Task<T> SubmitAsync<T>(Func<T> func, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Executes the given action and returns <see cref="Task{T}" /> indicating completion status and result of execution.
         /// </summary>
         /// <remarks>
         /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
         /// different objects is needed.
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        Task SubmitAsync(Func<object, Task> taskFunc, object state);
+        Task<T> SubmitAsync<T>(Func<object, T> func, object state);
 
         /// <summary>
-        /// Executes the given action and returns <see cref="Task" /> indicating completion of execution.
+        /// Executes the given action and returns <see cref="Task{T}" /> indicating completion status and result of execution.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
+        /// different objects is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        Task<T> SubmitAsync<T>(Func<object, T> func, object state, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Executes the given action and returns <see cref="Task{T}" /> indicating completion status and result of execution.
         /// </summary>
         /// <remarks>
         /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
         /// an action against different objects in different context is needed.
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
-        Task SubmitAsync(Func<object, object, Task> func, object context, object state);
+        Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state);
+
+        /// <summary>
+        /// Executes the given action and returns <see cref="Task{T}" /> indicating completion status and result of execution.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
+        /// an action against different objects in different context is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state, CancellationToken cancellationToken);
+
 
         /// <summary>
         /// Shortcut method for <see cref="ShutdownGracefullyAsync(TimeSpan,TimeSpan)"/> with sensible default values.
@@ -198,7 +226,7 @@ namespace DotNetty.Common.Concurrency
         /// <summary>
         /// Signals this executor that the caller wants the executor to be shut down.  Once this method is called,
         /// <see cref="IsShuttingDown"/> starts to return <c>true</c>, and the executor prepares to shut itself down.
-        /// Unlike <see cref="Shutdown()"/>, graceful shutdown ensures that no tasks are submitted for <i>'the quiet period'</i>
+        /// Graceful shutdown ensures that no tasks are submitted for <i>'the quiet period'</i>
         /// (usually a couple seconds) before it shuts itself down.  If a task is submitted during the quiet period,
         /// it is guaranteed to be accepted and the quiet period will start over.
         /// </summary>

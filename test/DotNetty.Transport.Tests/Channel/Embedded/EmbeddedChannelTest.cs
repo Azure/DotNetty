@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Embedded;
@@ -47,19 +48,30 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
             Assert.Null(channel.ReadInbound<object>());
         }
 
-        // TODO: can't test scheduling without https://github.com/Azure/DotNetty/issues/35
-        //class ChannelHandler2 : ChannelHandlerAdapter{ }
+        [Fact]
+        public void TestScheduling()
+        {
+            var ch = new EmbeddedChannel(new ChannelHandlerAdapter());
+            var latch = new CountdownEvent(2);
+            Task future = ch.EventLoop.ScheduleAsync(() => latch.Signal(), TimeSpan.FromSeconds(1));
+            future.ContinueWith(t => latch.Signal());
+            PreciseTimeSpan next = ch.RunScheduledPendingTasks();
+            Assert.True(next > PreciseTimeSpan.Zero);
+            // Sleep for the nanoseconds but also give extra 50ms as the clock my not be very precise and so fail the test
+            // otherwise.
+            Thread.Sleep(next.ToTimeSpan() + TimeSpan.FromMilliseconds(50));
+            Assert.Equal(PreciseTimeSpan.MinusOne, ch.RunScheduledPendingTasks());
+            latch.Wait();
+        }
 
-        //[Fact]
-        //public void TestScheduling()
-        //{
-        //    EmbeddedChannel ch = new EmbeddedChannel(new ChannelHandler2());
-        //    CountdownEvent latch = new CountdownEvent(2);
-        //    var future = ch.EventLoop.Schedule(_ =>
-        //    {
-        //        latch.Signal();
-        //    }, TimeSpan.FromSeconds(1));
-        //}
+        [Fact]
+        public void TestScheduledCancelled()
+        {
+            var ch = new EmbeddedChannel(new ChannelHandlerAdapter());
+            Task future = ch.EventLoop.ScheduleAsync(() => { }, TimeSpan.FromDays(1));
+            ch.Finish();
+            Assert.True(future.IsCanceled);
+        }
 
         class ChannelHandler3 : ChannelHandlerAdapter
         {
@@ -90,7 +102,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
         }
 
         [Theory]
-        [InlineData(3000)] //ghetto timeout
+        [InlineData(3000)]
         public void TestHandlerAddedExecutedInEventLoop(int timeout)
         {
             CountdownEvent latch = new CountdownEvent(1);

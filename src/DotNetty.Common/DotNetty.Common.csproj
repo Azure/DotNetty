@@ -125,6 +125,7 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Concurrency\ICallable`T.cs" />
     <Compile Include="Deque.cs" />
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="Concurrency\AbstractEventExecutor.cs" />

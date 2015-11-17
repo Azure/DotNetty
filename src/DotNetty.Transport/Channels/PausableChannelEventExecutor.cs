@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
@@ -37,119 +38,98 @@ namespace DotNetty.Transport.Channels
 
         public void Execute(IRunnable command)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
+            this.VerifyAcceptingNewTasks();
             this.Unwrap().Execute(command);
         }
 
         public void Execute(Action<object> action, object state)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
+            this.VerifyAcceptingNewTasks();
             this.Unwrap().Execute(action, state);
         }
 
         public void Execute(Action action)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
+            this.VerifyAcceptingNewTasks();
             this.Unwrap().Execute(action);
         }
 
-        public void Schedule(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
+        public Task ScheduleAsync(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            this.Unwrap().Schedule(action, state, delay, cancellationToken);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().ScheduleAsync(action, state, delay, cancellationToken);
         }
 
-        public void Schedule(Action<object> action, object state, TimeSpan delay)
+        public Task ScheduleAsync(Action<object> action, object state, TimeSpan delay)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            this.Unwrap().Schedule(action, state, delay);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().ScheduleAsync(action, state, delay);
         }
 
-        public void Schedule(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
+        public Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            this.Unwrap().Schedule(action, context, state, delay, cancellationToken);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().ScheduleAsync(action, context, state, delay, cancellationToken);
         }
 
-        public void Schedule(Action<object, object> action, object context, object state, TimeSpan delay)
+        public Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            this.Unwrap().Schedule(action, context, state, delay);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().ScheduleAsync(action, context, state, delay);
         }
 
-        public void Schedule(Action action, TimeSpan delay, CancellationToken cancellationToken)
+        public Task ScheduleAsync(Action action, TimeSpan delay, CancellationToken cancellationToken)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            this.Unwrap().Schedule(action, delay, cancellationToken);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().ScheduleAsync(action, delay, cancellationToken);
         }
 
-        public void Schedule(Action action, TimeSpan delay)
+        public Task ScheduleAsync(Action action, TimeSpan delay)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            this.Unwrap().Schedule(action, delay);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().ScheduleAsync(action, delay);
         }
 
-        public Task SubmitAsync(Func<object, Task> taskFunc, object state)
+        public Task<T> SubmitAsync<T>(Func<T> func)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            return this.Unwrap().SubmitAsync(taskFunc, state);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().SubmitAsync(func);
         }
 
-        public Task SubmitAsync(Func<Task> taskFunc)
+        public Task<T> SubmitAsync<T>(Func<T> func, CancellationToken cancellationToken)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            return this.Unwrap().SubmitAsync(taskFunc);
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().SubmitAsync(func, cancellationToken);
+        }
+
+        public Task<T> SubmitAsync<T>(Func<object, T> func, object state)
+        {
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().SubmitAsync(func, state);
+        }
+
+        public Task<T> SubmitAsync<T>(Func<object, T> func, object state, CancellationToken cancellationToken)
+        {
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().SubmitAsync(func, state, cancellationToken);
+        }
+
+        public Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state)
+        {
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().SubmitAsync(func, context, state);
+        }
+
+        public Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state, CancellationToken cancellationToken)
+        {
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().SubmitAsync(func, context, state, cancellationToken);
         }
 
         public void Execute(Action<object, object> action, object context, object state)
         {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
+            this.VerifyAcceptingNewTasks();
             this.Unwrap().Execute(action, context, state);
-        }
-
-        public Task SubmitAsync(Func<object, object, Task> func, object context, object state)
-        {
-            if (!this.IsAcceptingNewTasks)
-            {
-                throw new RejectedExecutionException();
-            }
-            return this.Unwrap().SubmitAsync(func, context, state);
         }
 
         public bool IsShuttingDown
@@ -167,7 +147,6 @@ namespace DotNetty.Transport.Channels
             return this.Unwrap().ShutdownGracefullyAsync(quietPeriod, timeout);
         }
 
-
         public Task TerminationCompletion
         {
             get { return this.Unwrap().TerminationCompletion; }
@@ -181,6 +160,15 @@ namespace DotNetty.Transport.Channels
         public bool IsTerminated
         {
             get { return this.Unwrap().IsTerminated; }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void VerifyAcceptingNewTasks()
+        {
+            if (!this.IsAcceptingNewTasks)
+            {
+                throw new RejectedExecutionException();
+            }
         }
     }
 }
