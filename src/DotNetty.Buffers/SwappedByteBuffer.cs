@@ -36,7 +36,7 @@ namespace DotNetty.Buffers
 
         public int ReferenceCount
         {
-            get { return this.ReferenceCount; }
+            get { return this.buf.ReferenceCount; }
         }
 
         public IReferenceCounted Retain()
