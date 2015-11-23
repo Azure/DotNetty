@@ -5,12 +5,11 @@ namespace DotNetty.Handlers.Logging
 {
     using DotNetty.Common.Internal.Logging;
 
-    public enum LogLevel
+    public static class LogLevelExtensions
     {
-        TRACE = InternalLogLevel.TRACE,
-        DEBUG = InternalLogLevel.DEBUG,
-        INFO = InternalLogLevel.INFO,
-        WARN = InternalLogLevel.WARN,
-        ERROR = InternalLogLevel.ERROR,
+        public static InternalLogLevel ToInternalLevel(this LogLevel level)
+        {
+            return (InternalLogLevel)level;
+        }
     }
 }
