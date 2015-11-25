@@ -34,7 +34,7 @@ namespace DotNetty.Transport.Channels.Groups
                 this.futures.Add(pair.Key, pair.Value);
                 pair.Value.ContinueWith(x =>
                 {
-                    bool success = x.IsCompleted && !x.IsFaulted && !x.IsCanceled;
+                    bool success = x.Status == TaskStatus.RanToCompletion;
                     bool callSetDone;
                     lock (this)
                     {
@@ -48,7 +48,7 @@ namespace DotNetty.Transport.Channels.Groups
                         }
 
                         callSetDone = this.successCount + this.failureCount == this.futures.Count;
-                        Debug.Assert(this.successCount + this.failureCount <= this.futures.Count);
+                        Contract.Assert(this.successCount + this.failureCount <= this.futures.Count);
                     }
 
                     if (callSetDone)

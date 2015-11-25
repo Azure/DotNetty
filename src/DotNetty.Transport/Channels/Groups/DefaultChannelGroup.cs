@@ -310,18 +310,19 @@ namespace DotNetty.Transport.Channels.Groups
 
         static object SafeDuplicate(object message)
         {
-            if (message is IByteBuffer)
+            var buffer = message as IByteBuffer;
+            if (buffer != null)
             {
-                return ((IByteBuffer)message).Duplicate().Retain();
+                return buffer.Duplicate().Retain();
             }
-            else if (message is IByteBufferHolder)
+
+            var byteBufferHolder = message as IByteBufferHolder;
+            if (byteBufferHolder != null)
             {
-                return ((IByteBufferHolder)message).Duplicate().Retain();
+                return byteBufferHolder.Duplicate().Retain();
             }
-            else
-            {
-                return ReferenceCountUtil.Retain(message);
-            }
+
+            return ReferenceCountUtil.Retain(message);
         }
 
         public override bool Equals(object obj)
@@ -355,13 +356,14 @@ namespace DotNetty.Transport.Channels.Groups
 
         public bool Remove(IChannelId channelId)
         {
-            IChannel ch = null;
+            IChannel ch;
 
             if (this.serverChannels.TryRemove(channelId, out ch))
             {
                 return true;
             }
-            else if (this.nonServerChannels.TryRemove(channelId, out ch))
+
+            if (this.nonServerChannels.TryRemove(channelId, out ch))
             {
                 return true;
             }

@@ -407,7 +407,7 @@ namespace DotNetty.Buffers
 
         public IByteBuffer SkipBytes(int length)
         {
-            throw new IndexOutOfRangeException();
+            return this.CheckLength(length);
         }
 
         public IByteBuffer WriteBoolean(bool value)
@@ -492,12 +492,12 @@ namespace DotNetty.Buffers
 
         public byte[] ToArray()
         {
-            throw new IndexOutOfRangeException();
+            return ByteArrayExtensions.Empty;
         }
 
         public IByteBuffer Duplicate()
         {
-            throw new IndexOutOfRangeException();
+            return this;
         }
 
         public IByteBuffer WithOrder(ByteOrder endianness)
