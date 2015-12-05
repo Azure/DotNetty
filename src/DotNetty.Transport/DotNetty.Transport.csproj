@@ -111,7 +111,6 @@
     <Compile Include="Channels\NotYetConnectedException.cs" />
     <Compile Include="Channels\IServerChannel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Channels\Sockets\SocketAsyncOperationPayloadPool.cs" />
     <Compile Include="Channels\DefaultChannelConfiguration.cs" />
     <Compile Include="Properties\Friends.cs" />
   </ItemGroup>
