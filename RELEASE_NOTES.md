@@ -1,3 +1,7 @@
+#### 0.2.1 December 08 2015
+- fixes to EmptyByteBuffer
+- ported LoggingHandler
+
 #### 0.2.0 November 17 2015
 - Proper Event Executor model port
 - EmbeddedChannel
