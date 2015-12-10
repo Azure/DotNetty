@@ -6,7 +6,9 @@ namespace DotNetty.Common.Internal.Logging
     using System;
     using System.Diagnostics.Tracing;
 
-    [EventSource(Name = "DotNetty-Default")]
+    [EventSource(
+        Name = "DotNetty-Default",
+        Guid = "d079e771-0495-4124-bd2f-ab63c2b50525")]
     public class DefaultEventSource : EventSource
     {
         const int TraceEventId = 1;
