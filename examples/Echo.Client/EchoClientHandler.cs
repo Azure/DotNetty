@@ -31,11 +31,8 @@ namespace Echo.Client
         {
             var byteBuffer = message as IByteBuffer;
             if (byteBuffer != null)
-            {
-                this.buffer.Initialize();
-                byteBuffer.Duplicate().ReadBytes(this.buffer, 0, byteBuffer.ReadableBytes);
-                string msg = Encoding.UTF8.GetString(this.buffer);
-                Console.WriteLine("Received from server: " + msg);
+            {                
+                Console.WriteLine("Received from server: " + byteBuffer.ToString(Encoding.UTF8));
             }
             context.WriteAsync(message);
         }

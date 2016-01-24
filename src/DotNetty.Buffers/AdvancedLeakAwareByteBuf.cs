@@ -4,6 +4,7 @@
 namespace DotNetty.Buffers
 {
     using System.IO;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
@@ -625,5 +626,17 @@ namespace DotNetty.Buffers
             }
             return deallocated;
         }
+
+        public override string ToString(Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation();
+            return base.ToString(encoding);
+        }
+
+        public override string ToString(int index, int length, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation();
+            return base.ToString(index, length, encoding);
+        }        
     }
 }

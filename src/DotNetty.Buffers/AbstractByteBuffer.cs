@@ -6,6 +6,7 @@ namespace DotNetty.Buffers
     using System;
     using System.Diagnostics.Contracts;
     using System.IO;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
@@ -921,6 +922,16 @@ namespace DotNetty.Buffers
         protected void DiscardMarkers()
         {
             this.markedReaderIndex = this.markedWriterIndex = 0;
+        }
+
+        public string ToString(Encoding encoding)
+        {
+            return this.ToString(ReaderIndex, ReadableBytes, encoding);
+        }
+
+        public string ToString(int index, int length, Encoding encoding)
+        {
+            return ByteBufferUtil.DecodeString(this, index, length, encoding);
         }
     }
 }

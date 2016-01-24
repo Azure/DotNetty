@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System.Diagnostics.Contracts;
     using System.IO;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
@@ -723,6 +724,16 @@ namespace DotNetty.Buffers
         public virtual bool Release(int decrement)
         {
             return this.Buf.Release(decrement);
+        }
+
+        public virtual string ToString(Encoding encoding)
+        {
+            return Buf.ToString(encoding);
+        }
+
+        public virtual string ToString(int index, int length, Encoding encoding)
+        {
+            return Buf.ToString(index, length, encoding);
         }
     }
 }
