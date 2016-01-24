@@ -6,6 +6,7 @@ namespace DotNetty.Buffers
     using System;
     using System.Diagnostics.Contracts;
     using System.IO;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
@@ -643,6 +644,17 @@ namespace DotNetty.Buffers
                 throw new IndexOutOfRangeException();
             }
             return this;
+        }
+
+        public string ToString(Encoding encoding)
+        {
+            return string.Empty;
+        }
+
+        public string ToString(int index, int length, Encoding encoding)
+        {
+            CheckIndex(index, length);
+            return this.ToString(encoding);
         }
     }
 }

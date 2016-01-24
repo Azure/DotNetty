@@ -3,12 +3,19 @@
 namespace Echo.Server
 {
     using System;
+    using System.Text;
+    using DotNetty.Buffers;
     using DotNetty.Transport.Channels;
 
     public class EchoServerHandler : ChannelHandlerAdapter
     {
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
+            IByteBuffer buffer = message as IByteBuffer;
+            if (buffer != null)
+            {
+                Console.WriteLine("Received from client: " + buffer.ToString(Encoding.UTF8));
+            }            
             context.WriteAsync(message);
         }
 

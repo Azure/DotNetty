@@ -7,6 +7,7 @@ namespace DotNetty.Buffers
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Linq;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
@@ -668,6 +669,16 @@ namespace DotNetty.Buffers
         public override string ToString()
         {
             return "Swapped(" + this.buf + ")";
+        }
+
+        public string ToString(Encoding encoding)
+        {
+            return buf.ToString(encoding);
+        }
+
+        public string ToString(int index, int length, Encoding encoding)
+        {
+            return buf.ToString(index, length, encoding);
         }
     }
 }

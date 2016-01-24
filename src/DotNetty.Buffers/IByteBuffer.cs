@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.IO;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
@@ -585,5 +586,9 @@ namespace DotNetty.Buffers
         Task WriteBytesAsync(Stream stream, int length);
 
         Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
+
+        string ToString(Encoding encoding);
+
+        string ToString(int index, int length, Encoding encoding);
     }
 }
