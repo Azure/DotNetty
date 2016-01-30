@@ -5,6 +5,7 @@ namespace DotNetty.Buffers.Tests
 {
     using System;
     using System.Diagnostics.Tracing;
+    using DotNetty.Common;
     using DotNetty.Common.Internal.Logging;
     using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
     using Microsoft.Practices.EnterpriseLibrary.SemanticLogging.Formatters;
@@ -17,7 +18,7 @@ namespace DotNetty.Buffers.Tests
         readonly MockRepository mockRepo = new MockRepository(MockBehavior.Strict);
 
         [Fact]
-        public void Leak()
+        public void UnderReleaseBufferLeak()
         {
             var eventListener = new ObservableEventListener();
             Mock<IObserver<EventEntry>> logListener = this.mockRepo.Create<IObserver<EventEntry>>();
@@ -37,6 +38,25 @@ namespace DotNetty.Buffers.Tests
             GC.WaitForPendingFinalizers();
 
             this.mockRepo.Verify();
+        }
+
+        [Fact]
+        public void ResampleNoLeak()
+        {
+            ResourceLeakDetector.DetectionLevel preservedLevel = ResourceLeakDetector.Level;
+            try
+            {
+                ResourceLeakDetector.Level = ResourceLeakDetector.DetectionLevel.Paranoid;
+                var bufPool = new PooledByteBufferAllocator(100, 1000);
+                IByteBuffer buffer = bufPool.Buffer(10);
+                buffer.Release();
+                buffer = bufPool.Buffer(10);
+                buffer.Release();
+            }
+            finally
+            {
+                ResourceLeakDetector.Level = preservedLevel;
+            }
         }
     }
 }
