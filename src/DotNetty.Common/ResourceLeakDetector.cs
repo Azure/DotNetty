@@ -198,7 +198,15 @@ namespace DotNetty.Common
             public DefaultResourceLeak(ResourceLeakDetector owner, object referent)
             {
                 this.owner = owner;
-                owner.gcNotificationMap.Add(referent, new GCNotice(this));
+                GCNotice existingNotice;
+                if (owner.gcNotificationMap.TryGetValue(referent, out existingNotice))
+                {
+                    existingNotice.Rearm(this);
+                }
+                else
+                {
+                    owner.gcNotificationMap.Add(referent, new GCNotice(this));
+                }
 
                 if (referent != null)
                 {
@@ -382,7 +390,7 @@ namespace DotNetty.Common
 
         class GCNotice
         {
-            readonly DefaultResourceLeak leak;
+            DefaultResourceLeak leak;
 
             public GCNotice(DefaultResourceLeak leak)
             {
@@ -392,6 +400,12 @@ namespace DotNetty.Common
             ~GCNotice()
             {
                 this.leak.CloseFinal();
+            }
+
+            public void Rearm(DefaultResourceLeak newLeak)
+            {
+                DefaultResourceLeak oldLeak = Interlocked.Exchange(ref this.leak, newLeak);
+                oldLeak.CloseFinal();
             }
         }
     }
