@@ -1,3 +1,8 @@
+#### 0.2.2 January 30
+- `ResourceLeakDetector` fix (#64)
+- Assigned GUID on default internal logger `EventSource`
+- `IByteBuffer.ToString(..)` for efficient string decoding directly from Byte Buffer
+
 #### 0.2.1 December 08 2015
 - fixes to EmptyByteBuffer
 - ported LoggingHandler
