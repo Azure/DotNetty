@@ -19,9 +19,10 @@ namespace DotNetty.Transport.Channels
         static readonly Action<object, object> InvokeUserEventTriggeredAction = (ctx, evt) => ChannelHandlerInvokerUtil.InvokeUserEventTriggeredNow((IChannelHandlerContext)ctx, evt);
         static readonly Action<object, object> InvokeChannelReadAction = (ctx, msg) => ChannelHandlerInvokerUtil.InvokeChannelReadNow((IChannelHandlerContext)ctx, msg);
 
-        static readonly Func<object, object, Task> InvokeWriteAsyncFunc = (ctx, msg) =>
+        static readonly Action<object, object> InvokeWriteAsyncAction = (p, msg) =>
         {
-            var context = (IChannelHandlerContext)ctx;
+            var promise = (TaskCompletionSource)p;
+            var context = (IChannelHandlerContext)promise.Task.AsyncState;
             var channel = (AbstractChannel)context.Channel;
             // todo: size is counted twice. is that a problem?
             int size = channel.EstimatorHandle.Size(msg);
@@ -34,7 +35,7 @@ namespace DotNetty.Transport.Channels
                     buffer.DecrementPendingOutboundBytes(size);
                 }
             }
-            return ChannelHandlerInvokerUtil.InvokeWriteAsyncNow(context, msg);
+            ChannelHandlerInvokerUtil.InvokeWriteAsyncNow(context, msg).LinkOutcome(promise);
         };
 
         readonly IEventExecutor executor;
@@ -59,7 +60,7 @@ namespace DotNetty.Transport.Channels
             }
             else
             {
-                this.executor.Execute(() => { ChannelHandlerInvokerUtil.InvokeChannelRegisteredNow(ctx); });
+                this.executor.Execute(c => ChannelHandlerInvokerUtil.InvokeChannelRegisteredNow((IChannelHandlerContext)c), ctx);
             }
         }
 
@@ -71,7 +72,7 @@ namespace DotNetty.Transport.Channels
             }
             else
             {
-                this.executor.Execute(() => { ChannelHandlerInvokerUtil.InvokeChannelUnregisteredNow(ctx); });
+                this.executor.Execute(c => ChannelHandlerInvokerUtil.InvokeChannelUnregisteredNow((IChannelHandlerContext)c), ctx);
             }
         }
 
@@ -83,7 +84,7 @@ namespace DotNetty.Transport.Channels
             }
             else
             {
-                this.executor.Execute(() => { ChannelHandlerInvokerUtil.InvokeChannelActiveNow(ctx); });
+                this.executor.Execute(c => ChannelHandlerInvokerUtil.InvokeChannelActiveNow((IChannelHandlerContext)c), ctx);
             }
         }
 
@@ -95,7 +96,7 @@ namespace DotNetty.Transport.Channels
             }
             else
             {
-                this.executor.Execute(() => { ChannelHandlerInvokerUtil.InvokeChannelInactiveNow(ctx); });
+                this.executor.Execute(c => ChannelHandlerInvokerUtil.InvokeChannelInactiveNow((IChannelHandlerContext)c), ctx);
             }
         }
 
@@ -111,14 +112,14 @@ namespace DotNetty.Transport.Channels
             {
                 try
                 {
-                    this.executor.Execute(() => { ChannelHandlerInvokerUtil.InvokeExceptionCaughtNow(ctx, cause); });
+                    this.executor.Execute((c, e) => ChannelHandlerInvokerUtil.InvokeExceptionCaughtNow((IChannelHandlerContext)c, (Exception)e), ctx, cause);
                 }
                 catch (Exception t)
                 {
                     if (DefaultChannelPipeline.Logger.WarnEnabled)
                     {
-                        DefaultChannelPipeline.Logger.Warn("Failed to submit an exceptionCaught() event.", t);
-                        DefaultChannelPipeline.Logger.Warn("The exceptionCaught() event that was failed to submit was:", cause);
+                        DefaultChannelPipeline.Logger.Warn("Failed to submit an ExceptionCaught() event.", t);
+                        DefaultChannelPipeline.Logger.Warn("The ExceptionCaught() event that was failed to submit was:", cause);
                     }
                 }
             }
@@ -299,17 +300,29 @@ namespace DotNetty.Transport.Channels
             else
             {
                 var channel = (AbstractChannel)ctx.Channel;
-                int size = channel.EstimatorHandle.Size(msg);
-                if (size > 0)
+                var promise = new TaskCompletionSource(ctx);
+
+                try
                 {
-                    ChannelOutboundBuffer buffer = channel.Unsafe.OutboundBuffer;
-                    // Check for null as it may be set to null if the channel is closed already
-                    if (buffer != null)
+                    int size = channel.EstimatorHandle.Size(msg);
+                    if (size > 0)
                     {
-                        buffer.IncrementPendingOutboundBytes(size);
+                        ChannelOutboundBuffer buffer = channel.Unsafe.OutboundBuffer;
+                        // Check for null as it may be set to null if the channel is closed already
+                        if (buffer != null)
+                        {
+                            buffer.IncrementPendingOutboundBytes(size);
+                        }
                     }
+
+                    this.executor.Execute(InvokeWriteAsyncAction, promise, msg);
                 }
-                return this.SafeProcessOutboundMessageAsync(InvokeWriteAsyncFunc, ctx, msg);
+                catch (Exception cause)
+                {
+                    ReferenceCountUtil.Release(msg); // todo: safe release?
+                    promise.TrySetException(cause);
+                }
+                return promise.Task;
             }
         }
 
@@ -325,12 +338,12 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        void SafeProcessInboundMessage(Action<object, object> task, object state, object msg)
+        void SafeProcessInboundMessage(Action<object, object> action, object state, object msg)
         {
             bool success = false;
             try
             {
-                this.executor.Execute(task, state, msg);
+                this.executor.Execute(action, state, msg);
                 success = true;
             }
             finally
@@ -342,29 +355,18 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        Task SafeExecuteOutboundAsync(Func<Task> task)
+        Task SafeExecuteOutboundAsync(Func<Task> function)
         {
+            var promise = new TaskCompletionSource();
             try
             {
-                return this.executor.SubmitAsync(task);
+                this.executor.Execute((p, func) => ((Func<Task>)func)().LinkOutcome((TaskCompletionSource)p), promise, function);
             }
             catch (Exception cause)
             {
-                return TaskEx.FromException(cause);
+                promise.TrySetException(cause);
             }
-        }
-
-        Task SafeProcessOutboundMessageAsync(Func<object, object, Task> task, object state, object msg)
-        {
-            try
-            {
-                return this.executor.SubmitAsync(task, state, msg);
-            }
-            catch (Exception cause)
-            {
-                ReferenceCountUtil.Release(msg);
-                return TaskEx.FromException(cause);
-            }
+            return promise.Task;
         }
     }
 }
