@@ -8,7 +8,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Net.Sockets;
 
     /// <summary>
-    /// The default {@link SocketChannelConfig} implementation.
+    ///     The default {@link SocketChannelConfig} implementation.
     /// </summary>
     public class DefaultSocketChannelConfiguration : DefaultChannelConfiguration, ISocketChannelConfiguration
     {
@@ -22,7 +22,13 @@ namespace DotNetty.Transport.Channels.Sockets
             this.Socket = socket;
 
             // Enable TCP_NODELAY by default if possible.
-            socket.NoDelay = true;
+            try
+            {
+                this.TcpNoDelay = true;
+            }
+            catch
+            {
+            }
         }
 
         public override T GetOption<T>(ChannelOption<T> option)
@@ -61,6 +67,53 @@ namespace DotNetty.Transport.Channels.Sockets
             }
 
             return base.GetOption(option);
+        }
+
+        public override bool SetOption<T>(ChannelOption<T> option, T value)
+        {
+            if (base.SetOption(option, value))
+            {
+                return true;
+            }
+
+            if (ChannelOption.SoRcvbuf.Equals(option))
+            {
+                this.ReceiveBufferSize = (int)(object)value;
+            }
+            else if (ChannelOption.SoSndbuf.Equals(option))
+            {
+                this.SendBufferSize = (int)(object)value;
+            }
+            else if (ChannelOption.TcpNodelay.Equals(option))
+            {
+                this.TcpNoDelay = (bool)(object)value;
+            }
+            else if (ChannelOption.SoKeepalive.Equals(option))
+            {
+                this.KeepAlive = (bool)(object)value;
+            }
+            else if (ChannelOption.SoReuseaddr.Equals(option))
+            {
+                this.ReuseAddress = (bool)(object)value;
+            }
+            else if (ChannelOption.SoLinger.Equals(option))
+            {
+                this.Linger = (int)(object)value;
+            }
+            //else if (option == IP_TOS)
+            //{
+            //    setTrafficClass((Integer)value);
+            //}
+            else if (ChannelOption.AllowHalfClosure.Equals(option))
+            {
+                this.allowHalfClosure = (bool)(object)value;
+            }
+            else
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public bool AllowHalfClosure
