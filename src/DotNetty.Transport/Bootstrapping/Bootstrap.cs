@@ -9,7 +9,9 @@ namespace DotNetty.Transport.Bootstrapping
     using System.Net;
     using System.Text;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
     /// <summary>
@@ -164,31 +166,33 @@ namespace DotNetty.Transport.Bootstrapping
         {
             // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
             // the pipeline in its channelRegistered() implementation.
-            return channel.EventLoop.SubmitAsync(async () =>
+            var promise = new TaskCompletionSource();
+            channel.EventLoop.Execute(() =>
             {
                 try
                 {
                     if (localAddress == null)
                     {
-                        await channel.ConnectAsync(remoteAddress);
+                        channel.ConnectAsync(remoteAddress).LinkOutcome(promise);
                     }
                     else
                     {
-                        await channel.ConnectAsync(remoteAddress, localAddress);
+                        channel.ConnectAsync(remoteAddress, localAddress).LinkOutcome(promise);
                     }
                 }
                 catch (Exception ex)
                 {
                     channel.CloseAsync();
-                    throw;
+                    promise.TrySetException(ex);
                 }
             });
+            return promise.Task;
         }
 
         protected override void Init(IChannel channel)
         {
             IChannelPipeline p = channel.Pipeline;
-            p.AddLast(this.Handler());
+            p.AddLast(null, (string)null, this.Handler());
 
             IDictionary<ChannelOption, object> options = this.Options();
             foreach (KeyValuePair<ChannelOption, object> e in options)

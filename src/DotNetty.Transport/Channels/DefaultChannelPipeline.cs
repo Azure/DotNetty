@@ -295,7 +295,7 @@ namespace DotNetty.Transport.Channels
                             {
                                 this.RemoveUnsafe(context);
                             }
-                            return TaskEx.Completed;
+                            return 0;
                         });
                 }
             }
@@ -386,7 +386,7 @@ namespace DotNetty.Transport.Channels
                             {
                                 this.ReplaceUnsafe(ctx, finalNewName, newCtx);
                             }
-                            return TaskEx.Completed;
+                            return 0;
                         });
                 }
             }
@@ -1101,8 +1101,12 @@ namespace DotNetty.Transport.Channels
                 Contract.Assert(!((IPausableEventExecutor)context.Channel.EventLoop).IsAcceptingNewTasks);
 
                 // submit deregistration task
-                return context.Channel.EventLoop.Unwrap().SubmitAsync(
-                    u => ((IChannelUnsafe)u).DeregisterAsync(), this.channel.Unsafe);
+                var promise = new TaskCompletionSource();
+                context.Channel.EventLoop.Unwrap().Execute(
+                    (u, p) => ((IChannelUnsafe)u).DeregisterAsync().LinkOutcome((TaskCompletionSource)p),
+                    this.channel.Unsafe,
+                    promise);
+                return promise.Task;
             }
 
             public void Read(IChannelHandlerContext context)

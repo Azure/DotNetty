@@ -34,6 +34,11 @@ namespace DotNetty.Common.Concurrency
             return true;
         }
 
+        public override string ToString()
+        {
+            return "TaskCompletionSource[status: " + this.Task.Status.ToString() + "]";
+        }
+
         static TaskCompletionSource CreateVoidTcs()
         {
             var tcs = new TaskCompletionSource();
