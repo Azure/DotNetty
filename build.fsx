@@ -70,9 +70,17 @@ open AssemblyInfoFile
 Target "AssemblyInfo" (fun _ ->
     let version = release.AssemblyVersion
 
+    let signKey = getBuildParamOrDefault "signkey" ""
+    let delaySign =
+        match signKey with
+            | s as string when s.Length > 0 -> Some(true)
+            | _ -> None
+    
     CreateCSharpAssemblyInfoWithConfig "src/SharedAssemblyInfo.cs" [
         Attribute.Company company
         Attribute.Copyright copyright
+        Attribute.KeyFile signKey
+        Attribute.DelaySign delaySign
         Attribute.Version version
         Attribute.FileVersion version ] <| AssemblyInfoFileConfig(false)
 )
@@ -160,6 +168,7 @@ Target "CleanNuget" (fun _ ->
 // Publish to nuget.org if nugetkey is specified
 
 let createNugetPackages _ =
+    let nugetSuffix = getBuildParamOrDefault "nugetSuffix" ""
     let mutable dirName = 1
     let removeDir dir = 
         let del _ = 
@@ -182,7 +191,7 @@ let createNugetPackages _ =
         let releaseDir = projectDir @@ @"bin\Release"
         let packages = projectDir @@ "packages.config"
         let packageDependencies = if (fileExists packages) then (getDependencies packages) else []
-        let dependencies = packageDependencies @ getDependencies project
+        let dependencies = packageDependencies @ (getDependencies project |> List.map (fun x -> fst x + nugetSuffix, snd x))
         let releaseVersion = getProjectVersion project
 
         let pack outputDir symbolPackage =
@@ -192,7 +201,7 @@ let createNugetPackages _ =
                         Description = description
                         Authors = authors
                         Copyright = copyright
-                        Project =  project
+                        Project =  project + nugetSuffix
                         Properties = ["Configuration", "Release"]
                         ReleaseNotes = release.Notes |> String.concat "\n"
                         Version = releaseVersion

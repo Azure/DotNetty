@@ -1,3 +1,8 @@
+#### 0.2.3 February 10
+- Critical fix to handling of async operations when initiated from outside the event loop (#66).
+- Fix to enable setting socket-related options through SetOption on Bootstrap (#68).
+- build changes to allow signing assemblies
+
 #### 0.2.2 January 30
 - `ResourceLeakDetector` fix (#64)
 - Assigned GUID on default internal logger `EventSource`
