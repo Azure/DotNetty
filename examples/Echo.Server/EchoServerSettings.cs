@@ -8,7 +8,7 @@ namespace Echo.Server
     {
         public static bool IsSsl
         {
-            get { return ConfigurationManager.AppSettings["ssl"].ToLower() == "true"; }
+            get { return (ConfigurationManager.AppSettings["ssl"] ?? string.Empty).ToLower() == "true"; }
         }
 
         public static int Port
