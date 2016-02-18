@@ -65,7 +65,9 @@ namespace DotNetty.Buffers
             }
 
             // todo: fall through to here means buffer pool is being used inefficiently. consider providing insight on such events
-            return base.AdjustCapacity(newCapacity);
+            base.AdjustCapacity(newCapacity);
+            this.length = newCapacity;
+            return this;
         }
 
         public override IByteBuffer Copy(int index, int length)
