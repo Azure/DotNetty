@@ -82,6 +82,7 @@
     <Compile Include="Concurrency\SingleThreadEventExecutorTests.cs" />
     <Compile Include="Internal\Logging\InternalLoggerFactoryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ThreadLocalPoolTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetty.Common\DotNetty.Common.csproj">

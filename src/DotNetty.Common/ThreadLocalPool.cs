@@ -12,50 +12,375 @@ namespace DotNetty.Common
     {
         public sealed class Handle
         {
+            internal int lastRecycledId;
+            internal int recycleId;
+
             public object Value;
-            internal readonly Stack Stack;
+            internal Stack Stack;
 
             internal Handle(Stack stack)
             {
                 this.Stack = stack;
             }
 
-            public bool Release<T>(T value)
+            public void Release<T>(T value)
                 where T : class
             {
                 Contract.Requires(value == this.Value, "value differs from one backed by this handle.");
 
                 Stack stack = this.Stack;
-                if (stack.Thread != Thread.CurrentThread)
+                Thread thread = Thread.CurrentThread;
+                if (stack.Thread == thread)
                 {
-                    return false;
+                    stack.Push(this);
+                    return;
                 }
 
-                if (stack.Count == stack.Owner.MaxCapacity)
+                Dictionary<Stack, WeakOrderQueue> queueDictionary = DelayedPool.Value;
+                WeakOrderQueue queue;
+                if (!queueDictionary.TryGetValue(stack, out queue))
                 {
-                    return false;
+                    var newQueue = new WeakOrderQueue(stack, thread);
+                    queue = newQueue;
+                    queueDictionary.Add(stack, queue);
                 }
-
-                stack.Push(this);
-                return true;
+                queue.Add(this);
             }
         }
 
-        internal sealed class Stack : Stack<Handle>
+        internal sealed class WeakOrderQueue
         {
-            public readonly ThreadLocalPool Owner;
-            public readonly Thread Thread;
+            const int LinkCapacity = 16;
 
-            public Stack(int initialCapacity, ThreadLocalPool owner, Thread thread)
-                : base(initialCapacity)
+            sealed class Link
             {
-                this.Owner = owner;
+                private int readIndex;
+                private int writeIndex;
+
+                internal readonly Handle[] elements;
+                internal Link next;
+
+                internal int ReadIndex
+                {
+                    get { return this.readIndex; }
+                    set { this.readIndex = value; }
+                }
+
+                internal int WriteIndex
+                {
+                    get { return Volatile.Read(ref this.writeIndex); }
+                    set { Volatile.Write(ref this.writeIndex, value); }
+                }
+
+                internal Link()
+                {
+                    this.elements = new Handle[LinkCapacity];
+                }
+            }
+
+            Link head, tail;
+            internal WeakOrderQueue next;
+            internal WeakReference<Thread> ownerThread;
+            int id = Interlocked.Increment(ref idSource);
+
+            internal bool IsEmpty
+            {
+                get { return this.tail.ReadIndex == this.tail.WriteIndex; }
+            }
+
+            internal WeakOrderQueue(Stack stack, Thread thread)
+            {
+                Contract.Requires(stack != null);
+
+                this.ownerThread = new WeakReference<Thread>(thread);
+                this.head = this.tail = new Link();
+                lock (stack)
+                {
+                    this.next = stack.HeadQueue;
+                    stack.HeadQueue = this;
+                }
+            }
+
+            internal void Add(Handle handle)
+            {
+                Contract.Requires(handle != null);
+
+                handle.lastRecycledId = this.id;
+
+                Link tail = this.tail;
+                int writeIndex = tail.WriteIndex;
+                if (writeIndex == LinkCapacity)
+                {
+                    this.tail = tail = tail.next = new Link();
+                    writeIndex = tail.WriteIndex;
+                }
+                tail.elements[writeIndex] = handle;
+                handle.Stack = null;
+                tail.WriteIndex = writeIndex + 1;
+            }
+
+            internal bool Transfer(Stack dst)
+            {
+                // This method must be called by owner thread.
+                Contract.Requires(dst != null);
+
+                Link head = this.head;
+                if (head == null)
+                {
+                    return false;
+                }
+
+                if (head.ReadIndex == LinkCapacity)
+                {
+                    if (head.next == null)
+                    {
+                        return false;
+                    }
+                    this.head = head = head.next;
+                }
+
+                int srcStart = head.ReadIndex;
+                int srcEnd = head.WriteIndex;
+                int srcSize = srcEnd - srcStart;
+                if (srcSize == 0)
+                {
+                    return false;
+                }
+
+                int dstSize = dst.size;
+                int expectedCapacity = dstSize + srcSize;
+
+                if (expectedCapacity > dst.elements.Length)
+                {
+                    int actualCapacity = dst.IncreaseCapacity(expectedCapacity);
+                    srcEnd = Math.Min(srcStart + actualCapacity - dstSize, srcEnd);
+                }
+
+                if (srcStart != srcEnd)
+                {
+                    Handle[] srcElems = head.elements;
+                    Handle[] dstElems = dst.elements;
+                    int newDstSize = dstSize;
+                    for (int i = srcStart; i < srcEnd; i++)
+                    {
+                        Handle element = srcElems[i];
+                        if (element.recycleId == 0)
+                        {
+                            element.recycleId = element.lastRecycledId;
+                        }
+                        else if (element.recycleId != element.lastRecycledId)
+                        {
+                            throw new InvalidOperationException("recycled already");
+                        }
+                        element.Stack = dst;
+                        dstElems[newDstSize++] = element;
+                        srcElems[i] = null;
+                    }
+                    dst.size = newDstSize;
+
+                    if (srcEnd == LinkCapacity && head.next != null)
+                    {
+                        this.head = head.next;
+                    }
+
+                    head.ReadIndex = srcEnd;
+                    return true;
+                }
+                else
+                {
+                    // The destination stack is full already.
+                    return false;
+                }
+            }
+        }
+
+        internal sealed class Stack
+        {
+            internal readonly ThreadLocalPool Parent;
+            internal readonly Thread Thread;
+
+            internal Handle[] elements;
+
+            int maxCapacity;
+            internal int size;
+
+            WeakOrderQueue headQueue;
+            WeakOrderQueue cursorQueue;
+            WeakOrderQueue prevQueue;
+
+            internal WeakOrderQueue HeadQueue
+            {
+                get { return Volatile.Read(ref this.headQueue); }
+                set { Volatile.Write(ref this.headQueue, value); }
+            }
+
+            internal int Size
+            {
+                get { return this.size; }
+            }
+
+            internal Stack(int maxCapacity, ThreadLocalPool parent, Thread thread)
+            {
+                this.maxCapacity = maxCapacity;
+                this.Parent = parent;
                 this.Thread = thread;
+
+                this.elements = new Handle[Math.Min(InitialCapacity, maxCapacity)];
+            }
+
+            internal int IncreaseCapacity(int expectedCapacity)
+            {
+                int newCapacity = this.elements.Length;
+                int maxCapacity = this.maxCapacity;
+                do
+                {
+                    newCapacity <<= 1;
+                }
+                while (newCapacity < expectedCapacity && newCapacity < maxCapacity);
+
+                newCapacity = Math.Min(newCapacity, maxCapacity);
+                if (newCapacity != this.elements.Length)
+                {
+                    Array.Resize(ref this.elements, newCapacity);
+                }
+
+                return newCapacity;
+            }
+
+            internal void Push(Handle item)
+            {
+                Contract.Requires(item != null);
+                if ((item.recycleId | item.lastRecycledId) != 0)
+                {
+                    throw new InvalidOperationException("released already");
+                }
+                item.recycleId = item.lastRecycledId = ownThreadId;
+
+                int size = this.size;
+                if (size >= this.maxCapacity)
+                {
+                    // Hit the maximum capacity - drop the possibly youngest object.
+                    return;
+                }
+                if (size == this.elements.Length)
+                {
+                    Array.Resize(ref this.elements, Math.Min(size << 1, this.maxCapacity));
+                }
+
+                this.elements[size] = item;
+                this.size = size + 1;
+            }
+
+            internal bool TryPop(out Handle item)
+            {
+                int size = this.size;
+                if (size == 0)
+                {
+                    if (!this.Scavenge())
+                    {
+                        item = null;
+                        return false;
+                    }
+                    size = this.size;
+                }
+                size--;
+                Handle ret = this.elements[size];
+                if (ret.lastRecycledId != ret.recycleId)
+                {
+                    throw new InvalidOperationException("recycled multiple times");
+                }
+                ret.recycleId = 0;
+                ret.lastRecycledId = 0;
+                item = ret;
+                this.size = size;
+
+                return true;
+            }
+
+            bool Scavenge()
+            {
+                // continue an existing scavenge, if any
+                if (this.ScavengeSome())
+                {
+                    return true;
+                }
+
+                // reset our scavenge cursor
+                this.prevQueue = null;
+                this.cursorQueue = this.HeadQueue;
+                return false;
+            }
+
+            bool ScavengeSome()
+            {
+                WeakOrderQueue cursor = this.cursorQueue;
+                if (cursor == null)
+                {
+                    cursor = this.HeadQueue;
+                    if (cursor == null)
+                    {
+                        return false;
+                    }
+                }
+
+                bool success = false;
+                WeakOrderQueue prev = this.prevQueue;
+                do
+                {
+                    if (cursor.Transfer(this))
+                    {
+                        success = true;
+                        break;
+                    }
+
+                    WeakOrderQueue next = cursor.next;
+                    Thread ownerThread;
+                    if (!cursor.ownerThread.TryGetTarget(out ownerThread))
+                    {
+                        // If the thread associated with the queue is gone, unlink it, after
+                        // performing a volatile read to confirm there is no data left to collect.
+                        // We never unlink the first queue, as we don't want to synchronize on updating the head.
+                        if (!cursor.IsEmpty)
+                        {
+                            for (;;)
+                            {
+                                if (cursor.Transfer(this))
+                                {
+                                    success = true;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        if (prev != null)
+                        {
+                            prev.next = next;
+                        }
+                    }
+                    else
+                    {
+                        prev = cursor;
+                    }
+
+                    cursor = next;
+                }
+                while (cursor != null && !success);
+
+                this.prevQueue = prev;
+                this.cursorQueue = cursor;
+                return success;
             }
         }
 
         internal static readonly int DefaultMaxCapacity = 262144;
         internal static readonly int InitialCapacity = Math.Min(256, DefaultMaxCapacity);
+        static int idSource = int.MinValue;
+        static int ownThreadId = Interlocked.Increment(ref idSource);
+
+        internal static readonly ThreadLocal<Dictionary<Stack, WeakOrderQueue>> DelayedPool = 
+            new ThreadLocal<Dictionary<Stack, WeakOrderQueue>>(() => new Dictionary<Stack, WeakOrderQueue>());
 
         public ThreadLocalPool(int maxCapacity)
         {
@@ -96,7 +421,7 @@ namespace DotNetty.Common
 
         Stack InitializeStorage()
         {
-            var stack = new Stack(InitialCapacity, this, Thread.CurrentThread);
+            var stack = new Stack(this.MaxCapacity, this, Thread.CurrentThread);
             if (this.preCreate)
             {
                 for (int i = 0; i < this.MaxCapacity; i++)
@@ -110,7 +435,11 @@ namespace DotNetty.Common
         public T Take()
         {
             Stack stack = this.threadLocal.Value;
-            Handle handle = stack.Count == 0 ? this.CreateValue(stack) : stack.Pop();
+            Handle handle;
+            if (!stack.TryPop(out handle))
+            {
+                handle = this.CreateValue(stack);
+            }
             return (T)handle.Value;
         }
 
@@ -120,6 +449,33 @@ namespace DotNetty.Common
             T value = this.valueFactory(handle);
             handle.Value = value;
             return handle;
+        }
+
+        public bool Release(T o, Handle handle)
+        {
+            if (handle.Stack.Parent != this)
+            {
+                return false;
+            }
+
+            handle.Release(o);
+            return true;
+        }
+
+        internal int ThreadLocalCapacity
+        {
+            get
+            {
+                return this.threadLocal.Value.elements.Length;
+            }
+        }
+
+        internal int ThreadLocalSize
+        {
+            get
+            {
+                return this.threadLocal.Value.Size;
+            }
         }
     }
 }
