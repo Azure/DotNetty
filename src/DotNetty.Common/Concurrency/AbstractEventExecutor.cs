@@ -55,6 +55,21 @@ namespace DotNetty.Common.Concurrency
             this.Execute(new ActionTaskQueueNode(action));
         }
 
+        public virtual IScheduledTask Schedule(Action action, TimeSpan delay)
+        {
+            throw new NotSupportedException();
+        }
+
+        public virtual IScheduledTask Schedule(Action<object> action, object state, TimeSpan delay)
+        {
+            throw new NotSupportedException();
+        }
+
+        public virtual IScheduledTask Schedule(Action<object, object> action, object context, object state, TimeSpan delay)
+        {
+            throw new NotSupportedException();
+        }
+
         public virtual Task ScheduleAsync(Action action, TimeSpan delay)
         {
             return this.ScheduleAsync(action, delay, CancellationToken.None);

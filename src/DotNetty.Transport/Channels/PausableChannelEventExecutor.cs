@@ -54,6 +54,24 @@ namespace DotNetty.Transport.Channels
             this.Unwrap().Execute(action);
         }
 
+        public IScheduledTask Schedule(Action<object, object> action, object context, object state, TimeSpan delay)
+        {
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().Schedule(action, context, state, delay);
+        }
+
+        public IScheduledTask Schedule(Action<object> action, object state, TimeSpan delay)
+        {
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().Schedule(action, state, delay);
+        }
+
+        public IScheduledTask Schedule(Action action, TimeSpan delay)
+        {
+            this.VerifyAcceptingNewTasks();
+            return this.Unwrap().Schedule(action, delay);
+        }
+
         public Task ScheduleAsync(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
             this.VerifyAcceptingNewTasks();

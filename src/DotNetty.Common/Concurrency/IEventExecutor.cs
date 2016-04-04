@@ -109,6 +109,34 @@ namespace DotNetty.Common.Concurrency
         /// Schedules the given action for execution after the specified delay would pass.
         /// </summary>
         /// <remarks>
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        IScheduledTask Schedule(Action action, TimeSpan delay);
+
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
+        /// different objects is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        IScheduledTask Schedule(Action<object> action, object state, TimeSpan delay);
+
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="context"/> and <paramref name="state"/> parameters are useful when repeated execution of
+        /// an action against different objects in different context is needed.
+        /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
+        /// </remarks>
+        IScheduledTask Schedule(Action<object, object> action, object context, object state, TimeSpan delay);
+
+        /// <summary>
+        /// Schedules the given action for execution after the specified delay would pass.
+        /// </summary>
+        /// <remarks>
         /// <paramref name="state"/> parameter is useful to when repeated execution of an action against
         /// different objects is needed.
         /// <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>

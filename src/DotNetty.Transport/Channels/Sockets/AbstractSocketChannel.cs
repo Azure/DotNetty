@@ -7,7 +7,6 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Net.Sockets;
-    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
@@ -41,7 +40,7 @@ namespace DotNetty.Transport.Channels.Sockets
         volatile StateFlags state;
 
         TaskCompletionSource connectPromise;
-        CancellationTokenSource connectCancellation;
+        IScheduledTask connectCancellationTask;
 
         protected AbstractSocketChannel(IChannel parent, Socket socket)
             : base(parent)
@@ -223,7 +222,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 get { return (AbstractSocketChannel)this.channel; }
             }
 
-            public override sealed Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
+            public sealed override Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
             {
                 // todo: handle cancellation
                 AbstractSocketChannel ch = this.Channel;
@@ -253,36 +252,36 @@ namespace DotNetty.Transport.Channels.Sockets
                         TimeSpan connectTimeout = ch.Configuration.ConnectTimeout;
                         if (connectTimeout > TimeSpan.Zero)
                         {
-                            CancellationTokenSource cts = ch.connectCancellation = new CancellationTokenSource();
-
-                            ch.EventLoop.ScheduleAsync(
-                                c =>
+                            ch.connectCancellationTask = ch.EventLoop.Schedule(
+                                (c, a) =>
                                 {
                                     // todo: make static / cache delegate?..
                                     var self = (AbstractSocketChannel)c;
                                     // todo: call Socket.CancelConnectAsync(...)
-                                    TaskCompletionSource promise = ch.connectPromise;
-                                    var cause =
-                                        new ConnectTimeoutException("connection timed out: " + remoteAddress);
+                                    TaskCompletionSource promise = self.connectPromise;
+                                    var cause = new ConnectTimeoutException("connection timed out: " + a.ToString());
                                     if (promise != null && promise.TrySetException(cause))
                                     {
                                         self.CloseAsync();
                                     }
                                 },
                                 this.channel,
-                                connectTimeout,
-                                cts.Token);
+                                remoteAddress,
+                                connectTimeout);
                         }
 
-                        ch.connectPromise.Task.ContinueWith(t =>
-                        {
-                            if (ch.connectCancellation != null)
+                        ch.connectPromise.Task.ContinueWith(
+                            (t, s) =>
                             {
-                                ch.connectCancellation.Cancel();
-                            }
-                            ch.connectPromise = null;
-                            this.channel.CloseAsync();
-                        },
+                                var c = (AbstractSocketChannel)s;
+                                if (c.connectCancellationTask != null)
+                                {
+                                    c.connectCancellationTask.Cancel();
+                                }
+                                c.connectPromise = null;
+                                c.CloseAsync();
+                            },
+                            ch,
                             TaskContinuationOptions.OnlyOnCanceled | TaskContinuationOptions.ExecuteSynchronously);
 
                         return ch.connectPromise.Task;
@@ -356,9 +355,9 @@ namespace DotNetty.Transport.Channels.Sockets
                 {
                     // Check for null as the connectTimeoutFuture is only created if a connectTimeoutMillis > 0 is used
                     // See https://github.com/netty/netty/issues/1770
-                    if (ch.connectCancellation != null)
+                    if (ch.connectCancellationTask != null)
                     {
-                        ch.connectCancellation.Cancel();
+                        ch.connectCancellationTask.Cancel();
                     }
                     ch.connectPromise = null;
                 }
@@ -461,11 +460,11 @@ namespace DotNetty.Transport.Channels.Sockets
                 this.connectPromise = null;
             }
 
-            CancellationTokenSource cancellation = this.connectCancellation;
-            if (cancellation != null)
+            IScheduledTask cancellationTask = this.connectCancellationTask;
+            if (cancellationTask != null)
             {
-                cancellation.Cancel();
-                this.connectCancellation = null;
+                cancellationTask.Cancel();
+                this.connectCancellationTask = null;
             }
 
             SocketChannelAsyncOperation readOp = this.readOperation;

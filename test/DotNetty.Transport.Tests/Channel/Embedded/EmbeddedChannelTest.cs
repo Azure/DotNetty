@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Embedded;
@@ -71,6 +72,38 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
             Task future = ch.EventLoop.ScheduleAsync(() => { }, TimeSpan.FromDays(1));
             ch.Finish();
             Assert.True(future.IsCanceled);
+        }
+
+        [Fact]
+        public async Task TestScheduledCancelledDirectly()
+        {
+            var ch = new EmbeddedChannel(new ChannelHandlerAdapter());
+            
+            IScheduledTask task1 = ch.EventLoop.Schedule(() => { }, new TimeSpan(1));
+            IScheduledTask task2 = ch.EventLoop.Schedule(() => { }, new TimeSpan(1));
+            IScheduledTask task3 = ch.EventLoop.Schedule(() => { }, new TimeSpan(1));
+            task2.Cancel();
+            ch.RunPendingTasks();
+            Task<bool> checkTask1 = ch.EventLoop.SubmitAsync(() => task1.Completion.IsCompleted);
+            Task<bool> checkTask2 = ch.EventLoop.SubmitAsync(() => task2.Completion.IsCanceled);
+            Task<bool> checkTask3 = ch.EventLoop.SubmitAsync(() => task3.Completion.IsCompleted);
+            ch.RunPendingTasks();
+            ch.CheckException();
+            Assert.True(await checkTask1);
+            Assert.True(await checkTask2);
+            Assert.True(await checkTask3);
+        }
+
+        [Fact]
+        public async Task TestScheduledCancelledAsync()
+        {
+            var ch = new EmbeddedChannel(new ChannelHandlerAdapter());
+            var cts = new CancellationTokenSource();
+            Task task = ch.EventLoop.ScheduleAsync(() => { }, TimeSpan.FromDays(1), cts.Token);
+            await Task.Run(() => cts.Cancel());
+            var checkTask = ch.EventLoop.SubmitAsync(() => task.IsCanceled);
+            ch.RunPendingTasks();
+            Assert.True(await checkTask);
         }
 
         class ChannelHandler3 : ChannelHandlerAdapter

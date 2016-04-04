@@ -125,7 +125,17 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Concurrency\ActionScheduledAsyncTask.cs" />
+    <Compile Include="Concurrency\ActionScheduledTask.cs" />
     <Compile Include="Concurrency\ICallable`T.cs" />
+    <Compile Include="Concurrency\IScheduledRunnable.cs" />
+    <Compile Include="Concurrency\IScheduledTask.cs" />
+    <Compile Include="Concurrency\ScheduledAsyncTask.cs" />
+    <Compile Include="Concurrency\ScheduledTask.cs" />
+    <Compile Include="Concurrency\StateActionScheduledAsyncTask.cs" />
+    <Compile Include="Concurrency\StateActionScheduledTask.cs" />
+    <Compile Include="Concurrency\StateActionWithContextScheduledAsyncTask.cs" />
+    <Compile Include="Concurrency\StateActionWithContextScheduledTask.cs" />
     <Compile Include="Deque.cs" />
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="Concurrency\AbstractEventExecutor.cs" />

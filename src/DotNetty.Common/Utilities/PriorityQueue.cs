@@ -7,7 +7,6 @@ namespace DotNetty.Common.Utilities
     using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
-    using System.Linq;
 
     public class PriorityQueue<T> : IEnumerable<T>
         where T : class
@@ -71,6 +70,32 @@ namespace DotNetty.Common.Utilities
             }
             this.count = oldCount + 1;
             this.BubbleUp(oldCount, item);
+        }
+
+        public void Remove(T item)
+        {
+            int index = Array.IndexOf(this.items, item);
+            if (index == -1)
+            {
+                return;
+            }
+
+            this.count--;
+            if (index == this.count)
+            {
+                this.items[index] = default(T);
+            }
+            else
+            {
+                T last = this.items[this.count];
+                this.items[this.count] = default(T);
+                this.TrickleDown(index, last);
+                if (this.items[index] == last)
+                {
+                    this.BubbleUp(index, last); 
+                }
+            }
+
         }
 
         void BubbleUp(int index, T item)
