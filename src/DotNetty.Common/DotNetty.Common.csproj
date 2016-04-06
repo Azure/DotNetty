@@ -163,7 +163,7 @@
     <Compile Include="IResourceLeakHint.cs" />
     <Compile Include="ThreadLocalObjectList.cs" />
     <Compile Include="ThreadLocalPool.cs" />
-    <Compile Include="Timestamp.cs" />
+    <Compile Include="PreciseTimeSpan.cs" />
     <Compile Include="Utilities\AtomicReference.cs" />
     <Compile Include="Utilities\BitOps.cs" />
     <Compile Include="Utilities\ByteArrayExtensions.cs" />

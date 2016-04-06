@@ -85,7 +85,40 @@ namespace DotNetty.Common.Tests.Concurrency
             Assert.True(mre.WaitOne(TimeSpan.FromSeconds(5)));
         }
 
-        public class Container<T>
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ScheduledTaskFiresOnTime(bool scheduleFromExecutor)
+        {
+            var scheduler = new SingleThreadEventExecutor(null, TimeSpan.FromMinutes(1));
+            var promise = new TaskCompletionSource();
+            Func<Task> scheduleFunc = () => scheduler.ScheduleAsync(() => promise.Complete(), TimeSpan.FromMilliseconds(100));
+            Task task = scheduleFromExecutor ? await scheduler.SubmitAsync(scheduleFunc) : scheduleFunc();
+            await Task.WhenAny(task, Task.Delay(TimeSpan.FromMilliseconds(300)));
+            Assert.True(task.IsCompleted);
+        }
+
+        [Fact]
+        public async Task ScheduledTaskFiresOnTimeWhileBusy()
+        {
+            var scheduler = new SingleThreadEventExecutor(null, TimeSpan.FromMilliseconds(10));
+            var promise = new TaskCompletionSource();
+            Action selfQueueAction = null;
+            selfQueueAction = () =>
+            {
+                if (!promise.Task.IsCompleted)
+                {
+                    scheduler.Execute(selfQueueAction);
+                }
+            };
+
+            scheduler.Execute(selfQueueAction);
+            Task task = scheduler.ScheduleAsync(() => promise.Complete(), TimeSpan.FromMilliseconds(100));
+            await Task.WhenAny(task, Task.Delay(TimeSpan.FromMilliseconds(300)));
+            Assert.True(task.IsCompleted);
+        }
+
+        class Container<T>
         {
             public T Value;
         }
