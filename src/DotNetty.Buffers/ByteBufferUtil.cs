@@ -579,7 +579,7 @@ namespace DotNetty.Buffers
 
             if (src.HasArray)
             {
-                return encoding.GetString(src.Array, readerIndex, len);
+                return encoding.GetString(src.Array, src.ArrayOffset + readerIndex, len);
             }
             else
             {

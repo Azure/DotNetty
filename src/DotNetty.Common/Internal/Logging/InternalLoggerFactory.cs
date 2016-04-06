@@ -5,6 +5,8 @@ namespace DotNetty.Common.Internal.Logging
 {
     using System;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
+    using System.Threading;
 
     /// <summary>
     ///     Creates an <see cref="IInternalLogger"/> or changes the default factory
@@ -21,8 +23,7 @@ namespace DotNetty.Common.Internal.Logging
     /// </summary>
     public abstract class InternalLoggerFactory
     {
-        static volatile InternalLoggerFactory defaultFactory =
-            NewDefaultFactory(typeof(InternalLoggerFactory).FullName);
+        static InternalLoggerFactory defaultFactory;
 
         static InternalLoggerFactory()
         {
@@ -48,12 +49,25 @@ namespace DotNetty.Common.Internal.Logging
         /// </summary>
         public static InternalLoggerFactory DefaultFactory
         {
-            get { return defaultFactory; }
+            get
+            {
+                InternalLoggerFactory factory = Volatile.Read(ref defaultFactory);
+                if (factory == null)
+                {
+                    factory = NewDefaultFactory(typeof(InternalLoggerFactory).FullName);
+                    InternalLoggerFactory current = Interlocked.CompareExchange(ref defaultFactory, factory, null);
+                    if (current != null)
+                    {
+                        return current;
+                    }
+                }
+                return factory;
+            }
             set
             {
                 Contract.Requires(value != null);
 
-                defaultFactory = value;
+                Volatile.Write(ref defaultFactory, value);
             }
         }
 
