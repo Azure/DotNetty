@@ -9,7 +9,7 @@ namespace DotNetty.Transport.Channels
 
     public class SingleThreadEventLoop : SingleThreadEventExecutor, IEventLoop
     {
-        static readonly TimeSpan DefaultBreakoutInterval = TimeSpan.FromSeconds(5);
+        static readonly TimeSpan DefaultBreakoutInterval = TimeSpan.FromMilliseconds(100);
 
         public SingleThreadEventLoop()
             : this(null, DefaultBreakoutInterval)

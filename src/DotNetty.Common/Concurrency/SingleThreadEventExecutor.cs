@@ -27,7 +27,6 @@ namespace DotNetty.Common.Concurrency
         readonly MpscLinkedQueue<IRunnable> taskQueue = new MpscLinkedQueue<IRunnable>();
         Thread thread;
         volatile int executionState = ST_NOT_STARTED;
-        readonly TimeSpan breakoutInterval;
         readonly PreciseTimeSpan preciseBreakoutInterval;
         PreciseTimeSpan lastExecutionTime;
         readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim();
@@ -41,7 +40,6 @@ namespace DotNetty.Common.Concurrency
         public SingleThreadEventExecutor(string threadName, TimeSpan breakoutInterval)
         {
             this.terminationCompletionSource = new TaskCompletionSource();
-            this.breakoutInterval = breakoutInterval;
             this.preciseBreakoutInterval = PreciseTimeSpan.FromTimeSpan(breakoutInterval);
             this.scheduler = new ExecutorTaskScheduler(this);
             this.thread = new Thread(this.Loop)
@@ -400,10 +398,23 @@ namespace DotNetty.Common.Concurrency
             if (task == null)
             {
                 this.emptyEvent.Reset();
-                if ((task = this.taskQueue.Dequeue()) == null // revisit queue as producer might have put a task in meanwhile
-                    && this.emptyEvent.Wait(this.breakoutInterval))
+                if ((task = this.taskQueue.Dequeue()) == null) // revisit queue as producer might have put a task in meanwhile
                 {
-                    task = this.taskQueue.Dequeue();
+                    IScheduledRunnable nextScheduledTask = this.ScheduledTaskQueue.Peek();
+                    if (nextScheduledTask != null)
+                    {
+                        TimeSpan wakeUpTimeout = (nextScheduledTask.Deadline - PreciseTimeSpan.FromStart).ToTimeSpan();
+                        if (this.emptyEvent.Wait(wakeUpTimeout))
+                        {
+                            // woken up before the next scheduled task was due
+                            task = this.taskQueue.Dequeue();
+                        }
+                    }
+                    else
+                    {
+                        this.emptyEvent.Wait();
+                        task = this.taskQueue.Dequeue();
+                    }
                 }
             }
 
