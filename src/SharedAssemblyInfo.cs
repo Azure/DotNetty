@@ -2,8 +2,8 @@
 using System.Reflection;
 
 [assembly: AssemblyCompanyAttribute("DotNetty")]
-[assembly: AssemblyCopyrightAttribute("Copyright © 2015")]
+[assembly: AssemblyCopyrightAttribute("Copyright © 2016")]
 [assembly: AssemblyKeyFileAttribute("")]
 [assembly: AssemblyDelaySignAttribute(false)]
-[assembly: AssemblyVersionAttribute("0.2.3")]
-[assembly: AssemblyFileVersionAttribute("0.2.3")]
+[assembly: AssemblyVersionAttribute("0.2.4")]
+[assembly: AssemblyFileVersionAttribute("0.2.4")]

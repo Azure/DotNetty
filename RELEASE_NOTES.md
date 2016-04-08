@@ -1,9 +1,17 @@
-#### 0.2.3 February 10
+#### 0.2.4 April 07 2016
+- Proper handling of pooled buffer growth beyond max capacity of buffer in pool (fixing #71).
+- Improved pooling of buffers when a buffer was released in other thread (#73).
+- Introduction of IEventExecutor.Schedule and proper cancellation of scheduled tasks (#80).
+- Better handling of wake-ups for scheduled tasks (#81).
+- Default internal logging initialization is deferred to allow override it completely (#80 extra).
+- Honoring `IByteBuffer.ArrayOffset` in `IByteBuffer.ToString(Encoding)` (#80 extra).
+
+#### 0.2.3 February 10 2016
 - Critical fix to handling of async operations when initiated from outside the event loop (#66).
 - Fix to enable setting socket-related options through SetOption on Bootstrap (#68).
 - build changes to allow signing assemblies
 
-#### 0.2.2 January 30
+#### 0.2.2 January 30 2016
 - `ResourceLeakDetector` fix (#64)
 - Assigned GUID on default internal logger `EventSource`
 - `IByteBuffer.ToString(..)` for efficient string decoding directly from Byte Buffer
