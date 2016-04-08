@@ -6,6 +6,7 @@ open System.IO
 open Fake
 open Fake.FileUtils
 open Fake.TaskRunnerHelper
+open Fake.StrongNamingHelper
 
 //--------------------------------------------------------------------------------
 // Information about the project for Nuget and Assembly info files
@@ -13,7 +14,7 @@ open Fake.TaskRunnerHelper
 
 let product = "DotNetty"
 let authors = [ "Microsoft Azure" ]
-let copyright = "Copyright © 2015"
+let copyright = "Copyright © 2016"
 let company = "DotNetty"
 let description = "High performance, reactive TCP / UDP socket middleware for .NET"
 let tags = ["socket";"sockets";"UDP";"TCP";"Netty";"DotNetty"]
@@ -70,7 +71,7 @@ open AssemblyInfoFile
 Target "AssemblyInfo" (fun _ ->
     let version = release.AssemblyVersion
 
-    let signKey = getBuildParamOrDefault "signkey" ""
+    let signKey = getBuildParamOrDefault "signKey" ""
     let delaySign =
         match signKey with
             | s as string when s.Length > 0 -> Some(true)
@@ -95,6 +96,15 @@ Target "Build" (fun _ ->
 )
 
 //--------------------------------------------------------------------------------
+// Build the solution
+
+Target "BuildSignedConfig" (fun _ ->
+    !!"DotNetty.sln"
+    |> MSBuild "" "Rebuild" ["Configuration", "Signed"]
+    |> ignore
+)
+
+//--------------------------------------------------------------------------------
 // Copy the build output to bin directory
 //--------------------------------------------------------------------------------
 
@@ -113,8 +123,28 @@ Target "CopyOutput" (fun _ ->
     |> List.iter copyOutput
 )
 
+//--------------------------------------------------------------------------------
+// Copy the build output to bin directory
+//--------------------------------------------------------------------------------
+
+Target "ResignAssemblies" (fun _ ->    
+    let reSignKey = getBuildParamOrDefault "reSignKey" ""
+    let copyOutput project =
+        let src = "src" @@ project @@ "bin" @@ "Release" @@ project + ".dll"
+        StrongName (fun x -> x) ("-Ra " + src + " " + reSignKey)
+    [ "DotNetty.Buffers"
+      "DotNetty.Common"
+      "DotNetty.Transport"
+      "DotNetty.Codecs"
+      "DotNetty.Handlers"
+      "DotNetty.Codecs.Mqtt"
+    ]
+    |> List.iter copyOutput
+)
+
 Target "BuildRelease" DoNothing
 Target "BuildReleaseMono" DoNothing
+Target "BuildSigned" DoNothing
 
 //--------------------------------------------------------------------------------
 // Tests targets
@@ -145,9 +175,10 @@ module Nuget =
     let getDependencies project =
         match project with
         | "DotNetty.Common" -> []
-        | "DotNetty.Transport" -> ["DotNetty.Buffers", release.NugetVersion]
-        | "DotNetty.Codecs" -> ["DotNetty.Transport", release.NugetVersion]
-        | codecs when (codecs.StartsWith("DotNetty.Codecs.")) -> ["DotNetty.Codecs", release.NugetVersion]
+        | "DotNetty.Transport" -> ["DotNetty.Common", release.NugetVersion] @ ["DotNetty.Buffers", release.NugetVersion]
+        | "DotNetty.Codecs" -> ["DotNetty.Common", release.NugetVersion] @ ["DotNetty.Buffers", release.NugetVersion] @ ["DotNetty.Transport", release.NugetVersion]
+        | "DotNetty.Handlers" -> ["DotNetty.Common", release.NugetVersion] @ ["DotNetty.Buffers", release.NugetVersion] @ ["DotNetty.Transport", release.NugetVersion] @ ["DotNetty.Codecs", release.NugetVersion]
+        | codecs when (codecs.StartsWith("DotNetty.Codecs.")) -> ["DotNetty.Common", release.NugetVersion] @ ["DotNetty.Buffers", release.NugetVersion] @ ["DotNetty.Transport", release.NugetVersion] @ ["DotNetty.Codecs", release.NugetVersion]
         | _ -> ["DotNetty.Common", release.NugetVersion]
 
      // used to add -pre suffix to pre-release packages
@@ -288,6 +319,10 @@ Target "CreateNuget" <| fun _ ->
 Target "PublishNuget" <| fun _ -> 
     publishNugetPackages()
 
+Target "NugetSigned" <| fun _ -> 
+    createNugetPackages()
+    publishNugetPackages()
+
 //--------------------------------------------------------------------------------
 // Help 
 //--------------------------------------------------------------------------------
@@ -359,11 +394,15 @@ Target "All" DoNothing
 // build dependencies
 "Clean" ==> "AssemblyInfo" ==> "RestorePackages" ==> "Build" ==> "CopyOutput" ==> "BuildRelease"
 
+// build dependencies
+"Clean" ==> "AssemblyInfo" ==> "RestorePackages" ==> "BuildSignedConfig" ==> "ResignAssemblies" ==> "BuildSigned"
+
 // tests dependencies
 "CleanTests" ==> "RunTests"
-"CleanNuget" ==> "BuildRelease" ==> "Nuget"
 
 // nuget dependencies
+"CleanNuget" ==> "BuildRelease" ==> "Nuget"
+"CleanNuget" ==> "BuildSigned" ==> "NugetSigned"
 
 "BuildRelease" ==> "All"
 "RunTests" ==> "All"
