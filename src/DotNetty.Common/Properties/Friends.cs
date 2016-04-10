@@ -3,5 +3,8 @@
 
 using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("DotNetty.Common.Tests")]
+#if !NOTEST
 
+[assembly: InternalsVisibleTo("DotNetty.Common.Tests")]
+
+#endif

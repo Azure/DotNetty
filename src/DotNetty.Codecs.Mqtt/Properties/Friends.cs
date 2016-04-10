@@ -3,4 +3,8 @@
 
 using System.Runtime.CompilerServices;
 
+#if !NOTEST
+
 [assembly: InternalsVisibleTo("DotNetty.Codecs.Mqtt.Tests")]
+
+#endif
