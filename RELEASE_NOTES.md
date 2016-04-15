@@ -1,3 +1,6 @@
+#### 0.2.5 April 14 2016
+- Fixes regression in STEE where while evaluation of idling timeout did not account for immediately pending scheduled tasks (#83).
+
 #### 0.2.4 April 07 2016
 - Proper handling of pooled buffer growth beyond max capacity of buffer in pool (fixing #71).
 - Improved pooling of buffers when a buffer was released in other thread (#73).

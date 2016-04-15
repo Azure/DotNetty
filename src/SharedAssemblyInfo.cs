@@ -5,5 +5,5 @@ using System.Reflection;
 [assembly: AssemblyCopyrightAttribute("Copyright © 2016")]
 [assembly: AssemblyKeyFileAttribute("")]
 [assembly: AssemblyDelaySignAttribute(false)]
-[assembly: AssemblyVersionAttribute("0.2.4")]
-[assembly: AssemblyFileVersionAttribute("0.2.4")]
+[assembly: AssemblyVersionAttribute("0.2.5")]
+[assembly: AssemblyFileVersionAttribute("0.2.5")]
