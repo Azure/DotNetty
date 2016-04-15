@@ -88,7 +88,7 @@ namespace DotNetty.Common.Tests
             Random rand = new Random();
             for (int i = 0; i < 50; i++)
             {
-                this.MaxCapacityTest(rand.Next((1000) + 256)); // 256 - 1256
+                this.MaxCapacityTest(rand.Next(1000) + 256); // 256 - 1256
             }
         }
 

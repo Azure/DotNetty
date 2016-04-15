@@ -403,11 +403,14 @@ namespace DotNetty.Common.Concurrency
                     IScheduledRunnable nextScheduledTask = this.ScheduledTaskQueue.Peek();
                     if (nextScheduledTask != null)
                     {
-                        TimeSpan wakeUpTimeout = (nextScheduledTask.Deadline - PreciseTimeSpan.FromStart).ToTimeSpan();
-                        if (this.emptyEvent.Wait(wakeUpTimeout))
+                        PreciseTimeSpan wakeupTimeout = nextScheduledTask.Deadline - PreciseTimeSpan.FromStart;
+                        if (wakeupTimeout.Ticks > 0)
                         {
-                            // woken up before the next scheduled task was due
-                            task = this.taskQueue.Dequeue();
+                            if (this.emptyEvent.Wait(wakeupTimeout.ToTimeSpan()))
+                            {
+                                // woken up before the next scheduled task was due
+                                task = this.taskQueue.Dequeue();
+                            }
                         }
                     }
                     else

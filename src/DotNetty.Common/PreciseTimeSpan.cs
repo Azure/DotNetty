@@ -15,8 +15,14 @@ namespace DotNetty.Common
         readonly long ticks;
 
         PreciseTimeSpan(long ticks)
+            : this()
         {
             this.ticks = ticks;
+        }
+
+        public long Ticks
+        {
+            get { return this.ticks; }
         }
 
         public static readonly PreciseTimeSpan Zero = new PreciseTimeSpan(0);
