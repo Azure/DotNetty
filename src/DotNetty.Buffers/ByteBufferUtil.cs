@@ -160,7 +160,7 @@ namespace DotNetty.Buffers
         public static string HexDump(byte[] array, int fromIndex, int length)
         {
             Contract.Requires(length >= 0);
-            
+
             if (length == 0)
             {
                 return "";
@@ -567,6 +567,57 @@ namespace DotNetty.Buffers
                 dump.Append((rowStartIndex & 0xFFFFFFFFL | 0x100000000L).ToString("X2"));
                 dump.Insert(dump.Length - 9, '|');
                 dump.Append('|');
+            }
+        }
+
+
+        /// <summary>
+        /// Encode the given <see cref="CharBuffer"/> using the given <see cref="Encoding"/> into a new <see cref="IByteBuffer"/> which
+        /// is allocated via the <see cref="IByteBufferAllocator"/>.
+        /// </summary>
+        /// <param name="alloc">The <see cref="IByteBufferAllocator"/> to allocate {@link IByteBuffer}.</param>
+        /// <param name="src">src The <see cref="String"/> to encode.</param>
+        /// <param name="encoding">charset The specified <see cref="Encoding"/></param>
+        public static IByteBuffer EncodeString(IByteBufferAllocator alloc, string src, Encoding encoding)
+        {
+            return EncodeString0(alloc, src, encoding, 0);
+        }
+
+        /// <summary>
+        /// Encode the given <see cref="CharBuffer"/> using the given <see cref="Encoding"/> into a new <see cref="IByteBuffer"/> which
+        /// is allocated via the <see cref="IByteBufferAllocator"/>.
+        /// </summary>
+        /// <param name="alloc">The <see cref="IByteBufferAllocator"/> to allocate {@link IByteBuffer}.</param>
+        /// <param name="src">src The <see cref="String"/> to encode.</param>
+        /// <param name="encoding">charset The specified <see cref="Encoding"/></param>
+        /// <param name="extraCapacity">the extra capacity to alloc except the space for decoding.</param>
+        public static IByteBuffer EncodeString(IByteBufferAllocator alloc, string src, Encoding encoding, int extraCapacity)
+        {
+            return EncodeString0(alloc, src, encoding, extraCapacity);
+        }
+
+        static IByteBuffer EncodeString0(IByteBufferAllocator alloc, string src, Encoding encoding, int extraCapacity)
+        {
+            int length = encoding.GetMaxByteCount(src.Length) + extraCapacity;
+            var release = true;
+
+            IByteBuffer dst = alloc.Buffer(length);
+            Contract.Assert(dst.HasArray, "Operation expects allocator to operate array-based buffers.");
+
+            try
+            {
+                encoding.GetBytes(src, 0, src.Length, dst.Array, dst.ArrayOffset);
+                dst.SetWriterIndex(length);
+                release = false;
+
+                return dst;
+            }
+            finally
+            {
+                if (release)
+                {
+                    dst.Release();
+                }
             }
         }
 

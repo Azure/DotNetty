@@ -9,6 +9,7 @@ namespace DotNetty.Buffers
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
 
     public class WrappedByteBuffer : IByteBuffer
     {
@@ -724,6 +725,26 @@ namespace DotNetty.Buffers
         public virtual bool Release(int decrement)
         {
             return this.Buf.Release(decrement);
+        }
+
+        public int ForEachByte(ByteProcessor processor)
+        {
+            return this.ForEachByte(processor);
+        }
+
+        public int ForEachByte(int index, int length, ByteProcessor processor)
+        {
+            return this.ForEachByte(index, length, processor);
+        }
+
+        public int ForEachByteDesc(ByteProcessor processor)
+        {
+            return this.ForEachByteDesc(processor);
+        }
+
+        public int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        {
+            return this.ForEachByteDesc(processor);
         }
 
         public virtual string ToString(Encoding encoding)
