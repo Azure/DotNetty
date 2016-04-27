@@ -8,6 +8,7 @@ namespace Echo.Client
     using System.Net;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
+    using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
@@ -42,10 +43,12 @@ namespace Echo.Client
                             string targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
                             pipeline.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
                         }
+                        pipeline.AddLast(new LengthFieldPrepender(2));
+                        pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
                         pipeline.AddLast(new EchoClientHandler());
                     }));
-                
+
                 IChannel bootstrapChannel = await bootstrap.ConnectAsync(new IPEndPoint(EchoClientSettings.Host, EchoClientSettings.Port));
 
                 Console.ReadLine();

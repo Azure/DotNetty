@@ -148,7 +148,7 @@ namespace DotNetty.Buffers
 
         public override IByteBuffer GetBytes(int index, Stream destination, int length)
         {
-            destination.Write(this.Array, this.ArrayOffset + this.ReaderIndex, this.ReadableBytes);
+            destination.Write(this.Array, this.ArrayOffset + index, length);
             return this;
         }
 

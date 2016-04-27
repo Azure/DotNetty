@@ -247,7 +247,7 @@ namespace DotNetty.Handlers.Tls
                 this.state = oldState | State.Authenticating;
                 if (this.isServer)
                 {
-                    this.sslStream.AuthenticateAsServerAsync(this.certificate) // todo: change to begin/end
+                    this.sslStream.AuthenticateAsServerAsync(this.certificate, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false) // todo: change to begin/end
                         .ContinueWith(AuthenticationCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
                 else

@@ -11,6 +11,7 @@ namespace DotNetty.Tests.End2End
     using System.Text;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Codecs;
     using DotNetty.Codecs.Mqtt;
     using DotNetty.Codecs.Mqtt.Packets;
     using DotNetty.Common.Concurrency;
@@ -49,7 +50,9 @@ namespace DotNetty.Tests.End2End
             var tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
             Func<Task> closeServerFunc = await this.StartServerAsync(true, ch =>
             {
-                ch.Pipeline.AddLast(TlsHandler.Server(tlsCertificate));
+                ch.Pipeline.AddLast("server tls", TlsHandler.Server(tlsCertificate));
+                ch.Pipeline.AddLast("server prepender", new LengthFieldPrepender(2));
+                ch.Pipeline.AddLast("server decoder", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
                 ch.Pipeline.AddLast(new EchoChannelHandler());
             }, testPromise);
 
@@ -61,7 +64,9 @@ namespace DotNetty.Tests.End2End
                 .Handler(new ActionChannelInitializer<ISocketChannel>(ch =>
                 {
                     string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
-                    ch.Pipeline.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
+                    ch.Pipeline.AddLast("client tls", TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
+                    ch.Pipeline.AddLast("client prepender", new LengthFieldPrepender(2));
+                    ch.Pipeline.AddLast("client decoder", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
                     ch.Pipeline.AddLast(new TestScenarioRunner(this.GetEchoClientScenario, testPromise));
                 }));
 
@@ -74,8 +79,8 @@ namespace DotNetty.Tests.End2End
 
                 this.Output.WriteLine("Connected channel: {0}", clientChannel);
 
-                await Task.WhenAny(testPromise.Task, Task.Delay(TimeSpan.FromMinutes(1)));
-                Assert.True(testPromise.Task.IsCompleted);
+                await Task.WhenAny(testPromise.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+                Assert.True(testPromise.Task.IsCompleted, "timed out");
                 testPromise.Task.Wait();
             }
             finally
@@ -277,7 +282,6 @@ namespace DotNetty.Tests.End2End
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
             bool started = false;
-            //var tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
             try
             {
                 ServerBootstrap b = new ServerBootstrap()
