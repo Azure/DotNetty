@@ -933,5 +933,109 @@ namespace DotNetty.Buffers
         {
             return ByteBufferUtil.DecodeString(this, index, length, encoding);
         }
+
+        public int ForEachByte(ByteProcessor processor)
+        {
+            int index = this.ReaderIndex;
+            int length = this.WriterIndex - index;
+            this.EnsureAccessible();
+
+            return this.ForEachByteAsc0(index, length, processor);
+        }
+
+        public int ForEachByte(int index, int length, ByteProcessor processor)
+        {
+            this.CheckIndex(index, length);
+
+            return this.ForEachByteAsc0(index, length, processor);
+        }
+
+        int ForEachByteAsc0(int index, int length, ByteProcessor processor)
+        {
+            if (processor == null)
+            {
+                throw new NullReferenceException("processor");
+            }
+
+            if (length == 0)
+            {
+                return -1;
+            }
+
+            int endIndex = index + length;
+            int i = index;
+            try
+            {
+                do
+                {
+                    if (processor.Process(this._GetByte(i)))
+                    {
+                        i++;
+                    }
+                    else
+                    {
+                        return i;
+                    }
+                } while (i < endIndex);
+            }
+            catch
+            {
+                throw;
+            }
+
+            return -1;
+        }
+
+        public int ForEachByteDesc(ByteProcessor processor)
+        {
+            int index = this.ReaderIndex;
+            int length = this.WriterIndex - index;
+            this.EnsureAccessible();
+
+            return this.ForEachByteDesc0(index, length, processor);
+        }
+
+        public int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        {
+            this.CheckIndex(index, length);
+
+            return this.ForEachByteDesc0(index, length, processor);
+        }
+
+        int ForEachByteDesc0(int index, int length, ByteProcessor processor)
+        {
+
+            if (processor == null)
+            {
+                throw new NullReferenceException("processor");
+            }
+
+            if (length == 0)
+            {
+                return -1;
+            }
+
+            int i = index + length - 1;
+            try
+            {
+                do
+                {
+                    if (processor.Process(this._GetByte(i)))
+                    {
+                        i--;
+                    }
+                    else
+                    {
+                        return i;
+                    }
+                } while (i >= index);
+            }
+            catch
+            {
+                throw;
+            }
+
+            return -1;
+        }
     }
 }

@@ -9,6 +9,7 @@ namespace DotNetty.Buffers
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
 
     /// <summary>
     /// Inspired by the Netty ByteBuffer implementation (https://github.com/netty/netty/blob/master/buffer/src/main/java/io/netty/buffer/ByteBuf.java)
@@ -504,7 +505,7 @@ namespace DotNetty.Buffers
         IByteBuffer ReadBytes(byte[] destination, int dstIndex, int length);
 
         IByteBuffer ReadBytes(Stream destination, int length);
-            
+
         /// <summary>
         /// Increases the current <see cref="ReaderIndex"/> by the specified <see cref="length"/> in this buffer.
         /// </summary>
@@ -590,5 +591,47 @@ namespace DotNetty.Buffers
         string ToString(Encoding encoding);
 
         string ToString(int index, int length, Encoding encoding);
+
+        /// <summary>
+        /// Iterates over the readable bytes of this buffer with the specified <c>processor</c> in ascending order.
+        /// </summary>
+        /// <returns><c>1</c> if the processor iterated to or beyond the end of the readable bytes.
+        /// The last-visited index If the <see cref="ByteProcessor.Process(byte)"/> returned <c>false</c>.
+        /// </returns>
+        /// <param name="processor">Processor.</param>
+        int ForEachByte(ByteProcessor processor);
+
+        /// <summary>
+        /// Iterates over the specified area of this buffer with the specified {@code processor} in ascending order.
+        /// (i.e. {@code index}, {@code (index + 1)},  .. {@code (index + length - 1)})
+        /// </summary>
+        /// <returns>{@code -1} if the processor iterated to or beyond the end of the specified area.
+        /// The last-visited index If the {@link ByteProcessor#process(byte)} returned {@code false}.
+        /// </returns>
+        /// <param name="index">Index.</param>
+        /// <param name="length">Length.</param>
+        /// <param name="processor">Processor.</param>
+        int ForEachByte(int index, int length, ByteProcessor processor);
+
+        /// <summary>
+        /// Iterates over the readable bytes of this buffer with the specified {@code processor} in descending order.
+        /// </summary>
+        /// <returns>{@code -1} if the processor iterated to or beyond the beginning of the readable bytes.
+        /// The last-visited index If the {@link ByteProcessor#process(byte)} returned {@code false}.
+        /// </returns>
+        /// <param name="processor">Processor.</param>
+        int ForEachByteDesc(ByteProcessor processor);
+
+        /// <summary>
+        /// Iterates over the specified area of this buffer with the specified {@code processor} in descending order.
+        /// (i.e. {@code (index + length - 1)}, {@code (index + length - 2)}, ... {@code index})
+        /// </summary>
+        /// <returns>{@code -1} if the processor iterated to or beyond the beginning of the specified area.
+        /// The last-visited index If the {@link ByteProcessor#process(byte)} returned {@code false}.
+        /// </returns>
+        /// <param name="index">Index.</param>
+        /// <param name="length">Length.</param>
+        /// <param name="processor">Processor.</param>
+        int ForEachByteDesc(int index, int length, ByteProcessor processor);
     }
 }

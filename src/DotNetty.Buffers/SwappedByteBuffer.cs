@@ -11,11 +11,12 @@ namespace DotNetty.Buffers
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
 
     /// <summary>
     /// Wrapper which swaps the <see cref="ByteOrder"/> of a <see cref="IByteBuffer"/>.
     /// </summary>
-    public class SwappedByteBuffer : IByteBuffer
+	public class SwappedByteBuffer : IByteBuffer
     {
         readonly IByteBuffer buf;
         readonly ByteOrder order;
@@ -664,6 +665,26 @@ namespace DotNetty.Buffers
         public Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken)
         {
             return this.buf.WriteBytesAsync(stream, length, cancellationToken);
+        }
+
+        public int ForEachByte(ByteProcessor processor)
+        {
+            return this.buf.ForEachByte(processor);
+        }
+
+        public int ForEachByte(int index, int length, ByteProcessor processor)
+        {
+            return this.buf.ForEachByte(index, length, processor);
+        }
+
+        public int ForEachByteDesc(ByteProcessor processor)
+        {
+            return this.buf.ForEachByteDesc(processor);
+        }
+
+        public int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        {
+            return this.buf.ForEachByteDesc(index, length, processor);
         }
 
         public override string ToString()

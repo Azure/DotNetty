@@ -646,6 +646,28 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public int ForEachByte(ByteProcessor processor)
+        {
+            return -1;
+        }
+
+        public int ForEachByte(int index, int length, ByteProcessor processor)
+        {
+            CheckIndex(index, length);
+            return -1;
+        }
+
+        public int ForEachByteDesc(ByteProcessor processor)
+        {
+            return -1;
+        }
+
+        public int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        {
+            CheckIndex(index, length);
+            return -1;
+        }
+
         public string ToString(Encoding encoding)
         {
             return string.Empty;

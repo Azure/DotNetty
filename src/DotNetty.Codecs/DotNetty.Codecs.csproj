@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -54,18 +54,22 @@
     <Compile Include="ReplayingDecoder.cs" />
     <Compile Include="TooLongFrameException.cs" />
     <Compile Include="UnsupportedMessageTypeException.cs" />
+    <Compile Include="Strings\StringEncoder.cs" />
+    <Compile Include="Strings\StringDecoder.cs" />
+    <Compile Include="LineBasedFrameDecoder.cs" />
+    <Compile Include="MessageToMessageDecoder.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj">
-      <Project>{5de3c557-48bf-4cdb-9f47-474d343dd841}</Project>
+      <Project>{5DE3C557-48BF-4CDB-9F47-474D343DD841}</Project>
       <Name>DotNetty.Buffers</Name>
     </ProjectReference>
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj">
-      <Project>{de58fe41-5e99-44e5-86bc-fc9ed8761daf}</Project>
+      <Project>{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}</Project>
       <Name>DotNetty.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\DotNetty.Transport\DotNetty.Transport.csproj">
-      <Project>{8218c9ee-0a4a-432f-a12a-b54202f97b05}</Project>
+      <Project>{8218C9EE-0A4A-432F-A12A-B54202F97B05}</Project>
       <Name>DotNetty.Transport</Name>
     </ProjectReference>
   </ItemGroup>
@@ -80,4 +84,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="Strings\" />
+  </ItemGroup>
 </Project>
