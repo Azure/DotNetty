@@ -16,7 +16,7 @@ fi
 
 mono $SCRIPT_PATH/.nuget/nuget.exe update -self
 
-mono $SCRIPT_PATH/.nuget/nuget.exe install FAKE -OutputDirectory $SCRIPT_PATH/packages -ExcludeVersion -Version 3.28.8
+mono $SCRIPT_PATH/.nuget/nuget.exe install FAKE -OutputDirectory $SCRIPT_PATH/packages -ExcludeVersion -Version 4.25.4
 
 mono $SCRIPT_PATH/.nuget/nuget.exe install xunit.runners -OutputDirectory $SCRIPT_PATH/packages/FAKE -ExcludeVersion -Version 2.0.0
 
