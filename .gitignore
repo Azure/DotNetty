@@ -2,6 +2,7 @@
 [Bb]in/
 TestResults/
 .nuget/
+.fake/
 _ReSharper.*/
 packages/
 artifacts/

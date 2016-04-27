@@ -19,7 +19,7 @@ copy %CACHED_NUGET% .nuget\nuget.exe > nul
 
 .nuget\NuGet.exe update -self
 
-.nuget\NuGet.exe install FAKE -OutputDirectory packages -ExcludeVersion -Version 3.28.8
+.nuget\NuGet.exe install FAKE -OutputDirectory packages -ExcludeVersion -Version 4.25.4
 
 .nuget\NuGet.exe install xunit.runner.console -ConfigFile .nuget\Nuget.Config -OutputDirectory packages\FAKE -ExcludeVersion -Version 2.0.0
 

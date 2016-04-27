@@ -6,7 +6,7 @@
     <version>@build.number@</version>
     <authors>@authors@</authors>
     <owners>@authors@</owners>
-    <description>DotNetty is a port of netty framework. It is an asynchronous event-driven network application framework for rapid development of maintainable high performance protocol servers &amp; clients.</description>
+    <description>DotNetty is a port of netty framework. It is an asynchronous event-driven network application framework for rapid development of maintainable high performance protocol servers and clients.</description>
     <licenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</licenseUrl>
     <projectUrl>https://github.com/Azure/DotNetty/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
