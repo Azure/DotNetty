@@ -635,10 +635,11 @@ namespace DotNetty.Buffers
             else
             {
                 IByteBuffer buffer = src.Allocator.Buffer(len);
+                Contract.Assert(buffer.HasArray, "Operation expects allocator to operate array-based buffers.");
                 try
                 {
                     buffer.WriteBytes(src, readerIndex, len);
-                    return encoding.GetString(buffer.Array, 0, len);
+                    return encoding.GetString(buffer.Array, buffer.ArrayOffset, len);
                 }
                 finally
                 {

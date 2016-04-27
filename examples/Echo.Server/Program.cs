@@ -7,6 +7,7 @@ namespace Echo.Server
     using System.Diagnostics.Tracing;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
+    using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
@@ -41,6 +42,8 @@ namespace Echo.Server
                         {
                             pipeline.AddLast(TlsHandler.Server(new X509Certificate2("dotnetty.com.pfx", "password")));
                         }
+                        pipeline.AddLast(new LengthFieldPrepender(2));
+                        pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
                         pipeline.AddLast(new EchoServerHandler());
                     }));

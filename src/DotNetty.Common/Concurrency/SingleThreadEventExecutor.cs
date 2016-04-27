@@ -21,6 +21,8 @@ namespace DotNetty.Common.Concurrency
         const int ST_TERMINATED = 5;
         const string DefaultWorkerThreadName = "SingleThreadEventExecutor worker";
 
+        static readonly IRunnable WAKEUP_TASK = new NoOpRunnable();
+
         static readonly IInternalLogger Logger =
             InternalLoggerFactory.GetInstance<SingleThreadEventExecutor>();
 
@@ -70,15 +72,12 @@ namespace DotNetty.Common.Concurrency
             Task.Factory.StartNew(
                 () =>
                 {
-                    if (Interlocked.CompareExchange(ref this.executionState, ST_STARTED, ST_NOT_STARTED) == ST_NOT_STARTED)
+                    Interlocked.CompareExchange(ref this.executionState, ST_STARTED, ST_NOT_STARTED);
+                    while (!this.ConfirmShutdown())
                     {
-                        while (!this.ConfirmShutdown())
-                        {
-                            this.RunAllTasks(this.preciseBreakoutInterval);
-                        }
-
-                        this.CleanupAndTerminate(true);
+                        this.RunAllTasks(this.preciseBreakoutInterval);
                     }
+                    this.CleanupAndTerminate(true);
                 },
                 CancellationToken.None,
                 TaskCreationOptions.None,
@@ -117,6 +116,14 @@ namespace DotNetty.Common.Concurrency
             if (!this.InEventLoop)
             {
                 this.emptyEvent.Set();
+            }
+        }
+
+        protected void WakeUp(bool inEventLoop)
+        {
+            if (!inEventLoop || this.executionState == ST_SHUTTING_DOWN)
+            {
+                this.Execute(WAKEUP_TASK);
             }
         }
 
@@ -174,10 +181,10 @@ namespace DotNetty.Common.Concurrency
             //    scheduleExecution();
             //}
 
-            //if (wakeup)
-            //{
-            //    wakeup(inEventLoop);
-            //}
+            if (wakeup)
+            {
+                this.WakeUp(inEventLoop);
+            }
 
             return this.TerminationCompletion;
         }
@@ -189,10 +196,7 @@ namespace DotNetty.Common.Concurrency
                 return false;
             }
 
-            if (!this.InEventLoop)
-            {
-                throw new InvalidOperationException("must be invoked from an event loop");
-            }
+            Contract.Assert(this.InEventLoop, "must be invoked from an event loop");
 
             this.CancelScheduledTasks();
 
@@ -210,8 +214,7 @@ namespace DotNetty.Common.Concurrency
                 }
 
                 // There were tasks in the queue. Wait a little bit more until no tasks are queued for the quiet period.
-                // todo: ???
-                //wakeup(true);
+                this.WakeUp(true);
                 return false;
             }
 
@@ -227,7 +230,7 @@ namespace DotNetty.Common.Concurrency
                 // Check if any tasks were added to the queue every 100ms.
                 // TODO: Change the behavior of takeTask() so that it returns on timeout.
                 // todo: ???
-                //wakeup(true);
+                this.WakeUp(true);
                 Thread.Sleep(100);
 
                 return false;
@@ -243,7 +246,6 @@ namespace DotNetty.Common.Concurrency
             while (true)
             {
                 int oldState = this.executionState;
-                ;
                 if (oldState >= ST_SHUTTING_DOWN || Interlocked.CompareExchange(ref this.executionState, ST_SHUTTING_DOWN, oldState) == oldState)
                 {
                     break;
@@ -398,7 +400,7 @@ namespace DotNetty.Common.Concurrency
             if (task == null)
             {
                 this.emptyEvent.Reset();
-                if ((task = this.taskQueue.Dequeue()) == null) // revisit queue as producer might have put a task in meanwhile
+                if ((task = this.taskQueue.Dequeue()) == null && !this.IsShuttingDown) // revisit queue as producer might have put a task in meanwhile
                 {
                     IScheduledRunnable nextScheduledTask = this.ScheduledTaskQueue.Peek();
                     if (nextScheduledTask != null)
@@ -424,27 +426,11 @@ namespace DotNetty.Common.Concurrency
             return task;
         }
 
-        #region IDisposable members
-
-        public void Dispose()
+        sealed class NoOpRunnable : IRunnable
         {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        public void Dispose(bool isDisposing)
-        {
-            if (!this.disposed)
+            public void Run()
             {
-                if (isDisposing)
-                {
-                    this.thread = null;
-                }
             }
-
-            this.disposed = true;
         }
-
-        #endregion
     }
 }
