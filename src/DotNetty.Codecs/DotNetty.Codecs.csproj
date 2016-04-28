@@ -47,6 +47,7 @@
     <Compile Include="CorruptedFrameException.cs" />
     <Compile Include="DecoderException.cs" />
     <Compile Include="EncoderException.cs" />
+    <Compile Include="Json\JsonObjectDecoder.cs" />
     <Compile Include="LengthFieldBasedFrameDecoder.cs" />
     <Compile Include="LengthFieldPrepender.cs" />
     <Compile Include="MessageToMessageEncoder.cs" />
@@ -84,7 +85,5 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup>
-    <Folder Include="Strings\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>
