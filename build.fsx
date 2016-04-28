@@ -7,6 +7,7 @@ open Fake
 open Fake.FileUtils
 open Fake.TaskRunnerHelper
 open Fake.StrongNamingHelper
+open Fake.Testing.XUnit2
 
 //--------------------------------------------------------------------------------
 // Information about the project for Nuget and Assembly info files
@@ -150,7 +151,6 @@ Target "BuildSigned" DoNothing
 // Tests targets
 //--------------------------------------------------------------------------------
 
-open XUnit2Helper
 Target "RunTests" <| fun _ ->
     let xunitTestAssemblies = !! "test/**/bin/Release/*.Tests.dll" ++ "test/**/bin/Release/*.Tests.End2End.dll"
 
@@ -158,7 +158,7 @@ Target "RunTests" <| fun _ ->
     let xunitToolPath = findToolInSubPath "xunit.console.exe" "packages/xunit.runner.console*/tools"
     printfn "Using XUnit runner: %s" xunitToolPath
     xUnit2
-        (fun p -> { p with OutputDir = testOutput; ToolPath = xunitToolPath })
+        (fun p -> { p with XmlOutputPath = Some (testOutput + "/report.xml"); ToolPath = xunitToolPath })
         xunitTestAssemblies
 
 //--------------------------------------------------------------------------------

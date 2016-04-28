@@ -1,3 +1,9 @@
+#### 0.2.6 April 27 2016
+- TlsHandler negotiates TLS 1.0+ on server side (#89).
+- STEE properly supports graceful shutdown (#7).
+- UnpooledHeapByteBuffer.GetBytes honors received index and length (#88).
+- Port of MessageToMessageDecoder, LineBasedFrameDecoder, StringDecoder, StringEncoder, ByteProcessor and ForEachByte family of methods on Byte Buffers (#86).
+
 #### 0.2.5 April 14 2016
 - Fixes regression in STEE where while evaluation of idling timeout did not account for immediately pending scheduled tasks (#83).
 
