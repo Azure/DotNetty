@@ -55,6 +55,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Microbench", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Tests.Common", "test\DotNetty.Tests.Common\DotNetty.Tests.Common.csproj", "{EDF30087-8B53-4432-84B8-D21BD9F49E95}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Transport.Tests.Performance", "test\DotNetty.Transport.Tests.Performance\DotNetty.Transport.Tests.Performance.csproj", "{F2C39894-476D-441D-878F-23A03B848E06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -150,6 +152,12 @@ Global
 		{EDF30087-8B53-4432-84B8-D21BD9F49E95}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EDF30087-8B53-4432-84B8-D21BD9F49E95}.Signed|Any CPU.ActiveCfg = Release|Any CPU
 		{EDF30087-8B53-4432-84B8-D21BD9F49E95}.Signed|Any CPU.Build.0 = Release|Any CPU
+		{F2C39894-476D-441D-878F-23A03B848E06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2C39894-476D-441D-878F-23A03B848E06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2C39894-476D-441D-878F-23A03B848E06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2C39894-476D-441D-878F-23A03B848E06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2C39894-476D-441D-878F-23A03B848E06}.Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{F2C39894-476D-441D-878F-23A03B848E06}.Signed|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -172,5 +180,6 @@ Global
 		{BA163586-F875-4488-9188-53A4A14DFD34} = {2F51997C-2026-47CC-A4F8-7560BEC4D918}
 		{D0D45DCD-EF82-43FA-8B95-D85D50378806} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
 		{EDF30087-8B53-4432-84B8-D21BD9F49E95} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
+		{F2C39894-476D-441D-878F-23A03B848E06} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
 	EndGlobalSection
 EndGlobal
