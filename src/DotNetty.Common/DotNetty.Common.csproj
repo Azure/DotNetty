@@ -210,6 +210,7 @@
     <Compile Include="Utilities\StringUtil.cs" />
     <Compile Include="Utilities\TaskEx.cs" />
     <Compile Include="Utilities\ByteProcessor.cs" />
+    <Compile Include="Utilities\TimeUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DotNetty.Common.nuspec" />
