@@ -7,8 +7,9 @@ namespace DotNetty.Common.Utilities
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Threading;
+    using DotNetty.Common.Internal;
 
-    sealed class MpscLinkedQueue<T> : MpscLinkedQueueTailRef<T>, IEnumerable<T>
+    sealed class MpscLinkedQueue<T> : MpscLinkedQueueTailRef<T>, IEnumerable<T>, IQueue<T>
         where T : class
     {
 #pragma warning disable 169 // padded reference
@@ -60,7 +61,7 @@ namespace DotNetty.Common.Utilities
             return next;
         }
 
-        public bool Enqueue(T value)
+        public bool TryEnqueue(T value)
         {
             Contract.Requires(value != null);
 

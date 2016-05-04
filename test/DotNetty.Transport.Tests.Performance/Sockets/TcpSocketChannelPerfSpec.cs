@@ -82,8 +82,8 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.signal = new ManualResetEventSlimReadFinishedSignal(this.ResetEvent);
 
             // reserve up to 10mb of 16kb buffers on both client and server; we're only sending about 700k worth of messages
-            this.serverBufferAllocator = new PooledByteBufferAllocator(256, 10 * 1024 * 1024 / Environment.ProcessorCount);
-            this.clientBufferAllocator = new PooledByteBufferAllocator(256, 10 * 1024 * 1024 / Environment.ProcessorCount);
+            this.serverBufferAllocator = new PooledByteBufferAllocator();
+            this.clientBufferAllocator = new PooledByteBufferAllocator();
 
             ServerBootstrap sb = new ServerBootstrap()
                 .Group(this.ServerGroup, this.WorkerGroup)

@@ -345,6 +345,7 @@ namespace DotNetty.Buffers
         public virtual IByteBuffer GetBytes(int index, IByteBuffer destination, int length)
         {
             this.GetBytes(index, destination, destination.WriterIndex, length);
+            destination.SetWriterIndex(destination.WriterIndex + length);
             return this;
         }
 
@@ -605,6 +606,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer WriteByte(int value)
         {
+            this.EnsureAccessible();
             this.EnsureWritable(1);
             this.SetByte(this.WriterIndex, value);
             this.WriterIndex += 1;
@@ -613,6 +615,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer WriteShort(int value)
         {
+            this.EnsureAccessible();
             this.EnsureWritable(2);
             this._SetShort(this.WriterIndex, value);
             this.WriterIndex += 2;
@@ -630,6 +633,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer WriteInt(int value)
         {
+            this.EnsureAccessible();
             this.EnsureWritable(4);
             this._SetInt(this.WriterIndex, value);
             this.WriterIndex += 4;
@@ -647,6 +651,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer WriteLong(long value)
         {
+            this.EnsureAccessible();
             this.EnsureWritable(8);
             this._SetLong(this.WriterIndex, value);
             this.WriterIndex += 8;
@@ -739,7 +744,7 @@ namespace DotNetty.Buffers
             int readableBytes = this.ReadableBytes;
             if (readableBytes == 0)
             {
-                return ByteArrayExtensions.Empty;
+                return ArrayExtensions.ZeroBytes;
             }
 
             if (this.HasArray)
@@ -808,6 +813,60 @@ namespace DotNetty.Buffers
                 this.markedReaderIndex = markedReaderIndex - decrement;
                 this.markedWriterIndex -= decrement;
             }
+        }
+
+        public override int GetHashCode()
+        {
+            return ByteBufferUtil.HashCode(this);
+        }
+
+        public override bool Equals(object o)
+        {
+            return this.Equals(o as IByteBuffer);
+        }
+
+        public bool Equals(IByteBuffer buffer)
+        {
+            if (ReferenceEquals(this, buffer))
+            {
+                return true;
+            }
+            if (buffer != null)
+            {
+                return ByteBufferUtil.Equals(this, buffer);
+            }
+            return false;
+        }
+
+        public int CompareTo(IByteBuffer that)
+        {
+            return ByteBufferUtil.Compare(this, that);
+        }
+
+        public override string ToString()
+        {
+            if (this.ReferenceCount == 0)
+            {
+                return StringUtil.SimpleClassName(this) + "(freed)";
+            }
+
+            StringBuilder buf = new StringBuilder()
+                .Append(StringUtil.SimpleClassName(this))
+                .Append("(ridx: ").Append(this.ReaderIndex)
+                .Append(", widx: ").Append(this.WriterIndex)
+                .Append(", cap: ").Append(this.Capacity);
+            if (this.MaxCapacity != int.MaxValue)
+            {
+                buf.Append('/').Append(this.MaxCapacity);
+            }
+
+            IByteBuffer unwrapped = this.Unwrap();
+            if (unwrapped != null)
+            {
+                buf.Append(", unwrapped: ").Append(unwrapped);
+            }
+            buf.Append(')');
+            return buf.ToString();
         }
 
         protected void CheckIndex(int index)
@@ -926,7 +985,7 @@ namespace DotNetty.Buffers
 
         public string ToString(Encoding encoding)
         {
-            return this.ToString(ReaderIndex, ReadableBytes, encoding);
+            return this.ToString(this.ReaderIndex, this.ReadableBytes, encoding);
         }
 
         public string ToString(int index, int length, Encoding encoding)
@@ -954,7 +1013,7 @@ namespace DotNetty.Buffers
         {
             if (processor == null)
             {
-                throw new NullReferenceException("processor");
+                throw new ArgumentNullException("processor");
             }
 
             if (length == 0)
@@ -964,24 +1023,18 @@ namespace DotNetty.Buffers
 
             int endIndex = index + length;
             int i = index;
-            try
+            do
             {
-                do
+                if (processor.Process(this._GetByte(i)))
                 {
-                    if (processor.Process(this._GetByte(i)))
-                    {
-                        i++;
-                    }
-                    else
-                    {
-                        return i;
-                    }
-                } while (i < endIndex);
+                    i++;
+                }
+                else
+                {
+                    return i;
+                }
             }
-            catch
-            {
-                throw;
-            }
+            while (i < endIndex);
 
             return -1;
         }
@@ -1016,24 +1069,18 @@ namespace DotNetty.Buffers
             }
 
             int i = index + length - 1;
-            try
+            do
             {
-                do
+                if (processor.Process(this._GetByte(i)))
                 {
-                    if (processor.Process(this._GetByte(i)))
-                    {
-                        i--;
-                    }
-                    else
-                    {
-                        return i;
-                    }
-                } while (i >= index);
+                    i--;
+                }
+                else
+                {
+                    return i;
+                }
             }
-            catch
-            {
-                throw;
-            }
+            while (i >= index);
 
             return -1;
         }

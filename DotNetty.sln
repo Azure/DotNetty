@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Common", "src\DotNetty.Common\DotNetty.Common.csproj", "{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}"
 EndProject
@@ -74,8 +74,8 @@ Global
 		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Signed|Any CPU.ActiveCfg = Release|Any CPU
-		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Signed|Any CPU.Build.0 = Release|Any CPU
+		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Signed|Any CPU.ActiveCfg = Signed|Any CPU
+		{5DE3C557-48BF-4CDB-9F47-474D343DD841}.Signed|Any CPU.Build.0 = Signed|Any CPU
 		{8218C9EE-0A4A-432F-A12A-B54202F97B05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8218C9EE-0A4A-432F-A12A-B54202F97B05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8218C9EE-0A4A-432F-A12A-B54202F97B05}.Release|Any CPU.ActiveCfg = Release|Any CPU

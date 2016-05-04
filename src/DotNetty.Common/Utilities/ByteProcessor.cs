@@ -13,7 +13,7 @@ namespace DotNetty.Common.Utilities
         /// <summary>
         /// A <see cref="ByteProcessor"/> which finds the first appearance of a specific byte.
         /// </summary>
-        sealed public class IndexOfProcessor : ByteProcessor
+        public sealed class IndexOfProcessor : ByteProcessor
         {
             readonly byte byteToFind;
 
@@ -28,7 +28,7 @@ namespace DotNetty.Common.Utilities
             }
         }
 
-        sealed public class IndexNotOfProcessor : ByteProcessor
+        public sealed class IndexNotOfProcessor : ByteProcessor
         {
             readonly byte byteToNotFind;
 
@@ -43,7 +43,7 @@ namespace DotNetty.Common.Utilities
             }
         }
 
-        sealed public class CustomProcessor : ByteProcessor
+        public sealed class CustomProcessor : ByteProcessor
         {
             readonly Func<byte, bool> customHandler;
 

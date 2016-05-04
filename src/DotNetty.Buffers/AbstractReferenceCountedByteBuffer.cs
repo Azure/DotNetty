@@ -9,8 +9,9 @@ namespace DotNetty.Buffers
 
     public abstract class AbstractReferenceCountedByteBuffer : AbstractByteBuffer
     {
-#pragma warning disable 420
-        volatile int referenceCount = 1;
+//#pragma warning disable 420
+//#pragma warning disable 420
+        int referenceCount = 1;
 
         protected AbstractReferenceCountedByteBuffer(int maxCapacity)
             : base(maxCapacity)
@@ -19,19 +20,19 @@ namespace DotNetty.Buffers
 
         public override int ReferenceCount
         {
-            get { return this.referenceCount; }
+            get { return Volatile.Read(ref this.referenceCount); }
         }
 
         protected void SetReferenceCount(int value)
         {
-            this.referenceCount = value;
+            Volatile.Write(ref this.referenceCount, value);
         }
 
         public override IReferenceCounted Retain()
         {
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, 1);
@@ -58,7 +59,7 @@ namespace DotNetty.Buffers
 
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, increment);
@@ -80,7 +81,7 @@ namespace DotNetty.Buffers
         {
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt == 0)
                 {
                     throw new IllegalReferenceCountException(0, -1);
@@ -107,7 +108,7 @@ namespace DotNetty.Buffers
 
             while (true)
             {
-                int refCnt = this.referenceCount;
+                int refCnt = this.ReferenceCount;
                 if (refCnt < decrement)
                 {
                     throw new IllegalReferenceCountException(refCnt, -decrement);

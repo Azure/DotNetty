@@ -16,7 +16,7 @@ namespace DotNetty.Buffers
     /// <summary>
     /// Wrapper which swaps the <see cref="ByteOrder"/> of a <see cref="IByteBuffer"/>.
     /// </summary>
-	public class SwappedByteBuffer : IByteBuffer
+    public class SwappedByteBuffer : IByteBuffer
     {
         readonly IByteBuffer buf;
         readonly ByteOrder order;
@@ -687,6 +687,34 @@ namespace DotNetty.Buffers
             return this.buf.ForEachByteDesc(index, length, processor);
         }
 
+        public override int GetHashCode()
+        {
+            return this.buf.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as IByteBuffer);
+        }
+
+        public bool Equals(IByteBuffer buffer)
+        {
+            if (ReferenceEquals(this, buffer))
+            {
+                return true;
+            }
+            if (buffer != null)
+            {
+                return ByteBufferUtil.Equals(this, buffer);
+            }
+            return false;
+        }
+
+        public int CompareTo(IByteBuffer buffer)
+        {
+            return ByteBufferUtil.Compare(this, buffer);
+        }
+
         public override string ToString()
         {
             return "Swapped(" + this.buf + ")";
@@ -694,12 +722,12 @@ namespace DotNetty.Buffers
 
         public string ToString(Encoding encoding)
         {
-            return buf.ToString(encoding);
+            return this.buf.ToString(encoding);
         }
 
         public string ToString(int index, int length, Encoding encoding)
         {
-            return buf.ToString(index, length, encoding);
+            return this.buf.ToString(index, length, encoding);
         }
     }
 }

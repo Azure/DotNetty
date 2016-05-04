@@ -172,6 +172,7 @@ namespace DotNetty.Buffers
             System.Array.Copy(src, srcIndex, this.array, index, length);
             return this;
         }
+
         public override async Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
             int readTotal = 0;

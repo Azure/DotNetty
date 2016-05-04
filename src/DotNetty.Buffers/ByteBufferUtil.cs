@@ -7,9 +7,13 @@ namespace DotNetty.Buffers
     using System;
     using System.Diagnostics.Contracts;
     using System.Text;
+    using DotNetty.Common.Internal;
+    using DotNetty.Common.Internal.Logging;
 
     public static class ByteBufferUtil
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(ByteBufferUtil));
+
         static readonly char[] HexdumpTable = new char[256 * 4];
         static readonly string Newline = StringUtil.Newline;
         static readonly string[] Byte2Hex = new string[256];
@@ -17,6 +21,8 @@ namespace DotNetty.Buffers
         static readonly string[] BytePadding = new string[16];
         static readonly char[] Byte2Char = new char[256];
         static readonly string[] HexDumpRowPrefixes = new string[(int)((uint)65536 >> 4)];
+
+        public static readonly IByteBufferAllocator DefaultAllocator;
 
         static ByteBufferUtil()
         {
@@ -81,32 +87,28 @@ namespace DotNetty.Buffers
                 HexDumpRowPrefixes[i] = buf.ToString();
             }
 
-            //todo: port
-            //String allocType = SystemPropertyUtil.get(
-            //    "io.netty.allocator.type", PlatformDependent.isAndroid() ? "unpooled" : "pooled");
-            //allocType = allocType.toLowerCase(Locale.US).trim();
+            string allocType = SystemPropertyUtil.Get(
+                "io.netty.allocator.type", "pooled");
+            allocType = allocType.Trim();
 
-            //ByteBufAllocator alloc;
-            //if ("unpooled".equals(allocType))
-            //{
-            //    alloc = UnpooledByteBufAllocator.DEFAULT;
-            //    logger.debug("-Dio.netty.allocator.type: {}", allocType);
-            //}
-            //else if ("pooled".equals(allocType))
-            //{
-            //    alloc = PooledByteBufAllocator.DEFAULT;
-            //    logger.debug("-Dio.netty.allocator.type: {}", allocType);
-            //}
-            //else
-            //{
-            //    alloc = PooledByteBufAllocator.DEFAULT;
-            //    logger.debug("-Dio.netty.allocator.type: pooled (unknown: {})", allocType);
-            //}
+            IByteBufferAllocator alloc;
+            if ("unpooled".Equals(allocType, StringComparison.OrdinalIgnoreCase))
+            {
+                alloc = UnpooledByteBufferAllocator.Default;
+                Logger.Debug("-Dio.netty.allocator.type: {}", allocType);
+            }
+            else if ("pooled".Equals(allocType, StringComparison.OrdinalIgnoreCase))
+            {
+                alloc = PooledByteBufferAllocator.Default;
+                Logger.Debug("-Dio.netty.allocator.type: {}", allocType);
+            }
+            else
+            {
+                alloc = PooledByteBufferAllocator.Default;
+                Logger.Debug("-Dio.netty.allocator.type: pooled (unknown: {})", allocType);
+            }
 
-            //DEFAULT_ALLOCATOR = alloc;
-
-            //THREAD_LOCAL_BUFFER_SIZE = SystemPropertyUtil.getInt("io.netty.threadLocalDirectBufferSize", 64 * 1024);
-            //logger.debug("-Dio.netty.threadLocalDirectBufferSize: {}", THREAD_LOCAL_BUFFER_SIZE);
+            DefaultAllocator = alloc;
         }
 
         /// <summary>

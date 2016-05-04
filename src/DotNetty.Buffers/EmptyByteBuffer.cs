@@ -488,12 +488,12 @@ namespace DotNetty.Buffers
 
         public byte[] Array
         {
-            get { return ByteArrayExtensions.Empty; }
+            get { return ArrayExtensions.ZeroBytes; }
         }
 
         public byte[] ToArray()
         {
-            return ByteArrayExtensions.Empty;
+            return ArrayExtensions.ZeroBytes;
         }
 
         public IByteBuffer Duplicate()
@@ -606,6 +606,29 @@ namespace DotNetty.Buffers
             return false;
         }
 
+        public override int GetHashCode()
+        {
+            return 0;
+        }
+
+        
+        public override bool Equals(object obj)
+        {
+            var buffer = obj as IByteBuffer;
+            return this.Equals(buffer);
+        }
+
+        public bool Equals(IByteBuffer buffer)
+        {
+            return buffer != null && !buffer.IsReadable();
+        }
+
+        public int CompareTo(IByteBuffer buffer)
+        {
+            return buffer.IsReadable() ? -1 : 0;
+        }
+
+        
         public override string ToString()
         {
             return this.str;

@@ -111,7 +111,7 @@ namespace DotNetty.Common.Concurrency
 
         public override void Execute(IRunnable task)
         {
-            this.taskQueue.Enqueue(task);
+            this.taskQueue.TryEnqueue(task);
 
             if (!this.InEventLoop)
             {
@@ -387,7 +387,7 @@ namespace DotNetty.Common.Concurrency
                         break;
                     }
 
-                    this.taskQueue.Enqueue(scheduledTask);
+                    this.taskQueue.TryEnqueue(scheduledTask);
                 }
             }
         }

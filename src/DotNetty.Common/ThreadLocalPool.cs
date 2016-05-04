@@ -4,8 +4,8 @@
 namespace DotNetty.Common
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
     using System.Threading;
 
     public class ThreadLocalPool
@@ -36,7 +36,7 @@ namespace DotNetty.Common
                     return;
                 }
 
-                Dictionary<Stack, WeakOrderQueue> queueDictionary = DelayedPool.Value;
+                ConditionalWeakTable<Stack, WeakOrderQueue> queueDictionary = DelayedPool.Value;
                 WeakOrderQueue queue;
                 if (!queueDictionary.TryGetValue(stack, out queue))
                 {
@@ -54,8 +54,8 @@ namespace DotNetty.Common
 
             sealed class Link
             {
-                private int readIndex;
-                private int writeIndex;
+                int readIndex;
+                int writeIndex;
 
                 internal readonly Handle[] elements;
                 internal Link next;
@@ -379,8 +379,15 @@ namespace DotNetty.Common
         static int idSource = int.MinValue;
         static int ownThreadId = Interlocked.Increment(ref idSource);
 
-        internal static readonly ThreadLocal<Dictionary<Stack, WeakOrderQueue>> DelayedPool = 
-            new ThreadLocal<Dictionary<Stack, WeakOrderQueue>>(() => new Dictionary<Stack, WeakOrderQueue>());
+        internal static readonly DelayedThreadLocal DelayedPool = new DelayedThreadLocal();
+
+        internal sealed class DelayedThreadLocal : FastThreadLocal<ConditionalWeakTable<Stack, WeakOrderQueue>>
+        {
+            protected override ConditionalWeakTable<Stack, WeakOrderQueue> GetInitialValue()
+            {
+                return new ConditionalWeakTable<Stack, WeakOrderQueue>();
+            }
+        }
 
         public ThreadLocalPool(int maxCapacity)
         {
@@ -394,7 +401,7 @@ namespace DotNetty.Common
     public sealed class ThreadLocalPool<T> : ThreadLocalPool
         where T : class
     {
-        readonly ThreadLocal<Stack> threadLocal;
+        readonly ThreadLocalStack threadLocal;
         readonly Func<Handle, T> valueFactory;
         readonly bool preCreate;
 
@@ -415,21 +422,8 @@ namespace DotNetty.Common
 
             this.preCreate = preCreate;
 
-            this.threadLocal = new ThreadLocal<Stack>(this.InitializeStorage, true);
+            this.threadLocal = new ThreadLocalStack(this);
             this.valueFactory = valueFactory;
-        }
-
-        Stack InitializeStorage()
-        {
-            var stack = new Stack(this.MaxCapacity, this, Thread.CurrentThread);
-            if (this.preCreate)
-            {
-                for (int i = 0; i < this.MaxCapacity; i++)
-                {
-                    stack.Push(this.CreateValue(stack));
-                }
-            }
-            return stack;
         }
 
         public T Take()
@@ -475,6 +469,29 @@ namespace DotNetty.Common
             get
             {
                 return this.threadLocal.Value.Size;
+            }
+        }
+
+        sealed class ThreadLocalStack : FastThreadLocal<Stack>
+        {
+            readonly ThreadLocalPool<T> owner;
+
+            public ThreadLocalStack(ThreadLocalPool<T> owner)
+            {
+                this.owner = owner;
+            }
+
+            protected override Stack GetInitialValue()
+            {
+                var stack = new Stack(this.owner.MaxCapacity, this.owner, Thread.CurrentThread);
+                if (this.owner.preCreate)
+                {
+                    for (int i = 0; i < this.owner.MaxCapacity; i++)
+                    {
+                        stack.Push(this.owner.CreateValue(stack));
+                    }
+                }
+                return stack;
             }
         }
     }
