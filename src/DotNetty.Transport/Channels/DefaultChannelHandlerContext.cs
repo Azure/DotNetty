@@ -7,17 +7,15 @@ namespace DotNetty.Transport.Channels
 
     sealed class DefaultChannelHandlerContext : AbstractChannelHandlerContext
     {
-        readonly IChannelHandler handler;
-
         public DefaultChannelHandlerContext(
             DefaultChannelPipeline pipeline, IChannelHandlerInvoker invoker, string name, IChannelHandler handler)
             : base(pipeline, invoker, name, GetSkipPropagationFlags(handler))
         {
             Contract.Requires(handler != null);
 
-            this.handler = handler;
+            this.Handler = handler;
         }
 
-        public override IChannelHandler Handler => this.handler;
+        public override IChannelHandler Handler { get; }
     }
 }

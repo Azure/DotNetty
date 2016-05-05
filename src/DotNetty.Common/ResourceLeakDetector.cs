@@ -86,6 +86,9 @@ namespace DotNetty.Common
         /// </summary>
         public static DetectionLevel Level { get; set; }
 
+        /// Returns <c>true</c> if resource leak detection is enabled.
+        public static bool Enabled => Level > DetectionLevel.Disabled;
+
         readonly ConcurrentDictionary<string, bool> reportedLeaks = new ConcurrentDictionary<string, bool>();
 
         readonly string resourceType;

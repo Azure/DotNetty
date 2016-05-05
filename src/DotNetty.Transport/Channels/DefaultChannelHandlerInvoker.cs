@@ -7,7 +7,9 @@ namespace DotNetty.Transport.Channels
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Common;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal;
     using DotNetty.Common.Utilities;
 
     public class DefaultChannelHandlerInvoker : IChannelHandlerInvoker
@@ -18,25 +20,6 @@ namespace DotNetty.Transport.Channels
         static readonly Action<object> InvokeFlushAction = ctx => ChannelHandlerInvokerUtil.InvokeFlushNow((IChannelHandlerContext)ctx);
         static readonly Action<object, object> InvokeUserEventTriggeredAction = (ctx, evt) => ChannelHandlerInvokerUtil.InvokeUserEventTriggeredNow((IChannelHandlerContext)ctx, evt);
         static readonly Action<object, object> InvokeChannelReadAction = (ctx, msg) => ChannelHandlerInvokerUtil.InvokeChannelReadNow((IChannelHandlerContext)ctx, msg);
-
-        static readonly Action<object, object> InvokeWriteAsyncAction = (p, msg) =>
-        {
-            var promise = (TaskCompletionSource)p;
-            var context = (IChannelHandlerContext)promise.Task.AsyncState;
-            var channel = (AbstractChannel)context.Channel;
-            // todo: size is counted twice. is that a problem?
-            int size = channel.EstimatorHandle.Size(msg);
-            if (size > 0)
-            {
-                ChannelOutboundBuffer buffer = channel.Unsafe.OutboundBuffer;
-                // Check for null as it may be set to null if the channel is closed already
-                if (buffer != null)
-                {
-                    buffer.DecrementPendingOutboundBytes(size);
-                }
-            }
-            ChannelHandlerInvokerUtil.InvokeWriteAsyncNow(context, msg).LinkOutcome(promise);
-        };
 
         readonly IEventExecutor executor;
 
@@ -284,10 +267,20 @@ namespace DotNetty.Transport.Channels
         public Task InvokeWriteAsync(IChannelHandlerContext ctx, object msg)
         {
             Contract.Requires(msg != null);
-            // todo: check for cancellation
-            //if (!validatePromise(ctx, promise, false)) {
-            //    // promise cancelled
-            //    return;
+
+            // todo: cancellation support
+            //try
+            //{
+            //    if (!validatePromise(ctx, promise, true))
+            //    {
+            //        ReferenceCountUtil.release(msg);
+            //        return;
+            //    }
+            //}
+            //catch (RuntimeException e)
+            //{
+            //    ReferenceCountUtil.release(msg);
+            //    throw e;
             //}
 
             if (this.executor.InEventLoop)
@@ -296,29 +289,8 @@ namespace DotNetty.Transport.Channels
             }
             else
             {
-                var channel = (AbstractChannel)ctx.Channel;
-                var promise = new TaskCompletionSource(ctx);
-
-                try
-                {
-                    int size = channel.EstimatorHandle.Size(msg);
-                    if (size > 0)
-                    {
-                        ChannelOutboundBuffer buffer = channel.Unsafe.OutboundBuffer;
-                        // Check for null as it may be set to null if the channel is closed already
-                        if (buffer != null)
-                        {
-                            buffer.IncrementPendingOutboundBytes(size);
-                        }
-                    }
-
-                    this.executor.Execute(InvokeWriteAsyncAction, promise, msg);
-                }
-                catch (Exception cause)
-                {
-                    ReferenceCountUtil.Release(msg); // todo: safe release?
-                    promise.TrySetException(cause);
-                }
+                var promise = new TaskCompletionSource();
+                this.SafeExecuteOutbound(WriteTask.NewInstance(ctx, msg, promise), promise, msg);
                 return promise.Task;
             }
         }
@@ -364,6 +336,101 @@ namespace DotNetty.Transport.Channels
                 promise.TrySetException(cause);
             }
             return promise.Task;
+        }
+
+        void SafeExecuteOutbound(IRunnable task, TaskCompletionSource promise, object msg)
+        {
+            try
+            {
+                this.executor.Execute(task);
+            }
+            catch (Exception cause)
+            {
+                try
+                {
+                    promise.TrySetException(cause);
+                }
+                finally
+                {
+                    ReferenceCountUtil.Release(msg);
+                }
+            }
+        }
+
+        sealed class WriteTask : RecyclableMpscLinkedQueueNode<IRunnable>, IRunnable
+        {
+            static readonly bool EstimateTaskSizeOnSubmit =
+                SystemPropertyUtil.GetBoolean("io.netty.transport.estimateSizeOnSubmit", true);
+
+            // Assuming a 64-bit .NET VM, 16 bytes object header, 4 reference fields and 2 int field
+            static readonly int WriteTaskOverhead =
+                SystemPropertyUtil.GetInt("io.netty.transport.writeTaskSizeOverhead", 56);
+
+            IChannelHandlerContext ctx;
+            object msg;
+            TaskCompletionSource promise;
+            int size;
+
+            static readonly ThreadLocalPool<WriteTask> Recycler = new ThreadLocalPool<WriteTask>(handle => new WriteTask(handle));
+
+            public static WriteTask NewInstance(
+                IChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            {
+                WriteTask task = Recycler.Take();
+                task.ctx = ctx;
+                task.msg = msg;
+                task.promise = promise;
+
+                if (EstimateTaskSizeOnSubmit)
+                {
+                    ChannelOutboundBuffer buffer = ctx.Channel.Unsafe.OutboundBuffer;
+
+                    // Check for null as it may be set to null if the channel is closed already
+                    if (buffer != null)
+                    {
+                        task.size = ((AbstractChannel)ctx.Channel).EstimatorHandle.Size(msg) + WriteTaskOverhead;
+                        buffer.IncrementPendingOutboundBytes(task.size);
+                    }
+                    else
+                    {
+                        task.size = 0;
+                    }
+                }
+                else
+                {
+                    task.size = 0;
+                }
+
+                return task;
+            }
+
+            WriteTask(ThreadLocalPool.Handle handle)
+                : base(handle)
+            {
+            }
+
+            public void Run()
+            {
+                try
+                {
+                    ChannelOutboundBuffer buffer = this.ctx.Channel.Unsafe.OutboundBuffer;
+                    // Check for null as it may be set to null if the channel is closed already
+                    if (EstimateTaskSizeOnSubmit)
+                    {
+                        buffer?.DecrementPendingOutboundBytes(this.size);
+                    }
+                    ChannelHandlerInvokerUtil.InvokeWriteAsyncNow(this.ctx, this.msg).LinkOutcome(this.promise);
+                }
+                finally
+                {
+                    // Set to null so the GC can collect them directly
+                    this.ctx = null;
+                    this.msg = null;
+                    this.promise = null;
+                }
+            }
+
+            public override IRunnable Value => this;
         }
     }
 }

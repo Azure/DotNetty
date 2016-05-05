@@ -33,10 +33,5 @@ namespace DotNetty.Transport.Channels
         {
             return channel.Unsafe.RegisterAsync(this);
         }
-
-        IEventLoop IEventLoop.Unwrap()
-        {
-            return this;
-        }
     }
 }

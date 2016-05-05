@@ -24,11 +24,6 @@ namespace DotNetty.Transport.Channels.Embedded
             return channel.Unsafe.RegisterAsync(this);
         }
 
-        IEventLoop IEventLoop.Unwrap()
-        {
-            return this;
-        }
-
         public override bool IsShuttingDown => false;
 
         public override Task TerminationCompletion

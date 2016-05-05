@@ -8,12 +8,10 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using System.Reflection;
     using System.Runtime.CompilerServices;
-    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
-    using DotNetty.Common.Utilities;
 
     abstract class AbstractChannelHandlerContext : IChannelHandlerContext, IResourceLeakHint
     {
@@ -165,79 +163,33 @@ namespace DotNetty.Transport.Channels
         internal volatile AbstractChannelHandlerContext Prev;
 
         internal readonly int SkipPropagationFlags;
-        readonly IChannelHandlerInvoker invoker;
-        volatile PausableChannelEventExecutor wrappedEventLoop;
 
-        protected AbstractChannelHandlerContext(IChannelPipeline pipeline, IChannelHandlerInvoker invoker,
+        readonly DefaultChannelPipeline pipeline;
+        internal readonly IChannelHandlerInvoker invoker;
+
+        protected AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, IChannelHandlerInvoker invoker,
             string name, int skipPropagationDirections)
         {
             Contract.Requires(pipeline != null);
             Contract.Requires(name != null);
 
-            this.Channel = pipeline.Channel();
+            this.pipeline = pipeline;
+            this.Name = name;
             this.invoker = invoker;
             this.SkipPropagationFlags = skipPropagationDirections;
-            this.Name = name;
         }
 
-        public IChannel Channel { get; }
+        public IChannel Channel => this.pipeline.Channel;
 
         public IByteBufferAllocator Allocator => this.Channel.Allocator;
 
         public bool Removed { get; internal set; }
 
-        public IEventExecutor Executor
-        {
-            get
-            {
-                if (this.invoker == null)
-                {
-                    return this.Channel.EventLoop;
-                }
-                else
-                {
-                    return this.WrappedEventLoop;
-                }
-            }
-        }
+        public IEventExecutor Executor => this.Invoker.Executor;
 
         public string Name { get; }
 
-        public IChannelHandlerInvoker Invoker
-        {
-            get
-            {
-                if (this.invoker == null)
-                {
-                    return this.Channel.EventLoop.Invoker;
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                    //return wrappedEventLoop();
-                }
-            }
-        }
-
-        PausableChannelEventExecutor WrappedEventLoop
-        {
-            get
-            {
-                PausableChannelEventExecutor wrapped = this.wrappedEventLoop;
-                if (wrapped == null)
-                {
-                    wrapped = new PausableChannelEventExecutor0(this);
-#pragma warning disable 420 // does not apply to Interlocked operations
-                    if (Interlocked.CompareExchange(ref this.wrappedEventLoop, wrapped, null) != null)
-#pragma warning restore 420
-                    {
-                        // Set in the meantime so we need to issue another volatile read
-                        return this.wrappedEventLoop;
-                    }
-                }
-                return wrapped;
-            }
-        }
+        public IChannelHandlerInvoker Invoker => this.invoker ?? this.Channel.EventLoop.Invoker;
 
         public IChannelHandlerContext FireChannelRegistered()
         {
@@ -279,8 +231,7 @@ namespace DotNetty.Transport.Channels
         public IChannelHandlerContext FireChannelRead(object msg)
         {
             AbstractChannelHandlerContext target = this.FindContextInbound();
-            ReferenceCountUtil.Touch(msg, target);
-            target.Invoker.InvokeChannelRead(target, msg);
+            target.Invoker.InvokeChannelRead(target, this.pipeline.Touch(msg, target));
             return this;
         }
 
@@ -321,8 +272,7 @@ namespace DotNetty.Transport.Channels
         public Task WriteAsync(object msg) // todo: cancellationToken?
         {
             AbstractChannelHandlerContext target = this.FindContextOutbound();
-            ReferenceCountUtil.Touch(msg, target);
-            return target.Invoker.InvokeWriteAsync(target, msg);
+            return target.Invoker.InvokeWriteAsync(target, this.pipeline.Touch(msg, target));
         }
 
         public IChannelHandlerContext Flush()
@@ -336,8 +286,7 @@ namespace DotNetty.Transport.Channels
         {
             AbstractChannelHandlerContext target;
             target = this.FindContextOutbound();
-            ReferenceCountUtil.Touch(message, target);
-            Task writeFuture = target.Invoker.InvokeWriteAsync(target, message);
+            Task writeFuture = target.Invoker.InvokeWriteAsync(target, this.pipeline.Touch(message, target));
             target = this.FindContextOutbound();
             target.Invoker.InvokeFlush(target);
             return writeFuture;
@@ -399,56 +348,8 @@ namespace DotNetty.Transport.Channels
             return ctx;
         }
 
-        public string ToHintString()
-        {
-            return '\'' + this.Name + "' will handle the message from this point.";
-        }
+        public string ToHintString() => $"\'{this.Name}\' will handle the message from this point.";
 
-        public override string ToString()
-        {
-            return $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
-        }
-
-        class PausableChannelEventExecutor0 : PausableChannelEventExecutor
-        {
-            readonly AbstractChannelHandlerContext context;
-
-            public PausableChannelEventExecutor0(AbstractChannelHandlerContext context)
-            {
-                this.context = context;
-            }
-
-            public override void RejectNewTasks()
-            {
-                /**
-             * This cast is correct because {@link #channel()} always returns an {@link AbstractChannel} and
-             * {@link AbstractChannel#eventLoop()} always returns a {@link PausableChannelEventExecutor}.
-             */
-                ((PausableChannelEventExecutor)this.Channel.EventLoop).RejectNewTasks();
-            }
-
-            public override void AcceptNewTasks()
-            {
-                ((PausableChannelEventExecutor)this.Channel.EventLoop).AcceptNewTasks();
-            }
-
-            public override bool IsAcceptingNewTasks => ((PausableChannelEventExecutor)this.Channel.EventLoop).IsAcceptingNewTasks;
-
-            internal override IChannel Channel => this.context.Channel;
-
-            public override IEventExecutor Unwrap()
-            {
-                return this.UnwrapInvoker().Executor;
-            }
-
-            public IChannelHandlerInvoker UnwrapInvoker()
-            {
-                /**
-                 * {@link #invoker} can not be {@code null}, because {@link PausableChannelEventExecutor0} will only be
-                 * instantiated if {@link #invoker} is not {@code null}.
-                 */
-                return this.context.invoker;
-            }
-        }
+        public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
     }
 }
