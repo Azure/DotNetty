@@ -34,7 +34,7 @@ namespace DotNetty.Handlers.Tls
         volatile IChannelHandlerContext capturedContext;
         PendingWriteQueue pendingUnencryptedWrites;
         Task lastContextWriteTask;
-        TaskCompletionSource closeFuture;
+        readonly TaskCompletionSource closeFuture;
         readonly bool isServer;
         readonly X509Certificate2 certificate;
         readonly string targetHost;
@@ -73,15 +73,9 @@ namespace DotNetty.Handlers.Tls
             return new TlsHandler(true, certificate, null, null);
         }
 
-        public X509Certificate LocalCertificate
-        {
-            get { return this.sslStream.LocalCertificate; }
-        }
+        public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
 
-        public X509Certificate RemoteCertificate
-        {
-            get { return this.sslStream.RemoteCertificate; }
-        }
+        public X509Certificate RemoteCertificate => this.sslStream.RemoteCertificate;
 
         public void Dispose()
         {
@@ -112,7 +106,7 @@ namespace DotNetty.Handlers.Tls
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
-            if (IgnoreException(exception))
+            if (this.IgnoreException(exception))
             {
                 // Close the connection explicitly just in case the transport
                 // did not close the connection automatically.
@@ -136,7 +130,7 @@ namespace DotNetty.Handlers.Tls
             return false;
         }
 
-            static void HandleAuthenticationCompleted(Task task, object state)
+        static void HandleAuthenticationCompleted(Task task, object state)
         {
             var self = (TlsHandler)state;
             switch (task.Status)
@@ -177,7 +171,7 @@ namespace DotNetty.Handlers.Tls
                     break;
                 }
                 default:
-                    throw new ArgumentOutOfRangeException("task", "Unexpected task status: " + task.Status);
+                    throw new ArgumentOutOfRangeException(nameof(task), "Unexpected task status: " + task.Status);
             }
         }
 
@@ -613,20 +607,11 @@ namespace DotNetty.Handlers.Tls
                 throw new NotSupportedException();
             }
 
-            public override bool CanRead
-            {
-                get { return true; }
-            }
+            public override bool CanRead => true;
 
-            public override bool CanSeek
-            {
-                get { return false; }
-            }
+            public override bool CanSeek => false;
 
-            public override bool CanWrite
-            {
-                get { return true; }
-            }
+            public override bool CanWrite => true;
 
             public override long Length
             {
@@ -647,10 +632,7 @@ namespace DotNetty.Handlers.Tls
             {
                 public T Result { get; set; }
 
-                public bool IsCompleted
-                {
-                    get { return true; }
-                }
+                public bool IsCompleted => true;
 
                 public WaitHandle AsyncWaitHandle
                 {
@@ -659,10 +641,7 @@ namespace DotNetty.Handlers.Tls
 
                 public object AsyncState { get; set; }
 
-                public bool CompletedSynchronously
-                {
-                    get { return true; }
-                }
+                public bool CompletedSynchronously => true;
             }
 
             #endregion

@@ -30,19 +30,23 @@ namespace DotNetty.Codecs
     * }
     * </pre>
     */
+
     public class StringEncoder : MessageToMessageEncoder<string>
     {
         readonly Encoding encoding;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Codecs.StringEncoder"/> class with the current system character set.
+        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.StringEncoder" /> class with the current system
+        ///     character set.
         /// </summary>
-        public StringEncoder() : this(Encoding.Default)
+        public StringEncoder()
+            : this(Encoding.Default)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Codecs.StringEncoder"/> class with the specified character set..
+        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.StringEncoder" /> class with the specified character
+        ///     set..
         /// </summary>
         /// <param name="encoding">Encoding.</param>
         public StringEncoder(Encoding encoding)
@@ -55,10 +59,7 @@ namespace DotNetty.Codecs
             this.encoding = encoding;
         }
 
-        public override bool IsSharable
-        {
-            get { return true; }
-        }
+        public override bool IsSharable => true;
 
         protected override void Encode(IChannelHandlerContext context, string message, List<object> output)
         {
@@ -67,7 +68,7 @@ namespace DotNetty.Codecs
                 return;
             }
 
-            output.Add(ByteBufferUtil.EncodeString(context.Allocator, message, encoding));
+            output.Add(ByteBufferUtil.EncodeString(context.Allocator, message, this.encoding));
         }
     }
 }

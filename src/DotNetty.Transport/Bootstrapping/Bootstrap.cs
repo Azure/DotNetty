@@ -15,11 +15,12 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// A {@link Bootstrap} that makes it easy to bootstrap a {@link Channel} to use
-    /// for clients.
-    ///
-    /// <p>The {@link #bind()} methods are useful in combination with connectionless transports such as datagram (UDP).
-    /// For regular TCP connections, please use the provided {@link #connect()} methods.</p>
+    ///     A {@link Bootstrap} that makes it easy to bootstrap a {@link Channel} to use
+    ///     for clients.
+    ///     <p>
+    ///         The {@link #bind()} methods are useful in combination with connectionless transports such as datagram (UDP).
+    ///         For regular TCP connections, please use the provided {@link #connect()} methods.
+    ///     </p>
     /// </summary>
     public class Bootstrap : AbstractBootstrap<Bootstrap, IChannel>
     {
@@ -42,7 +43,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Sets the {@link NameResolver} which will resolve the address of the unresolved named address.
+        ///     Sets the {@link NameResolver} which will resolve the address of the unresolved named address.
         /// </summary>
         public Bootstrap Resolver(INameResolver resolver)
         {
@@ -52,8 +53,8 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// The {@link SocketAddress} to connect to once the {@link #connect()} method
-        /// is called.
+        ///     The {@link SocketAddress} to connect to once the {@link #connect()} method
+        ///     is called.
         /// </summary>
         public Bootstrap RemoteAddress(EndPoint remoteAddress)
         {
@@ -62,7 +63,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #remoteAddress(SocketAddress)}
+        ///     @see {@link #remoteAddress(SocketAddress)}
         /// </summary>
         public Bootstrap RemoteAddress(string inetHost, int inetPort)
         {
@@ -71,7 +72,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #remoteAddress(SocketAddress)}
+        ///     @see {@link #remoteAddress(SocketAddress)}
         /// </summary>
         public Bootstrap RemoteAddress(IPAddress inetHost, int inetPort)
         {
@@ -80,7 +81,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync()
         {
@@ -95,7 +96,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync(string inetHost, int inetPort)
         {
@@ -103,7 +104,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync(IPAddress inetHost, int inetPort)
         {
@@ -111,7 +112,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync(EndPoint remoteAddress)
         {
@@ -122,7 +123,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
@@ -133,7 +134,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #connect()}
+        ///     @see {@link #connect()}
         /// </summary>
         async Task<IChannel> DoResolveAndConnect(EndPoint remoteAddress, EndPoint localAddress)
         {
@@ -237,9 +238,9 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Returns a deep clone of this bootstrap which has the identical configuration except that it uses
-        /// the given {@link EventLoopGroup}. This method is useful when making multiple {@link Channel}s with similar
-        /// settings.
+        ///     Returns a deep clone of this bootstrap which has the identical configuration except that it uses
+        ///     the given {@link EventLoopGroup}. This method is useful when making multiple {@link Channel}s with similar
+        ///     settings.
         /// </summary>
         public Bootstrap Clone(IEventLoopGroup group)
         {

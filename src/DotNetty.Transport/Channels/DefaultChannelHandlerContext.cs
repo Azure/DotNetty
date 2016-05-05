@@ -18,9 +18,6 @@ namespace DotNetty.Transport.Channels
             this.handler = handler;
         }
 
-        public override IChannelHandler Handler
-        {
-            get { return this.handler; }
-        }
+        public override IChannelHandler Handler => this.handler;
     }
 }

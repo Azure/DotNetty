@@ -895,7 +895,7 @@ namespace DotNetty.Transport.Channels
             var ctx = (AbstractChannelHandlerContext)this.Context(name);
             if (ctx == null)
             {
-                throw new ArgumentException(string.Format("Handler with a name `{0}` could not be found in the pipeline.", name));
+                throw new ArgumentException($"Handler with a name `{name}` could not be found in the pipeline.");
             }
 
             return ctx;
@@ -906,7 +906,7 @@ namespace DotNetty.Transport.Channels
             var ctx = (AbstractChannelHandlerContext)this.Context(handler);
             if (ctx == null)
             {
-                throw new ArgumentException(string.Format("Handler of type `{0}` could not be found in the pipeline.", handler.GetType().Name));
+                throw new ArgumentException($"Handler of type `{handler.GetType().Name}` could not be found in the pipeline.");
             }
 
             return ctx;
@@ -917,7 +917,7 @@ namespace DotNetty.Transport.Channels
             var ctx = (AbstractChannelHandlerContext)this.Context<T>();
             if (ctx == null)
             {
-                throw new ArgumentException(string.Format("Handler of type `{0}` could not be found in the pipeline.", typeof(T).Name));
+                throw new ArgumentException($"Handler of type `{typeof(T).Name}` could not be found in the pipeline.");
             }
 
             return ctx;
@@ -932,10 +932,7 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            public override IChannelHandler Handler
-            {
-                get { return this; }
-            }
+            public override IChannelHandler Handler => this;
 
             public void ChannelRegistered(IChannelHandlerContext context)
             {
@@ -1066,10 +1063,7 @@ namespace DotNetty.Transport.Channels
                 this.channel = pipeline.Channel();
             }
 
-            public override IChannelHandler Handler
-            {
-                get { return this; }
-            }
+            public override IChannelHandler Handler => this;
 
             public void Flush(IChannelHandlerContext context)
             {

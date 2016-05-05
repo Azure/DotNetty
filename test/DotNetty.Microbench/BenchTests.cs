@@ -55,7 +55,7 @@ namespace DotNetty.Microbench
 
                     if (!mre.WaitOne(TimeSpan.FromMinutes(1)))
                     {
-                        throw new TimeoutException(string.Format("{0} benchmark timed out.", scheduler.GetType().Name));
+                        throw new TimeoutException($"{scheduler.GetType().Name} benchmark timed out.");
                     }
                     mre.Reset();
                 });
@@ -69,7 +69,7 @@ namespace DotNetty.Microbench
                 }
             };
 
-            CodeTimer.Benchmark(testSubjects, "STEE out of loop ({0})", 1, this.output, 
+            CodeTimer.Benchmark(testSubjects, "STEE out of loop ({0})", 1, this.output,
                 scheduler =>
                 {
                     var container = new Container<int>();
@@ -80,7 +80,7 @@ namespace DotNetty.Microbench
 
                     if (!mre.WaitOne(TimeSpan.FromMinutes(1)))
                     {
-                        throw new TimeoutException(string.Format("{0} benchmark timed out.", scheduler.GetType().Name));
+                        throw new TimeoutException($"{scheduler.GetType().Name} benchmark timed out.");
                     }
                     mre.Reset();
                 });

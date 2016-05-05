@@ -7,7 +7,7 @@ namespace DotNetty.Common.Utilities
     using System.Diagnostics.Contracts;
 
     /// <summary>
-    /// Extension methods used for slicing byte arrays
+    ///     Extension methods used for slicing byte arrays
     /// </summary>
     public static class ByteArrayExtensions
     {
@@ -19,7 +19,7 @@ namespace DotNetty.Common.Utilities
 
             if (length > array.Length)
             {
-                throw new ArgumentOutOfRangeException("length", string.Format("length({0}) cannot be longer than Array.length({1})", length, array.Length));
+                throw new ArgumentOutOfRangeException(nameof(length), $"length({length}) cannot be longer than Array.length({array.Length})");
             }
             return Slice(array, 0, length);
         }
@@ -30,7 +30,7 @@ namespace DotNetty.Common.Utilities
 
             if (index + length > array.Length)
             {
-                throw new ArgumentOutOfRangeException("length", string.Format("index: ({0}), length({1}) index + length cannot be longer than Array.length({2})", index, length, array.Length));
+                throw new ArgumentOutOfRangeException(nameof(length), $"index: ({index}), length({length}) index + length cannot be longer than Array.length({array.Length})");
             }
             var result = new byte[length];
             Array.Copy(array, index, result, 0, length);
@@ -48,11 +48,11 @@ namespace DotNetty.Common.Utilities
             Contract.Requires(src != null);
             if (index + srcLength > array.Length)
             {
-                throw new ArgumentOutOfRangeException("srcLength", string.Format("index: ({0}), srcLength({1}) index + length cannot be longer than Array.length({2})", index, srcLength, array.Length));
+                throw new ArgumentOutOfRangeException(nameof(srcLength), $"index: ({index}), srcLength({srcLength}) index + length cannot be longer than Array.length({array.Length})");
             }
             if (srcIndex + srcLength > src.Length)
             {
-                throw new ArgumentOutOfRangeException("srcLength", string.Format("index: ({0}), srcLength({1}) index + length cannot be longer than src.length({2})", srcIndex, srcLength, src.Length));
+                throw new ArgumentOutOfRangeException(nameof(srcLength), $"index: ({srcIndex}), srcLength({srcLength}) index + length cannot be longer than src.length({src.Length})");
             }
 
             Array.Copy(src, srcIndex, array, index, srcLength);

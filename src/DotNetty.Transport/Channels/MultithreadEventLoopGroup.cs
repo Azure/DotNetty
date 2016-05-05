@@ -65,7 +65,7 @@ namespace DotNetty.Transport.Channels
             this.TerminationCompletion = Task.WhenAll(terminationTasks);
         }
 
-        public Task TerminationCompletion { get; private set; }
+        public Task TerminationCompletion { get; }
 
         public IEventLoop GetNext()
         {

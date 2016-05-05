@@ -123,9 +123,6 @@ namespace DotNetty.Transport.Channels
             context.Read();
         }
 
-        public virtual bool IsSharable
-        {
-            get { return false; }
-        }
+        public virtual bool IsSharable => false;
     }
 }

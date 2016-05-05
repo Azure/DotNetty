@@ -20,19 +20,13 @@ namespace DotNetty.Common
             this.ticks = ticks;
         }
 
-        public long Ticks
-        {
-            get { return this.ticks; }
-        }
+        public long Ticks => this.ticks;
 
         public static readonly PreciseTimeSpan Zero = new PreciseTimeSpan(0);
 
         public static readonly PreciseTimeSpan MinusOne = new PreciseTimeSpan(-1);
 
-        public static PreciseTimeSpan FromStart
-        {
-            get { return new PreciseTimeSpan(GetTimeChangeSinceStart()); }
-        }
+        public static PreciseTimeSpan FromStart => new PreciseTimeSpan(GetTimeChangeSinceStart());
 
         public static PreciseTimeSpan FromTimeSpan(TimeSpan timeSpan)
         {

@@ -5,15 +5,9 @@ namespace DotNetty.Codecs.Mqtt.Packets
 {
     public sealed class PubRelPacket : PacketWithId
     {
-        public override PacketType PacketType
-        {
-            get { return PacketType.PUBREL; }
-        }
+        public override PacketType PacketType => PacketType.PUBREL;
 
-        public override QualityOfService QualityOfService
-        {
-            get { return QualityOfService.AtLeastOnce; }
-        }
+        public override QualityOfService QualityOfService => QualityOfService.AtLeastOnce;
 
         public static PubRelPacket InResponseTo(PubRecPacket publishPacket)
         {

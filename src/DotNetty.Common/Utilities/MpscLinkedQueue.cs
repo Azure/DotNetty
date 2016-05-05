@@ -39,7 +39,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        ///  Returns the node right next to the head, which contains the first element of this queue.
+        ///     Returns the node right next to the head, which contains the first element of this queue.
         /// </summary>
         MpscLinkedQueueNode<T> PeekNode()
         {
@@ -127,10 +127,7 @@ namespace DotNetty.Common.Utilities
             }
         }
 
-        public bool IsEmpty
-        {
-            get { return this.PeekNode() == null; }
-        }
+        public bool IsEmpty => this.PeekNode() == null;
 
         public IEnumerator<T> GetEnumerator()
         {
@@ -163,10 +160,7 @@ namespace DotNetty.Common.Utilities
                 this.value = value;
             }
 
-            public override T Value
-            {
-                get { return this.value; }
-            }
+            public override T Value => this.value;
 
             protected internal override T ClearMaybe()
             {
@@ -201,7 +195,7 @@ namespace DotNetty.Common.Utilities
         public abstract T Value { get; }
 
         /// <summary>
-        /// Sets the element this node contains to <code>null</code> so that the node can be used as a tombstone.
+        ///     Sets the element this node contains to <code>null</code> so that the node can be used as a tombstone.
         /// </summary>
         /// <returns></returns>
         protected internal virtual T ClearMaybe()
@@ -210,7 +204,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Unlink to allow GC
+        ///     Unlink to allow GC
         /// </summary>
         internal virtual void Unlink()
         {

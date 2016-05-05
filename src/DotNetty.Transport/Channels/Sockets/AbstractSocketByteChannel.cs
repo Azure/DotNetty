@@ -8,12 +8,12 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Buffers;
 
     /// <summary>
-    /// {@link AbstractNioChannel} base class for {@link Channel}s that operate on bytes.
+    ///     {@link AbstractNioChannel} base class for {@link Channel}s that operate on bytes.
     /// </summary>
     public abstract class AbstractSocketByteChannel : AbstractSocketChannel
     {
         static readonly string ExpectedTypes =
-            string.Format(" (expected: {0})", typeof(IByteBuffer).Name); //+ ", " +
+            $" (expected: {typeof(IByteBuffer).Name})"; //+ ", " +
 
         // todo: FileRegion support        
         //typeof(FileRegion).Name + ')';
@@ -22,10 +22,9 @@ namespace DotNetty.Transport.Channels.Sockets
         static readonly Action<object, object> ReadCompletedSyncCallback = OnReadCompletedSync;
 
         /// <summary>
-        /// Create a new instance
-        ///
-        /// @param parent            the parent {@link Channel} by which this instance was created. May be {@code null}
-        /// @param ch                the underlying {@link SelectableChannel} on which it operates
+        ///     Create a new instance
+        ///     @param parent            the parent {@link Channel} by which this instance was created. May be {@code null}
+        ///     @param ch                the underlying {@link SelectableChannel} on which it operates
         /// </summary>
         protected AbstractSocketByteChannel(IChannel parent, Socket socket)
             : base(parent, socket)
@@ -44,10 +43,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            new AbstractSocketByteChannel Channel
-            {
-                get { return (AbstractSocketByteChannel)this.channel; }
-            }
+            new AbstractSocketByteChannel Channel => (AbstractSocketByteChannel)this.channel;
 
             void CloseOnRead()
             {
@@ -356,14 +352,14 @@ namespace DotNetty.Transport.Channels.Sockets
         //protected abstract long doWriteFileRegion(FileRegion region);
 
         /// <summary>
-        /// Read bytes into the given {@link ByteBuf} and return the amount.
+        ///     Read bytes into the given {@link ByteBuf} and return the amount.
         /// </summary>
         protected abstract int DoReadBytes(IByteBuffer buf);
 
         /// <summary>
-        /// Write bytes form the given {@link ByteBuf} to the underlying {@link java.nio.channels.Channel}.
-        /// @param buf           the {@link ByteBuf} from which the bytes should be written
-        /// @return amount       the amount of written bytes
+        ///     Write bytes form the given {@link ByteBuf} to the underlying {@link java.nio.channels.Channel}.
+        ///     @param buf           the {@link ByteBuf} from which the bytes should be written
+        ///     @return amount       the amount of written bytes
         /// </summary>
         protected abstract int DoWriteBytes(IByteBuffer buf);
     }

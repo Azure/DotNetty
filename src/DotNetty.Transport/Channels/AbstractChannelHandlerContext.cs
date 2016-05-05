@@ -155,7 +155,7 @@ namespace DotNetty.Transport.Channels
 
         protected static bool IsSkippable(Type handlerType, string methodName, params Type[] paramTypes)
         {
-            Type[] newParamTypes = new Type[paramTypes.Length + 1];
+            var newParamTypes = new Type[paramTypes.Length + 1];
             newParamTypes[0] = typeof(IChannelHandlerContext);
             Array.Copy(paramTypes, 0, newParamTypes, 1, paramTypes.Length);
             return handlerType.GetMethod(methodName, newParamTypes).GetCustomAttribute<SkipAttribute>(false) != null;
@@ -180,12 +180,9 @@ namespace DotNetty.Transport.Channels
             this.Name = name;
         }
 
-        public IChannel Channel { get; private set; }
+        public IChannel Channel { get; }
 
-        public IByteBufferAllocator Allocator
-        {
-            get { return this.Channel.Allocator; }
-        }
+        public IByteBufferAllocator Allocator => this.Channel.Allocator;
 
         public bool Removed { get; internal set; }
 
@@ -204,7 +201,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public string Name { get; private set; }
+        public string Name { get; }
 
         public IChannelHandlerInvoker Invoker
         {
@@ -409,7 +406,7 @@ namespace DotNetty.Transport.Channels
 
         public override string ToString()
         {
-            return string.Format("{0} ({1}, {2})", typeof(IChannelHandlerContext).Name, this.Name, this.Channel);
+            return $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
         }
 
         class PausableChannelEventExecutor0 : PausableChannelEventExecutor
@@ -435,15 +432,9 @@ namespace DotNetty.Transport.Channels
                 ((PausableChannelEventExecutor)this.Channel.EventLoop).AcceptNewTasks();
             }
 
-            public override bool IsAcceptingNewTasks
-            {
-                get { return ((PausableChannelEventExecutor)this.Channel.EventLoop).IsAcceptingNewTasks; }
-            }
+            public override bool IsAcceptingNewTasks => ((PausableChannelEventExecutor)this.Channel.EventLoop).IsAcceptingNewTasks;
 
-            internal override IChannel Channel
-            {
-                get { return this.context.Channel; }
-            }
+            internal override IChannel Channel => this.context.Channel;
 
             public override IEventExecutor Unwrap()
             {

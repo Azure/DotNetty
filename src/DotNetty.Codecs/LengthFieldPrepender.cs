@@ -9,31 +9,30 @@ namespace DotNetty.Codecs
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// An encoder that prepends the length of the message.  The length value is
-    /// prepended as a binary form.
-    /// <p>
-    /// For example, <tt>{@link LengthFieldPrepender}(2)</tt> will encode the
-    /// following 12-bytes string:
-    /// <pre>
-    /// +----------------+
-    /// | "HELLO, WORLD" |
-    /// +----------------+
-    /// </pre>
-    /// into the following:
-    /// <pre>
-    /// +--------+----------------+
-    /// + 0x000C | "HELLO, WORLD" |
-    /// +--------+----------------+
-    /// </pre>
-    /// 
-    /// If you turned on the {@code lengthIncludesLengthFieldLength} flag in the
-    /// constructor, the encoded data would look like the following
-    /// (12 (original data) + 2 (prepended data) = 14 (0xE)):
-    /// <pre>
-    /// +--------+----------------+
-    /// + 0x000E | "HELLO, WORLD" |
-    /// +--------+----------------+
-    /// </pre>
+    ///     An encoder that prepends the length of the message.  The length value is
+    ///     prepended as a binary form.
+    ///     <p>
+    ///         For example, <tt>{@link LengthFieldPrepender}(2)</tt> will encode the
+    ///         following 12-bytes string:
+    ///         <pre>
+    ///             +----------------+
+    ///             | "HELLO, WORLD" |
+    ///             +----------------+
+    ///         </pre>
+    ///         into the following:
+    ///         <pre>
+    ///             +--------+----------------+
+    ///             + 0x000C | "HELLO, WORLD" |
+    ///             +--------+----------------+
+    ///         </pre>
+    ///         If you turned on the {@code lengthIncludesLengthFieldLength} flag in the
+    ///         constructor, the encoded data would look like the following
+    ///         (12 (original data) + 2 (prepended data) = 14 (0xE)):
+    ///         <pre>
+    ///             +--------+----------------+
+    ///             + 0x000E | "HELLO, WORLD" |
+    ///             +--------+----------------+
+    ///         </pre>
     /// </summary>
     public class LengthFieldPrepender : MessageToMessageEncoder<IByteBuffer>
     {
@@ -43,7 +42,7 @@ namespace DotNetty.Codecs
         readonly int lengthAdjustment;
 
         /// <summary>
-        /// Creates a new <see cref="LengthFieldPrepender"/> instance.
+        ///     Creates a new <see cref="LengthFieldPrepender" /> instance.
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
@@ -55,7 +54,7 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Creates a new <see cref="LengthFieldPrepender"/> instance.
+        ///     Creates a new <see cref="LengthFieldPrepender" /> instance.
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
@@ -71,7 +70,7 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Creates a new <see cref="LengthFieldPrepender"/> instance.
+        ///     Creates a new <see cref="LengthFieldPrepender" /> instance.
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
@@ -84,7 +83,7 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Creates a new <see cref="LengthFieldPrepender"/> instance.
+        ///     Creates a new <see cref="LengthFieldPrepender" /> instance.
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
@@ -101,9 +100,9 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Creates a new <see cref="LengthFieldPrepender"/> instance.
+        ///     Creates a new <see cref="LengthFieldPrepender" /> instance.
         /// </summary>
-        /// <param name="byteOrder">The <see cref="ByteOrder"/> of the length field.</param>
+        /// <param name="byteOrder">The <see cref="ByteOrder" /> of the length field.</param>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
         ///     Only 1, 2, 4, and 8 are allowed.
@@ -120,7 +119,7 @@ namespace DotNetty.Codecs
             {
                 throw new ArgumentException(
                     "lengthFieldLength must be either 1, 2, 3, 4, or 8: " +
-                        lengthFieldLength, "lengthFieldLength");
+                        lengthFieldLength, nameof(lengthFieldLength));
             }
 
             this.byteOrder = byteOrder;

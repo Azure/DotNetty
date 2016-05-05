@@ -70,15 +70,9 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        public override bool Open
-        {
-            get { return this.IsInState(StateFlags.Open); }
-        }
+        public override bool Open => this.IsInState(StateFlags.Open);
 
-        public override bool Active
-        {
-            get { return this.IsInState(StateFlags.Active); }
-        }
+        public override bool Active => this.IsInState(StateFlags.Active);
 
         protected bool ReadPending
         {
@@ -86,10 +80,7 @@ namespace DotNetty.Transport.Channels.Sockets
             set { this.readPending = value; }
         }
 
-        protected bool InputShutdown
-        {
-            get { return this.inputShutdown; }
-        }
+        protected bool InputShutdown => this.inputShutdown;
 
         protected void ShutdownInput()
         {
@@ -117,10 +108,7 @@ namespace DotNetty.Transport.Channels.Sockets
             return (this.state & stateToCheck) == stateToCheck;
         }
 
-        protected SocketChannelAsyncOperation ReadOperation
-        {
-            get { return this.readOperation ?? (this.readOperation = new SocketChannelAsyncOperation(this, true)); }
-        }
+        protected SocketChannelAsyncOperation ReadOperation => this.readOperation ?? (this.readOperation = new SocketChannelAsyncOperation(this, true));
 
         protected SocketChannelAsyncOperation PrepareWriteOperation(IByteBuffer buffer)
         {
@@ -198,12 +186,12 @@ namespace DotNetty.Transport.Channels.Sockets
         internal interface ISocketChannelUnsafe : IChannelUnsafe
         {
             /// <summary>
-            /// Finish connect
+            ///     Finish connect
             /// </summary>
             void FinishConnect(SocketChannelAsyncOperation operation);
 
             /// <summary>
-            /// Read from underlying {@link SelectableChannel}
+            ///     Read from underlying {@link SelectableChannel}
             /// </summary>
             void FinishRead(SocketChannelAsyncOperation operation);
 
@@ -217,10 +205,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            public AbstractSocketChannel Channel
-            {
-                get { return (AbstractSocketChannel)this.channel; }
-            }
+            public AbstractSocketChannel Channel => (AbstractSocketChannel)this.channel;
 
             public sealed override Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
             {
@@ -365,7 +350,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public abstract void FinishRead(SocketChannelAsyncOperation operation);
 
-            protected override sealed void Flush0()
+            protected sealed override void Flush0()
             {
                 // Flush immediately only when there's no pending flush.
                 // If there's a pending flush operation, event loop will call FinishWrite() later,
@@ -441,12 +426,12 @@ namespace DotNetty.Transport.Channels.Sockets
         protected abstract void ScheduleSocketRead();
 
         /// <summary>
-        ///  Connect to the remote peer
+        ///     Connect to the remote peer
         /// </summary>
         protected abstract bool DoConnect(EndPoint remoteAddress, EndPoint localAddress);
 
         /// <summary>
-        /// Finish the connect
+        ///     Finish the connect
         /// </summary>
         protected abstract void DoFinishConnect(SocketChannelAsyncOperation operation);
 

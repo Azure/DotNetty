@@ -19,34 +19,19 @@ namespace DotNetty.Codecs.Mqtt.Packets
             this.retainRequested = retain;
         }
 
-        public override PacketType PacketType
-        {
-            get { return PacketType.PUBLISH; }
-        }
+        public override PacketType PacketType => PacketType.PUBLISH;
 
-        public override bool Duplicate
-        {
-            get { return this.duplicate; }
-        }
+        public override bool Duplicate => this.duplicate;
 
-        public override QualityOfService QualityOfService
-        {
-            get { return this.qos; }
-        }
+        public override QualityOfService QualityOfService => this.qos;
 
-        public override bool RetainRequested
-        {
-            get { return this.retainRequested; }
-        }
+        public override bool RetainRequested => this.retainRequested;
 
         public string TopicName { get; set; }
 
         public IByteBuffer Payload { get; set; }
 
-        public int ReferenceCount
-        {
-            get { return this.Payload.ReferenceCount; }
-        }
+        public int ReferenceCount => this.Payload.ReferenceCount;
 
         public IReferenceCounted Retain()
         {
@@ -82,10 +67,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
             return this.Payload.Release(decrement);
         }
 
-        IByteBuffer IByteBufferHolder.Content
-        {
-            get { return this.Payload; }
-        }
+        IByteBuffer IByteBufferHolder.Content => this.Payload;
 
         public IByteBufferHolder Copy()
         {

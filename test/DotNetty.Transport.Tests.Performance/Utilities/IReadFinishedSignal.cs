@@ -10,4 +10,3 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
         void Signal();
     }
 }
-

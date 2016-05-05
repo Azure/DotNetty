@@ -13,4 +13,3 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
         public bool Finished { get; private set; }
     }
 }
-

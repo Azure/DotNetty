@@ -5,10 +5,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 {
     public sealed class ConnAckPacket : Packet
     {
-        public override PacketType PacketType
-        {
-            get { return PacketType.CONNACK; }
-        }
+        public override PacketType PacketType => PacketType.CONNACK;
 
         public bool SessionPresent { get; set; }
 

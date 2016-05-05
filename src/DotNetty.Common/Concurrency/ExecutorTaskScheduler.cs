@@ -63,10 +63,7 @@ namespace DotNetty.Common.Concurrency
                 this.task = task;
             }
 
-            public override IRunnable Value
-            {
-                get { return this; }
-            }
+            public override IRunnable Value => this;
 
             public void Run()
             {

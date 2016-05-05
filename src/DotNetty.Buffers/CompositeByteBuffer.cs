@@ -84,12 +84,10 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Add the given {@link IByteBuffer}.
-        /// 
-        ///  Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
-        ///  If you need to have it increased you need to handle it by your own.
-        /// 
-        ///  @param buffer the {@link IByteBuffer} to add
+        ///     Add the given {@link IByteBuffer}.
+        ///     Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
+        ///     If you need to have it increased you need to handle it by your own.
+        ///     @param buffer the {@link IByteBuffer} to add
         /// </summary>
         public CompositeByteBuffer AddComponent(IByteBuffer buffer)
         {
@@ -99,12 +97,10 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Add the given {@link IByteBuffer}s.
-        /// 
-        ///  Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
-        ///  If you need to have it increased you need to handle it by your own.
-        /// 
-        ///  @param buffers the {@link IByteBuffer}s to add
+        ///     Add the given {@link IByteBuffer}s.
+        ///     Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
+        ///     If you need to have it increased you need to handle it by your own.
+        ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
         public CompositeByteBuffer AddComponents(params IByteBuffer[] buffers)
         {
@@ -114,12 +110,10 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Add the given {@link IByteBuffer}s.
-        /// 
-        ///  Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
-        ///  If you need to have it increased you need to handle it by your own.
-        /// 
-        ///  @param buffers the {@link IByteBuffer}s to add
+        ///     Add the given {@link IByteBuffer}s.
+        ///     Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
+        ///     If you need to have it increased you need to handle it by your own.
+        ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
         public CompositeByteBuffer AddComponents(IEnumerable<IByteBuffer> buffers)
         {
@@ -129,13 +123,11 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Add the given {@link IByteBuffer} on the specific index.
-        /// 
-        ///  Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
-        ///  If you need to have it increased you need to handle it by your own.
-        /// 
-        ///  @param cIndex the index on which the {@link IByteBuffer} will be added
-        ///  @param buffer the {@link IByteBuffer} to add
+        ///     Add the given {@link IByteBuffer} on the specific index.
+        ///     Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
+        ///     If you need to have it increased you need to handle it by your own.
+        ///     @param cIndex the index on which the {@link IByteBuffer} will be added
+        ///     @param buffer the {@link IByteBuffer} to add
         /// </summary>
         public CompositeByteBuffer AddComponent(int cIndex, IByteBuffer buffer)
         {
@@ -179,13 +171,11 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Add the given {@link IByteBuffer}s on the specific index
-        /// 
-        ///  Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
-        ///  If you need to have it increased you need to handle it by your own.
-        /// 
-        ///  @param cIndex the index on which the {@link IByteBuffer} will be added.
-        ///  @param buffers the {@link IByteBuffer}s to add
+        ///     Add the given {@link IByteBuffer}s on the specific index
+        ///     Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
+        ///     If you need to have it increased you need to handle it by your own.
+        ///     @param cIndex the index on which the {@link IByteBuffer} will be added.
+        ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
         public CompositeByteBuffer AddComponents(int cIndex, params IByteBuffer[] buffers)
         {
@@ -218,13 +208,11 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Add the given {@link ByteBuf}s on the specific index
-        /// 
-        ///  Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
-        ///  If you need to have it increased you need to handle it by your own.
-        /// 
-        ///  @param cIndex the index on which the {@link IByteBuffer} will be added.
-        ///  @param buffers the {@link IByteBuffer}s to add
+        ///     Add the given {@link ByteBuf}s on the specific index
+        ///     Be aware that this method does not increase the {@code writerIndex} of the {@link CompositeByteBuffer}.
+        ///     If you need to have it increased you need to handle it by your own.
+        ///     @param cIndex the index on which the {@link IByteBuffer} will be added.
+        ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
         public CompositeByteBuffer AddComponents(int cIndex, IEnumerable<IByteBuffer> buffers)
         {
@@ -234,8 +222,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  This should only be called as last operation from a method as this may adjust the underlying
-        ///  array of components and so affect the index etc.
+        ///     This should only be called as last operation from a method as this may adjust the underlying
+        ///     array of components and so affect the index etc.
         /// </summary>
         void ConsolidateIfNeeded()
         {
@@ -268,9 +256,7 @@ namespace DotNetty.Buffers
             this.EnsureAccessible();
             if (cIndex < 0 || cIndex > this.components.Count)
             {
-                throw new ArgumentOutOfRangeException(string.Format(
-                    "cIndex: {0} (expected: >= 0 && <= numComponents({1}))",
-                    cIndex, this.components.Count));
+                throw new ArgumentOutOfRangeException($"cIndex: {cIndex} (expected: >= 0 && <= numComponents({this.components.Count}))");
             }
         }
 
@@ -279,10 +265,7 @@ namespace DotNetty.Buffers
             this.EnsureAccessible();
             if (cIndex < 0 || cIndex + numComponents > this.components.Count)
             {
-                throw new ArgumentOutOfRangeException(string.Format(
-                    "cIndex: {0}, numComponents: {1} " +
-                        "(expected: cIndex >= 0 && cIndex + numComponents <= totalNumComponents({2}))",
-                    cIndex, numComponents, this.components.Count));
+                throw new ArgumentOutOfRangeException($"cIndex: {cIndex}, numComponents: {numComponents} " + $"(expected: cIndex >= 0 && cIndex + numComponents <= totalNumComponents({this.components.Count}))");
             }
         }
 
@@ -312,9 +295,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Remove the {@link IByteBuffer} from the given index.
-        /// 
-        ///  @param cIndex the index on from which the {@link IByteBuffer} will be remove
+        ///     Remove the {@link IByteBuffer} from the given index.
+        ///     @param cIndex the index on from which the {@link IByteBuffer} will be remove
         /// </summary>
         public CompositeByteBuffer RemoveComponent(int cIndex)
         {
@@ -331,10 +313,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Remove the number of {@link IByteBuffer}s starting from the given index.
-        /// 
-        ///  @param cIndex the index on which the {@link IByteBuffer}s will be started to removed
-        ///  @param numComponents the number of components to remove
+        ///     Remove the number of {@link IByteBuffer}s starting from the given index.
+        ///     @param cIndex the index on which the {@link IByteBuffer}s will be started to removed
+        ///     @param numComponents the number of components to remove
         /// </summary>
         public CompositeByteBuffer RemoveComponents(int cIndex, int numComponents)
         {
@@ -371,7 +352,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Same with {@link #slice(int, int)} except that this method returns a list.
+        ///     Same with {@link #slice(int, int)} except that this method returns a list.
         /// </summary>
         public IList<IByteBuffer> Decompose(int offset, int length)
         {
@@ -544,34 +525,22 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public override IByteBufferAllocator Allocator
-        {
-            get { return this.allocator; }
-        }
+        public override IByteBufferAllocator Allocator => this.allocator;
 
-        public override ByteOrder Order
-        {
-            get { return ByteOrder.BigEndian; }
-        }
+        public override ByteOrder Order => ByteOrder.BigEndian;
 
         /// <summary>
-        ///  Return the current number of {@link IByteBuffer}'s that are composed in this instance
+        ///     Return the current number of {@link IByteBuffer}'s that are composed in this instance
         /// </summary>
-        public int NumComponents
-        {
-            get { return this.components.Count; }
-        }
+        public int NumComponents => this.components.Count;
 
         /// <summary>
-        ///  Return the max number of {@link IByteBuffer}'s that are composed in this instance
+        ///     Return the max number of {@link IByteBuffer}'s that are composed in this instance
         /// </summary>
-        public int MaxNumComponents
-        {
-            get { return this.maxNumComponents; }
-        }
+        public int MaxNumComponents => this.maxNumComponents;
 
         /// <summary>
-        ///  Return the index for the given offset
+        ///     Return the index for the given offset
         /// </summary>
         public int ToComponentIndex(int offset)
         {
@@ -874,7 +843,8 @@ namespace DotNetty.Buffers
                     length -= localReadBytes;
                     readBytes += localReadBytes;
                 }
-            } while (length > 0);
+            }
+            while (length > 0);
 
             return readBytes;
         }
@@ -936,21 +906,16 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Return the {@link IByteBuffer} on the specified index
-        /// 
-        ///  @param cIndex the index for which the {@link IByteBuffer} should be returned
-        ///  @return buffer the {@link IByteBuffer} on the specified index
+        ///     Return the {@link IByteBuffer} on the specified index
+        ///     @param cIndex the index for which the {@link IByteBuffer} should be returned
+        ///     @return buffer the {@link IByteBuffer} on the specified index
         /// </summary>
-        public IByteBuffer this[int cIndex]
-        {
-            get { return this.InternalComponent(cIndex).Duplicate(); }
-        }
+        public IByteBuffer this[int cIndex] => this.InternalComponent(cIndex).Duplicate();
 
         /// <summary>
-        ///  Return the {@link IByteBuffer} on the specified index
-        /// 
-        ///  @param offset the offset for which the {@link IByteBuffer} should be returned
-        ///  @return the {@link IByteBuffer} on the specified index
+        ///     Return the {@link IByteBuffer} on the specified index
+        ///     @param offset the offset for which the {@link IByteBuffer} should be returned
+        ///     @return the {@link IByteBuffer} on the specified index
         /// </summary>
         public IByteBuffer ComponentAtOffset(int offset)
         {
@@ -958,10 +923,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Return the internal {@link IByteBuffer} on the specified index. Note that updating the indexes of the returned
-        ///  buffer will lead to an undefined behavior of this buffer.
-        /// 
-        ///  @param cIndex the index for which the {@link IByteBuffer} should be returned
+        ///     Return the internal {@link IByteBuffer} on the specified index. Note that updating the indexes of the returned
+        ///     buffer will lead to an undefined behavior of this buffer.
+        ///     @param cIndex the index for which the {@link IByteBuffer} should be returned
         /// </summary>
         public IByteBuffer InternalComponent(int cIndex)
         {
@@ -970,10 +934,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Return the internal {@link IByteBuffer} on the specified offset. Note that updating the indexes of the returned
-        ///  buffer will lead to an undefined behavior of this buffer.
-        /// 
-        ///  @param offset the offset for which the {@link IByteBuffer} should be returned
+        ///     Return the internal {@link IByteBuffer} on the specified offset. Note that updating the indexes of the returned
+        ///     buffer will lead to an undefined behavior of this buffer.
+        ///     @param offset the offset for which the {@link IByteBuffer} should be returned
         /// </summary>
         public IByteBuffer InternalComponentAtOffset(int offset)
         {
@@ -1007,7 +970,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Consolidate the composed {@link IByteBuffer}s
+        ///     Consolidate the composed {@link IByteBuffer}s
         /// </summary>
         public CompositeByteBuffer Consolidate()
         {
@@ -1037,10 +1000,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Consolidate the composed {@link IByteBuffer}s
-        /// 
-        ///  @param cIndex the index on which to start to compose
-        ///  @param numComponents the number of components to compose
+        ///     Consolidate the composed {@link IByteBuffer}s
+        ///     @param cIndex the index on which to start to compose
+        ///     @param numComponents the number of components to compose
         /// </summary>
         public CompositeByteBuffer Consolidate(int cIndex, int numComponents)
         {
@@ -1070,7 +1032,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Discard all {@link IByteBuffer}s which are read.
+        ///     Discard all {@link IByteBuffer}s which are read.
         /// </summary>
         public CompositeByteBuffer DiscardReadComponents()
         {
@@ -1173,7 +1135,7 @@ namespace DotNetty.Buffers
         {
             string result = base.ToString();
             result = result.Substring(0, result.Length - 1);
-            return string.Format("{0}, components={1})", result, this.components.Count);
+            return $"{result}, components={this.components.Count})";
         }
 
         public override IReferenceCounted Touch()

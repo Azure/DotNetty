@@ -10,24 +10,24 @@ namespace DotNetty.Transport.Channels
     static class Util
     {
         /// <summary>
-        /// Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
+        ///     Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
         /// </summary>
         public static void SafeSetSuccess(TaskCompletionSource promise, IInternalLogger logger)
         {
             if (promise != TaskCompletionSource.Void && !promise.TryComplete())
             {
-                logger.Warn(string.Format("Failed to mark a promise as success because it is done already: {0}", promise));
+                logger.Warn($"Failed to mark a promise as success because it is done already: {promise}");
             }
         }
 
         /// <summary>
-        /// Marks the specified {@code promise} as failure.  If the {@code promise} is done already, log a message.
+        ///     Marks the specified {@code promise} as failure.  If the {@code promise} is done already, log a message.
         /// </summary>
         public static void SafeSetFailure(TaskCompletionSource promise, Exception cause, IInternalLogger logger)
         {
             if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
             {
-                logger.Warn(string.Format("Failed to mark a promise as failure because it's done already: {0}", promise), cause);
+                logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
             }
         }
     }

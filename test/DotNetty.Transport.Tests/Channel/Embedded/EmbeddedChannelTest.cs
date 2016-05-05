@@ -39,7 +39,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
             int first = 1;
             int second = 2;
             IChannelHandler handler = new ChannelHandler1(first, second);
-            EmbeddedChannel channel = new EmbeddedChannel(new ActionChannelInitializer<IChannel>(ch => { ch.Pipeline.AddLast(handler); }));
+            var channel = new EmbeddedChannel(new ActionChannelInitializer<IChannel>(ch => { ch.Pipeline.AddLast(handler); }));
             IChannelPipeline pipeline = channel.Pipeline;
             Assert.Same(handler, pipeline.FirstContext().Handler);
             Assert.True(channel.WriteInbound(3));
@@ -78,7 +78,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
         public async Task TestScheduledCancelledDirectly()
         {
             var ch = new EmbeddedChannel(new ChannelHandlerAdapter());
-            
+
             IScheduledTask task1 = ch.EventLoop.Schedule(() => { }, new TimeSpan(1));
             IScheduledTask task2 = ch.EventLoop.Schedule(() => { }, new TimeSpan(1));
             IScheduledTask task3 = ch.EventLoop.Schedule(() => { }, new TimeSpan(1));
@@ -101,7 +101,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
             var cts = new CancellationTokenSource();
             Task task = ch.EventLoop.ScheduleAsync(() => { }, TimeSpan.FromDays(1), cts.Token);
             await Task.Run(() => cts.Cancel());
-            var checkTask = ch.EventLoop.SubmitAsync(() => task.IsCanceled);
+            Task<bool> checkTask = ch.EventLoop.SubmitAsync(() => task.IsCanceled);
             ch.RunPendingTasks();
             Assert.True(await checkTask);
         }
@@ -138,10 +138,10 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
         [InlineData(3000)]
         public void TestHandlerAddedExecutedInEventLoop(int timeout)
         {
-            CountdownEvent latch = new CountdownEvent(1);
-            AtomicReference<Exception> ex = new AtomicReference<Exception>();
+            var latch = new CountdownEvent(1);
+            var ex = new AtomicReference<Exception>();
             IChannelHandler handler = new ChannelHandler3(latch, ex);
-            EmbeddedChannel channel = new EmbeddedChannel(handler);
+            var channel = new EmbeddedChannel(handler);
             Assert.False(channel.Finish());
             Assert.True(latch.Wait(timeout));
             Exception cause = ex.Value;
@@ -154,7 +154,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
         [Fact]
         public void TestConstructWithoutHandler()
         {
-            EmbeddedChannel channel = new EmbeddedChannel();
+            var channel = new EmbeddedChannel();
             Assert.True(channel.WriteInbound(1));
             Assert.True(channel.WriteOutbound(2));
             Assert.True(channel.Finish());
@@ -173,15 +173,15 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
 
         public void TestFireChannelInactiveAndUnregisteredOnClose(Func<IChannel, Task> action, int timeout)
         {
-            CountdownEvent latch = new CountdownEvent(3);
-            EmbeddedChannel channel = new EmbeddedChannel(new ChannelHandlerWithInactiveAndRegister(latch));
+            var latch = new CountdownEvent(3);
+            var channel = new EmbeddedChannel(new ChannelHandlerWithInactiveAndRegister(latch));
             action(channel);
             Assert.True(latch.Wait(timeout));
         }
 
         class ChannelHandlerWithInactiveAndRegister : ChannelHandlerAdapter
         {
-            CountdownEvent latch;
+            readonly CountdownEvent latch;
 
             public ChannelHandlerWithInactiveAndRegister(CountdownEvent latch)
             {

@@ -7,7 +7,7 @@ namespace DotNetty.Buffers
     using DotNetty.Common;
 
     /// <summary>
-    /// Abstract base class for <see cref="IByteBufferAllocator"/> instances
+    ///     Abstract base class for <see cref="IByteBufferAllocator" /> instances
     /// </summary>
     public abstract class AbstractByteBufferAllocator : IByteBufferAllocator
     {
@@ -89,12 +89,12 @@ namespace DotNetty.Buffers
         {
             if (initialCapacity < 0)
             {
-                throw new ArgumentOutOfRangeException("initialCapacity", "initialCapacity must be greater than zero");
+                throw new ArgumentOutOfRangeException(nameof(initialCapacity), "initialCapacity must be greater than zero");
             }
 
             if (initialCapacity > maxCapacity)
             {
-                throw new ArgumentOutOfRangeException("initialCapacity", string.Format("initialCapacity ({0}) must be greater than maxCapacity ({1})", initialCapacity, maxCapacity));
+                throw new ArgumentOutOfRangeException(nameof(initialCapacity), $"initialCapacity ({initialCapacity}) must be greater than maxCapacity ({maxCapacity})");
             }
         }
 

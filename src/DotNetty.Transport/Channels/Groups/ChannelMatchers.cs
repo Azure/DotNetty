@@ -55,7 +55,7 @@ namespace DotNetty.Transport.Channels.Groups
         {
             if (matchers.Length < 1)
             {
-                throw new ArgumentOutOfRangeException("matchers");
+                throw new ArgumentOutOfRangeException(nameof(matchers));
             }
             if (matchers.Length == 1)
             {

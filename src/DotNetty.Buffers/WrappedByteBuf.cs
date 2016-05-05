@@ -22,10 +22,7 @@ namespace DotNetty.Buffers
             this.Buf = buf;
         }
 
-        public int Capacity
-        {
-            get { return this.Buf.Capacity; }
-        }
+        public int Capacity => this.Buf.Capacity;
 
         public virtual IByteBuffer AdjustCapacity(int newCapacity)
         {
@@ -33,20 +30,11 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public int MaxCapacity
-        {
-            get { return this.Buf.MaxCapacity; }
-        }
+        public int MaxCapacity => this.Buf.MaxCapacity;
 
-        public IByteBufferAllocator Allocator
-        {
-            get { return this.Buf.Allocator; }
-        }
+        public IByteBufferAllocator Allocator => this.Buf.Allocator;
 
-        public ByteOrder Order
-        {
-            get { return this.Buf.Order; }
-        }
+        public ByteOrder Order => this.Buf.Order;
 
         public virtual IByteBuffer WithOrder(ByteOrder endianness)
         {
@@ -58,10 +46,7 @@ namespace DotNetty.Buffers
             return this.Buf;
         }
 
-        public int ReaderIndex
-        {
-            get { return this.Buf.ReaderIndex; }
-        }
+        public int ReaderIndex => this.Buf.ReaderIndex;
 
         public IByteBuffer SetReaderIndex(int readerIndex)
         {
@@ -69,10 +54,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public int WriterIndex
-        {
-            get { return this.Buf.WriterIndex; }
-        }
+        public int WriterIndex => this.Buf.WriterIndex;
 
         public IByteBuffer SetWriterIndex(int writerIndex)
         {
@@ -86,20 +68,11 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public int ReadableBytes
-        {
-            get { return this.Buf.ReadableBytes; }
-        }
+        public int ReadableBytes => this.Buf.ReadableBytes;
 
-        public int WritableBytes
-        {
-            get { return this.Buf.WritableBytes; }
-        }
+        public int WritableBytes => this.Buf.WritableBytes;
 
-        public int MaxWritableBytes
-        {
-            get { return this.Buf.MaxWritableBytes; }
-        }
+        public int MaxWritableBytes => this.Buf.MaxWritableBytes;
 
         public bool IsReadable()
         {
@@ -631,20 +604,11 @@ namespace DotNetty.Buffers
             return this.Buf.Duplicate();
         }
 
-        public virtual bool HasArray
-        {
-            get { return this.Buf.HasArray; }
-        }
+        public virtual bool HasArray => this.Buf.HasArray;
 
-        public virtual byte[] Array
-        {
-            get { return this.Buf.Array; }
-        }
+        public virtual byte[] Array => this.Buf.Array;
 
-        public virtual int ArrayOffset
-        {
-            get { return this.Buf.ArrayOffset; }
-        }
+        public virtual int ArrayOffset => this.Buf.ArrayOffset;
 
         // todo: port: complete
         //    public virtual String toString(Charset charset)
@@ -712,10 +676,7 @@ namespace DotNetty.Buffers
             return this.Buf.IsWritable(size);
         }
 
-        public int ReferenceCount
-        {
-            get { return this.Buf.ReferenceCount; }
-        }
+        public int ReferenceCount => this.Buf.ReferenceCount;
 
         public virtual bool Release()
         {
@@ -749,12 +710,12 @@ namespace DotNetty.Buffers
 
         public virtual string ToString(Encoding encoding)
         {
-            return Buf.ToString(encoding);
+            return this.Buf.ToString(encoding);
         }
 
         public virtual string ToString(int index, int length, Encoding encoding)
         {
-            return Buf.ToString(index, length, encoding);
+            return this.Buf.ToString(index, length, encoding);
         }
     }
 }

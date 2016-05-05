@@ -38,7 +38,7 @@ namespace DotNetty.Transport.Channels.Embedded
         State state;
 
         /// <summary>
-        /// Create a new instance with an empty pipeline.
+        ///     Create a new instance with an empty pipeline.
         /// </summary>
         public EmbeddedChannel()
             : this(EmbeddedChannelId.Instance, EMPTY_HANDLERS)
@@ -46,19 +46,19 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Create a new instance with an empty pipeline with the specified <see cref="IChannelId"/>.
+        ///     Create a new instance with an empty pipeline with the specified <see cref="IChannelId" />.
         /// </summary>
-        /// <param name="channelId">The <see cref="IChannelId"/> of this channel. </param>
+        /// <param name="channelId">The <see cref="IChannelId" /> of this channel. </param>
         public EmbeddedChannel(IChannelId channelId)
             : this(channelId, EMPTY_HANDLERS)
         {
         }
 
         /// <summary>
-        /// Create a new instance with the pipeline initialized with the specified handlers.
+        ///     Create a new instance with the pipeline initialized with the specified handlers.
         /// </summary>
         /// <param name="handlers">
-        /// The <see cref="IChannelHandler"/>s that will be added to the <see cref="IChannelPipeline"/>
+        ///     The <see cref="IChannelHandler" />s that will be added to the <see cref="IChannelPipeline" />
         /// </param>
         public EmbeddedChannel(params IChannelHandler[] handlers)
             : this(EmbeddedChannelId.Instance, handlers)
@@ -66,11 +66,11 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Create a new instance with the pipeline initialized with the specified handlers.
+        ///     Create a new instance with the pipeline initialized with the specified handlers.
         /// </summary>
-        /// <param name="id">The <see cref="IChannelId"/> of this channel.</param>
+        /// <param name="id">The <see cref="IChannelId" /> of this channel.</param>
         /// <param name="handlers">
-        /// The <see cref="IChannelHandler"/>s that will be added to the <see cref="IChannelPipeline"/>
+        ///     The <see cref="IChannelHandler" />s that will be added to the <see cref="IChannelPipeline" />
         /// </param>
         public EmbeddedChannel(IChannelId id, params IChannelHandler[] handlers)
             : base(null, id)
@@ -100,28 +100,19 @@ namespace DotNetty.Transport.Channels.Embedded
             p.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
         }
 
-        public override IChannelConfiguration Configuration
-        {
-            get { return this.config; }
-        }
+        public override IChannelConfiguration Configuration => this.config;
 
         /// <summary>
-        /// Returns the <see cref="Queue{T}"/> which holds all of the <see cref="object"/>s that 
-        /// were received by this <see cref="IChannel"/>.
+        ///     Returns the <see cref="Queue{T}" /> which holds all of the <see cref="object" />s that
+        ///     were received by this <see cref="IChannel" />.
         /// </summary>
-        public Queue<object> InboundMessages
-        {
-            get { return this.inboundMessages ?? (this.inboundMessages = new Queue<object>()); }
-        }
+        public Queue<object> InboundMessages => this.inboundMessages ?? (this.inboundMessages = new Queue<object>());
 
         /// <summary>
-        /// Returns the <see cref="Queue{T}"/> which holds all of the <see cref="object"/>s that 
-        /// were written by this <see cref="IChannel"/>.
+        ///     Returns the <see cref="Queue{T}" /> which holds all of the <see cref="object" />s that
+        ///     were written by this <see cref="IChannel" />.
         /// </summary>
-        public Queue<object> OutboundMessages
-        {
-            get { return this.outboundMessages ?? (this.outboundMessages = new Queue<object>()); }
-        }
+        public Queue<object> OutboundMessages => this.outboundMessages ?? (this.outboundMessages = new Queue<object>());
 
         public T ReadInbound<T>()
         {
@@ -133,20 +124,11 @@ namespace DotNetty.Transport.Channels.Embedded
             return (T)Poll(this.outboundMessages);
         }
 
-        public override bool DisconnectSupported
-        {
-            get { return false; }
-        }
+        public override bool DisconnectSupported => false;
 
-        protected override EndPoint LocalAddressInternal
-        {
-            get { return this.Active ? LOCAL_ADDRESS : null; }
-        }
+        protected override EndPoint LocalAddressInternal => this.Active ? LOCAL_ADDRESS : null;
 
-        protected override EndPoint RemoteAddressInternal
-        {
-            get { return this.Active ? REMOTE_ADDRESS : null; }
-        }
+        protected override EndPoint RemoteAddressInternal => this.Active ? REMOTE_ADDRESS : null;
 
         protected override IChannelUnsafe NewUnsafe()
         {
@@ -199,19 +181,13 @@ namespace DotNetty.Transport.Channels.Embedded
             }
         }
 
-        public override bool Open
-        {
-            get { return this.state != State.Closed; }
-        }
+        public override bool Open => this.state != State.Closed;
 
-        public override bool Active
-        {
-            get { return this.state == State.Active; }
-        }
+        public override bool Active => this.state == State.Active;
 
         /// <summary>
-        /// Run all tasks (which also includes scheduled tasks) that are pending in the <see cref="IEventLoop"/>
-        /// for this <see cref="IChannel"/>.
+        ///     Run all tasks (which also includes scheduled tasks) that are pending in the <see cref="IEventLoop" />
+        ///     for this <see cref="IChannel" />.
         /// </summary>
         public void RunPendingTasks()
         {
@@ -235,11 +211,11 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Run all pending scheduled tasks in the <see cref="IEventLoop"/> for this <see cref="IChannel"/>.
+        ///     Run all pending scheduled tasks in the <see cref="IEventLoop" /> for this <see cref="IChannel" />.
         /// </summary>
         /// <returns>
-        /// The <see cref="PreciseTimeSpan"/> when the next scheduled task is ready to run. If no other task is
-        /// scheduled then it will return <see cref="PreciseTimeSpan.Zero"/>.
+        ///     The <see cref="PreciseTimeSpan" /> when the next scheduled task is ready to run. If no other task is
+        ///     scheduled then it will return <see cref="PreciseTimeSpan.Zero" />.
         /// </returns>
         public PreciseTimeSpan RunScheduledPendingTasks()
         {
@@ -262,7 +238,7 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Write messages to the inbound of this <see cref="IChannel"/>
+        ///     Write messages to the inbound of this <see cref="IChannel" />
         /// </summary>
         /// <param name="msgs">The messages to be written.</param>
         /// <returns><c>true</c> if the write operation did add something to the inbound buffer</returns>
@@ -286,7 +262,7 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Write messages to the outbound of this <see cref="IChannel"/>.
+        ///     Write messages to the outbound of this <see cref="IChannel" />.
         /// </summary>
         /// <param name="msgs">The messages to be written.</param>
         /// <returns><c>true</c> if the write operation did add something to the inbound buffer</returns>
@@ -299,7 +275,7 @@ namespace DotNetty.Transport.Channels.Embedded
             }
 
             //todo: RecyclableArrayList
-            List<Task> futures = new List<Task>(msgs.Length);
+            var futures = new List<Task>(msgs.Length);
 
             foreach (object m in msgs)
             {
@@ -343,7 +319,7 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Mark this <see cref="IChannel"/> as finished. Any further try to write data to it will fail.
+        ///     Mark this <see cref="IChannel" /> as finished. Any further try to write data to it will fail.
         /// </summary>
         /// <returns>bufferReadable returns <c>true</c></returns>
         public bool Finish()
@@ -368,7 +344,7 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Check to see if there was any <see cref="Exception"/> and rethrow if so.
+        ///     Check to see if there was any <see cref="Exception" /> and rethrow if so.
         /// </summary>
         public void CheckException()
         {
@@ -383,7 +359,7 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// Ensure the <see cref="IChannel"/> is open and if not throw an exception.
+        ///     Ensure the <see cref="IChannel" /> is open and if not throw an exception.
         /// </summary>
         protected void EnsureOpen()
         {

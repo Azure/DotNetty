@@ -8,7 +8,7 @@ namespace DotNetty.Buffers
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Dervied buffer that forwards requests to the original underlying buffer
+    ///     Dervied buffer that forwards requests to the original underlying buffer
     /// </summary>
     public sealed class DuplicatedByteBuffer : AbstractDerivedByteBuffer
     {
@@ -22,20 +22,14 @@ namespace DotNetty.Buffers
             this.SetIndex(source.ReaderIndex, source.WriterIndex);
         }
 
-        public override int Capacity
-        {
-            get { return this.buffer.Capacity; }
-        }
+        public override int Capacity => this.buffer.Capacity;
 
         public override IByteBuffer AdjustCapacity(int newCapacity)
         {
             return this.buffer.AdjustCapacity(newCapacity);
         }
 
-        public override IByteBufferAllocator Allocator
-        {
-            get { return this.buffer.Allocator; }
-        }
+        public override IByteBufferAllocator Allocator => this.buffer.Allocator;
 
         public override byte GetByte(int index)
         {
@@ -162,25 +156,16 @@ namespace DotNetty.Buffers
             return this.buffer.SetBytesAsync(index, src, length, cancellationToken);
         }
 
-        public override bool HasArray
-        {
-            get { return this.buffer.HasArray; }
-        }
+        public override bool HasArray => this.buffer.HasArray;
 
-        public override byte[] Array
-        {
-            get { return this.buffer.Array; }
-        }
+        public override byte[] Array => this.buffer.Array;
 
         public override IByteBuffer Copy(int index, int length)
         {
             return this.buffer.Copy(index, length);
         }
 
-        public override int ArrayOffset
-        {
-            get { return this.buffer.ArrayOffset; }
-        }
+        public override int ArrayOffset => this.buffer.ArrayOffset;
 
         public override IByteBuffer Unwrap()
         {

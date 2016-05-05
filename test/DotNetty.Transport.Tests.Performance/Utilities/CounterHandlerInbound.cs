@@ -21,10 +21,6 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
             context.FireChannelRead(message);
         }
 
-        public override bool IsSharable
-        {
-           get { return true; }
-        }
+        public override bool IsSharable => true;
     }
 }
-

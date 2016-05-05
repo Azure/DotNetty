@@ -32,10 +32,7 @@ namespace DotNetty.Buffers
             this.DiscardMarkers();
         }
 
-        public override int Capacity
-        {
-            get { return this.length; }
-        }
+        public override int Capacity => this.length;
 
         public override IByteBuffer AdjustCapacity(int newCapacity)
         {

@@ -16,9 +16,9 @@ namespace DotNetty.Codecs.Mqtt.Packets
             this.QualityOfService = qualityOfService;
         }
 
-        public string TopicFilter { get; private set; }
+        public string TopicFilter { get; }
 
-        public QualityOfService QualityOfService { get; private set; }
+        public QualityOfService QualityOfService { get; }
 
         public bool Equals(SubscriptionRequest other)
         {
@@ -28,7 +28,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
         public override string ToString()
         {
-            return string.Format("{0}[TopicFilter={1}, QualityOfService={2}]", this.GetType().Name, this.TopicFilter, this.QualityOfService);
+            return $"{this.GetType().Name}[TopicFilter={this.TopicFilter}, QualityOfService={this.QualityOfService}]";
         }
     }
 }

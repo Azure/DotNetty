@@ -14,10 +14,9 @@ namespace DotNetty.Buffers
         byte[] array;
 
         /// <summary>
-        /// Creates a new heap buffer with a newly allocated byte array.
-        ///
-        /// @param initialCapacity the initial capacity of the underlying byte array
-        /// @param maxCapacity the max capacity of the underlying byte array
+        ///     Creates a new heap buffer with a newly allocated byte array.
+        ///     @param initialCapacity the initial capacity of the underlying byte array
+        ///     @param maxCapacity the max capacity of the underlying byte array
         /// </summary>
         public UnpooledHeapByteBuffer(IByteBufferAllocator allocator, int initialCapacity, int maxCapacity)
             : this(allocator, new byte[initialCapacity], 0, 0, maxCapacity)
@@ -25,10 +24,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Creates a new heap buffer with an existing byte array.
-        ///
-        /// @param initialArray the initial underlying byte array
-        /// @param maxCapacity the max capacity of the underlying byte array
+        ///     Creates a new heap buffer with an existing byte array.
+        ///     @param initialArray the initial underlying byte array
+        ///     @param maxCapacity the max capacity of the underlying byte array
         /// </summary>
         public UnpooledHeapByteBuffer(IByteBufferAllocator allocator, byte[] initialArray, int maxCapacity)
             : this(allocator, initialArray, 0, initialArray.Length, maxCapacity)
@@ -53,15 +51,9 @@ namespace DotNetty.Buffers
             this.array = initialArray;
         }
 
-        public override IByteBufferAllocator Allocator
-        {
-            get { return this.allocator; }
-        }
+        public override IByteBufferAllocator Allocator => this.allocator;
 
-        public override ByteOrder Order
-        {
-            get { return ByteOrder.BigEndian; }
-        }
+        public override ByteOrder Order => ByteOrder.BigEndian;
 
         public override int Capacity
         {
@@ -106,10 +98,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public override bool HasArray
-        {
-            get { return true; }
-        }
+        public override bool HasArray => true;
 
         public override byte[] Array
         {
@@ -120,10 +109,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        public override int ArrayOffset
-        {
-            get { return 0; }
-        }
+        public override int ArrayOffset => 0;
 
         public override IByteBuffer GetBytes(int index, IByteBuffer dst, int dstIndex, int length)
         {
@@ -172,6 +158,7 @@ namespace DotNetty.Buffers
             System.Array.Copy(src, srcIndex, this.array, index, length);
             return this;
         }
+
         public override async Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
             int readTotal = 0;

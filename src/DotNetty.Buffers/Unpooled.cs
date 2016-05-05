@@ -7,7 +7,7 @@ namespace DotNetty.Buffers
     using System.Diagnostics.Contracts;
 
     /// <summary>
-    /// Utility class for managing and creating unpooled buffers
+    ///     Utility class for managing and creating unpooled buffers
     /// </summary>
     public static class Unpooled
     {
@@ -62,12 +62,12 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Creates a new big-endian buffer whose content is a copy of the specified <see cref="array"/>.
-        /// The new buffer's <see cref="IByteBuffer.ReaderIndex"/> and <see cref="IByteBuffer.WriterIndex"/>
-        /// are <c>0</c> and <see cref="Array.Length"/> respectively.
+        ///     Creates a new big-endian buffer whose content is a copy of the specified <see cref="array" />.
+        ///     The new buffer's <see cref="IByteBuffer.ReaderIndex" /> and <see cref="IByteBuffer.WriterIndex" />
+        ///     are <c>0</c> and <see cref="Array.Length" /> respectively.
         /// </summary>
         /// <param name="array">A buffer we're going to copy.</param>
-        /// <returns>The new buffer that copies the contents of <see cref="array"/>.</returns>
+        /// <returns>The new buffer that copies the contents of <see cref="array" />.</returns>
         public static IByteBuffer CopiedBuffer(byte[] array)
         {
             Contract.Requires(array != null);
@@ -75,21 +75,23 @@ namespace DotNetty.Buffers
             {
                 return Empty;
             }
-            byte[] newArray = new byte[array.Length];
+            var newArray = new byte[array.Length];
             Array.Copy(array, newArray, array.Length);
             return WrappedBuffer(newArray);
         }
 
         /// <summary>
-        /// Creates a new big-endian buffer whose content is a copy of the specified <see cref="array"/>.
-        /// The new buffer's <see cref="IByteBuffer.ReaderIndex"/> and <see cref="IByteBuffer.WriterIndex"/>
-        /// are <c>0</c> and <see cref="Array.Length"/> respectively.
+        ///     Creates a new big-endian buffer whose content is a copy of the specified <see cref="array" />.
+        ///     The new buffer's <see cref="IByteBuffer.ReaderIndex" /> and <see cref="IByteBuffer.WriterIndex" />
+        ///     are <c>0</c> and <see cref="Array.Length" /> respectively.
         /// </summary>
         /// <param name="array">A buffer we're going to copy.</param>
-        /// <param name="offset">The index offset from which we're going to read <see cref="array"/>.</param>
-        /// <param name="length">The number of bytes we're going to read from <see cref="array"/> 
-        /// beginning from position <see cref="offset"/>.</param>
-        /// <returns>The new buffer that copies the contents of <see cref="array"/>.</returns>
+        /// <param name="offset">The index offset from which we're going to read <see cref="array" />.</param>
+        /// <param name="length">
+        ///     The number of bytes we're going to read from <see cref="array" />
+        ///     beginning from position <see cref="offset" />.
+        /// </param>
+        /// <returns>The new buffer that copies the contents of <see cref="array" />.</returns>
         public static IByteBuffer CopiedBuffer(byte[] array, int offset, int length)
         {
             Contract.Requires(array != null);
@@ -97,18 +99,18 @@ namespace DotNetty.Buffers
             {
                 return Empty;
             }
-            byte[] copy = new byte[length];
+            var copy = new byte[length];
             Array.Copy(array, offset, copy, 0, length);
             return WrappedBuffer(copy);
         }
 
         /// <summary>
-        /// Creates a new big-endian buffer whose content is a copy of the specified <see cref="array"/>.
-        /// The new buffer's <see cref="IByteBuffer.ReaderIndex"/> and <see cref="IByteBuffer.WriterIndex"/>
-        /// are <c>0</c> and <see cref="IByteBuffer.Capacity"/> respectively.
+        ///     Creates a new big-endian buffer whose content is a copy of the specified <see cref="array" />.
+        ///     The new buffer's <see cref="IByteBuffer.ReaderIndex" /> and <see cref="IByteBuffer.WriterIndex" />
+        ///     are <c>0</c> and <see cref="IByteBuffer.Capacity" /> respectively.
         /// </summary>
         /// <param name="buffer">A buffer we're going to copy.</param>
-        /// <returns>The new buffer that copies the contents of <see cref="buffer"/>.</returns>
+        /// <returns>The new buffer that copies the contents of <see cref="buffer" />.</returns>
         public static IByteBuffer CopiedBuffer(IByteBuffer buffer)
         {
             Contract.Requires(buffer != null);
@@ -117,7 +119,7 @@ namespace DotNetty.Buffers
             {
                 return Empty;
             }
-            byte[] copy = new byte[length];
+            var copy = new byte[length];
 
             // Duplicate the buffer so we do not adjust our position during our get operation
             IByteBuffer duplicate = buffer.Duplicate();

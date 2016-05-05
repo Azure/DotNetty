@@ -15,15 +15,9 @@ namespace DotNetty.Transport.Channels.Embedded
     {
         readonly Queue<IRunnable> tasks = new Queue<IRunnable>(2);
 
-        public IEventExecutor Executor
-        {
-            get { return this; }
-        }
+        public IEventExecutor Executor => this;
 
-        public IChannelHandlerInvoker Invoker
-        {
-            get { return this; }
-        }
+        public IChannelHandlerInvoker Invoker => this;
 
         public Task RegisterAsync(IChannel channel)
         {
@@ -35,25 +29,16 @@ namespace DotNetty.Transport.Channels.Embedded
             return this;
         }
 
-        public override bool IsShuttingDown
-        {
-            get { return false; }
-        }
+        public override bool IsShuttingDown => false;
 
         public override Task TerminationCompletion
         {
             get { throw new NotSupportedException(); }
         }
 
-        public override bool IsShutdown
-        {
-            get { return false; }
-        }
+        public override bool IsShutdown => false;
 
-        public override bool IsTerminated
-        {
-            get { return false; }
-        }
+        public override bool IsTerminated => false;
 
         public override bool IsInEventLoop(Thread thread)
         {
@@ -117,7 +102,7 @@ namespace DotNetty.Transport.Channels.Embedded
         }
 
         /// <summary>
-        /// YOLO
+        ///     YOLO
         /// </summary>
         internal new void CancelScheduledTasks()
         {

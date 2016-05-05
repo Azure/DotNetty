@@ -5,13 +5,12 @@ namespace DotNetty.Common.Internal.Logging
 {
     using System;
     using System.Diagnostics.Contracts;
-    using System.Runtime.CompilerServices;
     using System.Threading;
 
     /// <summary>
-    ///     Creates an <see cref="IInternalLogger"/> or changes the default factory
+    ///     Creates an <see cref="IInternalLogger" /> or changes the default factory
     ///     implementation.  This factory allows you to choose what logging framework
-    ///     Netty should use.  The default factory is <see cref="EventSourceLoggerFactory"/>
+    ///     Netty should use.  The default factory is <see cref="EventSourceLoggerFactory" />
     ///     You can change it to your preferred logging framework before other Netty classes are loaded:
     ///     <pre>
     ///         <code>InternalLoggerFactory.SetDefaultFactory(new MyLoggerFactory());</code>
@@ -45,7 +44,7 @@ namespace DotNetty.Common.Internal.Logging
         }
 
         /// <summary>
-        /// Gets or sets the default factory. The initial default factory is <see cref="EventSourceLoggerFactory"/>
+        ///     Gets or sets the default factory. The initial default factory is <see cref="EventSourceLoggerFactory" />
         /// </summary>
         public static InternalLoggerFactory DefaultFactory
         {
@@ -72,7 +71,7 @@ namespace DotNetty.Common.Internal.Logging
         }
 
         /// <summary>
-        /// Creates a new logger instance with the name of the specified type.
+        ///     Creates a new logger instance with the name of the specified type.
         /// </summary>
         /// <typeparam name="T">type where logger is used</typeparam>
         /// <returns>logger instance</returns>
@@ -82,7 +81,7 @@ namespace DotNetty.Common.Internal.Logging
         }
 
         /// <summary>
-        /// Creates a new logger instance with the name of the specified type.
+        ///     Creates a new logger instance with the name of the specified type.
         /// </summary>
         /// <param name="type">type where logger is used</param>
         /// <returns>logger instance</returns>
@@ -92,7 +91,7 @@ namespace DotNetty.Common.Internal.Logging
         }
 
         /// <summary>
-        /// Creates a new logger instance with the specified name.
+        ///     Creates a new logger instance with the specified name.
         /// </summary>
         /// <param name="name">logger name</param>
         /// <returns>logger instance</returns>
@@ -100,8 +99,9 @@ namespace DotNetty.Common.Internal.Logging
         {
             return DefaultFactory.NewInstance(name);
         }
+
         /// <summary>
-        /// Creates a new logger instance with the specified name.
+        ///     Creates a new logger instance with the specified name.
         /// </summary>
         /// <param name="name">logger name</param>
         /// <returns>logger instance</returns>

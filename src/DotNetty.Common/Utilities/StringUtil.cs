@@ -320,7 +320,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// The shortcut to <see cref="SimpleClassName(Type)">SimpleClassName(o.GetType())</see>.
+        ///     The shortcut to <see cref="SimpleClassName(Type)">SimpleClassName(o.GetType())</see>.
         /// </summary>
         public static string SimpleClassName(object o)
         {
@@ -328,7 +328,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// The shortcut to <see cref="SimpleClassName(Type)">SimpleClassName(o.GetType())</see>.
+        ///     The shortcut to <see cref="SimpleClassName(Type)">SimpleClassName(o.GetType())</see>.
         /// </summary>
         public static string SimpleClassName<T>()
         {
@@ -336,8 +336,9 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Generates a simplified name from a <see cref="Type"/>.  Similar to {@link Class#getSimpleName()}, but it works fine
-        /// with anonymous classes.
+        ///     Generates a simplified name from a <see cref="Type" />.  Similar to {@link Class#getSimpleName()}, but it works
+        ///     fine
+        ///     with anonymous classes.
         /// </summary>
         public static string SimpleClassName(Type type)
         {

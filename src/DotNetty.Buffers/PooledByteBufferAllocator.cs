@@ -21,7 +21,7 @@ namespace DotNetty.Buffers
                 false);
         }
 
-        public int MaxPooledBufSize { get; private set; }
+        public int MaxPooledBufSize { get; }
 
         protected override IByteBuffer NewBuffer(int initialCapacity, int maxCapacity)
         {

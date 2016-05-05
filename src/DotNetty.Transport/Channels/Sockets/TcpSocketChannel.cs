@@ -11,14 +11,14 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Concurrency;
 
     /// <summary>
-    ///  {@link io.netty.channel.socket.SocketChannel} which uses NIO selector based implementation.
+    ///     {@link io.netty.channel.socket.SocketChannel} which uses NIO selector based implementation.
     /// </summary>
     public class TcpSocketChannel : AbstractSocketByteChannel, ISocketChannel
     {
         readonly ISocketChannelConfiguration config;
 
         /// <summary>
-        ///  Create a new instance
+        ///     Create a new instance
         /// </summary>
         public TcpSocketChannel()
             : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
@@ -26,7 +26,7 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        ///  Create a new instance
+        ///     Create a new instance
         /// </summary>
         public TcpSocketChannel(AddressFamily addressFamily)
             : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
@@ -34,7 +34,7 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        ///  Create a new instance using the given {@link SocketChannel}.
+        ///     Create a new instance using the given {@link SocketChannel}.
         /// </summary>
         public TcpSocketChannel(Socket socket)
             : this(null, socket)
@@ -42,10 +42,9 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        ///  Create a new instance
-        /// 
-        ///  @param parent    the {@link Channel} which created this instance or {@code null} if it was created by the user
-        ///  @param socket    the {@link SocketChannel} which will be used
+        ///     Create a new instance
+        ///     @param parent    the {@link Channel} which created this instance or {@code null} if it was created by the user
+        ///     @param socket    the {@link SocketChannel} which will be used
         /// </summary>
         public TcpSocketChannel(IChannel parent, Socket socket)
             : this(parent, socket, false)
@@ -67,25 +66,13 @@ namespace DotNetty.Transport.Channels.Sockets
         //    get { return (IServerSocketChannel)base.Parent; }
         //}
 
-        public override bool DisconnectSupported
-        {
-            get { return false; }
-        }
+        public override bool DisconnectSupported => false;
 
-        public override IChannelConfiguration Configuration
-        {
-            get { return this.config; }
-        }
+        public override IChannelConfiguration Configuration => this.config;
 
-        protected override EndPoint LocalAddressInternal
-        {
-            get { return this.Socket.LocalEndPoint; }
-        }
+        protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
 
-        protected override EndPoint RemoteAddressInternal
-        {
-            get { return this.Socket.RemoteEndPoint; }
-        }
+        protected override EndPoint RemoteAddressInternal => this.Socket.RemoteEndPoint;
 
         public bool IsOutputShutdown
         {

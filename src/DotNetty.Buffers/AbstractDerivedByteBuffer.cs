@@ -16,10 +16,7 @@ namespace DotNetty.Buffers
         {
         }
 
-        public sealed override int ReferenceCount
-        {
-            get { return this.Unwrap().ReferenceCount; }
-        }
+        public sealed override int ReferenceCount => this.Unwrap().ReferenceCount;
 
         public sealed override IReferenceCounted Retain()
         {

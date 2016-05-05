@@ -8,17 +8,17 @@ namespace DotNetty.Buffers
     public interface IByteBufferHolder : IReferenceCounted
     {
         /// <summary>
-        /// Return the data which is held by this {@link ByteBufHolder}.
+        ///     Return the data which is held by this {@link ByteBufHolder}.
         /// </summary>
         IByteBuffer Content { get; }
 
         /// <summary>
-        /// Create a deep copy of this {@link ByteBufHolder}.
+        ///     Create a deep copy of this {@link ByteBufHolder}.
         /// </summary>
         IByteBufferHolder Copy();
 
         /// <summary>
-        /// Duplicate the {@link ByteBufHolder}. Be aware that this will not automatically call {@link #retain()}.
+        ///     Duplicate the {@link ByteBufHolder}. Be aware that this will not automatically call {@link #retain()}.
         /// </summary>
         IByteBufferHolder Duplicate();
 

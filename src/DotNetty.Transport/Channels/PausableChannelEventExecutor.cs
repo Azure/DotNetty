@@ -21,15 +21,9 @@ namespace DotNetty.Transport.Channels
 
         public abstract IEventExecutor Unwrap();
 
-        public IEventExecutor Executor
-        {
-            get { return this; }
-        }
+        public IEventExecutor Executor => this;
 
-        public bool InEventLoop
-        {
-            get { return this.Unwrap().InEventLoop; }
-        }
+        public bool InEventLoop => this.Unwrap().InEventLoop;
 
         public bool IsInEventLoop(Thread thread)
         {
@@ -150,10 +144,7 @@ namespace DotNetty.Transport.Channels
             this.Unwrap().Execute(action, context, state);
         }
 
-        public bool IsShuttingDown
-        {
-            get { return this.Unwrap().IsShuttingDown; }
-        }
+        public bool IsShuttingDown => this.Unwrap().IsShuttingDown;
 
         public Task ShutdownGracefullyAsync()
         {
@@ -165,20 +156,11 @@ namespace DotNetty.Transport.Channels
             return this.Unwrap().ShutdownGracefullyAsync(quietPeriod, timeout);
         }
 
-        public Task TerminationCompletion
-        {
-            get { return this.Unwrap().TerminationCompletion; }
-        }
+        public Task TerminationCompletion => this.Unwrap().TerminationCompletion;
 
-        public bool IsShutdown
-        {
-            get { return this.Unwrap().IsShutdown; }
-        }
+        public bool IsShutdown => this.Unwrap().IsShutdown;
 
-        public bool IsTerminated
-        {
-            get { return this.Unwrap().IsTerminated; }
-        }
+        public bool IsTerminated => this.Unwrap().IsTerminated;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void VerifyAcceptingNewTasks()

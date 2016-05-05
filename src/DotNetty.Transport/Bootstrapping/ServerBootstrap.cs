@@ -17,8 +17,7 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
-    ///
+    ///     {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
     /// </summary>
     public class ServerBootstrap : AbstractBootstrap<ServerBootstrap, IServerChannel>
     {
@@ -48,7 +47,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Specify the {@link EventLoopGroup} which is used for the parent (acceptor) and the child (client).
+        ///     Specify the {@link EventLoopGroup} which is used for the parent (acceptor) and the child (client).
         /// </summary>
         public override ServerBootstrap Group(IEventLoopGroup group)
         {
@@ -56,9 +55,9 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Set the {@link EventLoopGroup} for the parent (acceptor) and the child (client). These
-        /// {@link EventLoopGroup}'s are used to handle all the events and IO for {@link ServerChannel} and
-        /// {@link Channel}'s.
+        ///     Set the {@link EventLoopGroup} for the parent (acceptor) and the child (client). These
+        ///     {@link EventLoopGroup}'s are used to handle all the events and IO for {@link ServerChannel} and
+        ///     {@link Channel}'s.
         /// </summary>
         public ServerBootstrap Group(IEventLoopGroup parentGroup, IEventLoopGroup childGroup)
         {
@@ -74,9 +73,9 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they get created
-        /// (after the acceptor accepted the {@link Channel}). Use a value of {@code null} to remove a previous set
-        /// {@link ChannelOption}.
+        ///     Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they get created
+        ///     (after the acceptor accepted the {@link Channel}). Use a value of {@code null} to remove a previous set
+        ///     {@link ChannelOption}.
         /// </summary>
         public ServerBootstrap ChildOption<T>(ChannelOption<T> childOption, T value)
         {
@@ -111,7 +110,7 @@ namespace DotNetty.Transport.Bootstrapping
         //    return this;
         //}
         /// <summary>
-        /// Set the {@link ChannelHandler} which is used to serve the request for the {@link Channel}'s.
+        ///     Set the {@link ChannelHandler} which is used to serve the request for the {@link Channel}'s.
         /// </summary>
         public ServerBootstrap ChildHandler(IChannelHandler childHandler)
         {
@@ -122,8 +121,8 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Return the configured {@link EventLoopGroup} which will be used for the child channels or {@code null}
-        /// if non is configured yet.
+        ///     Return the configured {@link EventLoopGroup} which will be used for the child channels or {@code null}
+        ///     if non is configured yet.
         /// </summary>
         public IEventLoopGroup ChildGroup()
         {
@@ -222,7 +221,7 @@ namespace DotNetty.Transport.Bootstrapping
                 }
                 if (optionType.GetGenericTypeDefinition() != typeof(ChannelOption<>))
                 {
-                    throw new NotSupportedException(string.Format("Channel option is of an unsupported type `{0}`. Only ChannelOption and ChannelOption<T> are supported.", optionType));
+                    throw new NotSupportedException($"Channel option is of an unsupported type `{optionType}`. Only ChannelOption and ChannelOption<T> are supported.");
                 }
                 Type valueType = optionType.GetGenericArguments()[0];
                 MethodInfo setOptionMethod = setOptionMethodDefinition.MakeGenericMethod(valueType);

@@ -6,7 +6,6 @@ namespace DotNetty.Transport.Channels.Groups
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Threading.Tasks;
 
@@ -85,10 +84,7 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public IChannelGroup Group
-        {
-            get { return this.group; }
-        }
+        public IChannelGroup Group => this.@group;
 
         public Task Find(IChannel channel)
         {
@@ -116,25 +112,16 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public ChannelGroupException Cause
-        {
-            get { return (ChannelGroupException)this.Task.Exception.InnerException; }
-        }
+        public ChannelGroupException Cause => (ChannelGroupException)this.Task.Exception.InnerException;
 
-        public Task Current
-        {
-            get { return this.futures.Values.GetEnumerator().Current; }
-        }
+        public Task Current => this.futures.Values.GetEnumerator().Current;
 
         public void Dispose()
         {
             this.futures.Values.GetEnumerator().Dispose();
         }
 
-        object IEnumerator.Current
-        {
-            get { return this.futures.Values.GetEnumerator().Current; }
-        }
+        object IEnumerator.Current => this.futures.Values.GetEnumerator().Current;
 
         public bool MoveNext()
         {

@@ -14,9 +14,9 @@ namespace DotNetty.Buffers
     using DotNetty.Common.Utilities;
 
     /// <summary>
-    /// Wrapper which swaps the <see cref="ByteOrder"/> of a <see cref="IByteBuffer"/>.
+    ///     Wrapper which swaps the <see cref="ByteOrder" /> of a <see cref="IByteBuffer" />.
     /// </summary>
-	public class SwappedByteBuffer : IByteBuffer
+    public class SwappedByteBuffer : IByteBuffer
     {
         readonly IByteBuffer buf;
         readonly ByteOrder order;
@@ -36,10 +36,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        public int ReferenceCount
-        {
-            get { return this.buf.ReferenceCount; }
-        }
+        public int ReferenceCount => this.buf.ReferenceCount;
 
         public IReferenceCounted Retain()
         {
@@ -75,35 +72,20 @@ namespace DotNetty.Buffers
             return this.buf.Release(decrement);
         }
 
-        public int Capacity
-        {
-            get { return this.buf.Capacity; }
-        }
+        public int Capacity => this.buf.Capacity;
 
         public IByteBuffer AdjustCapacity(int newCapacity)
         {
             return this.buf.AdjustCapacity(newCapacity);
         }
 
-        public int MaxCapacity
-        {
-            get { return this.buf.MaxCapacity; }
-        }
+        public int MaxCapacity => this.buf.MaxCapacity;
 
-        public IByteBufferAllocator Allocator
-        {
-            get { return this.buf.Allocator; }
-        }
+        public IByteBufferAllocator Allocator => this.buf.Allocator;
 
-        public int ReaderIndex
-        {
-            get { return this.buf.ReaderIndex; }
-        }
+        public int ReaderIndex => this.buf.ReaderIndex;
 
-        public int WriterIndex
-        {
-            get { return this.buf.WriterIndex; }
-        }
+        public int WriterIndex => this.buf.WriterIndex;
 
         public IByteBuffer SetWriterIndex(int writerIndex)
         {
@@ -123,20 +105,11 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public int ReadableBytes
-        {
-            get { return this.buf.ReadableBytes; }
-        }
+        public int ReadableBytes => this.buf.ReadableBytes;
 
-        public int WritableBytes
-        {
-            get { return this.buf.WritableBytes; }
-        }
+        public int WritableBytes => this.buf.WritableBytes;
 
-        public int MaxWritableBytes
-        {
-            get { return this.buf.MaxWritableBytes; }
-        }
+        public int MaxWritableBytes => this.buf.MaxWritableBytes;
 
         public bool IsReadable()
         {
@@ -588,15 +561,9 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public bool HasArray
-        {
-            get { return this.buf.HasArray; }
-        }
+        public bool HasArray => this.buf.HasArray;
 
-        public byte[] Array
-        {
-            get { return this.buf.Array; }
-        }
+        public byte[] Array => this.buf.Array;
 
         public byte[] ToArray()
         {
@@ -613,10 +580,7 @@ namespace DotNetty.Buffers
             return this.buf.Unwrap();
         }
 
-        public ByteOrder Order
-        {
-            get { return this.order; }
-        }
+        public ByteOrder Order => this.order;
 
         public IByteBuffer WithOrder(ByteOrder endianness)
         {
@@ -647,10 +611,7 @@ namespace DotNetty.Buffers
             return this.buf.Slice(index, length).WithOrder(this.Order);
         }
 
-        public int ArrayOffset
-        {
-            get { return this.buf.ArrayOffset; }
-        }
+        public int ArrayOffset => this.buf.ArrayOffset;
 
         public IByteBuffer ReadSlice(int length)
         {
@@ -694,12 +655,12 @@ namespace DotNetty.Buffers
 
         public string ToString(Encoding encoding)
         {
-            return buf.ToString(encoding);
+            return this.buf.ToString(encoding);
         }
 
         public string ToString(int index, int length, Encoding encoding)
         {
-            return buf.ToString(index, length, encoding);
+            return this.buf.ToString(index, length, encoding);
         }
     }
 }

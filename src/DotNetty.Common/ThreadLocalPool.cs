@@ -54,8 +54,8 @@ namespace DotNetty.Common
 
             sealed class Link
             {
-                private int readIndex;
-                private int writeIndex;
+                int readIndex;
+                int writeIndex;
 
                 internal readonly Handle[] elements;
                 internal Link next;
@@ -81,12 +81,9 @@ namespace DotNetty.Common
             Link head, tail;
             internal WeakOrderQueue next;
             internal WeakReference<Thread> ownerThread;
-            int id = Interlocked.Increment(ref idSource);
+            readonly int id = Interlocked.Increment(ref idSource);
 
-            internal bool IsEmpty
-            {
-                get { return this.tail.ReadIndex == this.tail.WriteIndex; }
-            }
+            internal bool IsEmpty => this.tail.ReadIndex == this.tail.WriteIndex;
 
             internal WeakOrderQueue(Stack stack, Thread thread)
             {
@@ -201,7 +198,7 @@ namespace DotNetty.Common
 
             internal Handle[] elements;
 
-            int maxCapacity;
+            readonly int maxCapacity;
             internal int size;
 
             WeakOrderQueue headQueue;
@@ -214,10 +211,7 @@ namespace DotNetty.Common
                 set { Volatile.Write(ref this.headQueue, value); }
             }
 
-            internal int Size
-            {
-                get { return this.size; }
-            }
+            internal int Size => this.size;
 
             internal Stack(int maxCapacity, ThreadLocalPool parent, Thread thread)
             {
@@ -377,9 +371,9 @@ namespace DotNetty.Common
         internal static readonly int DefaultMaxCapacity = 262144;
         internal static readonly int InitialCapacity = Math.Min(256, DefaultMaxCapacity);
         static int idSource = int.MinValue;
-        static int ownThreadId = Interlocked.Increment(ref idSource);
+        static readonly int ownThreadId = Interlocked.Increment(ref idSource);
 
-        internal static readonly ThreadLocal<Dictionary<Stack, WeakOrderQueue>> DelayedPool = 
+        internal static readonly ThreadLocal<Dictionary<Stack, WeakOrderQueue>> DelayedPool =
             new ThreadLocal<Dictionary<Stack, WeakOrderQueue>>(() => new Dictionary<Stack, WeakOrderQueue>());
 
         public ThreadLocalPool(int maxCapacity)
@@ -388,7 +382,7 @@ namespace DotNetty.Common
             this.MaxCapacity = maxCapacity;
         }
 
-        public int MaxCapacity { get; private set; }
+        public int MaxCapacity { get; }
     }
 
     public sealed class ThreadLocalPool<T> : ThreadLocalPool
@@ -462,20 +456,8 @@ namespace DotNetty.Common
             return true;
         }
 
-        internal int ThreadLocalCapacity
-        {
-            get
-            {
-                return this.threadLocal.Value.elements.Length;
-            }
-        }
+        internal int ThreadLocalCapacity => this.threadLocal.Value.elements.Length;
 
-        internal int ThreadLocalSize
-        {
-            get
-            {
-                return this.threadLocal.Value.Size;
-            }
-        }
+        internal int ThreadLocalSize => this.threadLocal.Value.Size;
     }
 }

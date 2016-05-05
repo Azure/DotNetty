@@ -22,20 +22,14 @@ namespace DotNetty.Transport.Channels.Groups
             this.currentEnumerator = e1;
         }
 
-        public E Current
-        {
-            get { return this.currentEnumerator.Current; }
-        }
+        public E Current => this.currentEnumerator.Current;
 
         public void Dispose()
         {
             this.currentEnumerator.Dispose();
         }
 
-        object IEnumerator.Current
-        {
-            get { return this.Current; }
-        }
+        object IEnumerator.Current => this.Current;
 
         public bool MoveNext()
         {

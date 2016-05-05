@@ -22,4 +22,3 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
         public bool Finished => this.manualResetEventSlim.IsSet;
     }
 }
-
