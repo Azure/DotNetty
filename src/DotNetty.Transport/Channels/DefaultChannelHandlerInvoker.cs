@@ -47,10 +47,7 @@ namespace DotNetty.Transport.Channels
             this.executor = executor;
         }
 
-        public IEventExecutor Executor
-        {
-            get { return this.executor; }
-        }
+        public IEventExecutor Executor => this.executor;
 
         public void InvokeChannelRegistered(IChannelHandlerContext ctx)
         {

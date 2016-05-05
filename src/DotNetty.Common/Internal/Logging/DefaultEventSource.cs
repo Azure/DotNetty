@@ -29,30 +29,15 @@ namespace DotNetty.Common.Internal.Logging
         {
         }
 
-        public bool IsTraceEnabled
-        {
-            get { return this.IsEnabled(EventLevel.Verbose, Keywords.TraceEventKeyword); }
-        }
+        public bool IsTraceEnabled => this.IsEnabled(EventLevel.Verbose, Keywords.TraceEventKeyword);
 
-        public bool IsDebugEnabled
-        {
-            get { return this.IsEnabled(EventLevel.Verbose, Keywords.DebugEventKeyword); }
-        }
+        public bool IsDebugEnabled => this.IsEnabled(EventLevel.Verbose, Keywords.DebugEventKeyword);
 
-        public bool IsInfoEnabled
-        {
-            get { return this.IsEnabled(EventLevel.Informational, EventKeywords.None); }
-        }
+        public bool IsInfoEnabled => this.IsEnabled(EventLevel.Informational, EventKeywords.None);
 
-        public bool IsWarningEnabled
-        {
-            get { return this.IsEnabled(EventLevel.Warning, EventKeywords.None); }
-        }
+        public bool IsWarningEnabled => this.IsEnabled(EventLevel.Warning, EventKeywords.None);
 
-        public bool IsErrorEnabled
-        {
-            get { return this.IsEnabled(EventLevel.Error, EventKeywords.None); }
-        }
+        public bool IsErrorEnabled => this.IsEnabled(EventLevel.Error, EventKeywords.None);
 
         [NonEvent]
         public void Trace(string source, string message)

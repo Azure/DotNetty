@@ -8,22 +8,21 @@ namespace DotNetty.Transport.Channels
     public interface IRecvByteBufAllocatorHandle
     {
         /// <summary>
-        /// Creates a new receive buffer whose capacity is probably large enough to read all inbound data and small
-        /// enough not to waste its space.
+        ///     Creates a new receive buffer whose capacity is probably large enough to read all inbound data and small
+        ///     enough not to waste its space.
         /// </summary>
         IByteBuffer Allocate(IByteBufferAllocator alloc);
 
         /// <summary>
-        /// Similar to {@link #allocate(ByteBufAllocator)} except that it does not allocate anything but just tells the
-        /// capacity.
+        ///     Similar to {@link #allocate(ByteBufAllocator)} except that it does not allocate anything but just tells the
+        ///     capacity.
         /// </summary>
         int Guess();
 
         /// <summary>
-        /// Records the the actual number of read bytes in the previous read operation so that the allocator allocates
-        /// the buffer with potentially more correct capacity.
-        ///
-        /// @param actualReadBytes the actual number of read bytes in the previous read operation
+        ///     Records the the actual number of read bytes in the previous read operation so that the allocator allocates
+        ///     the buffer with potentially more correct capacity.
+        ///     @param actualReadBytes the actual number of read bytes in the previous read operation
         /// </summary>
         void Record(int actualReadBytes);
     }

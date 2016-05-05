@@ -3,10 +3,10 @@
 
 namespace DotNetty.Buffers
 {
-    using DotNetty.Common.Utilities;
     using System;
     using System.Diagnostics.Contracts;
     using System.Text;
+    using DotNetty.Common.Utilities;
 
     public static class ByteBufferUtil
     {
@@ -110,8 +110,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
         public static string HexDump(IByteBuffer buffer)
         {
@@ -119,8 +119,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
         public static string HexDump(IByteBuffer buffer, int fromIndex, int length)
         {
@@ -130,7 +130,7 @@ namespace DotNetty.Buffers
                 return "";
             }
             int endIndex = fromIndex + length;
-            char[] buf = new char[length << 1];
+            var buf = new char[length << 1];
 
             int srcIdx = fromIndex;
             int dstIdx = 0;
@@ -145,8 +145,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
         public static string HexDump(byte[] array)
         {
@@ -154,8 +154,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
         public static string HexDump(byte[] array, int fromIndex, int length)
         {
@@ -167,7 +167,7 @@ namespace DotNetty.Buffers
             }
 
             int endIndex = fromIndex + length;
-            char[] buf = new char[length << 1];
+            var buf = new char[length << 1];
 
             int srcIdx = fromIndex;
             int dstIdx = 0;
@@ -180,8 +180,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Calculates the hash code of the specified buffer.  This method is
-        /// useful when implementing a new buffer type.
+        ///     Calculates the hash code of the specified buffer.  This method is
+        ///     useful when implementing a new buffer type.
         /// </summary>
         public static int HashCode(IByteBuffer buffer)
         {
@@ -222,12 +222,12 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Returns {@code true} if and only if the two specified buffers are
-        ///  identical to each other for {@code length} bytes starting at {@code aStartIndex}
-        ///  index for the {@code a} buffer and {@code bStartIndex} index for the {@code b} buffer.
-        ///  A more compact way to express this is:
-        ///  <p>
-        ///  {@code a[aStartIndex : aStartIndex + length] == b[bStartIndex : bStartIndex + length]}
+        ///     Returns {@code true} if and only if the two specified buffers are
+        ///     identical to each other for {@code length} bytes starting at {@code aStartIndex}
+        ///     index for the {@code a} buffer and {@code bStartIndex} index for the {@code b} buffer.
+        ///     A more compact way to express this is:
+        ///     <p>
+        ///         {@code a[aStartIndex : aStartIndex + length] == b[bStartIndex : bStartIndex + length]}
         /// </summary>
         public static bool Equals(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
         {
@@ -282,9 +282,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Returns {@code true} if and only if the two specified buffers are
-        ///  identical to each other as described in {@link ByteBuf#equals(Object)}.
-        ///  This method is useful when implementing a new buffer type.
+        ///     Returns {@code true} if and only if the two specified buffers are
+        ///     identical to each other as described in {@link ByteBuf#equals(Object)}.
+        ///     This method is useful when implementing a new buffer type.
         /// </summary>
         public static bool Equals(IByteBuffer bufferA, IByteBuffer bufferB)
         {
@@ -297,8 +297,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Compares the two specified buffers as described in {@link ByteBuf#compareTo(ByteBuf)}.
-        /// This method is useful when implementing a new buffer type.
+        ///     Compares the two specified buffers as described in {@link ByteBuf#compareTo(ByteBuf)}.
+        ///     This method is useful when implementing a new buffer type.
         /// </summary>
         public static int Compare(IByteBuffer bufferA, IByteBuffer bufferB)
         {
@@ -368,7 +368,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Toggles the endianness of the specified 64-bit long integer.
+        ///     Toggles the endianness of the specified 64-bit long integer.
         /// </summary>
         public static long SwapLong(long value)
         {
@@ -377,7 +377,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Toggles the endianness of the specified 32-bit integer.
+        ///     Toggles the endianness of the specified 32-bit integer.
         /// </summary>
         public static int SwapInt(int value)
         {
@@ -386,7 +386,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Toggles the endianness of the specified 16-bit integer.
+        ///     Toggles the endianness of the specified 16-bit integer.
         /// </summary>
         public static short SwapShort(short value)
         {
@@ -394,7 +394,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Read the given amount of bytes into a new {@link ByteBuf} that is allocated from the {@link ByteBufAllocator}.
+        ///     Read the given amount of bytes into a new {@link ByteBuf} that is allocated from the {@link ByteBufAllocator}.
         /// </summary>
         public static IByteBuffer ReadBytes(IByteBufferAllocator alloc, IByteBuffer buffer, int length)
         {
@@ -427,20 +427,9 @@ namespace DotNetty.Buffers
         //    return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
         //}
 
-        ///todo: port
-        //static int lastIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
-        //{
-        //    fromIndex = Math.min(fromIndex, buffer.capacity());
-        //    if (fromIndex < 0 || buffer.capacity() == 0)
-        //    {
-        //        return -1;
-        //    }
-
-        //    return buffer.forEachByteDesc(toIndex, fromIndex - toIndex, new ByteProcessor.IndexOfProcessor(value));
-        //}
-
+        /// todo: port
         /// <summary>
-        ///  Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans.
+        ///     Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans.
         /// </summary>
         public static string PrettyHexDump(IByteBuffer buffer)
         {
@@ -448,8 +437,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans,
-        /// starting at the given {@code offset} using the given {@code length}.
+        ///     Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans,
+        ///     starting at the given {@code offset} using the given {@code length}.
         /// </summary>
         public static string PrettyHexDump(IByteBuffer buffer, int offset, int length)
         {
@@ -467,8 +456,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
-        /// {@link StringBuilder} that is easy to read by humans.
+        ///     Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
+        ///     {@link StringBuilder} that is easy to read by humans.
         /// </summary>
         public static void AppendPrettyHexDump(StringBuilder dump, IByteBuffer buf)
         {
@@ -476,17 +465,16 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
-        /// {@link StringBuilder} that is easy to read by humans, starting at the given {@code offset} using
-        /// the given {@code length}.
+        ///     Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
+        ///     {@link StringBuilder} that is easy to read by humans, starting at the given {@code offset} using
+        ///     the given {@code length}.
         /// </summary>
         public static void AppendPrettyHexDump(StringBuilder dump, IByteBuffer buf, int offset, int length)
         {
             if (offset < 0 || length > buf.Capacity - offset)
             {
                 throw new IndexOutOfRangeException(
-                    "expected: " + "0 <= offset(" + offset + ") <= offset + length(" + length
-                        + ") <= " + "buf.capacity(" + buf.Capacity + ')');
+                    $"expected: 0 <= offset({offset}) <= offset + length({length}) <= buf.capacity({buf.Capacity}{')'}");
             }
             if (length == 0)
             {
@@ -553,7 +541,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Appends the prefix of each hex dump row.  Uses the look-up table for the buffer <= 64 KiB.
+        ///     Appends the prefix of each hex dump row.  Uses the look-up table for the buffer <= 64 KiB.
         /// </summary>
         static void AppendHexDumpRowPrefix(StringBuilder dump, int row, int rowStartIndex)
         {
@@ -570,26 +558,27 @@ namespace DotNetty.Buffers
             }
         }
 
-
         /// <summary>
-        /// Encode the given <see cref="CharBuffer"/> using the given <see cref="Encoding"/> into a new <see cref="IByteBuffer"/> which
-        /// is allocated via the <see cref="IByteBufferAllocator"/>.
+        ///     Encode the given <see cref="CharBuffer" /> using the given <see cref="Encoding" /> into a new
+        ///     <see cref="IByteBuffer" /> which
+        ///     is allocated via the <see cref="IByteBufferAllocator" />.
         /// </summary>
-        /// <param name="alloc">The <see cref="IByteBufferAllocator"/> to allocate {@link IByteBuffer}.</param>
-        /// <param name="src">src The <see cref="String"/> to encode.</param>
-        /// <param name="encoding">charset The specified <see cref="Encoding"/></param>
+        /// <param name="alloc">The <see cref="IByteBufferAllocator" /> to allocate {@link IByteBuffer}.</param>
+        /// <param name="src">src The <see cref="string" /> to encode.</param>
+        /// <param name="encoding">charset The specified <see cref="Encoding" /></param>
         public static IByteBuffer EncodeString(IByteBufferAllocator alloc, string src, Encoding encoding)
         {
             return EncodeString0(alloc, src, encoding, 0);
         }
 
         /// <summary>
-        /// Encode the given <see cref="CharBuffer"/> using the given <see cref="Encoding"/> into a new <see cref="IByteBuffer"/> which
-        /// is allocated via the <see cref="IByteBufferAllocator"/>.
+        ///     Encode the given <see cref="CharBuffer" /> using the given <see cref="Encoding" /> into a new
+        ///     <see cref="IByteBuffer" /> which
+        ///     is allocated via the <see cref="IByteBufferAllocator" />.
         /// </summary>
-        /// <param name="alloc">The <see cref="IByteBufferAllocator"/> to allocate {@link IByteBuffer}.</param>
-        /// <param name="src">src The <see cref="String"/> to encode.</param>
-        /// <param name="encoding">charset The specified <see cref="Encoding"/></param>
+        /// <param name="alloc">The <see cref="IByteBufferAllocator" /> to allocate {@link IByteBuffer}.</param>
+        /// <param name="src">src The <see cref="string" /> to encode.</param>
+        /// <param name="encoding">charset The specified <see cref="Encoding" /></param>
         /// <param name="extraCapacity">the extra capacity to alloc except the space for decoding.</param>
         public static IByteBuffer EncodeString(IByteBufferAllocator alloc, string src, Encoding encoding, int extraCapacity)
         {
@@ -599,7 +588,7 @@ namespace DotNetty.Buffers
         static IByteBuffer EncodeString0(IByteBufferAllocator alloc, string src, Encoding encoding, int extraCapacity)
         {
             int length = encoding.GetMaxByteCount(src.Length) + extraCapacity;
-            var release = true;
+            bool release = true;
 
             IByteBuffer dst = alloc.Buffer(length);
             Contract.Assert(dst.HasArray, "Operation expects allocator to operate array-based buffers.");

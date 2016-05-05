@@ -3,16 +3,15 @@
 
 namespace DotNetty.Codecs
 {
-    using System;
     using System.Collections.Generic;
     using DotNetty.Buffers;
-    using DotNetty.Transport.Channels;
     using DotNetty.Common.Utilities;
+    using DotNetty.Transport.Channels;
 
     /// <summary>
-    ///  A decoder that splits the received {@link ByteBuf}s on line endings.
-    ///  Both {@code "\n"} and {@code "\r\n"} are handled.
-    ///  For a more general delimiter-based decoder, see {@link DelimiterBasedFrameDecoder}.
+    ///     A decoder that splits the received {@link ByteBuf}s on line endings.
+    ///     Both {@code "\n"} and {@code "\r\n"} are handled.
+    ///     For a more general delimiter-based decoder, see {@link DelimiterBasedFrameDecoder}.
     /// </summary>
     public class LineBasedFrameDecoder : ByteToMessageDecoder
     {
@@ -27,33 +26,39 @@ namespace DotNetty.Codecs
         int discardedBytes;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Codecs.LineBasedFrameDecoder"/> class.
+        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.LineBasedFrameDecoder" /> class.
         /// </summary>
-        /// <param name="maxLength">the maximum length of the decoded frame.
-        /// A {@link TooLongFrameException} is thrown if
-        /// the length of the frame exceeds this value.</param>
+        /// <param name="maxLength">
+        ///     the maximum length of the decoded frame.
+        ///     A {@link TooLongFrameException} is thrown if
+        ///     the length of the frame exceeds this value.
+        /// </param>
         public LineBasedFrameDecoder(int maxLength)
             : this(maxLength, true, false)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Codecs.LineBasedFrameDecoder"/> class.
+        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.LineBasedFrameDecoder" /> class.
         /// </summary>
-        /// <param name="maxLength">the maximum length of the decoded frame.
-        /// A {@link TooLongFrameException} is thrown if
-        /// the length of the frame exceeds this value.</param>
-        /// 
-        /// <param name="stripDelimiter"> whether the decoded frame should strip out the
-        /// delimiter or not</param>
-        /// 
-        /// <param name="failFast">If <tt>true</tt>, a {@link TooLongFrameException} is
-        /// thrown as soon as the decoder notices the length of the
-        /// frame will exceed <tt>maxFrameLength</tt> regardless of
-        /// whether the entire frame has been read.
-        /// If <tt>false</tt>, a {@link TooLongFrameException} is
-        /// thrown after the entire frame that exceeds
-        /// <tt>maxFrameLength</tt> has been read.</param>
+        /// <param name="maxLength">
+        ///     the maximum length of the decoded frame.
+        ///     A {@link TooLongFrameException} is thrown if
+        ///     the length of the frame exceeds this value.
+        /// </param>
+        /// <param name="stripDelimiter">
+        ///     whether the decoded frame should strip out the
+        ///     delimiter or not
+        /// </param>
+        /// <param name="failFast">
+        ///     If <tt>true</tt>, a {@link TooLongFrameException} is
+        ///     thrown as soon as the decoder notices the length of the
+        ///     frame will exceed <tt>maxFrameLength</tt> regardless of
+        ///     whether the entire frame has been read.
+        ///     If <tt>false</tt>, a {@link TooLongFrameException} is
+        ///     thrown after the entire frame that exceeds
+        ///     <tt>maxFrameLength</tt> has been read.
+        /// </param>
         public LineBasedFrameDecoder(int maxLength, bool stripDelimiter, bool failFast)
         {
             this.maxLength = maxLength;
@@ -61,7 +66,7 @@ namespace DotNetty.Codecs
             this.stripDelimiter = stripDelimiter;
         }
 
-        sealed protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
+        protected sealed override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
             object decode = this.Decode(context, input);
             if (decode != null)
@@ -71,7 +76,7 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Create a frame out of the {@link ByteBuf} and return it.
+        ///     Create a frame out of the {@link ByteBuf} and return it.
         /// </summary>
         /// <param name="ctx">the {@link ChannelHandlerContext} which this {@link ByteToMessageDecoder} belongs to</param>
         /// <param name="buffer">the {@link ByteBuf} from which to read data</param>
@@ -83,8 +88,8 @@ namespace DotNetty.Codecs
                 if (eol >= 0)
                 {
                     IByteBuffer frame;
-                    var length = eol - buffer.ReaderIndex;
-                    var delimLength = buffer.GetByte(eol) == '\r' ? 2 : 1;
+                    int length = eol - buffer.ReaderIndex;
+                    int delimLength = buffer.GetByte(eol) == '\r' ? 2 : 1;
 
                     if (length > this.maxLength)
                     {
@@ -93,7 +98,7 @@ namespace DotNetty.Codecs
                         return null;
                     }
 
-                    if (stripDelimiter)
+                    if (this.stripDelimiter)
                     {
                         frame = buffer.ReadSlice(length);
                         buffer.SkipBytes(delimLength);
@@ -115,7 +120,7 @@ namespace DotNetty.Codecs
                         this.discarding = true;
                         if (this.failFast)
                         {
-                            Fail(ctx, "over " + discardedBytes);
+                            this.Fail(ctx, "over " + this.discardedBytes);
                         }
                     }
                     return null;
@@ -125,19 +130,19 @@ namespace DotNetty.Codecs
             {
                 if (eol >= 0)
                 {
-                    var length = discardedBytes + eol - buffer.ReaderIndex;
-                    var delimLength = buffer.GetByte(eol) == '\r' ? 2 : 1;
+                    int length = this.discardedBytes + eol - buffer.ReaderIndex;
+                    int delimLength = buffer.GetByte(eol) == '\r' ? 2 : 1;
                     buffer.SetReaderIndex(eol + delimLength);
-                    discardedBytes = 0;
-                    discarding = false;
-                    if (!failFast)
+                    this.discardedBytes = 0;
+                    this.discarding = false;
+                    if (!this.failFast)
                     {
-                        Fail(ctx, length);
+                        this.Fail(ctx, length);
                     }
                 }
                 else
                 {
-                    discardedBytes += buffer.ReadableBytes;
+                    this.discardedBytes += buffer.ReadableBytes;
                     buffer.SetReaderIndex(buffer.WriterIndex);
                 }
                 return null;
@@ -146,16 +151,14 @@ namespace DotNetty.Codecs
 
         void Fail(IChannelHandlerContext ctx, int length)
         {
-            Fail(ctx, length.ToString());
+            this.Fail(ctx, length.ToString());
         }
 
         void Fail(IChannelHandlerContext ctx, string length)
         {
             ctx.FireExceptionCaught(
                 new TooLongFrameException(
-                    string.Format("frame length ({0}) exceeds the allowed maximum ({1})",
-                        length,
-                        this.maxLength)));
+                    $"frame length ({length}) exceeds the allowed maximum ({this.maxLength})"));
         }
 
         int FindEndOfLine(IByteBuffer buffer)

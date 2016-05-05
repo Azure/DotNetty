@@ -5,15 +5,16 @@ namespace DotNetty.Common.Utilities
 {
     using System;
     using System.Diagnostics.Contracts;
+
     /// <summary>
-    /// Provides a mechanism to iterate over a collection of bytes.
+    ///     Provides a mechanism to iterate over a collection of bytes.
     /// </summary>
     public abstract class ByteProcessor
     {
         /// <summary>
-        /// A <see cref="ByteProcessor"/> which finds the first appearance of a specific byte.
+        ///     A <see cref="ByteProcessor" /> which finds the first appearance of a specific byte.
         /// </summary>
-        sealed public class IndexOfProcessor : ByteProcessor
+        public sealed class IndexOfProcessor : ByteProcessor
         {
             readonly byte byteToFind;
 
@@ -24,11 +25,11 @@ namespace DotNetty.Common.Utilities
 
             public override bool Process(byte value)
             {
-                return value != byteToFind;
+                return value != this.byteToFind;
             }
         }
 
-        sealed public class IndexNotOfProcessor : ByteProcessor
+        public sealed class IndexNotOfProcessor : ByteProcessor
         {
             readonly byte byteToNotFind;
 
@@ -39,11 +40,11 @@ namespace DotNetty.Common.Utilities
 
             public override bool Process(byte value)
             {
-                return value == byteToNotFind;
+                return value == this.byteToNotFind;
             }
         }
 
-        sealed public class CustomProcessor : ByteProcessor
+        public sealed class CustomProcessor : ByteProcessor
         {
             readonly Func<byte, bool> customHandler;
 
@@ -60,57 +61,57 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Aborts on a <c>NUL (0x00)</c>.
+        ///     Aborts on a <c>NUL (0x00)</c>.
         /// </summary>
         public static ByteProcessor FIND_NUL = new IndexOfProcessor((byte)0);
 
         /// <summary>
-        /// Aborts on a non-{@code NUL (0x00)}.
+        ///     Aborts on a non-{@code NUL (0x00)}.
         /// </summary>
         public static ByteProcessor FIND_NON_NUL = new IndexNotOfProcessor((byte)0);
 
         /// <summary>
-        /// Aborts on a {@code CR ('\r')}.
+        ///     Aborts on a {@code CR ('\r')}.
         /// </summary>
         public static ByteProcessor FIND_CR = new IndexOfProcessor((byte)'\r');
 
         /// <summary>
-        /// Aborts on a non-{@code CR ('\r')}.
+        ///     Aborts on a non-{@code CR ('\r')}.
         /// </summary>
         public static ByteProcessor FIND_NON_CR = new IndexNotOfProcessor((byte)'\r');
 
         /// <summary>
-        /// Aborts on a {@code LF ('\n')}.
+        ///     Aborts on a {@code LF ('\n')}.
         /// </summary>
         public static ByteProcessor FIND_LF = new IndexOfProcessor((byte)'\n');
 
         /// <summary>
-        /// Aborts on a non-{@code LF ('\n')}.
+        ///     Aborts on a non-{@code LF ('\n')}.
         /// </summary>
         public static ByteProcessor FIND_NON_LF = new IndexNotOfProcessor((byte)'\n');
 
         /// <summary>
-        /// Aborts on a {@code CR (';')}.
+        ///     Aborts on a {@code CR (';')}.
         /// </summary>
         public static ByteProcessor FIND_SEMI_COLON = new IndexOfProcessor((byte)';');
 
         /// <summary>
-        /// Aborts on a {@code CR ('\r')} or a {@code LF ('\n')}.
+        ///     Aborts on a {@code CR ('\r')} or a {@code LF ('\n')}.
         /// </summary>
         public static ByteProcessor FIND_CRLF = new CustomProcessor(new Func<byte, bool>(value => value != '\r' && value != '\n'));
 
         /// <summary>
-        /// Aborts on a byte which is neither a {@code CR ('\r')} nor a {@code LF ('\n')}.
+        ///     Aborts on a byte which is neither a {@code CR ('\r')} nor a {@code LF ('\n')}.
         /// </summary>
         public static ByteProcessor FIND_NON_CRLF = new CustomProcessor(new Func<byte, bool>(value => value == '\r' || value == '\n'));
 
         /// <summary>
-        /// Aborts on a linear whitespace (a ({@code ' '} or a {@code '\t'}).
+        ///     Aborts on a linear whitespace (a ({@code ' '} or a {@code '\t'}).
         /// </summary>
         public static ByteProcessor FIND_LINEAR_WHITESPACE = new CustomProcessor(new Func<byte, bool>(value => value != ' ' && value != '\t'));
 
         /// <summary>
-        /// Aborts on a byte which is not a linear whitespace (neither {@code ' '} nor {@code '\t'}).
+        ///     Aborts on a byte which is not a linear whitespace (neither {@code ' '} nor {@code '\t'}).
         /// </summary>
         public static ByteProcessor FIND_NON_LINEAR_WHITESPACE = new CustomProcessor(new Func<byte, bool>(value => value == ' ' || value == '\t'));
 
@@ -118,7 +119,7 @@ namespace DotNetty.Common.Utilities
         * @return {@code true} if the processor wants to continue the loop and handle the next byte in the buffer.
         *         {@code false} if the processor wants to stop handling bytes and abort the loop.
         */
+
         public abstract bool Process(byte value);
     }
 }
-

@@ -11,8 +11,8 @@ namespace DotNetty.Common.Utilities
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ReferenceCountUtil>();
 
         /// <summary>
-        /// Try to call {@link ReferenceCounted#retain()} if the specified message implements {@link ReferenceCounted}.
-        /// If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
+        ///     Try to call {@link ReferenceCounted#retain()} if the specified message implements {@link ReferenceCounted}.
+        ///     If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
         /// </summary>
         public static T Retain<T>(T msg)
         {
@@ -25,8 +25,8 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Try to call {@link ReferenceCounted#retain(int)} if the specified message implements {@link ReferenceCounted}.
-        /// If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
+        ///     Try to call {@link ReferenceCounted#retain(int)} if the specified message implements {@link ReferenceCounted}.
+        ///     If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
         /// </summary>
         public static T Retain<T>(T msg, int increment)
         {
@@ -39,8 +39,9 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Tries to call <see cref="IReferenceCounted.Touch()"/> if the specified message implements <see cref="IReferenceCounted"/>.
-        /// If the specified message doesn't implement <see cref="IReferenceCounted"/>, this method does nothing.
+        ///     Tries to call <see cref="IReferenceCounted.Touch()" /> if the specified message implements
+        ///     <see cref="IReferenceCounted" />.
+        ///     If the specified message doesn't implement <see cref="IReferenceCounted" />, this method does nothing.
         /// </summary>
         public static T Touch<T>(T msg)
         {
@@ -53,9 +54,9 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Tries to call <see cref="IReferenceCounted.Touch(object)"/> if the specified message implements
-        /// <see cref="IReferenceCounted"/>. If the specified message doesn't implement <see cref="IReferenceCounted"/>,
-        /// this method does nothing.
+        ///     Tries to call <see cref="IReferenceCounted.Touch(object)" /> if the specified message implements
+        ///     <see cref="IReferenceCounted" />. If the specified message doesn't implement <see cref="IReferenceCounted" />,
+        ///     this method does nothing.
         /// </summary>
         public static T Touch<T>(T msg, object hint)
         {
@@ -68,8 +69,8 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Try to call {@link ReferenceCounted#release()} if the specified message implements {@link ReferenceCounted}.
-        /// If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
+        ///     Try to call {@link ReferenceCounted#release()} if the specified message implements {@link ReferenceCounted}.
+        ///     If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
         /// </summary>
         public static bool Release(object msg)
         {
@@ -82,8 +83,8 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Try to call {@link ReferenceCounted#release(int)} if the specified message implements {@link ReferenceCounted}.
-        /// If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
+        ///     Try to call {@link ReferenceCounted#release(int)} if the specified message implements {@link ReferenceCounted}.
+        ///     If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
         /// </summary>
         public static bool Release(object msg, int decrement)
         {
@@ -96,11 +97,11 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Try to call {@link ReferenceCounted#release()} if the specified message implements {@link ReferenceCounted}.
-        /// If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
-        /// Unlike {@link #release(Object)} this method catches an exception raised by {@link ReferenceCounted#release()}
-        /// and logs it, rather than rethrowing it to the caller.  It is usually recommended to use {@link #release(Object)}
-        /// instead, unless you absolutely need to swallow an exception.
+        ///     Try to call {@link ReferenceCounted#release()} if the specified message implements {@link ReferenceCounted}.
+        ///     If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
+        ///     Unlike {@link #release(Object)} this method catches an exception raised by {@link ReferenceCounted#release()}
+        ///     and logs it, rather than rethrowing it to the caller.  It is usually recommended to use {@link #release(Object)}
+        ///     instead, unless you absolutely need to swallow an exception.
         /// </summary>
         public static void SafeRelease(object msg)
         {
@@ -115,11 +116,11 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Try to call {@link ReferenceCounted#release(int)} if the specified message implements {@link ReferenceCounted}.
-        /// If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
-        /// Unlike {@link #release(Object)} this method catches an exception raised by {@link ReferenceCounted#release(int)}
-        /// and logs it, rather than rethrowing it to the caller.  It is usually recommended to use
-        /// {@link #release(Object, int)} instead, unless you absolutely need to swallow an exception.
+        ///     Try to call {@link ReferenceCounted#release(int)} if the specified message implements {@link ReferenceCounted}.
+        ///     If the specified message doesn't implement {@link ReferenceCounted}, this method does nothing.
+        ///     Unlike {@link #release(Object)} this method catches an exception raised by {@link ReferenceCounted#release(int)}
+        ///     and logs it, rather than rethrowing it to the caller.  It is usually recommended to use
+        ///     {@link #release(Object, int)} instead, unless you absolutely need to swallow an exception.
         /// </summary>
         public static void SafeRelease(object msg, int decrement)
         {

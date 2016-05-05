@@ -4,12 +4,12 @@
 namespace DotNetty.Buffers
 {
     /// <summary>
-    /// Unpooled implementation of <see cref="IByteBufferAllocator"/>.
+    ///     Unpooled implementation of <see cref="IByteBufferAllocator" />.
     /// </summary>
     public class UnpooledByteBufferAllocator : AbstractByteBufferAllocator
     {
         /// <summary>
-        /// Default instance
+        ///     Default instance
         /// </summary>
         public static readonly UnpooledByteBufferAllocator Default = new UnpooledByteBufferAllocator();
 

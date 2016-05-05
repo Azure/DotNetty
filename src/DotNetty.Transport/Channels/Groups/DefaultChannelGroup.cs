@@ -23,7 +23,7 @@ namespace DotNetty.Transport.Channels.Groups
         readonly ConcurrentDictionary<IChannelId, IChannel> serverChannels = new ConcurrentDictionary<IChannelId, IChannel>();
 
         public DefaultChannelGroup(IEventExecutor executor)
-            : this(string.Format("group-{0:X2}", Interlocked.Increment(ref nextId)), executor)
+            : this($"group-{Interlocked.Increment(ref nextId):X2}", executor)
         {
         }
 
@@ -31,21 +31,15 @@ namespace DotNetty.Transport.Channels.Groups
         {
             if (name == null)
             {
-                throw new ArgumentNullException("name");
+                throw new ArgumentNullException(nameof(name));
             }
             this.name = name;
             this.executor = executor;
         }
 
-        public bool IsEmpty
-        {
-            get { return this.serverChannels.Count == 0 && this.nonServerChannels.Count == 0; }
-        }
+        public bool IsEmpty => this.serverChannels.Count == 0 && this.nonServerChannels.Count == 0;
 
-        public string Name
-        {
-            get { return this.name; }
-        }
+        public string Name => this.name;
 
         public IChannel Find(IChannelId id)
         {
@@ -143,15 +137,9 @@ namespace DotNetty.Transport.Channels.Groups
             this.ToArray().CopyTo(array, arrayIndex);
         }
 
-        public int Count
-        {
-            get { return this.nonServerChannels.Count + this.serverChannels.Count; }
-        }
+        public int Count => this.nonServerChannels.Count + this.serverChannels.Count;
 
-        public bool IsReadOnly
-        {
-            get { return false; }
-        }
+        public bool IsReadOnly => false;
 
         public bool Remove(IChannel channel)
         {
@@ -332,7 +320,7 @@ namespace DotNetty.Transport.Channels.Groups
 
         public override string ToString()
         {
-            return string.Format("{0}(name: {1}, size: {2})", this.GetType().Name, this.Name, this.Count);
+            return $"{this.GetType().Name}(name: {this.Name}, size: {this.Count})";
         }
 
         public bool Add(IChannel channel)

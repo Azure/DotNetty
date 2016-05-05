@@ -10,8 +10,8 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Internal.Logging;
 
     /// <summary>
-    /// A {@link io.netty.channel.socket.ServerSocketChannel} implementation which uses
-    /// NIO selector based implementation to accept new connections.
+    ///     A {@link io.netty.channel.socket.ServerSocketChannel} implementation which uses
+    ///     NIO selector based implementation to accept new connections.
     /// </summary>
     public class TcpServerSocketChannel : AbstractSocketChannel, IServerSocketChannel
     {
@@ -24,7 +24,7 @@ namespace DotNetty.Transport.Channels.Sockets
         SocketChannelAsyncOperation acceptOperation;
 
         /// <summary>
-        /// Create a new instance
+        ///     Create a new instance
         /// </summary>
         public TcpServerSocketChannel()
             : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
@@ -32,7 +32,7 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        /// Create a new instance
+        ///     Create a new instance
         /// </summary>
         public TcpServerSocketChannel(AddressFamily addressFamily)
             : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
@@ -40,7 +40,7 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        /// Create a new instance using the given {@link Socket}.
+        ///     Create a new instance using the given {@link Socket}.
         /// </summary>
         public TcpServerSocketChannel(Socket socket)
             : base(null, socket)
@@ -48,35 +48,17 @@ namespace DotNetty.Transport.Channels.Sockets
             this.config = new TcpServerSocketChannelConfig(this, socket);
         }
 
-        public override IChannelConfiguration Configuration
-        {
-            get { return this.config; }
-        }
+        public override IChannelConfiguration Configuration => this.config;
 
-        public override bool Active
-        {
-            get { return this.Socket.IsBound; }
-        }
+        public override bool Active => this.Socket.IsBound;
 
-        protected override EndPoint RemoteAddressInternal
-        {
-            get { return null; }
-        }
+        protected override EndPoint RemoteAddressInternal => null;
 
-        protected override EndPoint LocalAddressInternal
-        {
-            get { return this.Socket.LocalEndPoint; }
-        }
+        protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
 
-        public override bool DisconnectSupported
-        {
-            get { return false; }
-        }
+        public override bool DisconnectSupported => false;
 
-        SocketChannelAsyncOperation AcceptOperation
-        {
-            get { return this.acceptOperation ?? (this.acceptOperation = new SocketChannelAsyncOperation(this, false)); }
-        }
+        SocketChannelAsyncOperation AcceptOperation => this.acceptOperation ?? (this.acceptOperation = new SocketChannelAsyncOperation(this, false));
 
         protected override IChannelUnsafe NewUnsafe()
         {
@@ -134,7 +116,7 @@ namespace DotNetty.Transport.Channels.Sockets
             throw new NotSupportedException();
         }
 
-        protected override sealed object FilterOutboundMessage(object msg)
+        protected sealed override object FilterOutboundMessage(object msg)
         {
             throw new NotSupportedException();
         }
@@ -146,10 +128,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            new TcpServerSocketChannel Channel
-            {
-                get { return (TcpServerSocketChannel)this.channel; }
-            }
+            new TcpServerSocketChannel Channel => (TcpServerSocketChannel)this.channel;
 
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {

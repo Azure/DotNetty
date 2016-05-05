@@ -103,7 +103,7 @@ namespace DotNetty.Codecs.Mqtt.Tests
         }
 
         [Theory]
-        [InlineData(0, new[] { "+", "+/+", "//", "/#", "+//+" }, new[] {QualityOfService.ExactlyOnce, QualityOfService.AtLeastOnce, QualityOfService.AtMostOnce, QualityOfService.ExactlyOnce, QualityOfService.AtMostOnce})]
+        [InlineData(0, new[] { "+", "+/+", "//", "/#", "+//+" }, new[] { QualityOfService.ExactlyOnce, QualityOfService.AtLeastOnce, QualityOfService.AtMostOnce, QualityOfService.ExactlyOnce, QualityOfService.AtMostOnce })]
         [InlineData(ushort.MaxValue, new[] { "a" }, new[] { QualityOfService.AtLeastOnce })]
         public void TestSubscribeMessage(int packetId, string[] topicFilters, QualityOfService[] requestedQosValues)
         {
@@ -195,7 +195,10 @@ namespace DotNetty.Codecs.Mqtt.Tests
         void TestPublishResponseMessage<T>(int packetId, bool useServer)
             where T : PacketWithId, new()
         {
-            var packet = new T { PacketId = packetId };
+            var packet = new T
+            {
+                PacketId = packetId
+            };
 
             T recoded = this.RecodePacket(packet, useServer, true);
 

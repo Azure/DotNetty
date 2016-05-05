@@ -7,29 +7,24 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common.Internal.Logging;
 
     /// <summary>
-    /// A special {@link ChannelHandler} which offers an easy way to initialize a {@link Channel} once it was
-    /// registered to its {@link EventLoop}.
-    ///
-    /// Implementations are most often used in the context of {@link Bootstrap#handler(ChannelHandler)} ,
-    /// {@link ServerBootstrap#handler(ChannelHandler)} and {@link ServerBootstrap#childHandler(ChannelHandler)} to
-    /// setup the {@link ChannelPipeline} of a {@link Channel}.
-    ///
-    /// <pre>
-    ///
-    /// public class MyChannelInitializer extends {@link ChannelInitializer} {
-    ///     public void initChannel({@link Channel} channel) {
+    ///     A special {@link ChannelHandler} which offers an easy way to initialize a {@link Channel} once it was
+    ///     registered to its {@link EventLoop}.
+    ///     Implementations are most often used in the context of {@link Bootstrap#handler(ChannelHandler)} ,
+    ///     {@link ServerBootstrap#handler(ChannelHandler)} and {@link ServerBootstrap#childHandler(ChannelHandler)} to
+    ///     setup the {@link ChannelPipeline} of a {@link Channel}.
+    ///     <pre>
+    ///         public class MyChannelInitializer extends {@link ChannelInitializer} {
+    ///         public void initChannel({@link Channel} channel) {
     ///         channel.pipeline().addLast("myHandler", new MyHandler());
-    ///     }
-    /// }
-    ///
-    /// {@link ServerBootstrap} bootstrap = ...;
-    /// ...
-    /// bootstrap.childHandler(new MyChannelInitializer());
-    /// ...
-    /// </pre>
-    /// Be aware that this class is marked as {@link Sharable} and so the implementation must be safe to be re-used.
-    ///
-    /// @param <T>   A sub-type of {@link Channel}
+    ///         }
+    ///         }
+    ///         {@link ServerBootstrap} bootstrap = ...;
+    ///         ...
+    ///         bootstrap.childHandler(new MyChannelInitializer());
+    ///         ...
+    ///     </pre>
+    ///     Be aware that this class is marked as {@link Sharable} and so the implementation must be safe to be re-used.
+    ///     @param <T>   A sub-type of {@link Channel}
     /// </summary>
     public abstract class ChannelInitializer<T> : ChannelHandlerAdapter
         where T : IChannel
@@ -37,18 +32,14 @@ namespace DotNetty.Transport.Channels
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ChannelInitializer<T>>();
 
         /// <summary>
-        /// This method will be called once the {@link Channel} was registered. After the method returns this instance
-        /// will be removed from the {@link ChannelPipeline} of the {@link Channel}.
-        ///
-        /// @param channel            the {@link Channel} which was registered.
-        /// @throws Exception    is thrown if an error occurs. In that case the {@link Channel} will be closed.
+        ///     This method will be called once the {@link Channel} was registered. After the method returns this instance
+        ///     will be removed from the {@link ChannelPipeline} of the {@link Channel}.
+        ///     @param channel            the {@link Channel} which was registered.
+        ///     @throws Exception    is thrown if an error occurs. In that case the {@link Channel} will be closed.
         /// </summary>
         protected abstract void InitChannel(T channel);
 
-        public override bool IsSharable
-        {
-            get { return true; }
-        }
+        public override bool IsSharable => true;
 
         public sealed override void ChannelRegistered(IChannelHandlerContext context)
         {

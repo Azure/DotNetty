@@ -36,35 +36,20 @@ namespace DotNetty.Buffers
             this.str = this.GetType().Name + (order == ByteOrder.BigEndian ? "BE" : "LE");
         }
 
-        public int Capacity
-        {
-            get { return 0; }
-        }
+        public int Capacity => 0;
 
         public IByteBuffer AdjustCapacity(int newCapacity)
         {
             throw new NotSupportedException();
         }
 
-        public int MaxCapacity
-        {
-            get { return 0; }
-        }
+        public int MaxCapacity => 0;
 
-        public IByteBufferAllocator Allocator
-        {
-            get { return this.allocator; }
-        }
+        public IByteBufferAllocator Allocator => this.allocator;
 
-        public int ReaderIndex
-        {
-            get { return 0; }
-        }
+        public int ReaderIndex => 0;
 
-        public int WriterIndex
-        {
-            get { return 0; }
-        }
+        public int WriterIndex => 0;
 
         public IByteBuffer SetWriterIndex(int writerIndex)
         {
@@ -82,20 +67,11 @@ namespace DotNetty.Buffers
             return this.CheckIndex(writerIndex);
         }
 
-        public int ReadableBytes
-        {
-            get { return 0; }
-        }
+        public int ReadableBytes => 0;
 
-        public int WritableBytes
-        {
-            get { return 0; }
-        }
+        public int WritableBytes => 0;
 
-        public int MaxWritableBytes
-        {
-            get { return 0; }
-        }
+        public int MaxWritableBytes => 0;
 
         public bool IsReadable()
         {
@@ -481,15 +457,9 @@ namespace DotNetty.Buffers
             return this.CheckLength(length);
         }
 
-        public bool HasArray
-        {
-            get { return true; }
-        }
+        public bool HasArray => true;
 
-        public byte[] Array
-        {
-            get { return ByteArrayExtensions.Empty; }
-        }
+        public byte[] Array => ByteArrayExtensions.Empty;
 
         public byte[] ToArray()
         {
@@ -539,10 +509,7 @@ namespace DotNetty.Buffers
             return this.CheckIndex(index, length);
         }
 
-        public int ArrayOffset
-        {
-            get { return 0; }
-        }
+        public int ArrayOffset => 0;
 
         public IByteBuffer ReadSlice(int length)
         {
@@ -566,15 +533,9 @@ namespace DotNetty.Buffers
             return null;
         }
 
-        public ByteOrder Order
-        {
-            get { return this.order; }
-        }
+        public ByteOrder Order => this.order;
 
-        public int ReferenceCount
-        {
-            get { return 1; }
-        }
+        public int ReferenceCount => 1;
 
         public IReferenceCounted Retain()
         {
@@ -653,7 +614,7 @@ namespace DotNetty.Buffers
 
         public int ForEachByte(int index, int length, ByteProcessor processor)
         {
-            CheckIndex(index, length);
+            this.CheckIndex(index, length);
             return -1;
         }
 
@@ -664,7 +625,7 @@ namespace DotNetty.Buffers
 
         public int ForEachByteDesc(int index, int length, ByteProcessor processor)
         {
-            CheckIndex(index, length);
+            this.CheckIndex(index, length);
             return -1;
         }
 
@@ -675,7 +636,7 @@ namespace DotNetty.Buffers
 
         public string ToString(int index, int length, Encoding encoding)
         {
-            CheckIndex(index, length);
+            this.CheckIndex(index, length);
             return this.ToString(encoding);
         }
     }

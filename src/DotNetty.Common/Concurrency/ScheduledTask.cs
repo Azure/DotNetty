@@ -26,7 +26,7 @@ namespace DotNetty.Common.Concurrency
             this.Deadline = deadline;
         }
 
-        public PreciseTimeSpan Deadline { get; private set; }
+        public PreciseTimeSpan Deadline { get; }
 
         public bool Cancel()
         {
@@ -34,7 +34,7 @@ namespace DotNetty.Common.Concurrency
             {
                 return false;
             }
-            
+
             bool canceled = this.Promise.TrySetCanceled();
             if (canceled)
             {
@@ -43,10 +43,7 @@ namespace DotNetty.Common.Concurrency
             return canceled;
         }
 
-        public Task Completion
-        {
-            get { return this.Promise.Task; }
-        }
+        public Task Completion => this.Promise.Task;
 
         public TaskAwaiter GetAwaiter()
         {
@@ -60,10 +57,7 @@ namespace DotNetty.Common.Concurrency
             return this.Deadline.CompareTo(other.Deadline);
         }
 
-        public override IRunnable Value
-        {
-            get { return this; }
-        }
+        public override IRunnable Value => this;
 
         public virtual void Run()
         {

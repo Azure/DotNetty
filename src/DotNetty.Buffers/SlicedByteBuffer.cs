@@ -19,7 +19,7 @@ namespace DotNetty.Buffers
         {
             if (index < 0 || index > buffer.Capacity - length)
             {
-                throw new ArgumentOutOfRangeException("index", buffer + ".slice(" + index + ", " + length + ')');
+                throw new ArgumentOutOfRangeException(nameof(index), buffer + ".slice(" + index + ", " + length + ')');
             }
 
             var slicedByteBuf = buffer as SlicedByteBuffer;
@@ -48,40 +48,22 @@ namespace DotNetty.Buffers
             return this.buffer;
         }
 
-        public override IByteBufferAllocator Allocator
-        {
-            get { return this.buffer.Allocator; }
-        }
+        public override IByteBufferAllocator Allocator => this.buffer.Allocator;
 
-        public override ByteOrder Order
-        {
-            get { return this.buffer.Order; }
-        }
+        public override ByteOrder Order => this.buffer.Order;
 
-        public override int Capacity
-        {
-            get { return this.length; }
-        }
+        public override int Capacity => this.length;
 
         public override IByteBuffer AdjustCapacity(int newCapacity)
         {
             throw new NotSupportedException("sliced buffer");
         }
 
-        public override bool HasArray
-        {
-            get { return this.buffer.HasArray; }
-        }
+        public override bool HasArray => this.buffer.HasArray;
 
-        public override byte[] Array
-        {
-            get { return this.buffer.Array; }
-        }
+        public override byte[] Array => this.buffer.Array;
 
-        public override int ArrayOffset
-        {
-            get { return this.buffer.ArrayOffset + this.adjustment; }
-        }
+        public override int ArrayOffset => this.buffer.ArrayOffset + this.adjustment;
 
         protected override byte _GetByte(int index)
         {

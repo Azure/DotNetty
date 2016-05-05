@@ -18,10 +18,7 @@ namespace DotNetty.Common.Concurrency
 
         //TODO: support for EventExecutorGroup
 
-        public bool InEventLoop
-        {
-            get { return this.IsInEventLoop(Thread.CurrentThread); }
-        }
+        public bool InEventLoop => this.IsInEventLoop(Thread.CurrentThread);
 
         public abstract bool IsShuttingDown { get; }
 
@@ -149,10 +146,7 @@ namespace DotNetty.Common.Concurrency
         {
             public abstract void Run();
 
-            public override IRunnable Value
-            {
-                get { return this; }
-            }
+            public override IRunnable Value => this;
         }
 
         sealed class ActionTaskQueueNode : RunnableQueueNode
@@ -217,10 +211,7 @@ namespace DotNetty.Common.Concurrency
                 this.cancellationToken = cancellationToken;
             }
 
-            public Task<T> Completion
-            {
-                get { return this.promise.Task; }
-            }
+            public Task<T> Completion => this.promise.Task;
 
             public override void Run()
             {

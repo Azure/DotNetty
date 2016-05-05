@@ -5,7 +5,6 @@ namespace DotNetty.Common.Tests
 {
     using System;
     using System.Threading.Tasks;
-    using DotNetty.Common;
     using Xunit;
 
     public class ThreadLocalPoolTest
@@ -85,7 +84,7 @@ namespace DotNetty.Common.Tests
         public void MaxCapacityTest()
         {
             this.MaxCapacityTest(300);
-            Random rand = new Random();
+            var rand = new Random();
             for (int i = 0; i < 50; i++)
             {
                 this.MaxCapacityTest(rand.Next(1000) + 256); // 256 - 1256
@@ -120,7 +119,7 @@ namespace DotNetty.Common.Tests
             // Return the half from the same thread.
             // Return the other half from the different thread.
 
-            HandledObject[] array = new HandledObject[maxCapacity * 3];
+            var array = new HandledObject[maxCapacity * 3];
             for (int i = 0; i < array.Length; i++)
             {
                 array[i] = recycler.Take();

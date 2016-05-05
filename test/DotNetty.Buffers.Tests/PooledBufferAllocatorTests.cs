@@ -8,7 +8,7 @@ namespace DotNetty.Buffers.Tests
     public class PooledBufferAllocatorTests
     {
         [Theory]
-        [InlineData(16 * 1024, 10, new[] {16 * 1024 - 100, 8 * 1024})]
+        [InlineData(16 * 1024, 10, new[] { 16 * 1024 - 100, 8 * 1024 })]
         [InlineData(16 * 1024, 0, new[] { 16 * 1024 - 100, 8 * 1024 })]
         [InlineData(1024, 2 * 1024, new[] { 16 * 1024 - 100, 8 * 1024 })]
         [InlineData(1024, 0, new[] { 1024, 1 })]

@@ -6,7 +6,7 @@ namespace DotNetty.Common.Utilities
     using System.Threading;
 
     /// <summary>
-    /// Implementation of the java.concurrent.util AtomicReference type.
+    ///     Implementation of the java.concurrent.util AtomicReference type.
     /// </summary>
     public sealed class AtomicReference<T>
         where T : class
@@ -15,7 +15,7 @@ namespace DotNetty.Common.Utilities
         T atomicValue;
 
         /// <summary>
-        /// Sets the initial value of this <see cref="AtomicReference{T}"/> to <see cref="originalValue"/>.
+        ///     Sets the initial value of this <see cref="AtomicReference{T}" /> to <see cref="originalValue" />.
         /// </summary>
         public AtomicReference(T originalValue)
         {
@@ -23,7 +23,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Default constructor
+        ///     Default constructor
         /// </summary>
         public AtomicReference()
         {
@@ -31,7 +31,7 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// The current value of this <see cref="AtomicReference{T}"/>
+        ///     The current value of this <see cref="AtomicReference{T}" />
         /// </summary>
         public T Value
         {
@@ -40,10 +40,9 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// If <see cref="Value"/> equals <see cref="expected"/>, then set the Value to
-        /// <see cref="newValue"/>.
-        /// 
-        /// Returns true if <see cref="newValue"/> was set, false otherwise.
+        ///     If <see cref="Value" /> equals <see cref="expected" />, then set the Value to
+        ///     <see cref="newValue" />.
+        ///     Returns true if <see cref="newValue" /> was set, false otherwise.
         /// </summary>
         public T CompareAndSet(T expected, T newValue)
         {
@@ -53,7 +52,8 @@ namespace DotNetty.Common.Utilities
         #region Conversion operators
 
         /// <summary>
-        /// Implicit conversion operator = automatically casts the <see cref="AtomicReference{T}"/> to an instance of <typeparam name="T"></typeparam>
+        ///     Implicit conversion operator = automatically casts the <see cref="AtomicReference{T}" /> to an instance of
+        ///     <typeparam name="T"></typeparam>
         /// </summary>
         public static implicit operator T(AtomicReference<T> aRef)
         {
@@ -61,7 +61,8 @@ namespace DotNetty.Common.Utilities
         }
 
         /// <summary>
-        /// Implicit conversion operator = allows us to cast any type directly into a <see cref="AtomicReference{T}"/> instance.
+        ///     Implicit conversion operator = allows us to cast any type directly into a <see cref="AtomicReference{T}" />
+        ///     instance.
         /// </summary>
         /// <param name="newValue"></param>
         /// <returns></returns>

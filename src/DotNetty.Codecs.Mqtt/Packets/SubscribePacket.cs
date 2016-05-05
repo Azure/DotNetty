@@ -17,15 +17,9 @@ namespace DotNetty.Codecs.Mqtt.Packets
             this.Requests = requests;
         }
 
-        public override PacketType PacketType
-        {
-            get { return PacketType.SUBSCRIBE; }
-        }
+        public override PacketType PacketType => PacketType.SUBSCRIBE;
 
-        public override QualityOfService QualityOfService
-        {
-            get { return QualityOfService.AtLeastOnce; }
-        }
+        public override QualityOfService QualityOfService => QualityOfService.AtLeastOnce;
 
         public IReadOnlyList<SubscriptionRequest> Requests { get; set; }
     }

@@ -17,10 +17,7 @@ namespace DotNetty.Buffers
         {
         }
 
-        public override int ReferenceCount
-        {
-            get { return this.referenceCount; }
-        }
+        public override int ReferenceCount => this.referenceCount;
 
         protected void SetReferenceCount(int value)
         {

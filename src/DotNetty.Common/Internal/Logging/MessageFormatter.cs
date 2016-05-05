@@ -97,16 +97,16 @@ namespace DotNetty.Common.Internal.Logging
         }
 
         /// <summary>
-        /// Performs a two argument substitution for the 'messagePattern' passed as
-        /// parameter.
-        /// <p/>
-        /// For example,
-        /// <p/>
-        /// <pre>
-        /// MessageFormatter.Format(&quot;Hi {}. My name is {}.&quot;, &quot;Alice&quot;, &quot;Bob&quot;);
-        /// </pre>
-        /// <p/>
-        /// will return the string "Hi Alice. My name is Bob.".
+        ///     Performs a two argument substitution for the 'messagePattern' passed as
+        ///     parameter.
+        ///     <p />
+        ///     For example,
+        ///     <p />
+        ///     <pre>
+        ///         MessageFormatter.Format(&quot;Hi {}. My name is {}.&quot;, &quot;Alice&quot;, &quot;Bob&quot;);
+        ///     </pre>
+        ///     <p />
+        ///     will return the string "Hi Alice. My name is Bob.".
         /// </summary>
         /// <param name="messagePattern">The message pattern which will be parsed and formatted</param>
         /// <param name="argA">The argument to be substituted in place of the first formatting anchor</param>
@@ -134,9 +134,9 @@ namespace DotNetty.Common.Internal.Logging
         }
 
         /// <summary>
-        /// Same principle as the {@link #Format(String, Object)} and
-        /// {@link #Format(String, Object, Object)} methods except that any number of
-        /// arguments can be passed in an array.
+        ///     Same principle as the {@link #Format(String, Object)} and
+        ///     {@link #Format(String, Object, Object)} methods except that any number of
+        ///     arguments can be passed in an array.
         /// </summary>
         /// <param name="messagePattern">The message pattern which will be parsed and formatted</param>
         /// <param name="argArray">An array of arguments to be substituted in place of formatting anchors</param>

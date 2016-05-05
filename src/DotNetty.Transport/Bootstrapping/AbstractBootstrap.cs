@@ -15,11 +15,12 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// {@link AbstractBootstrap} is a helper class that makes it easy to bootstrap a {@link Channel}. It support
-    /// method-chaining to provide an easy way to configure the {@link AbstractBootstrap}.
-    ///
-    /// <p>When not used in a {@link ServerBootstrap} context, the {@link #bind()} methods are useful for connectionless
-    /// transports such as datagram (UDP).</p>
+    ///     {@link AbstractBootstrap} is a helper class that makes it easy to bootstrap a {@link Channel}. It support
+    ///     method-chaining to provide an easy way to configure the {@link AbstractBootstrap}.
+    ///     <p>
+    ///         When not used in a {@link ServerBootstrap} context, the {@link #bind()} methods are useful for connectionless
+    ///         transports such as datagram (UDP).
+    ///     </p>
     /// </summary>
     public abstract class AbstractBootstrap<TBootstrap, TChannel> : ICloneable
         where TBootstrap : AbstractBootstrap<TBootstrap, TChannel>
@@ -54,8 +55,8 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// The {@link EventLoopGroup} which is used to handle all the events for the to-be-created
-        /// {@link Channel}
+        ///     The {@link EventLoopGroup} which is used to handle all the events for the to-be-created
+        ///     {@link Channel}
         /// </summary>
         public virtual TBootstrap Group(IEventLoopGroup group)
         {
@@ -69,9 +70,9 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// The {@link Class} which is used to create {@link Channel} instances from.
-        /// You either use this or {@link #channelFactory(io.netty.channel.ChannelFactory)} if your
-        /// {@link Channel} implementation has no no-args constructor.
+        ///     The {@link Class} which is used to create {@link Channel} instances from.
+        ///     You either use this or {@link #channelFactory(io.netty.channel.ChannelFactory)} if your
+        ///     {@link Channel} implementation has no no-args constructor.
         /// </summary>
         public TBootstrap Channel<T>()
             where T : TChannel, new()
@@ -87,7 +88,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// The {@link SocketAddress} which is used to bind the local "end" to.
+        ///     The {@link SocketAddress} which is used to bind the local "end" to.
         /// </summary>
         public TBootstrap LocalAddress(EndPoint localAddress)
         {
@@ -96,7 +97,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #localAddress(SocketAddress)}
+        ///     @see {@link #localAddress(SocketAddress)}
         /// </summary>
         public TBootstrap LocalAddress(int inetPort)
         {
@@ -104,7 +105,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #localAddress(SocketAddress)}
+        ///     @see {@link #localAddress(SocketAddress)}
         /// </summary>
         public TBootstrap LocalAddress(string inetHost, int inetPort)
         {
@@ -112,7 +113,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #localAddress(SocketAddress)}
+        ///     @see {@link #localAddress(SocketAddress)}
         /// </summary>
         public TBootstrap LocalAddress(IPAddress inetHost, int inetPort)
         {
@@ -120,8 +121,8 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they got
-        /// created. Use a value of {@code null} to remove a previous set {@link ChannelOption}.
+        ///     Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they got
+        ///     created. Use a value of {@code null} to remove a previous set {@link ChannelOption}.
         /// </summary>
         public TBootstrap Option<T>(ChannelOption<T> option, T value)
         {
@@ -139,36 +140,12 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Allow to specify an initial attribute of the newly created {@link Channel}.  If the {@code value} is
-        /// {@code null}, the attribute of the specified {@code key} is removed.
+        ///     Allow to specify an initial attribute of the newly created {@link Channel}.  If the {@code value} is
+        ///     {@code null}, the attribute of the specified {@code key} is removed.
         /// </summary>
-
-        // todo: attr
-        //public B attr<T>(AttributeKey<T> key, T value)
-        //{
-        //    if (key == null)
-        //    {
-        //        throw new NullPointerException("key");
-        //    }
-        //    if (value == null)
-        //    {
-        //        synchronized(this.attrs)
-        //        {
-        //            this.attrs.remove(key);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        synchronized(this.attrs)
-        //        {
-        //            this.attrs.put(key, value);
-        //        }
-        //    }
-        //    return (B)this;
-        //}
         /// <summary>
-        /// Validate all the parameters. Sub-classes may override this, but should
-        /// call the super method in that case.
+        ///     Validate all the parameters. Sub-classes may override this, but should
+        ///     call the super method in that case.
         /// </summary>
         public virtual TBootstrap Validate()
         {
@@ -184,14 +161,14 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Returns a deep clone of this bootstrap which has the identical configuration.  This method is useful when making
-        /// multiple {@link Channel}s with similar settings.  Please note that this method does not clone the
-        /// {@link EventLoopGroup} deeply but shallowly, making the group a shared resource.
+        ///     Returns a deep clone of this bootstrap which has the identical configuration.  This method is useful when making
+        ///     multiple {@link Channel}s with similar settings.  Please note that this method does not clone the
+        ///     {@link EventLoopGroup} deeply but shallowly, making the group a shared resource.
         /// </summary>
         public abstract object Clone();
 
         /// <summary>
-        /// Create a new {@link Channel} and register it with an {@link EventLoop}.
+        ///     Create a new {@link Channel} and register it with an {@link EventLoop}.
         /// </summary>
         public Task Register()
         {
@@ -200,7 +177,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Create a new {@link Channel} and bind it.
+        ///     Create a new {@link Channel} and bind it.
         /// </summary>
         public Task<IChannel> BindAsync()
         {
@@ -214,7 +191,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Create a new {@link Channel} and bind it.
+        ///     Create a new {@link Channel} and bind it.
         /// </summary>
         public Task<IChannel> BindAsync(int inetPort)
         {
@@ -222,7 +199,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Create a new {@link Channel} and bind it.
+        ///     Create a new {@link Channel} and bind it.
         /// </summary>
         public Task<IChannel> BindAsync(string inetHost, int inetPort)
         {
@@ -230,7 +207,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Create a new {@link Channel} and bind it.
+        ///     Create a new {@link Channel} and bind it.
         /// </summary>
         public Task<IChannel> BindAsync(IPAddress inetHost, int inetPort)
         {
@@ -238,7 +215,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Create a new {@link Channel} and bind it.
+        ///     Create a new {@link Channel} and bind it.
         /// </summary>
         public Task<IChannel> BindAsync(EndPoint localAddress)
         {
@@ -322,7 +299,7 @@ namespace DotNetty.Transport.Bootstrapping
         protected abstract void Init(IChannel channel);
 
         /// <summary>
-        /// the {@link ChannelHandler} to use for serving the requests.
+        ///     the {@link ChannelHandler} to use for serving the requests.
         /// </summary>
         public TBootstrap Handler(IChannelHandler handler)
         {
@@ -342,7 +319,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Return the configured {@link EventLoopGroup} or {@code null} if non is configured yet.
+        ///     Return the configured {@link EventLoopGroup} or {@code null} if non is configured yet.
         /// </summary>
         public IEventLoopGroup Group()
         {

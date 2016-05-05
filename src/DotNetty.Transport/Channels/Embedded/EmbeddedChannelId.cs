@@ -6,7 +6,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using System;
 
     /// <summary>
-    /// A dummy <see cref="IChannelId"/> implementation
+    ///     A dummy <see cref="IChannelId" /> implementation
     /// </summary>
     public sealed class EmbeddedChannelId : IChannelId
     {
@@ -51,4 +51,3 @@ namespace DotNetty.Transport.Channels.Embedded
         }
     }
 }
-

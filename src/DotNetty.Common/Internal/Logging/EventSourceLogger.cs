@@ -16,10 +16,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Is this logger instance enabled for the TRACE level?
         /// </summary>
         /// <value>true if this Logger is enabled for level TRACE, false otherwise.</value>
-        public override bool TraceEnabled
-        {
-            get { return DefaultEventSource.Log.IsTraceEnabled; }
-        }
+        public override bool TraceEnabled => DefaultEventSource.Log.IsTraceEnabled;
 
         /// <summary>
         ///     Log a message object at level TRACE.
@@ -102,10 +99,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Is this logger instance enabled for the DEBUG level?
         /// </summary>
         /// <value>true if this Logger is enabled for level DEBUG, false otherwise.</value>
-        public override bool DebugEnabled
-        {
-            get { return DefaultEventSource.Log.IsDebugEnabled; }
-        }
+        public override bool DebugEnabled => DefaultEventSource.Log.IsDebugEnabled;
 
         /// <summary>
         ///     Log a message object at level DEBUG.
@@ -188,10 +182,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Is this logger instance enabled for the INFO level?
         /// </summary>
         /// <value>true if this Logger is enabled for level INFO, false otherwise.</value>
-        public override bool InfoEnabled
-        {
-            get { return DefaultEventSource.Log.IsInfoEnabled; }
-        }
+        public override bool InfoEnabled => DefaultEventSource.Log.IsInfoEnabled;
 
         /// <summary>
         ///     Log a message object at level INFO.
@@ -274,10 +265,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Is this logger instance enabled for the WARN level?
         /// </summary>
         /// <value>true if this Logger is enabled for level WARN, false otherwise.</value>
-        public override bool WarnEnabled
-        {
-            get { return DefaultEventSource.Log.IsWarningEnabled; }
-        }
+        public override bool WarnEnabled => DefaultEventSource.Log.IsWarningEnabled;
 
         /// <summary>
         ///     Log a message object at level WARN.
@@ -360,10 +348,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Is this logger instance enabled for the ERROR level?
         /// </summary>
         /// <value>true if this Logger is enabled for level ERROR, false otherwise.</value>
-        public override bool ErrorEnabled
-        {
-            get { return DefaultEventSource.Log.IsErrorEnabled; }
-        }
+        public override bool ErrorEnabled => DefaultEventSource.Log.IsErrorEnabled;
 
         /// <summary>
         ///     Log a message object at level ERROR.

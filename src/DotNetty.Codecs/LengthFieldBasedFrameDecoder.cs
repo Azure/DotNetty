@@ -184,10 +184,12 @@ namespace DotNetty.Codecs
         long bytesToDiscard;
 
         /// <summary>
-        /// Create a new instance.
+        ///     Create a new instance.
         /// </summary>
-        /// <param name="maxFrameLength">The maximum length of the frame.  If the length of the frame is
-        /// greater than this value then <see cref="TooLongFrameException"/> will be thrown.</param>
+        /// <param name="maxFrameLength">
+        ///     The maximum length of the frame.  If the length of the frame is
+        ///     greater than this value then <see cref="TooLongFrameException" /> will be thrown.
+        /// </param>
         /// <param name="lengthFieldOffset">The offset of the length field.</param>
         /// <param name="lengthFieldLength">The length of the length field.</param>
         public LengthFieldBasedFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength)
@@ -196,10 +198,12 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Create a new instance.
+        ///     Create a new instance.
         /// </summary>
-        /// <param name="maxFrameLength">The maximum length of the frame.  If the length of the frame is
-        /// greater than this value then <see cref="TooLongFrameException"/> will be thrown.</param>
+        /// <param name="maxFrameLength">
+        ///     The maximum length of the frame.  If the length of the frame is
+        ///     greater than this value then <see cref="TooLongFrameException" /> will be thrown.
+        /// </param>
         /// <param name="lengthFieldOffset">The offset of the length field.</param>
         /// <param name="lengthFieldLength">The length of the length field.</param>
         /// <param name="lengthAdjustment">The compensation value to add to the value of the length field.</param>
@@ -210,20 +214,21 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Create a new instance.
+        ///     Create a new instance.
         /// </summary>
-        /// <param name="maxFrameLength">The maximum length of the frame.  If the length of the frame is
-        /// greater than this value then <see cref="TooLongFrameException"/> will be thrown.</param>
+        /// <param name="maxFrameLength">
+        ///     The maximum length of the frame.  If the length of the frame is
+        ///     greater than this value then <see cref="TooLongFrameException" /> will be thrown.
+        /// </param>
         /// <param name="lengthFieldOffset">The offset of the length field.</param>
         /// <param name="lengthFieldLength">The length of the length field.</param>
         /// <param name="lengthAdjustment">The compensation value to add to the value of the length field.</param>
         /// <param name="initialBytesToStrip">the number of first bytes to strip out from the decoded frame.</param>
         /// <param name="failFast">
-        ///     If <c>true</c>, a <see cref="TooLongFrameException"/> is thrown as soon as the decoder notices the length
-        ///     of the frame will exceeed <see cref="maxFrameLength"/> regardless of whether the entire frame has been
-        ///     read. If <c>false</c>, a <see cref="TooLongFrameException"/> is thrown after the entire frame that exceeds
-        ///     <see cref="maxFrameLength"/> has been read.
-        /// 
+        ///     If <c>true</c>, a <see cref="TooLongFrameException" /> is thrown as soon as the decoder notices the length
+        ///     of the frame will exceeed <see cref="maxFrameLength" /> regardless of whether the entire frame has been
+        ///     read. If <c>false</c>, a <see cref="TooLongFrameException" /> is thrown after the entire frame that exceeds
+        ///     <see cref="maxFrameLength" /> has been read.
         ///     Defaults to <c>true</c> in other overloads.
         /// </param>
         public LengthFieldBasedFrameDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment, int initialBytesToStrip, bool failFast)
@@ -232,40 +237,41 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Create a new instance.
+        ///     Create a new instance.
         /// </summary>
-        /// <param name="byteOrder">The <see cref="ByteOrder"/> of the lenght field.</param>
-        /// <param name="maxFrameLength">The maximum length of the frame.  If the length of the frame is
-        /// greater than this value then <see cref="TooLongFrameException"/> will be thrown.</param>
+        /// <param name="byteOrder">The <see cref="ByteOrder" /> of the lenght field.</param>
+        /// <param name="maxFrameLength">
+        ///     The maximum length of the frame.  If the length of the frame is
+        ///     greater than this value then <see cref="TooLongFrameException" /> will be thrown.
+        /// </param>
         /// <param name="lengthFieldOffset">The offset of the length field.</param>
         /// <param name="lengthFieldLength">The length of the length field.</param>
         /// <param name="lengthAdjustment">The compensation value to add to the value of the length field.</param>
         /// <param name="initialBytesToStrip">the number of first bytes to strip out from the decoded frame.</param>
         /// <param name="failFast">
-        ///     If <c>true</c>, a <see cref="TooLongFrameException"/> is thrown as soon as the decoder notices the length
-        ///     of the frame will exceeed <see cref="maxFrameLength"/> regardless of whether the entire frame has been
-        ///     read. If <c>false</c>, a <see cref="TooLongFrameException"/> is thrown after the entire frame that exceeds
-        ///     <see cref="maxFrameLength"/> has been read.
-        /// 
+        ///     If <c>true</c>, a <see cref="TooLongFrameException" /> is thrown as soon as the decoder notices the length
+        ///     of the frame will exceeed <see cref="maxFrameLength" /> regardless of whether the entire frame has been
+        ///     read. If <c>false</c>, a <see cref="TooLongFrameException" /> is thrown after the entire frame that exceeds
+        ///     <see cref="maxFrameLength" /> has been read.
         ///     Defaults to <c>true</c> in other overloads.
         /// </param>
         public LengthFieldBasedFrameDecoder(ByteOrder byteOrder, int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment, int initialBytesToStrip, bool failFast)
         {
             if (maxFrameLength <= 0)
             {
-                throw new ArgumentOutOfRangeException("maxFrameLength", "maxFrameLength must be a positive integer: " + maxFrameLength);
+                throw new ArgumentOutOfRangeException(nameof(maxFrameLength), "maxFrameLength must be a positive integer: " + maxFrameLength);
             }
             if (lengthFieldOffset < 0)
             {
-                throw new ArgumentOutOfRangeException("lengthFieldOffset", "lengthFieldOffset must be a non-negative integer: " + lengthFieldOffset);
+                throw new ArgumentOutOfRangeException(nameof(lengthFieldOffset), "lengthFieldOffset must be a non-negative integer: " + lengthFieldOffset);
             }
             if (initialBytesToStrip < 0)
             {
-                throw new ArgumentOutOfRangeException("initialBytesToStrip", "initialBytesToStrip must be a non-negative integer: " + initialBytesToStrip);
+                throw new ArgumentOutOfRangeException(nameof(initialBytesToStrip), "initialBytesToStrip must be a non-negative integer: " + initialBytesToStrip);
             }
             if (lengthFieldOffset > maxFrameLength - lengthFieldLength)
             {
-                throw new ArgumentOutOfRangeException("maxFrameLength", "maxFrameLength (" + maxFrameLength + ") " +
+                throw new ArgumentOutOfRangeException(nameof(maxFrameLength), "maxFrameLength (" + maxFrameLength + ") " +
                     "must be equal to or greater than " +
                     "lengthFieldOffset (" + lengthFieldOffset + ") + " +
                     "lengthFieldLength (" + lengthFieldLength + ").");
@@ -283,7 +289,7 @@ namespace DotNetty.Codecs
 
         protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
-            var decoded = Decode(context, input);
+            object decoded = this.Decode(context, input);
             if (decoded != null)
             {
                 output.Add(decoded);
@@ -291,11 +297,14 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        /// Create a frame out of the <see cref="IByteBuffer"/> and return it.
+        ///     Create a frame out of the <see cref="IByteBuffer" /> and return it.
         /// </summary>
-        /// <param name="context">The <see cref="IChannelHandlerContext"/> which this <see cref="ByteToMessageDecoder"/> belongs to.</param>
-        /// <param name="input">The <see cref="IByteBuffer"/> from which to read data.</param>
-        /// <returns>The <see cref="IByteBuffer"/> which represents the frame or <c>null</c> if no frame could be created.</returns>
+        /// <param name="context">
+        ///     The <see cref="IChannelHandlerContext" /> which this <see cref="ByteToMessageDecoder" /> belongs
+        ///     to.
+        /// </param>
+        /// <param name="input">The <see cref="IByteBuffer" /> from which to read data.</param>
+        /// <returns>The <see cref="IByteBuffer" /> which represents the frame or <c>null</c> if no frame could be created.</returns>
         protected object Decode(IChannelHandlerContext context, IByteBuffer input)
         {
             if (this.discardingTooLongFrame)
@@ -377,16 +386,17 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        ///  Decodes the specified region of the buffer into an unadjusted frame length.  The default implementation is
-        /// capable of decoding the specified region into an unsigned 8/16/24/32/64 bit integer.  Override this method to
-        /// decode the length field encoded differently. 
-        /// Note that this method must not modify the state of the specified buffer (e.g. <see cref="IByteBuffer.ReaderIndex"/>, 
-        /// <see cref="IByteBuffer.WriterIndex"/>, and the content of the buffer.)
+        ///     Decodes the specified region of the buffer into an unadjusted frame length.  The default implementation is
+        ///     capable of decoding the specified region into an unsigned 8/16/24/32/64 bit integer.  Override this method to
+        ///     decode the length field encoded differently.
+        ///     Note that this method must not modify the state of the specified buffer (e.g.
+        ///     <see cref="IByteBuffer.ReaderIndex" />,
+        ///     <see cref="IByteBuffer.WriterIndex" />, and the content of the buffer.)
         /// </summary>
         /// <param name="buffer">The buffer we'll be extracting the frame length from.</param>
-        /// <param name="offset">The offset from the absolute <see cref="IByteBuffer.ReaderIndex"/>.</param>
+        /// <param name="offset">The offset from the absolute <see cref="IByteBuffer.ReaderIndex" />.</param>
         /// <param name="length">The length of the framelenght field. Expected: 1, 2, 3, 4, or 8.</param>
-        /// <param name="order">The preferred <see cref="ByteOrder"/> of <see cref="buffer"/>.</param>
+        /// <param name="order">The preferred <see cref="ByteOrder" /> of <see cref="buffer" />.</param>
         /// <returns>A long integer that represents the unadjusted length of the next frame.</returns>
         protected long GetUnadjustedFrameLength(IByteBuffer buffer, int offset, int length, ByteOrder order)
         {
@@ -414,7 +424,7 @@ namespace DotNetty.Codecs
 
         protected virtual IByteBuffer ExtractFrame(IChannelHandlerContext context, IByteBuffer buffer, int index, int length)
         {
-            var buff = buffer.Slice(index, length);
+            IByteBuffer buff = buffer.Slice(index, length);
             buff.Retain();
             return buff;
         }

@@ -27,4 +27,3 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
         }
     }
 }
-

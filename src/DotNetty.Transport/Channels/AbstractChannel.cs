@@ -38,22 +38,21 @@ namespace DotNetty.Transport.Channels
         string strVal;
 
         /// <summary>
-        /// Creates a new instance.
-        ///
-        /// @param parent
-        ///        the parent of this channel. {@code null} if there's no parent.
+        ///     Creates a new instance.
+        ///     @param parent
+        ///     the parent of this channel. {@code null} if there's no parent.
         /// </summary>
         protected AbstractChannel(IChannel parent)
             : this(parent, DefaultChannelId.NewInstance())
         {
         }
-        /// <summary>
-        /// Creates a new instance.
-        ///
+
         //* @param parent
         //*        the parent of this channel. {@code null} if there's no parent.
+        /// <summary>
+        ///     Creates a new instance.
         /// </summary>
-        protected AbstractChannel(IChannel parent , IChannelId id)
+        protected AbstractChannel(IChannel parent, IChannelId id)
         {
             this.Parent = parent;
             this.Id = id;
@@ -61,7 +60,7 @@ namespace DotNetty.Transport.Channels
             this.pipeline = new DefaultChannelPipeline(this);
         }
 
-        public IChannelId Id { get; private set; }
+        public IChannelId Id { get; }
 
         public bool IsWritable
         {
@@ -72,19 +71,13 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public IChannel Parent { get; private set; }
+        public IChannel Parent { get; }
 
-        public IChannelPipeline Pipeline
-        {
-            get { return this.pipeline; }
-        }
+        public IChannelPipeline Pipeline => this.pipeline;
 
         public abstract IChannelConfiguration Configuration { get; }
 
-        public IByteBufferAllocator Allocator
-        {
-            get { return this.Configuration.Allocator; }
-        }
+        public IByteBufferAllocator Allocator => this.Configuration.Allocator;
 
         public IEventLoop EventLoop
         {
@@ -164,12 +157,9 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// Reset the stored remoteAddress
+        ///     Reset the stored remoteAddress
         /// </summary>
-        public bool Registered
-        {
-            get { return this.registered; }
-        }
+        public bool Registered => this.registered;
 
         public virtual Task BindAsync(EndPoint localAddress)
         {
@@ -244,33 +234,27 @@ namespace DotNetty.Transport.Channels
             return this.pipeline.WriteAndFlushAsync(message);
         }
 
-        public Task CloseCompletion
-        {
-            get { return this.closeFuture.Task; }
-        }
+        public Task CloseCompletion => this.closeFuture.Task;
 
-        public IChannelUnsafe Unsafe
-        {
-            get { return this.channelUnsafe; }
-        }
+        public IChannelUnsafe Unsafe => this.channelUnsafe;
 
         /// <summary>
-        /// Create a new <see cref="AbstractUnsafe"/> instance which will be used for the life-time of the <see cref="IChannel"/>
+        ///     Create a new <see cref="AbstractUnsafe" /> instance which will be used for the life-time of the
+        ///     <see cref="IChannel" />
         /// </summary>
         protected abstract IChannelUnsafe NewUnsafe();
 
-           /// <summary>
-        /// Returns the ID of this channel.
+        /// <summary>
+        ///     Returns the ID of this channel.
         /// </summary>
-
         public override int GetHashCode()
         {
-            return Id.GetHashCode();
+            return this.Id.GetHashCode();
         }
 
         /// <summary>
-        /// Returns {@code true} if and only if the specified object is identical
-        /// with this channel (i.e: {@code this == o}).
+        ///     Returns {@code true} if and only if the specified object is identical
+        ///     with this channel (i.e: {@code this == o}).
         /// </summary>
         public override bool Equals(object o)
         {
@@ -284,14 +268,14 @@ namespace DotNetty.Transport.Channels
                 return 0;
             }
 
-            return Id.CompareTo(o.Id);
+            return this.Id.CompareTo(o.Id);
         }
 
         /// <summary>
-        /// Returns the {@link String} representation of this channel.  The returned
-        /// string contains the {@linkplain #hashCode()} ID}, {@linkplain #localAddress() local address},
-        /// and {@linkplain #remoteAddress() remote address} of this channel for
-        /// easier identification.
+        ///     Returns the {@link String} representation of this channel.  The returned
+        ///     string contains the {@linkplain #hashCode()} ID}, {@linkplain #localAddress() local address},
+        ///     and {@linkplain #remoteAddress() remote address} of this channel for
+        ///     easier identification.
         /// </summary>
         public override string ToString()
         {
@@ -320,7 +304,7 @@ namespace DotNetty.Transport.Channels
 
                 StringBuilder buf = new StringBuilder(96)
                     .Append("[id: 0x")
-                    .Append(Id.AsShortText())
+                    .Append(this.Id.AsShortText())
                     .Append(", ")
                     .Append(srcAddr)
                     .Append(active ? " => " : " :> ")
@@ -332,7 +316,7 @@ namespace DotNetty.Transport.Channels
             {
                 StringBuilder buf = new StringBuilder(64)
                     .Append("[id: 0x")
-                    .Append(Id.AsShortText())
+                    .Append(this.Id.AsShortText())
                     .Append(", ")
                     .Append(localAddr)
                     .Append(']');
@@ -342,7 +326,7 @@ namespace DotNetty.Transport.Channels
             {
                 StringBuilder buf = new StringBuilder(16)
                     .Append("[id: 0x")
-                    .Append(Id.AsShortText())
+                    .Append(this.Id.AsShortText())
                     .Append(']');
                 this.strVal = buf.ToString();
             }
@@ -352,19 +336,10 @@ namespace DotNetty.Transport.Channels
         }
 
         internal IMessageSizeEstimatorHandle EstimatorHandle
-        {
-            get
-            {
-                if (this.estimatorHandle == null)
-                {
-                    this.estimatorHandle = this.Configuration.MessageSizeEstimator.NewHandle();
-                }
-                return this.estimatorHandle;
-            }
-        }
+            => this.estimatorHandle ?? (this.estimatorHandle = this.Configuration.MessageSizeEstimator.NewHandle());
 
         /// <summary>
-        /// <see cref="IChannelUnsafe"/> implementation which sub-classes must extend and use.
+        ///     <see cref="IChannelUnsafe" /> implementation which sub-classes must extend and use.
         /// </summary>
         protected abstract class AbstractUnsafe : IChannelUnsafe
         {
@@ -377,16 +352,7 @@ namespace DotNetty.Transport.Channels
             bool neverRegistered = true;
 
             public IRecvByteBufAllocatorHandle RecvBufAllocHandle
-            {
-                get
-                {
-                    if (this.recvHandle == null)
-                    {
-                        this.recvHandle = this.channel.Configuration.RecvByteBufAllocator.NewHandle();
-                    }
-                    return this.recvHandle;
-                }
-            }
+                => this.recvHandle ?? (this.recvHandle = this.channel.Configuration.RecvByteBufAllocator.NewHandle());
 
             //public ChannelHandlerInvoker invoker() {
             //    // return the unwrapped invoker.
@@ -399,10 +365,7 @@ namespace DotNetty.Transport.Channels
                 this.outboundBuffer = new ChannelOutboundBuffer(channel);
             }
 
-            public ChannelOutboundBuffer OutboundBuffer
-            {
-                get { return this.outboundBuffer; }
-            }
+            public ChannelOutboundBuffer OutboundBuffer => this.outboundBuffer;
 
             public Task RegisterAsync(IEventLoop eventLoop)
             {
@@ -442,7 +405,7 @@ namespace DotNetty.Transport.Channels
                     catch (Exception ex)
                     {
                         Logger.Warn(
-                            string.Format("Force-closing a channel whose registration task was not accepted by an event loop: {0}", this.channel),
+                            $"Force-closing a channel whose registration task was not accepted by an event loop: {this.channel}",
                             ex);
                         this.CloseForcibly();
                         this.channel.closeFuture.Complete();
@@ -702,11 +665,11 @@ namespace DotNetty.Transport.Channels
             }
 
             /// <summary>
-            /// This method must NEVER be called directly, but be executed as an
-            /// extra task with a clean call stack instead. The reason for this
-            /// is that this method calls {@link ChannelPipeline#fireChannelUnregistered()}
-            /// directly, which might lead to an unfortunate nesting of independent inbound/outbound
-            /// events. See the comments input {@link #invokeLater(Runnable)} for more details.
+            ///     This method must NEVER be called directly, but be executed as an
+            ///     extra task with a clean call stack instead. The reason for this
+            ///     is that this method calls {@link ChannelPipeline#fireChannelUnregistered()}
+            ///     directly, which might lead to an unfortunate nesting of independent inbound/outbound
+            ///     events. See the comments input {@link #invokeLater(Runnable)} for more details.
             /// </summary>
             public Task DeregisterAsync()
             {
@@ -936,14 +899,13 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// Return {@code true} if the given {@link EventLoop} is compatible with this instance.
+        ///     Return {@code true} if the given {@link EventLoop} is compatible with this instance.
         /// </summary>
         protected abstract bool IsCompatible(IEventLoop eventLoop);
 
         /// <summary>
-        /// Is called after the {@link Channel} is registered with its {@link EventLoop} as part of the register process.
-        ///
-        /// Sub-classes may override this method
+        ///     Is called after the {@link Channel} is registered with its {@link EventLoop} as part of the register process.
+        ///     Sub-classes may override this method
         /// </summary>
         protected virtual void DoRegister()
         {
@@ -951,24 +913,23 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// Bind the {@link Channel} to the {@link EndPoint}
+        ///     Bind the {@link Channel} to the {@link EndPoint}
         /// </summary>
         protected abstract void DoBind(EndPoint localAddress);
 
         /// <summary>
-        /// Disconnect this {@link Channel} from its remote peer
+        ///     Disconnect this {@link Channel} from its remote peer
         /// </summary>
         protected abstract void DoDisconnect();
 
         /// <summary>
-        /// Close the {@link Channel}
+        ///     Close the {@link Channel}
         /// </summary>
         protected abstract void DoClose();
 
         /// <summary>
-        /// Deregister the {@link Channel} from its {@link EventLoop}.
-        ///
-        /// Sub-classes may override this method
+        ///     Deregister the {@link Channel} from its {@link EventLoop}.
+        ///     Sub-classes may override this method
         /// </summary>
         protected virtual void DoDeregister()
         {
@@ -976,18 +937,18 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// ScheduleAsync a read operation.
+        ///     ScheduleAsync a read operation.
         /// </summary>
         protected abstract void DoBeginRead();
 
         /// <summary>
-        /// Flush the content of the given buffer to the remote peer.
+        ///     Flush the content of the given buffer to the remote peer.
         /// </summary>
         protected abstract void DoWrite(ChannelOutboundBuffer input);
 
         /// <summary>
-        /// Invoked when a new message is added to a {@link ChannelOutboundBuffer} of this {@link AbstractChannel}, so that
-        /// the {@link Channel} implementation converts the message to another. (e.g. heap buffer -> direct buffer)
+        ///     Invoked when a new message is added to a {@link ChannelOutboundBuffer} of this {@link AbstractChannel}, so that
+        ///     the {@link Channel} implementation converts the message to another. (e.g. heap buffer -> direct buffer)
         /// </summary>
         protected virtual object FilterOutboundMessage(object msg)
         {
@@ -1016,10 +977,7 @@ namespace DotNetty.Transport.Channels
                 this.isAcceptingNewTasks = true;
             }
 
-            public override bool IsAcceptingNewTasks
-            {
-                get { return this.isAcceptingNewTasks; }
-            }
+            public override bool IsAcceptingNewTasks => this.isAcceptingNewTasks;
 
             public override IEventExecutor Unwrap()
             {
@@ -1031,20 +989,14 @@ namespace DotNetty.Transport.Channels
                 return this.Unwrapped;
             }
 
-            public IChannelHandlerInvoker Invoker
-            {
-                get { return this.Unwrapped.Invoker; }
-            }
+            public IChannelHandlerInvoker Invoker => this.Unwrapped.Invoker;
 
             public Task RegisterAsync(IChannel c)
             {
                 return this.Unwrapped.RegisterAsync(c);
             }
 
-            internal override IChannel Channel
-            {
-                get { return this.channel; }
-            }
+            internal override IChannel Channel => this.channel;
         }
     }
 }

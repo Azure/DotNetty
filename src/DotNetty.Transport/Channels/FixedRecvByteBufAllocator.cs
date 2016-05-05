@@ -7,8 +7,8 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Buffers;
 
     /// <summary>
-    /// The {@link RecvByteBufAllocator} that always yields the same buffer
-    /// size prediction. This predictor ignores the feedback from the I/O thread.
+    ///     The {@link RecvByteBufAllocator} that always yields the same buffer
+    ///     size prediction. This predictor ignores the feedback from the I/O thread.
     /// </summary>
     public sealed class FixedRecvByteBufAllocator : IRecvByteBufAllocator
     {
@@ -41,8 +41,8 @@ namespace DotNetty.Transport.Channels
         readonly IRecvByteBufAllocatorHandle handle;
 
         /// <summary>
-        /// Creates a new predictor that always returns the same prediction of
-        /// the specified buffer size.
+        ///     Creates a new predictor that always returns the same prediction of
+        ///     the specified buffer size.
         /// </summary>
         public FixedRecvByteBufAllocator(int bufferSize)
         {

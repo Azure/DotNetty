@@ -629,14 +629,14 @@ namespace DotNetty.Buffers
 
         public override string ToString(Encoding encoding)
         {
-            RecordLeakNonRefCountingOperation();
+            this.RecordLeakNonRefCountingOperation();
             return base.ToString(encoding);
         }
 
         public override string ToString(int index, int length, Encoding encoding)
         {
-            RecordLeakNonRefCountingOperation();
+            this.RecordLeakNonRefCountingOperation();
             return base.ToString(index, length, encoding);
-        }        
+        }
     }
 }

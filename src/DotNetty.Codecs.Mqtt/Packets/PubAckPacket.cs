@@ -5,10 +5,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 {
     public sealed class PubAckPacket : PacketWithId
     {
-        public override PacketType PacketType
-        {
-            get { return PacketType.PUBACK; }
-        }
+        public override PacketType PacketType => PacketType.PUBACK;
 
         public static PubAckPacket InResponseTo(PublishPacket publishPacket)
         {

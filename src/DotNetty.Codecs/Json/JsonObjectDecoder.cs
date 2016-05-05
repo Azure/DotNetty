@@ -3,17 +3,18 @@
 
 namespace DotNetty.Codecs.Json
 {
-    using DotNetty.Buffers;
-    using DotNetty.Codecs;
-    using DotNetty.Transport.Channels;
     using System;
     using System.Collections.Generic;
+    using DotNetty.Buffers;
+    using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// Splits a byte stream of JSON objects and arrays into individual objects/arrays and passes them up the <see cref="DotNetty.Transport.Channels.IChannelPipeline"/>.
-    /// This class does not do any real parsing or validation. A sequence of bytes is considered a JSON object/array
-    /// if it contains a matching number of opening and closing braces/brackets. It's up to a subsequent <see cref="DotNetty.Transport.Channels.IChannelHandler"/>
-    /// to parse the JSON text into a more usable form i.e.a POCO.
+    ///     Splits a byte stream of JSON objects and arrays into individual objects/arrays and passes them up the
+    ///     <see cref="DotNetty.Transport.Channels.IChannelPipeline" />.
+    ///     This class does not do any real parsing or validation. A sequence of bytes is considered a JSON object/array
+    ///     if it contains a matching number of opening and closing braces/brackets. It's up to a subsequent
+    ///     <see cref="DotNetty.Transport.Channels.IChannelHandler" />
+    ///     to parse the JSON text into a more usable form i.e.a POCO.
     /// </summary>
     public class JsonObjectDecoder : ByteToMessageDecoder
     {
@@ -32,7 +33,7 @@ namespace DotNetty.Codecs.Json
         readonly bool streamArrayElements;
 
         public JsonObjectDecoder()
-            :this(1024 * 1024)
+            : this(1024 * 1024)
         {
         }
 
@@ -73,10 +74,10 @@ namespace DotNetty.Codecs.Json
                 // buffer size exceeded maxObjectLength; discarding the complete buffer.
                 input.SkipBytes(input.ReadableBytes);
                 this.Reset();
-                throw new TooLongFrameException(string.Format("Object length exceeds {0}: {1} bytes discarded", this.maxObjectLength, wrtIdx));
+                throw new TooLongFrameException($"Object length exceeds {this.maxObjectLength}: {wrtIdx} bytes discarded");
             }
 
-            for (/* use current idx */; idx < wrtIdx; idx++)
+            for ( /* use current idx */; idx < wrtIdx; idx++)
             {
                 byte c = input.GetByte(idx);
 
@@ -123,7 +124,7 @@ namespace DotNetty.Codecs.Json
                             idxNoSpaces--;
                         }
 
-                        var json = this.ExtractObject(context, input, input.ReaderIndex, idxNoSpaces + 1 - input.ReaderIndex);
+                        IByteBuffer json = this.ExtractObject(context, input, input.ReaderIndex, idxNoSpaces + 1 - input.ReaderIndex);
                         if (json != null)
                         {
                             output.Add(json);
@@ -154,7 +155,7 @@ namespace DotNetty.Codecs.Json
                 else
                 {
                     this.state = StCorrupted;
-                    throw new CorruptedFrameException(string.Format("Invalid JSON received at byte position {0}", idx));
+                    throw new CorruptedFrameException($"Invalid JSON received at byte position {idx}");
                 }
             }
             if (input.ReadableBytes == 0)

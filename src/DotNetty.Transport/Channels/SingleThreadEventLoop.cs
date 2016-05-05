@@ -27,7 +27,7 @@ namespace DotNetty.Transport.Channels
             this.Invoker = new DefaultChannelHandlerInvoker(this);
         }
 
-        public IChannelHandlerInvoker Invoker { get; private set; }
+        public IChannelHandlerInvoker Invoker { get; }
 
         public Task RegisterAsync(IChannel channel)
         {

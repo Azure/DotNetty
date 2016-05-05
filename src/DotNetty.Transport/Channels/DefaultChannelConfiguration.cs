@@ -10,7 +10,8 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Transport.Channels.Sockets;
 
     /// <summary>
-    /// Shared configuration for SocketAsyncChannel. Provides access to pre-configured resources like ByteBuf allocator and IO buffer pools
+    ///     Shared configuration for SocketAsyncChannel. Provides access to pre-configured resources like ByteBuf allocator and
+    ///     IO buffer pools
     /// </summary>
     public class DefaultChannelConfiguration : IChannelConfiguration
     {

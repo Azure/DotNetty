@@ -18,7 +18,7 @@ namespace DotNetty.Common.Internal.Logging
         readonly string name;
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         /// <param name="name"></param>
         protected AbstractInternalLogger(string name)
@@ -28,10 +28,7 @@ namespace DotNetty.Common.Internal.Logging
             this.name = name;
         }
 
-        public string Name
-        {
-            get { return this.name; }
-        }
+        public string Name => this.name;
 
         public bool IsEnabled(InternalLogLevel level)
         {

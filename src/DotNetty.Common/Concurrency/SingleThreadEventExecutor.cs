@@ -27,7 +27,7 @@ namespace DotNetty.Common.Concurrency
             InternalLoggerFactory.GetInstance<SingleThreadEventExecutor>();
 
         readonly MpscLinkedQueue<IRunnable> taskQueue = new MpscLinkedQueue<IRunnable>();
-        Thread thread;
+        readonly Thread thread;
         volatile int executionState = ST_NOT_STARTED;
         readonly PreciseTimeSpan preciseBreakoutInterval;
         PreciseTimeSpan lastExecutionTime;
@@ -62,10 +62,7 @@ namespace DotNetty.Common.Concurrency
         /// <summary>
         ///     Task Scheduler that will post work to this executor's queue.
         /// </summary>
-        public TaskScheduler Scheduler
-        {
-            get { return this.scheduler; }
-        }
+        public TaskScheduler Scheduler => this.scheduler;
 
         void Loop()
         {
@@ -84,25 +81,13 @@ namespace DotNetty.Common.Concurrency
                 this.scheduler);
         }
 
-        public override bool IsShuttingDown
-        {
-            get { return this.executionState >= ST_SHUTTING_DOWN; }
-        }
+        public override bool IsShuttingDown => this.executionState >= ST_SHUTTING_DOWN;
 
-        public override Task TerminationCompletion
-        {
-            get { return this.terminationCompletionSource.Task; }
-        }
+        public override Task TerminationCompletion => this.terminationCompletionSource.Task;
 
-        public override bool IsShutdown
-        {
-            get { return this.executionState >= ST_SHUTDOWN; }
-        }
+        public override bool IsShutdown => this.executionState >= ST_SHUTDOWN;
 
-        public override bool IsTerminated
-        {
-            get { return this.executionState == ST_TERMINATED; }
-        }
+        public override bool IsTerminated => this.executionState == ST_TERMINATED;
 
         public override bool IsInEventLoop(Thread t)
         {
@@ -256,9 +241,8 @@ namespace DotNetty.Common.Concurrency
             if (success && this.gracefulShutdownStartTime == PreciseTimeSpan.Zero)
             {
                 Logger.Error(
-                    string.Format("Buggy {0} implementation; {1}.ConfirmShutdown() must be called " + "before run() implementation terminates.",
-                        typeof(IEventExecutor).Name,
-                        typeof(SingleThreadEventExecutor).Name));
+                    $"Buggy {typeof(IEventExecutor).Name} implementation; {typeof(SingleThreadEventExecutor).Name}.ConfirmShutdown() must be called "
+                        + "before run() implementation terminates.");
             }
 
             try
@@ -283,7 +267,7 @@ namespace DotNetty.Common.Concurrency
                     Interlocked.Exchange(ref this.executionState, ST_TERMINATED);
                     if (!this.taskQueue.IsEmpty)
                     {
-                        Logger.Warn(string.Format("An event executor terminated with non-empty task queue ({0})", this.taskQueue.Count));
+                        Logger.Warn($"An event executor terminated with non-empty task queue ({this.taskQueue.Count})");
                     }
 
                     //firstRun = true;

@@ -21,10 +21,7 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
             this.throughput.Increment();
             return context.WriteAsync(message);
         }
-        public override bool IsSharable
-        {
-            get { return true; }
-        }
+
+        public override bool IsSharable => true;
     }
 }
-

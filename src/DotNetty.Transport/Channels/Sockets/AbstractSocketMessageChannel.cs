@@ -9,12 +9,12 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Net.Sockets;
 
     /// <summary>
-    /// {@link AbstractNioChannel} base class for {@link Channel}s that operate on messages.
+    ///     {@link AbstractNioChannel} base class for {@link Channel}s that operate on messages.
     /// </summary>
     public abstract class AbstractSocketMessageChannel : AbstractSocketChannel
     {
         /// <summary>
-        /// @see {@link AbstractNioChannel#AbstractNioChannel(Channel, SelectableChannel, int)}
+        ///     @see {@link AbstractNioChannel#AbstractNioChannel(Channel, SelectableChannel, int)}
         /// </summary>
         protected AbstractSocketMessageChannel(IChannel parent, Socket socket)
             : base(parent, socket)
@@ -35,10 +35,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            new AbstractSocketMessageChannel Channel
-            {
-                get { return (AbstractSocketMessageChannel)this.channel; }
-            }
+            new AbstractSocketMessageChannel Channel => (AbstractSocketMessageChannel)this.channel;
 
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
@@ -206,22 +203,18 @@ namespace DotNetty.Transport.Channels.Sockets
         //}
 
         /// <summary>
-        /// Returns {@code true} if we should continue the write loop on a write error.
+        ///     Returns {@code true} if we should continue the write loop on a write error.
         /// </summary>
-        protected virtual bool ContinueOnWriteError
-        {
-            get { return false; }
-        }
+        protected virtual bool ContinueOnWriteError => false;
 
         /// <summary>
-        /// Read messages into the given array and return the amount which was read.
+        ///     Read messages into the given array and return the amount which was read.
         /// </summary>
         protected abstract int DoReadMessages(List<object> buf);
 
         /// <summary>
-        /// Write a message to the underlying {@link java.nio.channels.Channel}.
-        ///
-        /// @return {@code true} if and only if the message has been written
+        ///     Write a message to the underlying {@link java.nio.channels.Channel}.
+        ///     @return {@code true} if and only if the message has been written
         /// </summary>
         protected abstract bool DoWriteMessage(object msg, ChannelOutboundBuffer input);
     }

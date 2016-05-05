@@ -30,10 +30,7 @@ namespace DotNetty.Common.Utilities
         {
         }
 
-        public int Count
-        {
-            get { return this.count; }
-        }
+        public int Count => this.count;
 
         public T Dequeue()
         {
@@ -92,10 +89,9 @@ namespace DotNetty.Common.Utilities
                 this.TrickleDown(index, last);
                 if (this.items[index] == last)
                 {
-                    this.BubbleUp(index, last); 
+                    this.BubbleUp(index, last);
                 }
             }
-
         }
 
         void BubbleUp(int index, T item)

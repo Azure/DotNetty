@@ -89,13 +89,14 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                 .Group(this.ServerGroup, this.WorkerGroup)
                 .Channel<TcpServerSocketChannel>()
                 .ChildOption(ChannelOption.Allocator, this.serverBufferAllocator)
-                .ChildHandler(new ActionChannelInitializer<TcpSocketChannel>(channel => {
+                .ChildHandler(new ActionChannelInitializer<TcpSocketChannel>(channel =>
+                {
                     channel.Pipeline
-                    .AddLast(this.GetEncoder())
-                    .AddLast(this.GetDecoder())
-                    .AddLast(counterHandler)
-                    .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter))
-                    .AddLast(new ReadFinishedHandler(this.signal, WriteCount));
+                        .AddLast(this.GetEncoder())
+                        .AddLast(this.GetDecoder())
+                        .AddLast(counterHandler)
+                        .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter))
+                        .AddLast(new ReadFinishedHandler(this.signal, WriteCount));
                 }));
 
             Bootstrap cb = new Bootstrap()
@@ -103,14 +104,14 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                 .Channel<TcpSocketChannel>()
                 .Option(ChannelOption.Allocator, this.clientBufferAllocator)
                 .Handler(new ActionChannelInitializer<TcpSocketChannel>(
-                channel =>
-                {
-                    channel.Pipeline
-                    .AddLast(this.GetEncoder())
-                    .AddLast(this.GetDecoder())
-                    .AddLast(counterHandler)
-                    .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter));
-                }));
+                    channel =>
+                    {
+                        channel.Pipeline
+                            .AddLast(this.GetEncoder())
+                            .AddLast(this.GetDecoder())
+                            .AddLast(counterHandler)
+                            .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter));
+                    }));
 
             // start server
             this.serverChannel = sb.BindAsync(TEST_ADDRESS).Result;
@@ -153,4 +154,3 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
         }
     }
 }
-

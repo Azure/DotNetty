@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Channels.Groups
         {
             if (exceptions == null)
             {
-                throw new ArgumentNullException("exceptions");
+                throw new ArgumentNullException(nameof(exceptions));
             }
             if (exceptions.Count == 0)
             {
