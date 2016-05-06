@@ -287,7 +287,7 @@ namespace DotNetty.Codecs
             this.failFast = failFast;
         }
 
-        protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
+        protected internal override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
             object decoded = this.Decode(context, input);
             if (decoded != null)
