@@ -46,6 +46,8 @@
     <Compile Include="CodecException.cs" />
     <Compile Include="CorruptedFrameException.cs" />
     <Compile Include="DecoderException.cs" />
+    <Compile Include="DelimiterBasedFrameDecoder.cs" />
+    <Compile Include="Delimiters.cs" />
     <Compile Include="EncoderException.cs" />
     <Compile Include="Json\JsonObjectDecoder.cs" />
     <Compile Include="LengthFieldBasedFrameDecoder.cs" />

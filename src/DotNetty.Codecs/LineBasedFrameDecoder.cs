@@ -66,7 +66,7 @@ namespace DotNetty.Codecs
             this.stripDelimiter = stripDelimiter;
         }
 
-        protected sealed override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
+        protected internal sealed override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
             object decode = this.Decode(context, input);
             if (decode != null)
@@ -80,7 +80,7 @@ namespace DotNetty.Codecs
         /// </summary>
         /// <param name="ctx">the {@link ChannelHandlerContext} which this {@link ByteToMessageDecoder} belongs to</param>
         /// <param name="buffer">the {@link ByteBuf} from which to read data</param>
-        protected object Decode(IChannelHandlerContext ctx, IByteBuffer buffer)
+        protected internal object Decode(IChannelHandlerContext ctx, IByteBuffer buffer)
         {
             int eol = this.FindEndOfLine(buffer);
             if (!this.discarding)

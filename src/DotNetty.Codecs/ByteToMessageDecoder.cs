@@ -137,7 +137,7 @@ namespace DotNetty.Codecs
             }
         }
 
-        protected abstract void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output);
+        protected internal abstract void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output);
 
         static IByteBuffer ExpandCumulation(IByteBufferAllocator allocator, IByteBuffer cumulation, int readable)
         {
