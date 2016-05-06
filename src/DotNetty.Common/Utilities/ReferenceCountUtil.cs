@@ -4,6 +4,7 @@
 namespace DotNetty.Common.Utilities
 {
     using System;
+    using System.Threading;
     using DotNetty.Common.Internal.Logging;
 
     public sealed class ReferenceCountUtil
@@ -135,6 +136,53 @@ namespace DotNetty.Common.Utilities
                     Logger.Warn("Failed to release a message: {} (decrement: {})", msg, decrement, ex);
                 }
             }
+        }
+
+        /// <summary>
+        ///     Schedules the specified object to be released when the caller thread terminates. Note that this operation is
+        ///     intended to simplify reference counting of ephemeral objects during unit tests. Do not use it beyond the
+        ///     intended use case.
+        /// </summary>
+        public static T ReleaseLater<T>(T msg)
+        {
+            return ReleaseLater(msg, 1);
+        }
+
+        /// <summary>
+        ///     Schedules the specified object to be released when the caller thread terminates. Note that this operation is
+        ///     intended to simplify reference counting of ephemeral objects during unit tests. Do not use it beyond the
+        ///     intended use case.
+        /// </summary>
+        public static T ReleaseLater<T>(T msg, int decrement)
+        {
+            var referenceCounted = msg as IReferenceCounted;
+            if (referenceCounted != null)
+            {
+                ThreadDeathWatcher.Watch(Thread.CurrentThread, () =>
+                {
+                    try
+                    {
+                        if (!referenceCounted.Release(decrement))
+                        {
+                            Logger.Warn("Non-zero refCnt: {}", FormatReleaseString(referenceCounted, decrement));
+                        }
+                        else
+                        {
+                            Logger.Debug("Released: {}", FormatReleaseString(referenceCounted, decrement));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn("Failed to release an object: {}", referenceCounted, ex);
+                    }
+                });
+            }
+            return msg;
+        }
+
+        static string FormatReleaseString(IReferenceCounted referenceCounted, int decrement)
+        {
+            return referenceCounted.GetType().Name + ".Release(" + decrement + ") refCnt: " + referenceCounted.ReferenceCount;
         }
     }
 }

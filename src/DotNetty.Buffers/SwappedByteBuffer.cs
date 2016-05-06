@@ -648,6 +648,34 @@ namespace DotNetty.Buffers
             return this.buf.ForEachByteDesc(index, length, processor);
         }
 
+        public override int GetHashCode()
+        {
+            return this.buf.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as IByteBuffer);
+        }
+
+        public bool Equals(IByteBuffer buffer)
+        {
+            if (ReferenceEquals(this, buffer))
+            {
+                return true;
+            }
+            if (buffer != null)
+            {
+                return ByteBufferUtil.Equals(this, buffer);
+            }
+            return false;
+        }
+
+        public int CompareTo(IByteBuffer buffer)
+        {
+            return ByteBufferUtil.Compare(this, buffer);
+        }
+
         public override string ToString()
         {
             return "Swapped(" + this.buf + ")";

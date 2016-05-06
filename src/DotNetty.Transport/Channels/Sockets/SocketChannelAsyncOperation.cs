@@ -22,7 +22,7 @@ namespace DotNetty.Transport.Channels.Sockets
             this.Completed += AbstractSocketChannel.IoCompletedCallback;
             if (setEmptyBuffer)
             {
-                this.SetBuffer(ByteArrayExtensions.Empty, 0, 0);
+                this.SetBuffer(ArrayExtensions.ZeroBytes, 0, 0);
             }
         }
 

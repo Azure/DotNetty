@@ -23,7 +23,7 @@ namespace DotNetty.Buffers
                     leak = AbstractByteBuffer.LeakDetector.Open(buf);
                     if (leak != null)
                     {
-                        buf = new SimpleLeakAwareByteBuf(buf, leak);
+                        buf = new SimpleLeakAwareByteBuffer(buf, leak);
                     }
                     break;
                 case ResourceLeakDetector.DetectionLevel.Advanced:
@@ -31,7 +31,7 @@ namespace DotNetty.Buffers
                     leak = AbstractByteBuffer.LeakDetector.Open(buf);
                     if (leak != null)
                     {
-                        buf = new AdvancedLeakAwareByteBuf(buf, leak);
+                        buf = new AdvancedLeakAwareByteBuffer(buf, leak);
                     }
                     break;
                 case ResourceLeakDetector.DetectionLevel.Disabled:
@@ -71,15 +71,9 @@ namespace DotNetty.Buffers
             return this.NewBuffer(initialCapacity, maxCapacity);
         }
 
-        public CompositeByteBuffer CompositeBuffer()
-        {
-            return this.CompositeBuffer(DefaultMaxComponents);
-        }
+        public CompositeByteBuffer CompositeBuffer() => this.CompositeBuffer(DefaultMaxComponents);
 
-        public CompositeByteBuffer CompositeBuffer(int maxComponents)
-        {
-            return new CompositeByteBuffer(this, maxComponents);
-        }
+        public CompositeByteBuffer CompositeBuffer(int maxComponents) => new CompositeByteBuffer(this, maxComponents);
 
         protected abstract IByteBuffer NewBuffer(int initialCapacity, int maxCapacity);
 

@@ -5,6 +5,7 @@ namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
     using System.Net.Sockets;
+    using System.Threading;
     using DotNetty.Buffers;
 
     /// <summary>
@@ -185,7 +186,18 @@ namespace DotNetty.Transport.Channels.Sockets
         protected override void ScheduleSocketRead()
         {
             SocketChannelAsyncOperation operation = this.ReadOperation;
-            bool pending = this.Socket.ReceiveAsync(operation);
+            bool pending;
+            if (ExecutionContext.IsFlowSuppressed())
+            {
+                pending = this.Socket.ReceiveAsync(operation);
+            }
+            else
+            {
+                using (ExecutionContext.SuppressFlow())
+                {
+                    pending = this.Socket.ReceiveAsync(operation);
+                }
+            }
             if (!pending)
             {
                 // todo: potential allocation / non-static field?
@@ -329,7 +341,20 @@ namespace DotNetty.Transport.Channels.Sockets
                 SocketChannelAsyncOperation operation = this.PrepareWriteOperation(buffer);
 
                 this.SetState(StateFlags.WriteScheduled);
-                bool pending = this.Socket.SendAsync(operation);
+                bool pending;
+
+                if (ExecutionContext.IsFlowSuppressed())
+                {
+                    pending = this.Socket.SendAsync(operation);
+                }
+                else
+                {
+                    using (ExecutionContext.SuppressFlow())
+                    {
+                        pending = this.Socket.SendAsync(operation);
+                    }
+                }
+
                 if (!pending)
                 {
                     ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);

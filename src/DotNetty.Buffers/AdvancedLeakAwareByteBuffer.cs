@@ -11,14 +11,14 @@ namespace DotNetty.Buffers
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
 
-    class AdvancedLeakAwareByteBuf : WrappedByteBuffer
+    class AdvancedLeakAwareByteBuffer : WrappedByteBuffer
     {
         static readonly string PropAcquireAndReleaseOnly = "io.netty.leakDetection.acquireAndReleaseOnly";
         static readonly bool AcquireAndReleaseOnly;
 
-        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AdvancedLeakAwareByteBuf>();
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AdvancedLeakAwareByteBuffer>();
 
-        static AdvancedLeakAwareByteBuf()
+        static AdvancedLeakAwareByteBuffer()
         {
             AcquireAndReleaseOnly = SystemPropertyUtil.GetBoolean(PropAcquireAndReleaseOnly, false);
 
@@ -30,7 +30,7 @@ namespace DotNetty.Buffers
 
         readonly IResourceLeak leak;
 
-        internal AdvancedLeakAwareByteBuf(IByteBuffer buf, IResourceLeak leak)
+        internal AdvancedLeakAwareByteBuffer(IByteBuffer buf, IResourceLeak leak)
             : base(buf)
         {
             this.leak = leak;
@@ -53,32 +53,32 @@ namespace DotNetty.Buffers
             }
             else
             {
-                return new AdvancedLeakAwareByteBuf(base.WithOrder(endianness), this.leak);
+                return new AdvancedLeakAwareByteBuffer(base.WithOrder(endianness), this.leak);
             }
         }
 
         public override IByteBuffer Slice()
         {
             this.RecordLeakNonRefCountingOperation();
-            return new AdvancedLeakAwareByteBuf(base.Slice(), this.leak);
+            return new AdvancedLeakAwareByteBuffer(base.Slice(), this.leak);
         }
 
         public override IByteBuffer Slice(int index, int length)
         {
             this.RecordLeakNonRefCountingOperation();
-            return new AdvancedLeakAwareByteBuf(base.Slice(index, length), this.leak);
+            return new AdvancedLeakAwareByteBuffer(base.Slice(index, length), this.leak);
         }
 
         public override IByteBuffer Duplicate()
         {
             this.RecordLeakNonRefCountingOperation();
-            return new AdvancedLeakAwareByteBuf(base.Duplicate(), this.leak);
+            return new AdvancedLeakAwareByteBuffer(base.Duplicate(), this.leak);
         }
 
         public override IByteBuffer ReadSlice(int length)
         {
             this.RecordLeakNonRefCountingOperation();
-            return new AdvancedLeakAwareByteBuf(base.ReadSlice(length), this.leak);
+            return new AdvancedLeakAwareByteBuffer(base.ReadSlice(length), this.leak);
         }
 
         public override IByteBuffer DiscardReadBytes()

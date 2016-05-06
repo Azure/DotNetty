@@ -5,6 +5,7 @@ namespace DotNetty.Buffers.Tests
 {
     using System;
     using System.Diagnostics.Tracing;
+    using System.Runtime.CompilerServices;
     using DotNetty.Common;
     using DotNetty.Common.Internal.Logging;
     using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
@@ -20,24 +21,36 @@ namespace DotNetty.Buffers.Tests
         [Fact]
         public void UnderReleaseBufferLeak()
         {
-            var eventListener = new ObservableEventListener();
-            Mock<IObserver<EventEntry>> logListener = this.mockRepo.Create<IObserver<EventEntry>>();
-            var eventTextFormatter = new EventTextFormatter();
-            Func<EventEntry, bool> leakPredicate = y => y.TryFormatAsString(eventTextFormatter).Contains("LEAK");
-            logListener.Setup(x => x.OnNext(It.Is<EventEntry>(y => leakPredicate(y)))).Verifiable();
-            logListener.Setup(x => x.OnNext(It.Is<EventEntry>(y => !leakPredicate(y))));
-            eventListener.Subscribe(logListener.Object);
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+            ResourceLeakDetector.DetectionLevel preservedLevel = ResourceLeakDetector.Level;
+            try
+            {
+                ResourceLeakDetector.Level = ResourceLeakDetector.DetectionLevel.Paranoid;
+                var eventListener = new ObservableEventListener();
+                Mock<IObserver<EventEntry>> logListener = this.mockRepo.Create<IObserver<EventEntry>>();
+                var eventTextFormatter = new EventTextFormatter();
+                Func<EventEntry, bool> leakPredicate = y => y.TryFormatAsString(eventTextFormatter).Contains("LEAK");
+                logListener.Setup(x => x.OnNext(It.Is<EventEntry>(y => leakPredicate(y)))).Verifiable();
+                logListener.Setup(x => x.OnNext(It.Is<EventEntry>(y => !leakPredicate(y))));
+                eventListener.Subscribe(logListener.Object);
+                eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
 
-            var bufPool = new PooledByteBufferAllocator(100, 1000);
-            IByteBuffer buffer = bufPool.Buffer(10);
+                this.CreateAndForgetBuffer();
 
-            buffer = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
 
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+                this.mockRepo.Verify();
+            }
+            finally
+            {
+                ResourceLeakDetector.Level = preservedLevel;
+            }
+        }
 
-            this.mockRepo.Verify();
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        void CreateAndForgetBuffer()
+        {
+            IByteBuffer forgotten = PooledByteBufferAllocator.Default.Buffer(10);
         }
 
         [Fact]
@@ -47,10 +60,9 @@ namespace DotNetty.Buffers.Tests
             try
             {
                 ResourceLeakDetector.Level = ResourceLeakDetector.DetectionLevel.Paranoid;
-                var bufPool = new PooledByteBufferAllocator(100, 1000);
-                IByteBuffer buffer = bufPool.Buffer(10);
+                IByteBuffer buffer = PooledByteBufferAllocator.Default.Buffer(10);
                 buffer.Release();
-                buffer = bufPool.Buffer(10);
+                buffer = PooledByteBufferAllocator.Default.Buffer(10);
                 buffer.Release();
             }
             finally

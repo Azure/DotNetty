@@ -19,7 +19,7 @@ namespace DotNetty.Buffers
     ///     /// <see cref="ReaderIndex" /> LESS THAN OR EQUAL TO <see cref="WriterIndex" /> LESS THAN OR EQUAL TO
     ///     <see cref="Capacity" />.
     /// </summary>
-    public interface IByteBuffer : IReferenceCounted
+    public interface IByteBuffer : IReferenceCounted, IComparable<IByteBuffer>, IEquatable<IByteBuffer>
     {
         int Capacity { get; }
 

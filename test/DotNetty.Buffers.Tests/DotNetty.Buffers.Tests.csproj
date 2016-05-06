@@ -81,12 +81,15 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="AbstractPooledByteBufTest.cs" />
     <Compile Include="ByteBufferDerivationTests.cs" />
     <Compile Include="LeakDetectionTest.cs" />
+    <Compile Include="PooledBigEndianHeapByteBufTest.cs" />
     <Compile Include="PortionedMemoryStream.cs" />
     <Compile Include="AbstractByteBufferTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PooledBufferAllocatorTests.cs" />
+    <Compile Include="AbstractByteBufTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -42,14 +42,8 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public sealed override bool Release()
-        {
-            return this.Unwrap().Release();
-        }
+        public sealed override bool Release() => this.Unwrap().Release();
 
-        public sealed override bool Release(int decrement)
-        {
-            return this.Unwrap().Release(decrement);
-        }
+        public sealed override bool Release(int decrement) => this.Unwrap().Release(decrement);
     }
 }
