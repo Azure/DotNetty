@@ -473,7 +473,7 @@ namespace DotNetty.Transport.Channels
             IEventExecutor executor;
             bool inEventLoop;
 
-            lock (this.head)
+            lock (this)
             {
                 CheckMultiplicity(newHandler);
 
@@ -788,7 +788,7 @@ namespace DotNetty.Transport.Channels
                 IEventExecutor executor = ctx.Executor;
                 if (!inEventLoop && !executor.IsInEventLoop(currentThread))
                 {
-                    executor.Unwrap().Execute((self, c) => ((DefaultChannelPipeline)self).DestroyUp((AbstractChannelHandlerContext)c, true), this, ctx);
+                    executor.Execute((self, c) => ((DefaultChannelPipeline)self).DestroyUp((AbstractChannelHandlerContext)c, true), this, ctx);
                     break;
                 }
 
@@ -811,7 +811,7 @@ namespace DotNetty.Transport.Channels
                 IEventExecutor executor = ctx.Executor;
                 if (inEventLoop || executor.IsInEventLoop(currentThread))
                 {
-                    lock (this.head)
+                    lock (this)
                     {
                         Remove0(ctx);
                         this.CallHandlerRemoved0(ctx);
@@ -819,7 +819,7 @@ namespace DotNetty.Transport.Channels
                 }
                 else
                 {
-                    executor.Unwrap().Execute((self, c) => ((DefaultChannelPipeline)self).DestroyDown(Thread.CurrentThread, (AbstractChannelHandlerContext)c, true), this, ctx);
+                    executor.Execute((self, c) => ((DefaultChannelPipeline)self).DestroyDown(Thread.CurrentThread, (AbstractChannelHandlerContext)c, true), this, ctx);
                     break;
                 }
 

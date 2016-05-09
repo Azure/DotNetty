@@ -38,8 +38,7 @@ namespace DotNetty.Common.Concurrency
         ///     Returns <c>true</c> if all tasks have completed following shut down.
         /// </summary>
         /// <remarks>
-        ///     Note that <see cref="IsTerminated" /> is never <c>true</c> unless either <see cref="ShutdownGracefullyAsync()" />
-        ///     or <see cref="ShutdownNow()" /> was called first.
+        ///     Note that <see cref="IsTerminated" /> is never <c>true</c> unless <see cref="ShutdownGracefullyAsync()" /> was called first.
         /// </remarks>
         bool IsTerminated { get; }
 
@@ -48,33 +47,6 @@ namespace DotNetty.Common.Concurrency
         ///     <c>false></c> otherwise.
         /// </summary>
         bool IsInEventLoop(Thread thread);
-
-        /// <summary>
-        ///     Returns an <see cref="IEventExecutor" /> that is not an <see cref="IWrappedEventExecutor" />.
-        /// </summary>
-        /// <remarks>
-        ///     <list type="bullet">
-        ///         <item>
-        ///             <description>
-        ///                 A <see cref="IWrappedEventExecutor" /> implementing this method must return the underlying
-        ///                 <see cref="IEventExecutor" /> while making sure that it's not a <see cref="IWrappedEventExecutor" />
-        ///                 (e.g. by multiple calls to <see cref="Unwrap()" />).
-        ///             </description>
-        ///         </item>
-        ///         <item>
-        ///             <description>
-        ///                 An <see cref="IEventExecutor" /> that is not a <see cref="IWrappedEventExecutor" /> must return a
-        ///                 reference to itself.
-        ///             </description>
-        ///         </item>
-        ///         <item>
-        ///             <description>
-        ///                 This method must not return null.
-        ///             </description>
-        ///         </item>
-        ///     </list>
-        /// </remarks>
-        IEventExecutor Unwrap();
 
         /// <summary>
         ///     Executes the given task.
@@ -107,6 +79,14 @@ namespace DotNetty.Common.Concurrency
         ///     <para>Threading specifics are determined by <c>IEventExecutor</c> implementation.</para>
         /// </remarks>
         void Execute(Action<object, object> action, object context, object state);
+
+        /// <summary>
+        ///     Creates and executes a one-shot action that becomes enabled after the given delay.
+        /// </summary>
+        /// <param name="action">the task to execute</param>
+        /// <param name="delay">the time from now to delay execution</param>
+        /// <returns>an <see cref="IScheduledTask" /> representing pending completion of the task.</returns>
+        IScheduledTask Schedule(IRunnable action, TimeSpan delay);
 
         /// <summary>
         ///     Schedules the given action for execution after the specified delay would pass.

@@ -154,6 +154,7 @@
     <Compile Include="Concurrency\ICallable`T.cs" />
     <Compile Include="Concurrency\IScheduledRunnable.cs" />
     <Compile Include="Concurrency\IScheduledTask.cs" />
+    <Compile Include="Concurrency\RunnableScheduledTask.cs" />
     <Compile Include="Concurrency\ScheduledAsyncTask.cs" />
     <Compile Include="Concurrency\ScheduledTask.cs" />
     <Compile Include="Concurrency\StateActionScheduledAsyncTask.cs" />
@@ -175,7 +176,6 @@
     <Compile Include="Concurrency\ExecutorTaskScheduler.cs" />
     <Compile Include="Concurrency\IEventExecutor.cs" />
     <Compile Include="Concurrency\IRunnable.cs" />
-    <Compile Include="Concurrency\IWrappedEventExecutor.cs" />
     <Compile Include="Concurrency\SingleThreadEventExecutor.cs" />
     <Compile Include="Concurrency\TaskCompletionSource.cs" />
     <Compile Include="Internal\Logging\AbstractInternalLogger.cs" />
