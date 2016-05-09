@@ -167,13 +167,13 @@
     <Compile Include="Internal\IQueue.cs" />
     <Compile Include="Internal\ConcurrentCircularArrayQueue.cs" />
     <Compile Include="Internal\MpscArrayQueue.cs" />
+    <Compile Include="Internal\OneTimeTask.cs" />
     <Compile Include="Internal\PlatformDependent.cs" />
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="Concurrency\AbstractEventExecutor.cs" />
     <Compile Include="Concurrency\AbstractScheduledEventExecutor.cs" />
     <Compile Include="Concurrency\ExecutorTaskScheduler.cs" />
     <Compile Include="Concurrency\IEventExecutor.cs" />
-    <Compile Include="Concurrency\IPausableEventExecutor.cs" />
     <Compile Include="Concurrency\IRunnable.cs" />
     <Compile Include="Concurrency\IWrappedEventExecutor.cs" />
     <Compile Include="Concurrency\SingleThreadEventExecutor.cs" />

@@ -31,7 +31,7 @@ namespace DotNetty.Common.Concurrency
         volatile int executionState = ST_NOT_STARTED;
         readonly PreciseTimeSpan preciseBreakoutInterval;
         PreciseTimeSpan lastExecutionTime;
-        readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim();
+        readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
         readonly TaskScheduler scheduler;
         readonly TaskCompletionSource terminationCompletionSource;
         PreciseTimeSpan gracefulShutdownStartTime;

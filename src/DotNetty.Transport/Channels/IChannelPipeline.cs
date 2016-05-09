@@ -450,10 +450,10 @@ namespace DotNetty.Transport.Channels
         IChannelHandlerContext Context<T>() where T : class, IChannelHandler;
 
         /// <summary>
-        ///     Returns the {@link Channel} that this pipeline is attached to.
-        ///     @return the channel. {@code null} if this pipeline is not attached yet.
+        ///     Returns the <see cref="IChannel"/> that this pipeline is attached to.
         /// </summary>
-        IChannel Channel();
+        /// <returns>the channel. <c>null</c> if this pipeline is not attached yet.</returns>
+        IChannel Channel { get; }
 
         /// <summary>
         ///     A {@link Channel} is active now, which means it is connected.

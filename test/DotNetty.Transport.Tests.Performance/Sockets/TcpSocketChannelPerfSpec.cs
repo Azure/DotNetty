@@ -137,7 +137,10 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                 }
             }
             this.clientChannel.Flush();
-            this.ResetEvent.Wait(this.Timeout);
+            if (!this.ResetEvent.Wait(this.Timeout))
+            {
+                Console.WriteLine("*** TIMED OUT ***");
+            }
         }
 
         [PerfCleanup]

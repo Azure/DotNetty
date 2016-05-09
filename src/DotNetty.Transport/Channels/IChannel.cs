@@ -3,11 +3,12 @@
 
 namespace DotNetty.Transport.Channels
 {
+    using System;
     using System.Net;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
 
-    public interface IChannel
+    public interface IChannel : IComparable<IChannel>
     {
         IChannelId Id { get; }
 

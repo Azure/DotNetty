@@ -3,6 +3,7 @@
 
 namespace DotNetty.Transport.Tests.Performance.Utilities
 {
+    using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
     public class ReadFinishedHandler : ChannelHandlerAdapter
@@ -19,11 +20,11 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
+            ReferenceCountUtil.Release(message);
             if (++this.actualReads == this.expectedReads)
             {
                 this.signal.Signal();
             }
-            context.FireChannelRead(message);
         }
     }
 }

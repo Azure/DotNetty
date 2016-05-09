@@ -11,7 +11,5 @@ namespace DotNetty.Transport.Channels
         IChannelHandlerInvoker Invoker { get; }
 
         Task RegisterAsync(IChannel channel);
-
-        IEventLoop Unwrap();
     }
 }
