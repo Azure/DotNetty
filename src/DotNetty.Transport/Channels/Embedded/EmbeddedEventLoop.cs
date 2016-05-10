@@ -40,11 +40,6 @@ namespace DotNetty.Transport.Channels.Embedded
             return true;
         }
 
-        IEventExecutor IEventExecutor.Unwrap()
-        {
-            return this.Unwrap();
-        }
-
         public override void Execute(IRunnable command)
         {
             if (command == null)
