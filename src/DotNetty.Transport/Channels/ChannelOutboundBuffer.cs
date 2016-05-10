@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Threading;
     using DotNetty.Buffers;
@@ -18,7 +19,7 @@ namespace DotNetty.Transport.Channels
 
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ChannelOutboundBuffer>();
 
-        //static readonly ThreadLocal<IByteBuffer[]> NIO_BUFFERS = new ThreadLocal<IByteBuffer[]>(() => new IByteBuffer[1024]);
+        static readonly ThreadLocalByteBufferList NioBuffers = new ThreadLocalByteBufferList();
 
         readonly IChannel channel;
 
@@ -34,7 +35,6 @@ namespace DotNetty.Transport.Channels
         int flushed;
 
         //int nioBufferCount;
-        //long nioBufferSize;
 
         bool inFail;
 
@@ -53,7 +53,7 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         public void AddMessage(object msg, int size, TaskCompletionSource promise)
         {
-            Entry entry = Entry.NewInstance(msg, size, Total(msg), promise);
+            Entry entry = Entry.NewInstance(msg, size, promise);
             if (this.tailEntry == null)
             {
                 this.flushedEntry = null;
@@ -115,10 +115,7 @@ namespace DotNetty.Transport.Channels
         ///     Increment the pending bytes which will be written at some point.
         ///     This method is thread-safe!
         /// </summary>
-        internal void IncrementPendingOutboundBytes(long size)
-        {
-            this.IncrementPendingOutboundBytes(size, true);
-        }
+        internal void IncrementPendingOutboundBytes(long size) => this.IncrementPendingOutboundBytes(size, true);
 
         void IncrementPendingOutboundBytes(long size, bool invokeLater)
         {
@@ -138,10 +135,7 @@ namespace DotNetty.Transport.Channels
         ///     Decrement the pending bytes which will be written at some point.
         ///     This method is thread-safe!
         /// </summary>
-        internal void DecrementPendingOutboundBytes(long size)
-        {
-            this.DecrementPendingOutboundBytes(size, true, true);
-        }
+        internal void DecrementPendingOutboundBytes(long size) => this.DecrementPendingOutboundBytes(size, true, true);
 
         void DecrementPendingOutboundBytes(long size, bool invokeLater, bool notifyWritability)
         {
@@ -158,41 +152,10 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        static long Total(object msg)
-        {
-            if (msg is IByteBuffer)
-            {
-                return ((IByteBuffer)msg).ReadableBytes;
-            }
-            // todo: FileRegion support
-            //if (msg is FileRegion)
-            //{
-            //    return ((FileRegion)msg).count();
-            //}
-            // todo: IByteBufferHolder support
-            //if (msg is IByteBufferHolder)
-            //{
-            //    return ((ByteBufHolder)msg).content().readableBytes();
-            //}
-            return -1;
-        }
-
         /// <summary>
         ///     Return the current message to write or {@code null} if nothing was flushed before and so is ready to be written.
         /// </summary>
-        public object Current
-        {
-            get
-            {
-                Entry entry = this.flushedEntry;
-                if (entry == null)
-                {
-                    return null;
-                }
-
-                return entry.Message;
-            }
-        }
+        public object Current => this.flushedEntry?.Message;
 
         /// <summary>
         ///     Notify the {@link ChannelPromise} of the current message about writing progress.
@@ -221,6 +184,7 @@ namespace DotNetty.Transport.Channels
             Entry e = this.flushedEntry;
             if (e == null)
             {
+                this.ClearNioBuffers();
                 return false;
             }
             object msg = e.Message;
@@ -249,16 +213,14 @@ namespace DotNetty.Transport.Channels
         ///     and return {@code true}. If no   flushed message exists at the time this method is called it will return
         ///     {@code false} to signal that no more messages are ready to be handled.
         /// </summary>
-        public bool Remove(Exception cause)
-        {
-            return this.Remove0(cause, true);
-        }
+        public bool Remove(Exception cause) => this.Remove0(cause, true);
 
         bool Remove0(Exception cause, bool notifyWritability)
         {
             Entry e = this.flushedEntry;
             if (e == null)
             {
+                this.ClearNioBuffers();
                 return false;
             }
             object msg = e.Message;
@@ -311,7 +273,7 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         public void RemoveBytes(long writtenBytes)
         {
-            for (;;)
+            while (true)
             {
                 object msg = this.Current;
                 if (!(msg is IByteBuffer))
@@ -344,11 +306,104 @@ namespace DotNetty.Transport.Channels
                     break;
                 }
             }
+            this.ClearNioBuffers();
         }
+
+        // Clear all ByteBuffer from the array so these can be GC'ed.
+        // See https://github.com/netty/netty/issues/3837
+        void ClearNioBuffers() => NioBuffers.Value.Clear();
+        
+        ///
+        ///Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
+        ///{@link #nioBufferCount()} and {@link #nioBufferSize()} will return the number of NIO buffers in the returned
+        ///array and the total number of readable bytes of the NIO buffers respectively.
+        ///<p>
+        ///Note that the returned array is reused and thus should not escape
+        ///{@link AbstractChannel#doWrite(ChannelOutboundBuffer)}.
+        ///Refer to {@link NioSocketChannel#doWrite(ChannelOutboundBuffer)} for an example.
+        ///</p>
+        ///
+        public List<ArraySegment<byte>> GetNioBuffers()
+        {
+            long nioBufferSize = 0;
+            int nioBufferCount = 0;
+            InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
+            List<ArraySegment<byte>> nioBuffers = NioBuffers.Get(threadLocalMap);
+            Entry entry = this.flushedEntry;
+            while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer) {
+                if (!entry.Cancelled)
+                {
+                    var buf = (IByteBuffer)entry.Message;
+                    int readerIndex = buf.ReaderIndex;
+                    int readableBytes = buf.WriterIndex - readerIndex;
+
+                    if (readableBytes > 0)
+                    {
+                        if (int.MaxValue - readableBytes < nioBufferSize)
+                        {
+                            // If the nioBufferSize + readableBytes will overflow an Integer we stop populate the
+                            // ByteBuffer array. This is done as bsd/osx don't allow to write more bytes then
+                            // Integer.MAX_VALUE with one writev(...) call and so will return 'EINVAL', which will
+                            // raise an IOException. On Linux it may work depending on the
+                            // architecture and kernel but to be safe we also enforce the limit here.
+                            // This said writing more the Integer.MAX_VALUE is not a good idea anyway.
+                            //
+                            // See also:
+                            // - https://www.freebsd.org/cgi/man.cgi?query=write&sektion=2
+                            // - http://linux.die.net/man/2/writev
+                            break;
+                        }
+                        nioBufferSize += readableBytes;
+                        int count = entry.Count;
+                        if (count == -1)
+                        {
+                            //noinspection ConstantValueVariableUse
+                            entry.Count = count = buf.IoBufferCount;
+                        }
+                        if (count == 1)
+                        {
+                            ArraySegment<byte> nioBuf = entry.Buffer;
+                            if (nioBuf.Array == null)
+                            {
+                                // cache ByteBuffer as it may need to create a new ByteBuffer instance if its a
+                                // derived buffer
+                                entry.Buffer = nioBuf = buf.GetIoBuffer(readerIndex, readableBytes);
+                            }
+                            nioBuffers.Add(nioBuf);
+                        }
+                        else
+                        {
+                            ArraySegment<byte>[] nioBufs = entry.Buffers;
+                            if (nioBufs == null)
+                            {
+                                // cached ByteBuffers as they may be expensive to create in terms
+                                // of Object allocation
+                                entry.Buffers = nioBufs = buf.GetIoBuffers();
+                            }
+                            foreach (ArraySegment<byte> b in nioBufs)
+                            {
+                                nioBuffers.Add(b);
+                            }
+                        }
+                    }
+                }
+                entry = entry.Next;
+            }
+            this.NioBufferSize = nioBufferSize;
+
+            return nioBuffers;
+        }
+
+        /**
+         * Returns the number of bytes that can be written out of the {@link ByteBuffer} array that was
+         * obtained via {@link #nioBuffers()}. This method <strong>MUST</strong> be called after {@link #nioBuffers()}
+         * was called.
+         */
+        public long NioBufferSize { get; private set; }
 
         /// <summary>
         ///     Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
-        ///     {@link #NioBufferCount} and {@link #NioBufferSize} will return the number of NIO buffers in the returned
+        ///     {@link #IoBufferCount} and {@link #NioBufferSize} will return the number of NIO buffers in the returned
         ///     array and the total number of readable bytes of the NIO buffers respectively.
         ///     <p>
         ///         Note that the returned array is reused and thus should not escape
@@ -368,10 +423,7 @@ namespace DotNetty.Transport.Channels
         ///     Returns {@code true} if and only if the user-defined writability flag at the specified index is set to
         ///     {@code true}.
         /// </summary>
-        public bool GetUserDefinedWritability(int index)
-        {
-            return (this.unwritable & WritabilityMask(index)) == 0;
-        }
+        public bool GetUserDefinedWritability(int index) => (this.unwritable & WritabilityMask(index)) == 0;
 
         /// <summary>
         ///     Sets a user-defined writability flag at the specified index.
@@ -568,22 +620,17 @@ namespace DotNetty.Transport.Channels
             {
                 this.inFail = false;
             }
+            this.ClearNioBuffers();
         }
 
-        public long TotalPendingWriteBytes()
-        {
-            return Thread.VolatileRead(ref this.totalPendingSize);
-        }
+        public long TotalPendingWriteBytes() => Thread.VolatileRead(ref this.totalPendingSize);
 
         /// <summary>
         ///     Call {@link IMessageProcessor#processMessage(Object)} for each flushed message
         ///     in this {@link ChannelOutboundBuffer} until {@link IMessageProcessor#processMessage(Object)}
         ///     returns {@code false} or there are no more flushed messages to process.
         /// </summary>
-        bool IsFlushedEntry(Entry e)
-        {
-            return e != null && e != this.unflushedEntry;
-        }
+        bool IsFlushedEntry(Entry e) => e != null && e != this.unflushedEntry;
 
         sealed class Entry
         {
@@ -592,11 +639,9 @@ namespace DotNetty.Transport.Channels
             readonly ThreadLocalPool.Handle handle;
             public Entry Next;
             public object Message;
-            public IByteBuffer[] Buffers;
-            public IByteBuffer Buffer;
+            public ArraySegment<byte>[] Buffers;
+            public ArraySegment<byte> Buffer;
             public TaskCompletionSource Promise;
-            public long Progress;
-            public long Total;
             public int PendingSize;
             public int Count = -1;
             public bool Cancelled;
@@ -606,12 +651,11 @@ namespace DotNetty.Transport.Channels
                 this.handle = handle;
             }
 
-            public static Entry NewInstance(object msg, int size, long total, TaskCompletionSource promise)
+            public static Entry NewInstance(object msg, int size, TaskCompletionSource promise)
             {
                 Entry entry = Pool.Take();
                 entry.Message = msg;
                 entry.PendingSize = size;
-                entry.Total = total;
                 entry.Promise = promise;
                 return entry;
             }
@@ -628,10 +672,8 @@ namespace DotNetty.Transport.Channels
                     this.Message = Unpooled.Empty;
 
                     this.PendingSize = 0;
-                    this.Total = 0;
-                    this.Progress = 0;
                     this.Buffers = null;
-                    this.Buffer = null;
+                    this.Buffer = new ArraySegment<byte>();
                     return pSize;
                 }
                 return 0;
@@ -641,11 +683,9 @@ namespace DotNetty.Transport.Channels
             {
                 this.Next = null;
                 this.Buffers = null;
-                this.Buffer = null;
+                this.Buffer = new ArraySegment<byte>();
                 this.Message = null;
                 this.Promise = null;
-                this.Progress = 0;
-                this.Total = 0;
                 this.PendingSize = 0;
                 this.Count = -1;
                 this.Cancelled = false;
@@ -658,6 +698,11 @@ namespace DotNetty.Transport.Channels
                 this.Recycle();
                 return next;
             }
+        }
+
+        sealed class ThreadLocalByteBufferList : FastThreadLocal<List<ArraySegment<byte>>>
+        {
+            protected override List<ArraySegment<byte>> GetInitialValue() => new List<ArraySegment<byte>>(1024);
         }
     }
 }

@@ -59,6 +59,20 @@ namespace DotNetty.Buffers
             throw new NotSupportedException("sliced buffer");
         }
 
+        public override int IoBufferCount => this.Unwrap().IoBufferCount;
+
+        public override ArraySegment<byte> GetIoBuffer(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            return this.Unwrap().GetIoBuffer(index + this.adjustment, length);
+        }
+
+        public override ArraySegment<byte>[] GetIoBuffers(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            return this.Unwrap().GetIoBuffers(index + this.adjustment, length);
+        }
+
         public override bool HasArray => this.buffer.HasArray;
 
         public override byte[] Array => this.buffer.Array;

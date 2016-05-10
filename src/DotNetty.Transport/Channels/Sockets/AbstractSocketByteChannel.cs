@@ -32,10 +32,7 @@ namespace DotNetty.Transport.Channels.Sockets
         {
         }
 
-        protected override IChannelUnsafe NewUnsafe()
-        {
-            return new SocketByteChannelUnsafe(this);
-        }
+        protected override IChannelUnsafe NewUnsafe() => new SocketByteChannelUnsafe(this);
 
         protected class SocketByteChannelUnsafe : AbstractSocketUnsafe
         {
@@ -88,13 +85,6 @@ namespace DotNetty.Transport.Channels.Sockets
                 AbstractSocketByteChannel ch = this.Channel;
                 ch.ResetState(StateFlags.ReadScheduled);
                 IChannelConfiguration config = ch.Configuration;
-                if (!config.AutoRead && !ch.ReadPending)
-                {
-                    // ChannelConfig.setAutoRead(false) was called in the meantime
-                    //removeReadOp(); -- noop with IOCP, just don't schedule receive again
-                    return;
-                }
-
                 IChannelPipeline pipeline = ch.Pipeline;
                 IByteBufferAllocator allocator = config.Allocator;
                 int maxMessagesPerRead = config.MaxMessagesPerRead;
@@ -175,7 +165,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     // /// The user called Channel.read() or ChannelHandlerContext.read() input channelReadComplete(...) method
                     //
                     // See https://github.com/netty/netty/issues/2254
-                    if (!close && (config.AutoRead || ch.ReadPending))
+                    if (!close && (ch.ReadPending || config.AutoRead))
                     {
                         ch.DoBeginRead();
                     }
@@ -205,10 +195,7 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        static void OnReadCompletedSync(object u, object e)
-        {
-            ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)e);
-        }
+        static void OnReadCompletedSync(object u, object e) => ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)e);
 
         protected override void DoWrite(ChannelOutboundBuffer input)
         {
@@ -265,7 +252,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     else
                     {
-                        this.IncompleteWrite(scheduleAsync, buf);
+                        this.IncompleteWrite(scheduleAsync, this.PrepareWriteOperation(buf.GetIoBuffer()));
                         break;
                     }
                 } /*else if (msg is FileRegion) { todo: FileRegion support
@@ -333,13 +320,11 @@ namespace DotNetty.Transport.Channels.Sockets
                 "unsupported message type: " + msg.GetType().Name + ExpectedTypes);
         }
 
-        protected void IncompleteWrite(bool scheduleAsync, IByteBuffer buffer)
+        protected void IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
         {
             // Did not write completely.
             if (scheduleAsync)
             {
-                SocketChannelAsyncOperation operation = this.PrepareWriteOperation(buffer);
-
                 this.SetState(StateFlags.WriteScheduled);
                 bool pending;
 

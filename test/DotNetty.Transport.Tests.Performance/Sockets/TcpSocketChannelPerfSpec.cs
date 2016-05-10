@@ -4,12 +4,16 @@
 namespace DotNetty.Transport.Tests.Performance.Sockets
 {
     using System;
+    using System.IO;
     using System.Net;
+    using System.Reflection;
+    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
+    using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
@@ -69,6 +73,8 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
         [PerfSetup]
         public void SetUp(BenchmarkContext context)
         {
+            TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine(args.Exception);
+
             this.ClientGroup = new MultithreadEventLoopGroup(1);
             this.ServerGroup = new MultithreadEventLoopGroup(1);
             this.WorkerGroup = new MultithreadEventLoopGroup();
@@ -85,6 +91,17 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.serverBufferAllocator = new PooledByteBufferAllocator();
             this.clientBufferAllocator = new PooledByteBufferAllocator();
 
+            Assembly assembly = typeof(TcpChannelPerfSpecs).Assembly;
+            byte[] certificateData;
+            using (Stream sourceStream = assembly.GetManifestResourceStream(assembly.GetManifestResourceNames()[0]))
+            using (var tempStream = new MemoryStream())
+            {
+                sourceStream.CopyTo(tempStream);
+                certificateData = tempStream.ToArray();
+            }
+            var tlsCertificate = new X509Certificate2(certificateData, "password");
+            string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
+
             ServerBootstrap sb = new ServerBootstrap()
                 .Group(this.ServerGroup, this.WorkerGroup)
                 .Channel<TcpServerSocketChannel>()
@@ -92,6 +109,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                 .ChildHandler(new ActionChannelInitializer<TcpSocketChannel>(channel =>
                 {
                     channel.Pipeline
+                        //.AddLast(TlsHandler.Server(tlsCertificate))
                         .AddLast(this.GetEncoder())
                         .AddLast(this.GetDecoder())
                         .AddLast(counterHandler)
@@ -107,6 +125,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                     channel =>
                     {
                         channel.Pipeline
+                            //.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true))
                             .AddLast(this.GetEncoder())
                             .AddLast(this.GetDecoder())
                             .AddLast(counterHandler)

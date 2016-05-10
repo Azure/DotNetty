@@ -561,14 +561,21 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public int IoBufferCount => this.buf.IoBufferCount;
+
+        public ArraySegment<byte> GetIoBuffer() => this.buf.GetIoBuffer();
+
+        public ArraySegment<byte> GetIoBuffer(int index, int length) => this.buf.GetIoBuffer(index, length);
+
+        public ArraySegment<byte>[] GetIoBuffers() => this.buf.GetIoBuffers();
+
+        public ArraySegment<byte>[] GetIoBuffers(int index, int length) => this.buf.GetIoBuffers(index, length);
+
         public bool HasArray => this.buf.HasArray;
 
         public byte[] Array => this.buf.Array;
 
-        public byte[] ToArray()
-        {
-            return this.buf.ToArray().Reverse().ToArray();
-        }
+        public byte[] ToArray() => this.buf.ToArray();
 
         public IByteBuffer Duplicate()
         {

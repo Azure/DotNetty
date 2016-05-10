@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels.Sockets
@@ -9,12 +9,12 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Net.Sockets;
 
     /// <summary>
-    ///     {@link AbstractNioChannel} base class for {@link Channel}s that operate on messages.
+    /// {@link AbstractNioChannel} base class for {@link Channel}s that operate on messages.
     /// </summary>
     public abstract class AbstractSocketMessageChannel : AbstractSocketChannel
     {
         /// <summary>
-        ///     @see {@link AbstractNioChannel#AbstractNioChannel(Channel, SelectableChannel, int)}
+        /// @see {@link AbstractNioChannel#AbstractNioChannel(Channel, SelectableChannel, int)}
         /// </summary>
         protected AbstractSocketMessageChannel(IChannel parent, Socket socket)
             : base(parent, socket)
@@ -35,7 +35,10 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            new AbstractSocketMessageChannel Channel => (AbstractSocketMessageChannel)this.channel;
+            new AbstractSocketMessageChannel Channel
+            {
+                get { return (AbstractSocketMessageChannel)this.channel; }
+            }
 
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
@@ -43,7 +46,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 AbstractSocketMessageChannel ch = this.Channel;
                 ch.ResetState(StateFlags.ReadScheduled);
                 IChannelConfiguration config = ch.Configuration;
-                if (!config.AutoRead && !ch.ReadPending)
+                if (!ch.ReadPending && !config.AutoRead)
                 {
                     // ChannelConfig.setAutoRead(false) was called in the meantime
                     //removeReadOp(); -- noop with IOCP, just don't schedule receive again
@@ -126,7 +129,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     // /// The user called Channel.read() or ChannelHandlerContext.read() in channelReadComplete(...) method
                     //
                     // See https://github.com/netty/netty/issues/2254
-                    if (!closed && (config.AutoRead || ch.ReadPending))
+                    if (!closed && (ch.ReadPending || config.AutoRead))
                     {
                         ch.DoBeginRead();
                     }
@@ -203,18 +206,22 @@ namespace DotNetty.Transport.Channels.Sockets
         //}
 
         /// <summary>
-        ///     Returns {@code true} if we should continue the write loop on a write error.
+        /// Returns {@code true} if we should continue the write loop on a write error.
         /// </summary>
-        protected virtual bool ContinueOnWriteError => false;
+        protected virtual bool ContinueOnWriteError
+        {
+            get { return false; }
+        }
 
         /// <summary>
-        ///     Read messages into the given array and return the amount which was read.
+        /// Read messages into the given array and return the amount which was read.
         /// </summary>
         protected abstract int DoReadMessages(List<object> buf);
 
         /// <summary>
-        ///     Write a message to the underlying {@link java.nio.channels.Channel}.
-        ///     @return {@code true} if and only if the message has been written
+        /// Write a message to the underlying {@link java.nio.channels.Channel}.
+        ///
+        /// @return {@code true} if and only if the message has been written
         /// </summary>
         protected abstract bool DoWriteMessage(object msg, ChannelOutboundBuffer input);
     }

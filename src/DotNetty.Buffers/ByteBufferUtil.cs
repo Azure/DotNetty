@@ -542,7 +542,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///     Encode the given <see cref="CharBuffer" /> using the given <see cref="Encoding" /> into a new
+        ///     Encode the given <see cref="string" /> using the given <see cref="Encoding" /> into a new
         ///     <see cref="IByteBuffer" /> which
         ///     is allocated via the <see cref="IByteBufferAllocator" />.
         /// </summary>
@@ -552,7 +552,7 @@ namespace DotNetty.Buffers
         public static IByteBuffer EncodeString(IByteBufferAllocator alloc, string src, Encoding encoding) => EncodeString0(alloc, src, encoding, 0);
 
         /// <summary>
-        ///     Encode the given <see cref="CharBuffer" /> using the given <see cref="Encoding" /> into a new
+        ///     Encode the given <see cref="string" /> using the given <see cref="Encoding" /> into a new
         ///     <see cref="IByteBuffer" /> which
         ///     is allocated via the <see cref="IByteBufferAllocator" />.
         /// </summary>
@@ -572,8 +572,8 @@ namespace DotNetty.Buffers
 
             try
             {
-                encoding.GetBytes(src, 0, src.Length, dst.Array, dst.ArrayOffset);
-                dst.SetWriterIndex(length);
+                int written = encoding.GetBytes(src, 0, src.Length, dst.Array, dst.ArrayOffset + dst.WriterIndex);
+                dst.SetWriterIndex(dst.WriterIndex + written);
                 release = false;
 
                 return dst;

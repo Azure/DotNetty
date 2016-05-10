@@ -4,11 +4,11 @@
 namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
-    using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
@@ -36,7 +36,7 @@ namespace DotNetty.Transport.Channels.Sockets
         SocketChannelAsyncOperation readOperation;
         SocketChannelAsyncOperation writeOperation;
         volatile bool inputShutdown;
-        volatile bool readPending;
+        internal bool ReadPending;
         volatile StateFlags state;
 
         TaskCompletionSource connectPromise;
@@ -74,11 +74,33 @@ namespace DotNetty.Transport.Channels.Sockets
 
         public override bool Active => this.IsInState(StateFlags.Active);
 
-        protected bool ReadPending
+        /// <summary>
+        ///     Set read pending to <c>false</c>.
+        /// </summary>
+        protected internal void ClearReadPending()
         {
-            get { return this.readPending; }
-            set { this.readPending = value; }
+            if (this.Registered)
+            {
+                IEventLoop eventLoop = this.EventLoop;
+                if (eventLoop.InEventLoop)
+                {
+                    this.ClearReadPending0();
+                }
+                else
+                {
+                    eventLoop.Execute(channel => ((AbstractSocketChannel)channel).ClearReadPending0(), this);
+                }
+            }
+            else
+            {
+                // Best effort if we are not registered yet clear ReadPending. This happens during channel initialization.
+                // NB: We only set the boolean field instead of calling ClearReadPending0(), because the SelectionKey is
+                // not set yet so it would produce an assertion failure.
+                this.ReadPending = false;
+            }
         }
+
+        void ClearReadPending0() => this.ReadPending = false;
 
         protected bool InputShutdown => this.inputShutdown;
 
@@ -110,22 +132,36 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected SocketChannelAsyncOperation ReadOperation => this.readOperation ?? (this.readOperation = new SocketChannelAsyncOperation(this, true));
 
-        protected SocketChannelAsyncOperation PrepareWriteOperation(IByteBuffer buffer)
+        SocketChannelAsyncOperation WriteOperation => this.writeOperation ?? (this.writeOperation = new SocketChannelAsyncOperation(this, false));
+
+        protected SocketChannelAsyncOperation PrepareWriteOperation(ArraySegment<byte> buffer)
         {
-            SocketChannelAsyncOperation operation = this.writeOperation ?? (this.writeOperation = new SocketChannelAsyncOperation(this, false));
-            if (!buffer.HasArray)
-            {
-                throw new NotImplementedException("IByteBuffer implementations not backed by array are currently not supported.");
-            }
-            operation.SetBuffer(buffer.Array, buffer.ArrayOffset + buffer.WriterIndex, buffer.WritableBytes);
+            SocketChannelAsyncOperation operation = this.WriteOperation;
+            operation.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
+            return operation;
+        }
+
+        protected SocketChannelAsyncOperation PrepareWriteOperation(IList<ArraySegment<byte>> buffers)
+        {
+            SocketChannelAsyncOperation operation = this.WriteOperation;
+            operation.BufferList = buffers;
             return operation;
         }
 
         protected void ResetWriteOperation()
         {
             SocketChannelAsyncOperation operation = this.writeOperation;
-            Contract.Requires(operation != null);
-            operation.SetBuffer(null, 0, 0);
+
+            Contract.Assert(operation != null);
+
+            if (operation.BufferList == null)
+            {
+                operation.SetBuffer(null, 0, 0);
+            }
+            else
+            {
+                operation.BufferList = null;
+            }
         }
 
         /// <remarks>PORT NOTE: matches behavior of NioEventLoop.processSelectedKey</remarks>
@@ -364,6 +400,10 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public void FinishWrite(SocketChannelAsyncOperation operation)
             {
+                bool resetWritePending = this.Channel.ResetState(StateFlags.WriteScheduled);
+
+                Contract.Assert(resetWritePending);
+
                 ChannelOutboundBuffer input = this.OutboundBuffer;
                 try
                 {
@@ -372,13 +412,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     this.Channel.ResetWriteOperation();
                     if (sent > 0)
                     {
-                        object msg = input.Current;
-                        var buffer = msg as IByteBuffer;
-                        if (buffer != null)
-                        {
-                            buffer.SetWriterIndex(buffer.WriterIndex + sent);
-                        }
-                        // todo: FileRegion support
+                        input.RemoveBytes(sent);
                     }
                 }
                 catch (Exception ex)
@@ -387,8 +421,8 @@ namespace DotNetty.Transport.Channels.Sockets
                     throw;
                 }
 
-                // directly call super.flush0() to force a flush now
-                base.Flush0();
+                // directly call base.Flush0() to force a flush now
+                base.Flush0(); // todo: does it make sense now that we've actually written out everything that was flushed previously? concurrent flush handling?
             }
 
             bool IsFlushPending()
@@ -414,7 +448,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 return;
             }
 
-            this.readPending = true;
+            this.ReadPending = true;
 
             if (!this.IsInState(StateFlags.ReadScheduled))
             {
@@ -456,12 +490,14 @@ namespace DotNetty.Transport.Channels.Sockets
             if (readOp != null)
             {
                 readOp.Dispose();
+                this.readOperation = null;
             }
 
             SocketChannelAsyncOperation writeOp = this.writeOperation;
             if (writeOp != null)
             {
                 writeOp.Dispose();
+                this.writeOperation = null;
             }
         }
     }

@@ -25,7 +25,7 @@ namespace DotNetty.Codecs.Tests.Frame
                 ch.WriteInbound(Unpooled.WrappedBuffer(new byte[] { 0, 0, 0, 1, (byte)'A' }));
                 var buf = ch.ReadInbound<IByteBuffer>();
                 Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-                Assert.Equal("A", iso.GetString(buf.ToArray()));
+                Assert.Equal("A", buf.ToString(iso));
                 buf.Release();
             }
         }
@@ -47,7 +47,7 @@ namespace DotNetty.Codecs.Tests.Frame
                 ch.WriteInbound(Unpooled.WrappedBuffer(new byte[] { 0, 0, 0, 0, 0, 1, (byte)'A' }));
                 var buf = ch.ReadInbound<IByteBuffer>();
                 Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-                Assert.Equal("A", iso.GetString(buf.ToArray()));
+                Assert.Equal("A", buf.ToString(iso));
                 buf.Release();
             }
         }

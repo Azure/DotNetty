@@ -580,7 +580,7 @@ namespace DotNetty.Buffers
         ///     non-writable and increases the <see cref="ReaderIndex" /> by the number of transferred bytes.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if <see cref="destination.WritableBytes" /> is greater than
+        ///     if <c>destination.<see cref="WritableBytes" /></c> is greater than
         ///     <see cref="ReadableBytes" />.
         /// </exception>
         IByteBuffer ReadBytes(IByteBuffer destination);
@@ -628,6 +628,90 @@ namespace DotNetty.Buffers
         IByteBuffer WriteBytes(byte[] src);
 
         IByteBuffer WriteBytes(byte[] src, int srcIndex, int length);
+
+        /// <summary>
+        ///     Returns the maximum <see cref="ArraySegment{T}" /> of <see cref="Byte" /> that this buffer holds. Note that
+        ///     <see cref="GetIoBuffers()" />
+        ///     or <see cref="GetIoBuffers(int,int)" /> might return a less number of <see cref="ArraySegment{T}" />s of
+        ///     <see cref="Byte" />.
+        /// </summary>
+        /// <returns>
+        ///     <c>-1</c> if this buffer cannot represent its content as <see cref="ArraySegment{T}" /> of <see cref="Byte" />.
+        ///     the number of the underlying {@link ByteBuffer}s if this buffer has at least one underlying segment.
+        ///     Note that this method does not return <c>0</c> to avoid confusion.
+        /// </returns>
+        /// <seealso cref="GetIoBuffer()" />
+        /// <seealso cref="GetIoBuffer(int,int)" />
+        /// <seealso cref="GetIoBuffers()" />
+        /// <seealso cref="GetIoBuffers(int,int)" />
+        int IoBufferCount { get; }
+
+        /// <summary>
+        ///     Exposes this buffer's readable bytes as an <see cref="ArraySegment{T}" /> of <see cref="Byte" />. Returned segment
+        ///     shares the content with this buffer. This method is identical
+        ///     to <c>buf.GetIoBuffer(buf.ReaderIndex, buf.ReadableBytes)</c>. This method does not
+        ///     modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.  Please note that the
+        ///     returned segment will not see the changes of this buffer if this buffer is a dynamic
+        ///     buffer and it adjusted its capacity.
+        /// </summary>
+        /// <exception cref="NotSupportedException">
+        ///     if this buffer cannot represent its content as <see cref="ArraySegment{T}" />
+        ///     of <see cref="Byte" />
+        /// </exception>
+        /// <seealso cref="IoBufferCount" />
+        /// <seealso cref="GetIoBuffers()" />
+        /// <seealso cref="GetIoBuffers(int,int)" />
+        ArraySegment<byte> GetIoBuffer();
+
+        /// <summary>
+        ///     Exposes this buffer's sub-region as an <see cref="ArraySegment{T}" /> of <see cref="Byte" />. Returned segment
+        ///     shares the content with this buffer. This method does not
+        ///     modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer. Please note that the
+        ///     returned segment will not see the changes of this buffer if this buffer is a dynamic
+        ///     buffer and it adjusted its capacity.
+        /// </summary>
+        /// <exception cref="NotSupportedException">
+        ///     if this buffer cannot represent its content as <see cref="ArraySegment{T}" />
+        ///     of <see cref="Byte" />
+        /// </exception>
+        /// <seealso cref="IoBufferCount" />
+        /// <seealso cref="GetIoBuffers()" />
+        /// <seealso cref="GetIoBuffers(int,int)" />
+        ArraySegment<byte> GetIoBuffer(int index, int length);
+
+        /// <summary>
+        ///     Exposes this buffer's readable bytes as an array of <see cref="ArraySegment{T}" /> of <see cref="Byte" />. Returned
+        ///     segments
+        ///     share the content with this buffer. This method does not
+        ///     modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.  Please note that
+        ///     returned segments will not see the changes of this buffer if this buffer is a dynamic
+        ///     buffer and it adjusted its capacity.
+        /// </summary>
+        /// <exception cref="NotSupportedException">
+        ///     if this buffer cannot represent its content with <see cref="ArraySegment{T}" />
+        ///     of <see cref="Byte" />
+        /// </exception>
+        /// <seealso cref="IoBufferCount" />
+        /// <seealso cref="GetIoBuffer()" />
+        /// <seealso cref="GetIoBuffer(int,int)" />
+        ArraySegment<byte>[] GetIoBuffers();
+
+        /// <summary>
+        ///     Exposes this buffer's bytes as an array of <see cref="ArraySegment{T}" /> of <see cref="Byte" /> for the specified
+        ///     index and length.
+        ///     Returned segments share the content with this buffer. This method does
+        ///     not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer. Please note that
+        ///     returned segments will not see the changes of this buffer if this buffer is a dynamic
+        ///     buffer and it adjusted its capacity.
+        /// </summary>
+        /// <exception cref="NotSupportedException">
+        ///     if this buffer cannot represent its content with <see cref="ArraySegment{T}" />
+        ///     of <see cref="Byte" />
+        /// </exception>
+        /// <seealso cref="IoBufferCount" />
+        /// <seealso cref="GetIoBuffer()" />
+        /// <seealso cref="GetIoBuffer(int,int)" />
+        ArraySegment<byte>[] GetIoBuffers(int index, int length);
 
         /// <summary>
         ///     Flag that indicates if this <see cref="IByteBuffer" /> is backed by a byte array or not

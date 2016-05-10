@@ -4,6 +4,8 @@ TestResults/
 .nuget/
 .fake/
 _ReSharper.*/
+.idea/
+*.sln.iml
 packages/
 artifacts/
 PublishProfiles/

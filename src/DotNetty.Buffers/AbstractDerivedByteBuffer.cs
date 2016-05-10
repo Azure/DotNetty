@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using DotNetty.Common;
 
     /// <summary>
@@ -45,5 +46,7 @@ namespace DotNetty.Buffers
         public sealed override bool Release() => this.Unwrap().Release();
 
         public sealed override bool Release(int decrement) => this.Unwrap().Release(decrement);
+
+        public override ArraySegment<byte> GetIoBuffer(int index, int length) => this.Unwrap().GetIoBuffer(index, length);
     }
 }
