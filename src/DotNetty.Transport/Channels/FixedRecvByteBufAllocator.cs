@@ -23,15 +23,9 @@ namespace DotNetty.Transport.Channels
                 this.bufferSize = bufferSize;
             }
 
-            public IByteBuffer Allocate(IByteBufferAllocator alloc)
-            {
-                return alloc.Buffer(this.bufferSize);
-            }
+            public IByteBuffer Allocate(IByteBufferAllocator alloc) => alloc.Buffer(this.bufferSize);
 
-            public int Guess()
-            {
-                return this.bufferSize;
-            }
+            public int Guess() => this.bufferSize;
 
             public void Record(int actualReadBytes)
             {
@@ -51,9 +45,6 @@ namespace DotNetty.Transport.Channels
             this.handle = new HandleImpl(bufferSize);
         }
 
-        public IRecvByteBufAllocatorHandle NewHandle()
-        {
-            return this.handle;
-        }
+        public IRecvByteBufAllocatorHandle NewHandle() => this.handle;
     }
 }

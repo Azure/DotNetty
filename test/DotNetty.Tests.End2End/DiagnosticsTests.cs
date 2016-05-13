@@ -10,9 +10,6 @@ namespace DotNetty.Tests.End2End
     public class DiagnosticsTests
     {
         [Fact]
-        public void VerifyEventSources()
-        {
-            EventSourceAnalyzer.InspectAll(DefaultEventSource.Log);
-        }
+        public void VerifyEventSources() => EventSourceAnalyzer.InspectAll(DefaultEventSource.Log);
     }
 }

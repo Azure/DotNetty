@@ -15,10 +15,7 @@ namespace DotNetty.Buffers
 
         public static readonly IByteBuffer Empty = Allocator.Buffer(0, 0);
 
-        public static IByteBuffer Buffer()
-        {
-            return Allocator.Buffer();
-        }
+        public static IByteBuffer Buffer() => Allocator.Buffer();
 
         public static IByteBuffer Buffer(int initialCapacity)
         {
@@ -105,7 +102,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///     Creates a new big-endian buffer whose content is a copy of the specified <see cref="array" />.
+        ///     Creates a new big-endian buffer whose content is a copy of the specified <see cref="Array" />.
         ///     The new buffer's <see cref="IByteBuffer.ReaderIndex" /> and <see cref="IByteBuffer.WriterIndex" />
         ///     are <c>0</c> and <see cref="IByteBuffer.Capacity" /> respectively.
         /// </summary>

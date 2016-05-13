@@ -43,10 +43,7 @@ namespace DotNetty.Buffers
             this.SetWriterIndex(length);
         }
 
-        public override IByteBuffer Unwrap()
-        {
-            return this.buffer;
-        }
+        public override IByteBuffer Unwrap() => this.buffer;
 
         public override IByteBufferAllocator Allocator => this.buffer.Allocator;
 
@@ -79,25 +76,13 @@ namespace DotNetty.Buffers
 
         public override int ArrayOffset => this.buffer.ArrayOffset + this.adjustment;
 
-        protected override byte _GetByte(int index)
-        {
-            return this.buffer.GetByte(index + this.adjustment);
-        }
+        protected override byte _GetByte(int index) => this.buffer.GetByte(index + this.adjustment);
 
-        protected override short _GetShort(int index)
-        {
-            return this.buffer.GetShort(index + this.adjustment);
-        }
+        protected override short _GetShort(int index) => this.buffer.GetShort(index + this.adjustment);
 
-        protected override int _GetInt(int index)
-        {
-            return this.buffer.GetInt(index + this.adjustment);
-        }
+        protected override int _GetInt(int index) => this.buffer.GetInt(index + this.adjustment);
 
-        protected override long _GetLong(int index)
-        {
-            return this.buffer.GetLong(index + this.adjustment);
-        }
+        protected override long _GetLong(int index) => this.buffer.GetLong(index + this.adjustment);
 
         public override IByteBuffer Duplicate()
         {
@@ -149,25 +134,13 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        protected override void _SetByte(int index, int value)
-        {
-            this.buffer.SetByte(index + this.adjustment, value);
-        }
+        protected override void _SetByte(int index, int value) => this.buffer.SetByte(index + this.adjustment, value);
 
-        protected override void _SetShort(int index, int value)
-        {
-            this.buffer.SetShort(index + this.adjustment, value);
-        }
+        protected override void _SetShort(int index, int value) => this.buffer.SetShort(index + this.adjustment, value);
 
-        protected override void _SetInt(int index, int value)
-        {
-            this.buffer.SetInt(index + this.adjustment, value);
-        }
+        protected override void _SetInt(int index, int value) => this.buffer.SetInt(index + this.adjustment, value);
 
-        protected override void _SetLong(int index, long value)
-        {
-            this.buffer.SetLong(index + this.adjustment, value);
-        }
+        protected override void _SetLong(int index, long value) => this.buffer.SetLong(index + this.adjustment, value);
 
         public override IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length)
         {

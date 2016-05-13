@@ -7,9 +7,6 @@ namespace DotNetty.Transport.Channels.Embedded
 
     sealed class EmbeddedSocketAddress : EndPoint
     {
-        public override string ToString()
-        {
-            return "embedded";
-        }
+        public override string ToString() => "embedded";
     }
 }

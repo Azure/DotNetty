@@ -198,10 +198,7 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
                 });
             }
 
-            public override void ChannelUnregistered(IChannelHandlerContext context)
-            {
-                this.latch.Signal();
-            }
+            public override void ChannelUnregistered(IChannelHandlerContext context) => this.latch.Signal();
         }
     }
 }

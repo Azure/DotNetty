@@ -43,10 +43,7 @@ namespace DotNetty.Common.Utilities
         ///     <see cref="newValue" />.
         ///     Returns true if <see cref="newValue" /> was set, false otherwise.
         /// </summary>
-        public T CompareAndSet(T expected, T newValue)
-        {
-            return Interlocked.CompareExchange(ref this.atomicValue, expected, newValue);
-        }
+        public T CompareAndSet(T expected, T newValue) => Interlocked.CompareExchange(ref this.atomicValue, expected, newValue);
 
         #region Conversion operators
 
@@ -54,10 +51,7 @@ namespace DotNetty.Common.Utilities
         ///     Implicit conversion operator = automatically casts the <see cref="AtomicReference{T}" /> to an instance of
         ///     <typeparam name="T"></typeparam>
         /// </summary>
-        public static implicit operator T(AtomicReference<T> aRef)
-        {
-            return aRef.Value;
-        }
+        public static implicit operator T(AtomicReference<T> aRef) => aRef.Value;
 
         /// <summary>
         ///     Implicit conversion operator = allows us to cast any type directly into a <see cref="AtomicReference{T}" />
@@ -65,10 +59,7 @@ namespace DotNetty.Common.Utilities
         /// </summary>
         /// <param name="newValue"></param>
         /// <returns></returns>
-        public static implicit operator AtomicReference<T>(T newValue)
-        {
-            return new AtomicReference<T>(newValue);
-        }
+        public static implicit operator AtomicReference<T>(T newValue) => new AtomicReference<T>(newValue);
 
         #endregion
     }

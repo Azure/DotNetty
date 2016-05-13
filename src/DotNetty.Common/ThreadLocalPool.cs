@@ -54,17 +54,12 @@ namespace DotNetty.Common
 
             sealed class Link
             {
-                int readIndex;
                 int writeIndex;
 
                 internal readonly Handle[] elements;
                 internal Link next;
 
-                internal int ReadIndex
-                {
-                    get { return this.readIndex; }
-                    set { this.readIndex = value; }
-                }
+                internal int ReadIndex { get; set; }
 
                 internal int WriteIndex
                 {
@@ -377,10 +372,7 @@ namespace DotNetty.Common
 
         internal sealed class DelayedThreadLocal : FastThreadLocal<ConditionalWeakTable<Stack, WeakOrderQueue>>
         {
-            protected override ConditionalWeakTable<Stack, WeakOrderQueue> GetInitialValue()
-            {
-                return new ConditionalWeakTable<Stack, WeakOrderQueue>();
-            }
+            protected override ConditionalWeakTable<Stack, WeakOrderQueue> GetInitialValue() => new ConditionalWeakTable<Stack, WeakOrderQueue>();
         }
 
         public ThreadLocalPool(int maxCapacity)

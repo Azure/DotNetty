@@ -3,7 +3,6 @@
 
 namespace DotNetty.Buffers.Tests
 {
-    using DotNetty.Common.Utilities;
     using Xunit;
 
     public class PooledBufferAllocatorTests

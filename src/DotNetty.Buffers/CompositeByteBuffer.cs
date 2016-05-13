@@ -28,11 +28,7 @@ namespace DotNetty.Buffers
                 this.Length = buffer.ReadableBytes;
             }
 
-            public void FreeIfNecessary()
-            {
-                // Unwrap so that we can free slices, too.
-                this.Buffer.Release(); // We should not get a NPE here. If so, it must be a bug.
-            }
+            public void FreeIfNecessary() => this.Buffer.Release();
         }
 
         static readonly ArraySegment<byte> EmptyNioBuffer = Unpooled.Empty.GetIoBuffer();
@@ -665,10 +661,7 @@ namespace DotNetty.Buffers
             return this.components[cIndex].Offset;
         }
 
-        public override byte GetByte(int index)
-        {
-            return this._GetByte(index);
-        }
+        public override byte GetByte(int index) => this._GetByte(index);
 
         protected override byte _GetByte(int index)
         {
@@ -805,10 +798,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        protected override void _SetByte(int index, int value)
-        {
-            this.SetByte(index, value);
-        }
+        protected override void _SetByte(int index, int value) => this.SetByte(index, value);
 
         protected override void _SetShort(int index, int value)
         {
@@ -1009,10 +999,7 @@ namespace DotNetty.Buffers
         ///     @param offset the offset for which the {@link IByteBuffer} should be returned
         ///     @return the {@link IByteBuffer} on the specified index
         /// </summary>
-        public IByteBuffer ComponentAtOffset(int offset)
-        {
-            return this.InternalComponentAtOffset(offset).Duplicate();
-        }
+        public IByteBuffer ComponentAtOffset(int offset) => this.InternalComponentAtOffset(offset).Duplicate();
 
         /// <summary>
         ///     Return the internal {@link IByteBuffer} on the specified index. Note that updating the indexes of the returned
@@ -1030,10 +1017,7 @@ namespace DotNetty.Buffers
         ///     buffer will lead to an undefined behavior of this buffer.
         ///     @param offset the offset for which the {@link IByteBuffer} should be returned
         /// </summary>
-        public IByteBuffer InternalComponentAtOffset(int offset)
-        {
-            return this.FindComponent(offset).Buffer;
-        }
+        public IByteBuffer InternalComponentAtOffset(int offset) => this.FindComponent(offset).Buffer;
 
         ComponentEntry FindComponent(int offset)
         {
@@ -1218,10 +1202,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        IByteBuffer AllocateBuffer(int capacity)
-        {
-            return this.Allocator.Buffer(capacity);
-        }
+        IByteBuffer AllocateBuffer(int capacity) => this.Allocator.Buffer(capacity);
 
         public override string ToString()
         {
@@ -1232,26 +1213,17 @@ namespace DotNetty.Buffers
 
         public override IReferenceCounted Touch()
         {
-            if (this.leak != null)
-            {
-                this.leak.Record();
-            }
+            this.leak?.Record();
             return this;
         }
 
         public override IReferenceCounted Touch(object hint)
         {
-            if (this.leak != null)
-            {
-                this.leak.Record(hint);
-            }
+            this.leak?.Record(hint);
             return this;
         }
 
-        public override IByteBuffer DiscardSomeReadBytes()
-        {
-            return this.DiscardReadComponents();
-        }
+        public override IByteBuffer DiscardSomeReadBytes() => this.DiscardReadComponents();
 
         protected override void Deallocate()
         {
@@ -1269,15 +1241,9 @@ namespace DotNetty.Buffers
                 this.components[i].FreeIfNecessary();
             }
 
-            if (this.leak != null)
-            {
-                this.leak.Close();
-            }
+            this.leak?.Close();
         }
 
-        public override IByteBuffer Unwrap()
-        {
-            return null;
-        }
+        public override IByteBuffer Unwrap() => null;
     }
 }

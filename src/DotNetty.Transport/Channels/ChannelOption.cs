@@ -48,14 +48,8 @@ namespace DotNetty.Transport.Channels
 
     public sealed class ChannelOption<T> : ChannelOption
     {
-        public void Validate(T value)
-        {
-            Contract.Requires(value != null);
-        }
+        public void Validate(T value) => Contract.Requires(value != null);
 
-        public override bool Set(IChannelConfiguration configuration, object value)
-        {
-            return configuration.SetOption(this, (T)value);
-        }
+        public override bool Set(IChannelConfiguration configuration, object value) => configuration.SetOption(this, (T)value);
     }
 }

@@ -30,27 +30,13 @@ namespace DotNetty.Common.Concurrency
 
         public abstract bool IsInEventLoop(Thread thread);
 
-        public virtual IEventExecutor Unwrap()
-        {
-            return this;
-        }
-
         public abstract void Execute(IRunnable task);
 
-        public void Execute(Action<object> action, object state)
-        {
-            this.Execute(new StateActionTaskQueueNode(action, state));
-        }
+        public void Execute(Action<object> action, object state) => this.Execute(new StateActionTaskQueueNode(action, state));
 
-        public void Execute(Action<object, object> action, object context, object state)
-        {
-            this.Execute(new StateActionWithContextTaskQueueNode(action, context, state));
-        }
+        public void Execute(Action<object, object> action, object context, object state) => this.Execute(new StateActionWithContextTaskQueueNode(action, context, state));
 
-        public void Execute(Action action)
-        {
-            this.Execute(new ActionTaskQueueNode(action));
-        }
+        public void Execute(Action action) => this.Execute(new ActionTaskQueueNode(action));
 
         public virtual IScheduledTask Schedule(IRunnable action, TimeSpan delay)
         {
@@ -72,40 +58,28 @@ namespace DotNetty.Common.Concurrency
             throw new NotSupportedException();
         }
 
-        public virtual Task ScheduleAsync(Action action, TimeSpan delay)
-        {
-            return this.ScheduleAsync(action, delay, CancellationToken.None);
-        }
+        public virtual Task ScheduleAsync(Action action, TimeSpan delay) => this.ScheduleAsync(action, delay, CancellationToken.None);
 
         public virtual Task ScheduleAsync(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
 
-        public virtual Task ScheduleAsync(Action<object> action, object state, TimeSpan delay)
-        {
-            return this.ScheduleAsync(action, state, delay, CancellationToken.None);
-        }
+        public virtual Task ScheduleAsync(Action<object> action, object state, TimeSpan delay) => this.ScheduleAsync(action, state, delay, CancellationToken.None);
 
         public virtual Task ScheduleAsync(Action action, TimeSpan delay, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
 
-        public virtual Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay)
-        {
-            return this.ScheduleAsync(action, context, state, delay, CancellationToken.None);
-        }
+        public virtual Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay) => this.ScheduleAsync(action, context, state, delay, CancellationToken.None);
 
         public virtual Task ScheduleAsync(Action<object, object> action, object context, object state, TimeSpan delay, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
         }
 
-        public Task<T> SubmitAsync<T>(Func<T> func)
-        {
-            return this.SubmitAsync(func, CancellationToken.None);
-        }
+        public Task<T> SubmitAsync<T>(Func<T> func) => this.SubmitAsync(func, CancellationToken.None);
 
         public Task<T> SubmitAsync<T>(Func<T> func, CancellationToken cancellationToken)
         {
@@ -114,10 +88,7 @@ namespace DotNetty.Common.Concurrency
             return node.Completion;
         }
 
-        public Task<T> SubmitAsync<T>(Func<object, T> func, object state)
-        {
-            return this.SubmitAsync(func, state, CancellationToken.None);
-        }
+        public Task<T> SubmitAsync<T>(Func<object, T> func, object state) => this.SubmitAsync(func, state, CancellationToken.None);
 
         public Task<T> SubmitAsync<T>(Func<object, T> func, object state, CancellationToken cancellationToken)
         {
@@ -126,10 +97,7 @@ namespace DotNetty.Common.Concurrency
             return node.Completion;
         }
 
-        public Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state)
-        {
-            return this.SubmitAsync(func, context, state, CancellationToken.None);
-        }
+        public Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state) => this.SubmitAsync(func, context, state, CancellationToken.None);
 
         public Task<T> SubmitAsync<T>(Func<object, object, T> func, object context, object state, CancellationToken cancellationToken)
         {
@@ -138,10 +106,7 @@ namespace DotNetty.Common.Concurrency
             return node.Completion;
         }
 
-        public Task ShutdownGracefullyAsync()
-        {
-            return this.ShutdownGracefullyAsync(DefaultShutdownQuietPeriod, DefaultShutdownTimeout);
-        }
+        public Task ShutdownGracefullyAsync() => this.ShutdownGracefullyAsync(DefaultShutdownQuietPeriod, DefaultShutdownTimeout);
 
         public abstract Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
 
@@ -163,10 +128,7 @@ namespace DotNetty.Common.Concurrency
                 this.action = action;
             }
 
-            public override void Run()
-            {
-                this.action();
-            }
+            public override void Run() => this.action();
         }
 
         sealed class StateActionTaskQueueNode : RunnableQueueNode
@@ -180,10 +142,7 @@ namespace DotNetty.Common.Concurrency
                 this.state = state;
             }
 
-            public override void Run()
-            {
-                this.action(this.state);
-            }
+            public override void Run() => this.action(this.state);
         }
 
         sealed class StateActionWithContextTaskQueueNode : RunnableQueueNode
@@ -199,10 +158,7 @@ namespace DotNetty.Common.Concurrency
                 this.state = state;
             }
 
-            public override void Run()
-            {
-                this.action(this.context, this.state);
-            }
+            public override void Run() => this.action(this.context, this.state);
         }
 
         abstract class FuncQueueNodeBase<T> : RunnableQueueNode
@@ -251,10 +207,7 @@ namespace DotNetty.Common.Concurrency
                 this.func = func;
             }
 
-            protected override T Call()
-            {
-                return this.func();
-            }
+            protected override T Call() => this.func();
         }
 
         sealed class StateFuncSubmitQueueNode<T> : FuncQueueNodeBase<T>
@@ -267,10 +220,7 @@ namespace DotNetty.Common.Concurrency
                 this.func = func;
             }
 
-            protected override T Call()
-            {
-                return this.func(this.Completion.AsyncState);
-            }
+            protected override T Call() => this.func(this.Completion.AsyncState);
         }
 
         sealed class StateFuncWithContextSubmitQueueNode<T> : FuncQueueNodeBase<T>
@@ -285,10 +235,7 @@ namespace DotNetty.Common.Concurrency
                 this.context = context;
             }
 
-            protected override T Call()
-            {
-                return this.func(this.context, this.Completion.AsyncState);
-            }
+            protected override T Call() => this.func(this.context, this.Completion.AsyncState);
         }
 
         #endregion

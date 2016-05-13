@@ -124,7 +124,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static Task InvokeBindAsyncNow(
+        public static Task InvokeBindNowAsync(
             IChannelHandlerContext ctx, EndPoint localAddress)
         {
             try
@@ -137,7 +137,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static Task InvokeConnectAsyncNow(
+        public static Task InvokeConnectNowAsync(
             IChannelHandlerContext ctx,
             EndPoint remoteAddress, EndPoint localAddress)
         {
@@ -151,7 +151,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static Task InvokeDisconnectAsyncNow(IChannelHandlerContext ctx)
+        public static Task InvokeDisconnectNowAsync(IChannelHandlerContext ctx)
         {
             try
             {
@@ -163,7 +163,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static Task InvokeCloseAsyncNow(IChannelHandlerContext ctx)
+        public static Task InvokeCloseNowAsync(IChannelHandlerContext ctx)
         {
             try
             {
@@ -175,7 +175,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static Task InvokeDeregisterAsyncNow(IChannelHandlerContext ctx)
+        public static Task InvokeDeregisterNowAsync(IChannelHandlerContext ctx)
         {
             try
             {
@@ -199,7 +199,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static Task InvokeWriteAsyncNow(IChannelHandlerContext ctx, object msg)
+        public static Task InvokeWriteNowAsync(IChannelHandlerContext ctx, object msg)
         {
             try
             {
@@ -239,10 +239,7 @@ namespace DotNetty.Transport.Channels
             InvokeExceptionCaughtNow(ctx, cause);
         }
 
-        static Task ComposeExceptionTask(Exception cause)
-        {
-            return TaskEx.FromException(cause);
-        }
+        static Task ComposeExceptionTask(Exception cause) => TaskEx.FromException(cause);
 
         // todo: use "nameof" once available
         static readonly string ExceptionCaughtMethodName = ((MethodCallExpression)((Expression<Action<IChannelHandler>>)(_ => _.ExceptionCaught(null, null))).Body).Method.Name;

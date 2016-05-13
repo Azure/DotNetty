@@ -8,15 +8,9 @@ namespace DotNetty.Tests.End2End
 
     class EchoChannelHandler : ChannelHandlerAdapter
     {
-        public override void ChannelRead(IChannelHandlerContext context, object message)
-        {
-            context.Channel.WriteAsync(message);
-        }
+        public override void ChannelRead(IChannelHandlerContext context, object message) => context.Channel.WriteAsync(message);
 
-        public override void ChannelReadComplete(IChannelHandlerContext context)
-        {
-            context.Channel.Flush();
-        }
+        public override void ChannelReadComplete(IChannelHandlerContext context) => context.Channel.Flush();
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {

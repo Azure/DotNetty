@@ -42,15 +42,9 @@ namespace DotNetty.Common.Concurrency
             return this.TryExecuteTask(task);
         }
 
-        protected override IEnumerable<Task> GetScheduledTasks()
-        {
-            return null;
-        }
+        protected override IEnumerable<Task> GetScheduledTasks() => null;
 
-        protected override bool TryDequeue(Task task)
-        {
-            return false;
-        }
+        protected override bool TryDequeue(Task task) => false;
 
         sealed class TaskQueueNode : MpscLinkedQueueNode<IRunnable>, IRunnable
         {
@@ -65,10 +59,7 @@ namespace DotNetty.Common.Concurrency
 
             public override IRunnable Value => this;
 
-            public void Run()
-            {
-                this.scheduler.TryExecuteTask(this.task);
-            }
+            public void Run() => this.scheduler.TryExecuteTask(this.task);
         }
     }
 }

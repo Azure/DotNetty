@@ -86,26 +86,26 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Request to bind to the given {@link SocketAddress} and notify the {@link ChannelFuture} once the operation
         ///     completes, either because the operation was successful or because of an error.
-        ///     <p>
-        ///         This will result in having the
-        ///         {@link ChannelHandler#bind(ChannelHandlerContext, SocketAddress, ChannelPromise)} method
-        ///         called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///         {@link Channel}.
+        ///     <p />
+        ///     This will result in having the
+        ///     {@link ChannelHandler#bind(ChannelHandlerContext, SocketAddress, ChannelPromise)} method
+        ///     called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
+        ///     {@link Channel}.
         /// </summary>
         Task BindAsync(EndPoint localAddress);
 
         /// <summary>
         ///     Request to connect to the given {@link SocketAddress} and notify the {@link ChannelFuture} once the operation
         ///     completes, either because the operation was successful or because of an error.
-        ///     <p>
-        ///         If the connection fails because of a connection timeout, the {@link ChannelFuture} will get failed with
-        ///         a {@link ConnectTimeoutException}. If it fails because of connection refused a {@link ConnectException}
-        ///         will be used.
-        ///         <p>
-        ///             This will result in having the
-        ///             {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)}
-        ///             method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///             {@link Channel}.
+        ///     <p />
+        ///     If the connection fails because of a connection timeout, the {@link ChannelFuture} will get failed with
+        ///     a {@link ConnectTimeoutException}. If it fails because of connection refused a {@link ConnectException}
+        ///     will be used.
+        ///     <p />
+        ///     This will result in having the
+        ///     {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)}
+        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
+        ///     {@link Channel}.
         /// </summary>
         Task ConnectAsync(EndPoint remoteAddress);
 
@@ -113,22 +113,22 @@ namespace DotNetty.Transport.Channels
         ///     Request to connect to the given {@link SocketAddress} while bind to the localAddress and notify the
         ///     {@link ChannelFuture} once the operation completes, either because the operation was successful or because of
         ///     an error.
-        ///     <p>
-        ///         This will result in having the
-        ///         {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)}
-        ///         method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///         {@link Channel}.
+        ///     <p />
+        ///     This will result in having the
+        ///     {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)}
+        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
+        ///     {@link Channel}.
         /// </summary>
         Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress);
 
         /// <summary>
         ///     Request to disconnect from the remote peer and notify the {@link ChannelFuture} once the operation completes,
         ///     either because the operation was successful or because of an error.
-        ///     <p>
-        ///         This will result in having the
-        ///         {@link ChannelHandler#disconnect(ChannelHandlerContext, ChannelPromise)}
-        ///         method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///         {@link Channel}.
+        ///     <p />
+        ///     This will result in having the
+        ///     {@link ChannelHandler#disconnect(ChannelHandlerContext, ChannelPromise)}
+        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
+        ///     {@link Channel}.
         /// </summary>
         Task DisconnectAsync();
 
@@ -139,11 +139,11 @@ namespace DotNetty.Transport.Channels
         ///     {@link ChannelFuture} once the operation completes, either because the operation was successful or because of
         ///     an error.
         ///     The given {@link ChannelPromise} will be notified.
-        ///     <p>
-        ///         This will result in having the
-        ///         {@link ChannelHandler#deregister(ChannelHandlerContext, ChannelPromise)}
-        ///         method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///         {@link Channel}.
+        ///     <p />
+        ///     This will result in having the
+        ///     {@link ChannelHandler#deregister(ChannelHandlerContext, ChannelPromise)}
+        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
+        ///     {@link Channel}.
         /// </summary>
         Task DeregisterAsync();
     }

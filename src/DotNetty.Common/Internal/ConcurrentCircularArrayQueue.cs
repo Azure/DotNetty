@@ -41,26 +41,17 @@ namespace DotNetty.Common.Internal
 
         /// @param index desirable element index
         /// @return the offset in bytes within the array for a given index.
-        protected long CalcElementOffset(long index)
-        {
-            return CalcElementOffset(index, this.Mask);
-        }
+        protected long CalcElementOffset(long index) => CalcElementOffset(index, this.Mask);
 
         /// @param index desirable element index
         /// @param mask
         /// @return the offset in bytes within the array for a given index.
-        protected static long CalcElementOffset(long index, long mask)
-        {
-            return RefBufferPad + (index & mask);
-        }
+        protected static long CalcElementOffset(long index, long mask) => RefBufferPad + (index & mask);
 
         /// A plain store (no ordering/fences) of an element to a given offset
         /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
         /// @param e a kitty
-        protected void SpElement(long offset, T e)
-        {
-            SpElement(this.Buffer, offset, e);
-        }
+        protected void SpElement(long offset, T e) => SpElement(this.Buffer, offset, e);
 
         /// A plain store (no ordering/fences) of an element to a given offset
         /// @param buffer this.buffer
@@ -74,53 +65,35 @@ namespace DotNetty.Common.Internal
         /// An ordered store(store + StoreStore barrier) of an element to a given offset
         /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
         /// @param e an orderly kitty
-        protected void SoElement(long offset, T e)
-        {
-            SoElement(this.Buffer, offset, e);
-        }
+        protected void SoElement(long offset, T e) => SoElement(this.Buffer, offset, e);
 
         /// An ordered store(store + StoreStore barrier) of an element to a given offset
         /// @param buffer this.buffer
         /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
         /// @param e an orderly kitty
-        protected static void SoElement(T[] buffer, long offset, T e)
-        {
-            Volatile.Write(ref buffer[offset], e);
-        }
+        protected static void SoElement(T[] buffer, long offset, T e) => Volatile.Write(ref buffer[offset], e);
 
         /// A plain load (no ordering/fences) of an element from a given offset.
         /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
         /// @return the element at the offset
-        protected T LpElement(long offset)
-        {
-            return LpElement(this.Buffer, offset);
-        }
+        protected T LpElement(long offset) => LpElement(this.Buffer, offset);
 
         /// A plain load (no ordering/fences) of an element from a given offset.
         /// @param buffer this.buffer
         /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
         /// @return the element at the offset
-        protected static T LpElement(T[] buffer, long offset)
-        {
-            return buffer[offset];
-        }
+        protected static T LpElement(T[] buffer, long offset) => buffer[offset];
 
         /// A volatile load (load + LoadLoad barrier) of an element from a given offset.
         /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
         /// @return the element at the offset
-        protected T LvElement(long offset)
-        {
-            return LvElement(this.Buffer, offset);
-        }
+        protected T LvElement(long offset) => LvElement(this.Buffer, offset);
 
         /// A volatile load (load + LoadLoad barrier) of an element from a given offset.
         /// @param buffer this.buffer
         /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
         /// @return the element at the offset
-        protected static T LvElement(T[] buffer, long offset)
-        {
-            return Volatile.Read(ref buffer[offset]);
-        }
+        protected static T LvElement(T[] buffer, long offset) => Volatile.Read(ref buffer[offset]);
 
         public override void Clear()
         {
@@ -130,10 +103,7 @@ namespace DotNetty.Common.Internal
             }
         }
 
-        public int Capacity()
-        {
-            return (int)(this.Mask + 1);
-        }
+        public int Capacity() => (int)(this.Mask + 1);
     }
 
     abstract class ConcurrentCircularArrayQueueL0Pad<T> : AbstractQueue<T>

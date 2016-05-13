@@ -21,7 +21,6 @@ namespace DotNetty.Handlers.Logging
 
         protected readonly InternalLogLevel InternalLevel;
         protected readonly IInternalLogger Logger;
-        readonly LogLevel level;
 
         /// <summary>
         ///     Creates a new instance whose logger name is the fully qualified class
@@ -65,7 +64,7 @@ namespace DotNetty.Handlers.Logging
             }
 
             this.Logger = InternalLoggerFactory.GetInstance(type);
-            this.level = level;
+            this.Level = level;
             this.InternalLevel = level.ToInternalLevel();
         }
 
@@ -91,14 +90,14 @@ namespace DotNetty.Handlers.Logging
             }
 
             this.Logger = InternalLoggerFactory.GetInstance(name);
-            this.level = level;
+            this.Level = level;
             this.InternalLevel = level.ToInternalLevel();
         }
 
         /// <summary>
         ///     Returns the <see cref="LogLevel" /> that this handler uses to log
         /// </summary>
-        public LogLevel Level => this.level;
+        public LogLevel Level { get; }
 
         public override void ChannelRegistered(IChannelHandlerContext ctx)
         {

@@ -26,7 +26,7 @@ namespace DotNetty.Common
         /// <summary>
         ///     Records the current access location of this object for debugging purposes.
         ///     If this object is determined to be leaked, the information recorded by this operation will be provided to you
-        ///     via <see cref="ResourceLeakDetector{T}" />. This method is a shortcut to <see cref="Touch(object)" /> with null as
+        ///     via <see cref="ResourceLeakDetector" />. This method is a shortcut to <see cref="Touch(object)" /> with null as
         ///     an argument.
         /// </summary>
         /// <returns></returns>
@@ -35,7 +35,7 @@ namespace DotNetty.Common
         /// <summary>
         ///     Records the current access location of this object with an additonal arbitrary information for debugging
         ///     purposes. If this object is determined to be leaked, the information recorded by this operation will be
-        ///     provided to you via <see cref="ResourceLeakDetector{T}" />.
+        ///     provided to you via <see cref="ResourceLeakDetector" />.
         /// </summary>
         IReferenceCounted Touch(object hint);
 

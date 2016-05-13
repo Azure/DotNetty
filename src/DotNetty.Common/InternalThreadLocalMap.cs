@@ -45,10 +45,7 @@ namespace DotNetty.Common
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static InternalThreadLocalMap GetIfSet()
-        {
-            return slowThreadLocalMap;
-        }
+        public static InternalThreadLocalMap GetIfSet() => slowThreadLocalMap;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static InternalThreadLocalMap Get()
@@ -62,15 +59,9 @@ namespace DotNetty.Common
             return ret;
         }
 
-        public static void Remove()
-        {
-            slowThreadLocalMap = null;
-        }
+        public static void Remove() => slowThreadLocalMap = null;
 
-        public static void Destroy()
-        {
-            slowThreadLocalMap = null;
-        }
+        public static void Destroy() => slowThreadLocalMap = null;
 
         // Cache line padding (must be public)
         // With CompressedOops enabled, an instance of this class should occupy at least 128 bytes.

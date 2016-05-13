@@ -21,10 +21,7 @@ namespace DotNetty.Transport.Channels.Sockets
         {
         }
 
-        protected override IChannelUnsafe NewUnsafe()
-        {
-            return new SocketMessageUnsafe(this);
-        }
+        protected override IChannelUnsafe NewUnsafe() => new SocketMessageUnsafe(this);
 
         protected class SocketMessageUnsafe : AbstractSocketUnsafe
         {
@@ -35,10 +32,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            new AbstractSocketMessageChannel Channel
-            {
-                get { return (AbstractSocketMessageChannel)this.channel; }
-            }
+            new AbstractSocketMessageChannel Channel => (AbstractSocketMessageChannel)this.channel;
 
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
@@ -208,10 +202,7 @@ namespace DotNetty.Transport.Channels.Sockets
         /// <summary>
         /// Returns {@code true} if we should continue the write loop on a write error.
         /// </summary>
-        protected virtual bool ContinueOnWriteError
-        {
-            get { return false; }
-        }
+        protected virtual bool ContinueOnWriteError => false;
 
         /// <summary>
         /// Read messages into the given array and return the amount which was read.

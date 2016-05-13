@@ -20,10 +20,7 @@ namespace Echo.Server
             context.WriteAsync(message);
         }
 
-        public override void ChannelReadComplete(IChannelHandlerContext context)
-        {
-            context.Flush();
-        }
+        public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {

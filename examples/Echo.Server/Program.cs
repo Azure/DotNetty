@@ -18,7 +18,7 @@ namespace Echo.Server
 
     class Program
     {
-        static async Task RunServer()
+        static async Task RunServerAsync()
         {
             var eventListener = new ObservableEventListener();
             eventListener.LogToConsole();
@@ -61,9 +61,6 @@ namespace Echo.Server
             }
         }
 
-        static void Main(string[] args)
-        {
-            Task.Run(() => RunServer()).Wait();
-        }
+        static void Main() => RunServerAsync().Wait();
     }
 }

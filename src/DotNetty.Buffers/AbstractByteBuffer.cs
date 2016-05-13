@@ -941,7 +941,7 @@ namespace DotNetty.Buffers
         {
             if (processor == null)
             {
-                throw new ArgumentNullException("processor");
+                throw new ArgumentNullException(nameof(processor));
             }
 
             if (length == 0)

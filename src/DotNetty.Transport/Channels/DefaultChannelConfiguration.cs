@@ -92,10 +92,7 @@ namespace DotNetty.Transport.Channels
             return default(T);
         }
 
-        public bool SetOption(ChannelOption option, object value)
-        {
-            return option.Set(this, value);
-        }
+        public bool SetOption(ChannelOption option, object value) => option.Set(this, value);
 
         public virtual bool SetOption<T>(ChannelOption<T> option, T value)
         {

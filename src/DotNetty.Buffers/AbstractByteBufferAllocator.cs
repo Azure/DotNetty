@@ -49,15 +49,9 @@ namespace DotNetty.Buffers
             this.emptyBuffer = new EmptyByteBuffer(this);
         }
 
-        public IByteBuffer Buffer()
-        {
-            return this.Buffer(DefaultInitialCapacity, int.MaxValue);
-        }
+        public IByteBuffer Buffer() => this.Buffer(DefaultInitialCapacity, int.MaxValue);
 
-        public IByteBuffer Buffer(int initialCapacity)
-        {
-            return this.Buffer(initialCapacity, int.MaxValue);
-        }
+        public IByteBuffer Buffer(int initialCapacity) => this.Buffer(initialCapacity, int.MaxValue);
 
         public IByteBuffer Buffer(int initialCapacity, int maxCapacity)
         {

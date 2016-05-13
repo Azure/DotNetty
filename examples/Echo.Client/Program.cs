@@ -18,7 +18,7 @@ namespace Echo.Client
 
     class Program
     {
-        static async Task RunClient()
+        static async Task RunClientAsync()
         {
             var eventListener = new ObservableEventListener();
             eventListener.LogToConsole();
@@ -62,9 +62,6 @@ namespace Echo.Client
             }
         }
 
-        static void Main(string[] args)
-        {
-            Task.Run(() => RunClient()).Wait();
-        }
+        static void Main() => RunClientAsync().Wait();
     }
 }

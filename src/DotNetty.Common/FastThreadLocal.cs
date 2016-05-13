@@ -45,10 +45,7 @@ namespace DotNetty.Common
         /// non-{@link FastThreadLocalThread}s.  This operation is useful when you are in a container environment, and you
         /// do not want to leave the thread local variables in the threads you do not manage.  Call this method when your
         /// application is being unloaded from the container.
-        public static void Destroy()
-        {
-            InternalThreadLocalMap.Destroy();
-        }
+        public static void Destroy() => InternalThreadLocalMap.Destroy();
 
         protected static void AddToVariablesToRemove(InternalThreadLocalMap threadLocalMap, FastThreadLocal variable)
         {
@@ -152,33 +149,21 @@ namespace DotNetty.Common
         /// <summary>
         ///     Returns {@code true} if and only if this thread-local variable is set.
         /// </summary>
-        public bool IsSet()
-        {
-            return this.IsSet(InternalThreadLocalMap.GetIfSet());
-        }
+        public bool IsSet() => this.IsSet(InternalThreadLocalMap.GetIfSet());
 
         /// <summary>
         ///     Returns {@code true} if and only if this thread-local variable is set.
         ///     The specified thread local map must be for the current thread.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsSet(InternalThreadLocalMap threadLocalMap)
-        {
-            return threadLocalMap != null && threadLocalMap.IsIndexedVariableSet(this.index);
-        }
+        public bool IsSet(InternalThreadLocalMap threadLocalMap) => threadLocalMap != null && threadLocalMap.IsIndexedVariableSet(this.index);
 
         /// <summary>
         ///     Returns the initial value for this thread-local variable.
         /// </summary>
-        protected virtual T GetInitialValue()
-        {
-            return null;
-        }
+        protected virtual T GetInitialValue() => null;
 
-        public void Remove()
-        {
-            this.Remove(InternalThreadLocalMap.GetIfSet());
-        }
+        public void Remove() => this.Remove(InternalThreadLocalMap.GetIfSet());
 
         /// Sets the value to uninitialized for the specified thread local map;
         /// a proceeding call to get() will trigger a call to GetInitialValue().

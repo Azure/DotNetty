@@ -30,7 +30,6 @@ namespace DotNetty.Transport.Channels.Embedded
         static readonly IInternalLogger logger = InternalLoggerFactory.GetInstance<EmbeddedChannel>();
 
         readonly EmbeddedEventLoop loop = new EmbeddedEventLoop();
-        readonly IChannelConfiguration config;
 
         Queue<object> inboundMessages;
         Queue<object> outboundMessages;
@@ -75,7 +74,7 @@ namespace DotNetty.Transport.Channels.Embedded
         public EmbeddedChannel(IChannelId id, params IChannelHandler[] handlers)
             : base(null, id)
         {
-            this.config = new DefaultChannelConfiguration(this);
+            this.Configuration = new DefaultChannelConfiguration(this);
             if (handlers == null)
             {
                 throw new NullReferenceException("handlers cannot be null");
@@ -100,7 +99,7 @@ namespace DotNetty.Transport.Channels.Embedded
             p.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
         }
 
-        public override IChannelConfiguration Configuration => this.config;
+        public override IChannelConfiguration Configuration { get; }
 
         /// <summary>
         ///     Returns the <see cref="Queue{T}" /> which holds all of the <see cref="object" />s that
@@ -114,15 +113,9 @@ namespace DotNetty.Transport.Channels.Embedded
         /// </summary>
         public Queue<object> OutboundMessages => this.outboundMessages ?? (this.outboundMessages = new Queue<object>());
 
-        public T ReadInbound<T>()
-        {
-            return (T)Poll(this.inboundMessages);
-        }
+        public T ReadInbound<T>() => (T)Poll(this.inboundMessages);
 
-        public T ReadOutbound<T>()
-        {
-            return (T)Poll(this.outboundMessages);
-        }
+        public T ReadOutbound<T>() => (T)Poll(this.outboundMessages);
 
         public override bool DisconnectSupported => false;
 
@@ -130,35 +123,20 @@ namespace DotNetty.Transport.Channels.Embedded
 
         protected override EndPoint RemoteAddressInternal => this.Active ? REMOTE_ADDRESS : null;
 
-        protected override IChannelUnsafe NewUnsafe()
-        {
-            return new DefaultUnsafe(this);
-        }
+        protected override IChannelUnsafe NewUnsafe() => new DefaultUnsafe(this);
 
-        protected override bool IsCompatible(IEventLoop eventLoop)
-        {
-            return eventLoop is EmbeddedEventLoop;
-        }
+        protected override bool IsCompatible(IEventLoop eventLoop) => eventLoop is EmbeddedEventLoop;
 
         protected override void DoBind(EndPoint localAddress)
         {
             //NOOP
         }
 
-        protected override void DoRegister()
-        {
-            this.state = State.Active;
-        }
+        protected override void DoRegister() => this.state = State.Active;
 
-        protected override void DoDisconnect()
-        {
-            this.DoClose();
-        }
+        protected override void DoDisconnect() => this.DoClose();
 
-        protected override void DoClose()
-        {
-            this.state = State.Closed;
-        }
+        protected override void DoClose() => this.state = State.Closed;
 
         protected override void DoBeginRead()
         {
@@ -370,15 +348,9 @@ namespace DotNetty.Transport.Channels.Embedded
             }
         }
 
-        static bool IsNotEmpty(Queue<object> queue)
-        {
-            return queue != null && queue.Count > 0;
-        }
+        static bool IsNotEmpty(Queue<object> queue) => queue != null && queue.Count > 0;
 
-        static object Poll(Queue<object> queue)
-        {
-            return IsNotEmpty(queue) ? queue.Dequeue() : null;
-        }
+        static object Poll(Queue<object> queue) => IsNotEmpty(queue) ? queue.Dequeue() : null;
 
         class DefaultUnsafe : AbstractUnsafe
         {
@@ -387,10 +359,7 @@ namespace DotNetty.Transport.Channels.Embedded
             {
             }
 
-            public override Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
-            {
-                return TaskEx.Completed;
-            }
+            public override Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress) => TaskEx.Completed;
         }
 
         internal sealed class LastInboundHandler : ChannelHandlerAdapter
@@ -404,17 +373,9 @@ namespace DotNetty.Transport.Channels.Embedded
                 this.recordException = recordException;
             }
 
-            public override void ChannelRead(IChannelHandlerContext context, object message)
-            {
-                // have to pass the EmbeddedChannel.InboundMessages by reference via the constructor
-                this.inboundMessages.Enqueue(message);
-            }
+            public override void ChannelRead(IChannelHandlerContext context, object message) => this.inboundMessages.Enqueue(message);
 
-            public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
-            {
-                // have to pass the EmbeddedChannel.RecordException method via reference
-                this.recordException(exception);
-            }
+            public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => this.recordException(exception);
         }
     }
 }

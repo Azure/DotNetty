@@ -19,20 +19,14 @@ namespace DotNetty.Common.Internal
         ///     Returns <c>true</c> if and only if the system property with the specified <c>key</c>
         ///     exists.
         /// </summary>
-        public static bool Contains(string key)
-        {
-            return Get(key) != null;
-        }
+        public static bool Contains(string key) => Get(key) != null;
 
         /// <summary>
         ///     Returns the value of the system property with the specified
         ///     <c>key</c>, while falling back to <c>null</c> if the property access fails.
         /// </summary>
         /// <returns>the property value or <c>null</c></returns>
-        public static string Get(string key)
-        {
-            return Get(key, null);
-        }
+        public static string Get(string key) => Get(key, null);
 
         /// <summary>
         ///     Returns the value of the system property with the specified
@@ -167,14 +161,8 @@ namespace DotNetty.Common.Internal
             return result;
         }
 
-        static void Log(string msg)
-        {
-            Logger.Warn(msg);
-        }
+        static void Log(string msg) => Logger.Warn(msg);
 
-        static void Log(string msg, Exception e)
-        {
-            Logger.Warn(msg, e);
-        }
+        static void Log(string msg, Exception e) => Logger.Warn(msg, e);
     }
 }

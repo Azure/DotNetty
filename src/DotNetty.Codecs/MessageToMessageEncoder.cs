@@ -16,10 +16,7 @@ namespace DotNetty.Codecs
         ///     Returns {@code true} if the given message should be handled. If {@code false} it will be passed to the next
         ///     {@link ChannelHandler} in the {@link ChannelPipeline}.
         /// </summary>
-        public bool AcceptOutboundMessage(object msg)
-        {
-            return msg is T;
-        }
+        public bool AcceptOutboundMessage(object msg) => msg is T;
 
         public override Task WriteAsync(IChannelHandlerContext ctx, object msg)
         {

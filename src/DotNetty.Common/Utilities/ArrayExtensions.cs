@@ -37,10 +37,7 @@ namespace DotNetty.Common.Utilities
             return result;
         }
 
-        public static void SetRange<T>(this T[] array, int index, T[] src)
-        {
-            SetRange(array, index, src, 0, src.Length);
-        }
+        public static void SetRange<T>(this T[] array, int index, T[] src) => SetRange(array, index, src, 0, src.Length);
 
         public static void SetRange<T>(this T[] array, int index, T[] src, int srcIndex, int srcLength)
         {

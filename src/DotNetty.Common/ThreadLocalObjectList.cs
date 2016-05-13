@@ -16,10 +16,7 @@ namespace DotNetty.Common
             this.returnHandle = returnHandle;
         }
 
-        public static ThreadLocalObjectList Take()
-        {
-            return Pool.Take();
-        }
+        public static ThreadLocalObjectList Take() => Pool.Take();
 
         public void Return()
         {

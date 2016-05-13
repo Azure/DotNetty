@@ -14,10 +14,7 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
             this.tcs = tcs;
         }
 
-        public void Signal()
-        {
-            this.tcs.TryComplete();
-        }
+        public void Signal() => this.tcs.TryComplete();
 
         public bool Finished => this.tcs.Task.IsCompleted;
     }

@@ -5,9 +5,6 @@ namespace DotNetty.Buffers.Tests
 {
     public class PooledBigEndianHeapByteBufTest : AbstractPooledByteBufTest
     {
-        protected override IByteBuffer Alloc(int length)
-        {
-            return PooledByteBufferAllocator.Default.Buffer(length);
-        }
+        protected override IByteBuffer Alloc(int length) => PooledByteBufferAllocator.Default.Buffer(length);
     }
 }

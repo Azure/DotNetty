@@ -15,8 +15,6 @@ namespace DotNetty.Common.Internal.Logging
     {
         static readonly string EXCEPTION_MESSAGE = "Unexpected exception:";
 
-        readonly string name;
-
         /// <summary>
         ///     Creates a new instance.
         /// </summary>
@@ -25,10 +23,10 @@ namespace DotNetty.Common.Internal.Logging
         {
             Contract.Requires(name != null);
 
-            this.name = name;
+            this.Name = name;
         }
 
-        public string Name => this.name;
+        public string Name { get; }
 
         public bool IsEnabled(InternalLogLevel level)
         {
@@ -61,10 +59,7 @@ namespace DotNetty.Common.Internal.Logging
 
         public abstract void Trace(string msg, Exception t);
 
-        public void Trace(Exception t)
-        {
-            this.Trace(EXCEPTION_MESSAGE, t);
-        }
+        public void Trace(Exception t) => this.Trace(EXCEPTION_MESSAGE, t);
 
         public abstract bool DebugEnabled { get; }
 
@@ -78,10 +73,7 @@ namespace DotNetty.Common.Internal.Logging
 
         public abstract void Debug(string msg, Exception t);
 
-        public void Debug(Exception t)
-        {
-            this.Debug(EXCEPTION_MESSAGE, t);
-        }
+        public void Debug(Exception t) => this.Debug(EXCEPTION_MESSAGE, t);
 
         public abstract bool InfoEnabled { get; }
 
@@ -95,10 +87,7 @@ namespace DotNetty.Common.Internal.Logging
 
         public abstract void Info(string msg, Exception t);
 
-        public void Info(Exception t)
-        {
-            this.Info(EXCEPTION_MESSAGE, t);
-        }
+        public void Info(Exception t) => this.Info(EXCEPTION_MESSAGE, t);
 
         public abstract bool WarnEnabled { get; }
 
@@ -112,10 +101,7 @@ namespace DotNetty.Common.Internal.Logging
 
         public abstract void Warn(string msg, Exception t);
 
-        public void Warn(Exception t)
-        {
-            this.Warn(EXCEPTION_MESSAGE, t);
-        }
+        public void Warn(Exception t) => this.Warn(EXCEPTION_MESSAGE, t);
 
         public abstract bool ErrorEnabled { get; }
 
@@ -129,10 +115,7 @@ namespace DotNetty.Common.Internal.Logging
 
         public abstract void Error(string msg, Exception t);
 
-        public void Error(Exception t)
-        {
-            this.Error(EXCEPTION_MESSAGE, t);
-        }
+        public void Error(Exception t) => this.Error(EXCEPTION_MESSAGE, t);
 
         public void Log(InternalLogLevel level, string msg, Exception cause)
         {
@@ -278,9 +261,6 @@ namespace DotNetty.Common.Internal.Logging
             }
         }
 
-        public override string ToString()
-        {
-            return this.GetType().Name + '(' + this.Name + ')'; // todo: port: revert: StringUtil.simpleClassName(this) + '(' + name() + ')';
-        }
+        public override string ToString() => this.GetType().Name + '(' + this.Name + ')';
     }
 }

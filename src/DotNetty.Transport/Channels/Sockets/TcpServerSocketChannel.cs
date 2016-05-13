@@ -60,10 +60,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         SocketChannelAsyncOperation AcceptOperation => this.acceptOperation ?? (this.acceptOperation = new SocketChannelAsyncOperation(this, false));
 
-        protected override IChannelUnsafe NewUnsafe()
-        {
-            return new TcpServerSocketChannelUnsafe(this);
-        }
+        protected override IChannelUnsafe NewUnsafe() => new TcpServerSocketChannelUnsafe(this);
 
         protected override void DoBind(EndPoint localAddress)
         {
@@ -91,10 +88,7 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        static void OnReadCompletedSync(object u, object p)
-        {
-            ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)p);
-        }
+        static void OnReadCompletedSync(object u, object p) => ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)p);
 
         protected override bool DoConnect(EndPoint remoteAddress, EndPoint localAddress)
         {
@@ -242,10 +236,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            protected override void AutoReadCleared()
-            {
-                ((TcpServerSocketChannel)this.Channel).ReadPending = false;
-            }
+            protected override void AutoReadCleared() => ((TcpServerSocketChannel)this.Channel).ReadPending = false;
         }
     }
 }

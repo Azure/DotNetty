@@ -36,7 +36,7 @@ namespace DotNetty.Codecs
         readonly Encoding encoding;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.StringEncoder" /> class with the current system
+        ///     Initializes a new instance of the <see cref="StringEncoder" /> class with the current system
         ///     character set.
         /// </summary>
         public StringEncoder()
@@ -45,7 +45,7 @@ namespace DotNetty.Codecs
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.StringEncoder" /> class with the specified character
+        ///     Initializes a new instance of the <see cref="StringEncoder" /> class with the specified character
         ///     set..
         /// </summary>
         /// <param name="encoding">Encoding.</param>

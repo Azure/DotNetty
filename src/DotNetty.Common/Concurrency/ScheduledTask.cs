@@ -45,10 +45,7 @@ namespace DotNetty.Common.Concurrency
 
         public Task Completion => this.Promise.Task;
 
-        public TaskAwaiter GetAwaiter()
-        {
-            return this.Completion.GetAwaiter();
-        }
+        public TaskAwaiter GetAwaiter() => this.Completion.GetAwaiter();
 
         int IComparable<IScheduledRunnable>.CompareTo(IScheduledRunnable other)
         {
@@ -78,10 +75,7 @@ namespace DotNetty.Common.Concurrency
 
         protected abstract void Execute();
 
-        bool TrySetUncancelable()
-        {
-            return this.AtomicCancellationStateUpdate(CancellationProhibited, CancellationRequested);
-        }
+        bool TrySetUncancelable() => this.AtomicCancellationStateUpdate(CancellationProhibited, CancellationRequested);
 
         bool AtomicCancellationStateUpdate(int newBits, int illegalBits)
         {

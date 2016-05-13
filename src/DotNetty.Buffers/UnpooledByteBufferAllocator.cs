@@ -13,9 +13,6 @@ namespace DotNetty.Buffers
         /// </summary>
         public static readonly UnpooledByteBufferAllocator Default = new UnpooledByteBufferAllocator();
 
-        protected override IByteBuffer NewBuffer(int initialCapacity, int maxCapacity)
-        {
-            return new UnpooledHeapByteBuffer(this, initialCapacity, maxCapacity);
-        }
+        protected override IByteBuffer NewBuffer(int initialCapacity, int maxCapacity) => new UnpooledHeapByteBuffer(this, initialCapacity, maxCapacity);
     }
 }

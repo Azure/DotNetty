@@ -92,24 +92,18 @@ namespace DotNetty.Transport.Bootstrapping
                 throw new InvalidOperationException("remoteAddress not set");
             }
 
-            return this.DoResolveAndConnect(remoteAddress, this.LocalAddress());
+            return this.DoResolveAndConnectAsync(remoteAddress, this.LocalAddress());
         }
 
         /// <summary>
         ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
-        public Task<IChannel> ConnectAsync(string inetHost, int inetPort)
-        {
-            return this.ConnectAsync(new DnsEndPoint(inetHost, inetPort));
-        }
+        public Task<IChannel> ConnectAsync(string inetHost, int inetPort) => this.ConnectAsync(new DnsEndPoint(inetHost, inetPort));
 
         /// <summary>
         ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
-        public Task<IChannel> ConnectAsync(IPAddress inetHost, int inetPort)
-        {
-            return this.ConnectAsync(new IPEndPoint(inetHost, inetPort));
-        }
+        public Task<IChannel> ConnectAsync(IPAddress inetHost, int inetPort) => this.ConnectAsync(new IPEndPoint(inetHost, inetPort));
 
         /// <summary>
         ///     Connect a {@link Channel} to the remote peer.
@@ -119,7 +113,7 @@ namespace DotNetty.Transport.Bootstrapping
             Contract.Requires(remoteAddress != null);
 
             this.Validate();
-            return this.DoResolveAndConnect(remoteAddress, this.LocalAddress());
+            return this.DoResolveAndConnectAsync(remoteAddress, this.LocalAddress());
         }
 
         /// <summary>
@@ -130,20 +124,20 @@ namespace DotNetty.Transport.Bootstrapping
             Contract.Requires(remoteAddress != null);
 
             this.Validate();
-            return this.DoResolveAndConnect(remoteAddress, localAddress);
+            return this.DoResolveAndConnectAsync(remoteAddress, localAddress);
         }
 
         /// <summary>
         ///     @see {@link #connect()}
         /// </summary>
-        async Task<IChannel> DoResolveAndConnect(EndPoint remoteAddress, EndPoint localAddress)
+        async Task<IChannel> DoResolveAndConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
             IChannel channel = await this.InitAndRegisterAsync();
 
             if (this.resolver.IsResolved(remoteAddress))
             {
                 // Resolver has no idea about what to do with the specified remote address or it's resolved already.
-                await DoConnect(channel, remoteAddress, localAddress);
+                await DoConnectAsync(channel, remoteAddress, localAddress);
                 return channel;
             }
 
@@ -158,11 +152,11 @@ namespace DotNetty.Transport.Bootstrapping
                 throw;
             }
 
-            await DoConnect(channel, resolvedAddress, localAddress);
+            await DoConnectAsync(channel, resolvedAddress, localAddress);
             return channel;
         }
 
-        static Task DoConnect(IChannel channel,
+        static Task DoConnectAsync(IChannel channel,
             EndPoint remoteAddress, EndPoint localAddress)
         {
             // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
@@ -232,10 +226,7 @@ namespace DotNetty.Transport.Bootstrapping
             return this;
         }
 
-        public override object Clone()
-        {
-            return new Bootstrap(this);
-        }
+        public override object Clone() => new Bootstrap(this);
 
         /// <summary>
         ///     Returns a deep clone of this bootstrap which has the identical configuration except that it uses

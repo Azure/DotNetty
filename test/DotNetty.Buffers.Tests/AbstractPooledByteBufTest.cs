@@ -18,16 +18,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestDiscardMarks()
-        {
-            this.TestDiscardMarks(4);
-        }
+        public void TestDiscardMarks() => this.TestDiscardMarks(4);
 
         [Fact]
-        public void TestDiscardMarksUnpooled()
-        {
-            this.TestDiscardMarks(32 * 1024 * 1024);
-        }
+        public void TestDiscardMarksUnpooled() => this.TestDiscardMarks(32 * 1024 * 1024);
 
         void TestDiscardMarks(int capacity)
         {

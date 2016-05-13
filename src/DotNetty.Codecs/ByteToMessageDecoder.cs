@@ -356,9 +356,6 @@ namespace DotNetty.Codecs
             }
         }
 
-        protected virtual void DecodeLast(IChannelHandlerContext context, IByteBuffer input, List<object> output)
-        {
-            this.Decode(context, input, output);
-        }
+        protected virtual void DecodeLast(IChannelHandlerContext context, IByteBuffer input, List<object> output) => this.Decode(context, input, output);
     }
 }

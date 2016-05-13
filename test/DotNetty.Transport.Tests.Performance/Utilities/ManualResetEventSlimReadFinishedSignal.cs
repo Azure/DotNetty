@@ -14,10 +14,7 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
             this.manualResetEventSlim = manualResetEventSlim;
         }
 
-        public void Signal()
-        {
-            this.manualResetEventSlim.Set();
-        }
+        public void Signal() => this.manualResetEventSlim.Set();
 
         public bool Finished => this.manualResetEventSlim.IsSet;
     }

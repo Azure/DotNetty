@@ -145,10 +145,7 @@ namespace DotNetty.Common.Utilities
         /// <summary>
         ///     Converts the specified byte value into a 2-digit hexadecimal integer.
         /// </summary>
-        public static string ByteToHexStringPadded(int value)
-        {
-            return Byte2HexPad[value & 0xff];
-        }
+        public static string ByteToHexStringPadded(int value) => Byte2HexPad[value & 0xff];
 
         //todo: port
         //    /**
@@ -166,10 +163,7 @@ namespace DotNetty.Common.Utilities
         /// <summary>
         ///     Converts the specified byte array into a hexadecimal value.
         /// </summary>
-        public static string ToHexStringPadded(byte[] src)
-        {
-            return ToHexStringPadded(src, 0, src.Length);
-        }
+        public static string ToHexStringPadded(byte[] src) => ToHexStringPadded(src, 0, src.Length);
 
         /// <summary>
         ///     Converts the specified byte array into a hexadecimal value.
@@ -199,30 +193,15 @@ namespace DotNetty.Common.Utilities
         /// <summary>
         ///     Converts the specified byte value into a hexadecimal integer.
         /// </summary>
-        public static string ByteToHexString(byte value)
-        {
-            return Byte2HexNopad[value & 0xff];
-        }
+        public static string ByteToHexString(byte value) => Byte2HexNopad[value & 0xff];
 
-        public static StringBuilder ByteToHexString(StringBuilder buf, byte value)
-        {
-            return buf.Append(ByteToHexString(value));
-        }
+        public static StringBuilder ByteToHexString(StringBuilder buf, byte value) => buf.Append(ByteToHexString(value));
 
-        public static string ToHexString(byte[] src)
-        {
-            return ToHexString(src, 0, src.Length);
-        }
+        public static string ToHexString(byte[] src) => ToHexString(src, 0, src.Length);
 
-        public static string ToHexString(byte[] src, int offset, int length)
-        {
-            return ToHexString(new StringBuilder(length << 1), src, offset, length).ToString();
-        }
+        public static string ToHexString(byte[] src, int offset, int length) => ToHexString(new StringBuilder(length << 1), src, offset, length).ToString();
 
-        public static StringBuilder ToHexString(StringBuilder dst, byte[] src)
-        {
-            return ToHexString(dst, src, 0, src.Length);
-        }
+        public static StringBuilder ToHexString(StringBuilder dst, byte[] src) => ToHexString(dst, src, 0, src.Length);
 
         /// <summary>
         ///     Converts the specified byte array into a hexadecimal value and appends it to the specified buffer.
@@ -314,35 +293,23 @@ namespace DotNetty.Common.Utilities
                 escaped.Append(DoubleQuote).ToString() : value;
         }
 
-        static bool IsDoubleQuote(char c)
-        {
-            return c == DoubleQuote;
-        }
+        static bool IsDoubleQuote(char c) => c == DoubleQuote;
 
         /// <summary>
         ///     The shortcut to <see cref="SimpleClassName(Type)">SimpleClassName(o.GetType())</see>.
         /// </summary>
-        public static string SimpleClassName(object o)
-        {
-            return o == null ? "null_object" : o.GetType().Name;
-        }
+        public static string SimpleClassName(object o) => o?.GetType().Name ?? "null_object";
 
         /// <summary>
         ///     The shortcut to <see cref="SimpleClassName(Type)">SimpleClassName(o.GetType())</see>.
         /// </summary>
-        public static string SimpleClassName<T>()
-        {
-            return typeof(T).Name;
-        }
+        public static string SimpleClassName<T>() => typeof(T).Name;
 
         /// <summary>
         ///     Generates a simplified name from a <see cref="Type" />.  Similar to {@link Class#getSimpleName()}, but it works
         ///     fine
         ///     with anonymous classes.
         /// </summary>
-        public static string SimpleClassName(Type type)
-        {
-            return type.Name;
-        }
+        public static string SimpleClassName(Type type) => type.Name;
     }
 }

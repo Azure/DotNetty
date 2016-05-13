@@ -96,7 +96,7 @@ namespace DotNetty.Transport.Channels
                 do
                 {
                     this.flushed++;
-                    if (!entry.Promise.setUncancellable())
+                    if (!entry.Promise.SetUncancellable())
                     {
                         // Was cancelled so make sure we free up memory and notify about the freed bytes
                         int pending = entry.Cancel();
@@ -326,7 +326,6 @@ namespace DotNetty.Transport.Channels
         public List<ArraySegment<byte>> GetNioBuffers()
         {
             long nioBufferSize = 0;
-            int nioBufferCount = 0;
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
             List<ArraySegment<byte>> nioBuffers = NioBuffers.Get(threadLocalMap);
             Entry entry = this.flushedEntry;

@@ -52,9 +52,6 @@ namespace DotNetty.Transport.Channels
             this.handle = new HandleImpl(unknownSize);
         }
 
-        public IMessageSizeEstimatorHandle NewHandle()
-        {
-            return this.handle;
-        }
+        public IMessageSizeEstimatorHandle NewHandle() => this.handle;
     }
 }

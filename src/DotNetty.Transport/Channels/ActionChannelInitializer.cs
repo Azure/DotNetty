@@ -18,9 +18,6 @@ namespace DotNetty.Transport.Channels
             this.initializationAction = initializationAction;
         }
 
-        protected override void InitChannel(T channel)
-        {
-            this.initializationAction(channel);
-        }
+        protected override void InitChannel(T channel) => this.initializationAction(channel);
     }
 }

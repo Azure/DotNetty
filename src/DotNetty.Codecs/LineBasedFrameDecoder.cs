@@ -149,10 +149,7 @@ namespace DotNetty.Codecs
             }
         }
 
-        void Fail(IChannelHandlerContext ctx, int length)
-        {
-            this.Fail(ctx, length.ToString());
-        }
+        void Fail(IChannelHandlerContext ctx, int length) => this.Fail(ctx, length.ToString());
 
         void Fail(IChannelHandlerContext ctx, string length)
         {

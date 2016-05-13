@@ -19,10 +19,7 @@ namespace DotNetty.Transport.Channels.Embedded
 
         public IChannelHandlerInvoker Invoker => this;
 
-        public Task RegisterAsync(IChannel channel)
-        {
-            return channel.Unsafe.RegisterAsync(this);
-        }
+        public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
 
         public override bool IsShuttingDown => false;
 
@@ -35,10 +32,7 @@ namespace DotNetty.Transport.Channels.Embedded
 
         public override bool IsTerminated => false;
 
-        public override bool IsInEventLoop(Thread thread)
-        {
-            return true;
-        }
+        public override bool IsInEventLoop(Thread thread) => true;
 
         public override void Execute(IRunnable command)
         {
@@ -54,10 +48,7 @@ namespace DotNetty.Transport.Channels.Embedded
             throw new NotSupportedException();
         }
 
-        internal PreciseTimeSpan NextScheduledTask()
-        {
-            return this.NextScheduledTaskNanos();
-        }
+        internal PreciseTimeSpan NextScheduledTask() => this.NextScheduledTaskNanos();
 
         internal void RunTasks()
         {
@@ -94,94 +85,40 @@ namespace DotNetty.Transport.Channels.Embedded
         /// <summary>
         ///     YOLO
         /// </summary>
-        internal new void CancelScheduledTasks()
-        {
-            base.CancelScheduledTasks();
-        }
+        internal new void CancelScheduledTasks() => base.CancelScheduledTasks();
 
-        public void InvokeChannelRegistered(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeChannelRegisteredNow(ctx);
-        }
+        public void InvokeChannelRegistered(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeChannelRegisteredNow(ctx);
 
-        public void InvokeChannelUnregistered(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeChannelUnregisteredNow(ctx);
-        }
+        public void InvokeChannelUnregistered(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeChannelUnregisteredNow(ctx);
 
-        public void InvokeChannelActive(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeChannelActiveNow(ctx);
-        }
+        public void InvokeChannelActive(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeChannelActiveNow(ctx);
 
-        public void InvokeChannelInactive(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeChannelInactiveNow(ctx);
-        }
+        public void InvokeChannelInactive(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeChannelInactiveNow(ctx);
 
-        public void InvokeExceptionCaught(IChannelHandlerContext ctx, Exception cause)
-        {
-            ChannelHandlerInvokerUtil.InvokeExceptionCaughtNow(ctx, cause);
-        }
+        public void InvokeExceptionCaught(IChannelHandlerContext ctx, Exception cause) => ChannelHandlerInvokerUtil.InvokeExceptionCaughtNow(ctx, cause);
 
-        public void InvokeUserEventTriggered(IChannelHandlerContext ctx, object evt)
-        {
-            ChannelHandlerInvokerUtil.InvokeUserEventTriggeredNow(ctx, evt);
-        }
+        public void InvokeUserEventTriggered(IChannelHandlerContext ctx, object evt) => ChannelHandlerInvokerUtil.InvokeUserEventTriggeredNow(ctx, evt);
 
-        public void InvokeChannelRead(IChannelHandlerContext ctx, object msg)
-        {
-            ChannelHandlerInvokerUtil.InvokeChannelReadNow(ctx, msg);
-        }
+        public void InvokeChannelRead(IChannelHandlerContext ctx, object msg) => ChannelHandlerInvokerUtil.InvokeChannelReadNow(ctx, msg);
 
-        public void InvokeChannelReadComplete(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeChannelReadCompleteNow(ctx);
-        }
+        public void InvokeChannelReadComplete(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeChannelReadCompleteNow(ctx);
 
-        public void InvokeChannelWritabilityChanged(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeChannelWritabilityChangedNow(ctx);
-        }
+        public void InvokeChannelWritabilityChanged(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeChannelWritabilityChangedNow(ctx);
 
-        public Task InvokeBindAsync(IChannelHandlerContext ctx, EndPoint localAddress)
-        {
-            return ChannelHandlerInvokerUtil.InvokeBindAsyncNow(ctx, localAddress);
-        }
+        public Task InvokeBindAsync(IChannelHandlerContext ctx, EndPoint localAddress) => ChannelHandlerInvokerUtil.InvokeBindNowAsync(ctx, localAddress);
 
-        public Task InvokeConnectAsync(IChannelHandlerContext ctx, EndPoint remoteAddress, EndPoint localAddress)
-        {
-            return ChannelHandlerInvokerUtil.InvokeConnectAsyncNow(ctx, remoteAddress, localAddress);
-        }
+        public Task InvokeConnectAsync(IChannelHandlerContext ctx, EndPoint remoteAddress, EndPoint localAddress) => ChannelHandlerInvokerUtil.InvokeConnectNowAsync(ctx, remoteAddress, localAddress);
 
-        public Task InvokeDisconnectAsync(IChannelHandlerContext ctx)
-        {
-            return ChannelHandlerInvokerUtil.InvokeDisconnectAsyncNow(ctx);
-        }
+        public Task InvokeDisconnectAsync(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeDisconnectNowAsync(ctx);
 
-        public Task InvokeCloseAsync(IChannelHandlerContext ctx)
-        {
-            return ChannelHandlerInvokerUtil.InvokeCloseAsyncNow(ctx);
-        }
+        public Task InvokeCloseAsync(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeCloseNowAsync(ctx);
 
-        public Task InvokeDeregisterAsync(IChannelHandlerContext ctx)
-        {
-            return ChannelHandlerInvokerUtil.InvokeDeregisterAsyncNow(ctx);
-        }
+        public Task InvokeDeregisterAsync(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeDeregisterNowAsync(ctx);
 
-        public void InvokeRead(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeReadNow(ctx);
-        }
+        public void InvokeRead(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeReadNow(ctx);
 
-        public Task InvokeWriteAsync(IChannelHandlerContext ctx, object msg)
-        {
-            return ChannelHandlerInvokerUtil.InvokeWriteAsyncNow(ctx, msg);
-        }
+        public Task InvokeWriteAsync(IChannelHandlerContext ctx, object msg) => ChannelHandlerInvokerUtil.InvokeWriteNowAsync(ctx, msg);
 
-        public void InvokeFlush(IChannelHandlerContext ctx)
-        {
-            ChannelHandlerInvokerUtil.InvokeFlushNow(ctx);
-        }
+        public void InvokeFlush(IChannelHandlerContext ctx) => ChannelHandlerInvokerUtil.InvokeFlushNow(ctx);
     }
 }

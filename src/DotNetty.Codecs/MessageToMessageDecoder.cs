@@ -14,10 +14,7 @@ namespace DotNetty.Codecs
     /// </summary>
     public abstract class MessageToMessageDecoder<T> : ChannelHandlerAdapter
     {
-        public virtual bool AcceptInboundMessage(object msg)
-        {
-            return msg is T;
-        }
+        public virtual bool AcceptInboundMessage(object msg) => msg is T;
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {

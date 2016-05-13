@@ -29,9 +29,6 @@ namespace DotNetty.Transport.Channels
 
         public IChannelHandlerInvoker Invoker { get; }
 
-        public Task RegisterAsync(IChannel channel)
-        {
-            return channel.Unsafe.RegisterAsync(this);
-        }
+        public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
     }
 }
