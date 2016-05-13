@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -155,6 +156,10 @@ namespace DotNetty.Buffers
         {
             return this.buffer.SetBytesAsync(index, src, length, cancellationToken);
         }
+
+        public override int IoBufferCount => this.Unwrap().IoBufferCount;
+
+        public override ArraySegment<byte>[] GetIoBuffers(int index, int length) => this.Unwrap().GetIoBuffers(index, length);
 
         public override bool HasArray => this.buffer.HasArray;
 

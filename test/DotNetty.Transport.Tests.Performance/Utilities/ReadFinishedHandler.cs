@@ -3,6 +3,7 @@
 
 namespace DotNetty.Transport.Tests.Performance.Utilities
 {
+    using System;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
@@ -26,5 +27,7 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
                 this.signal.Signal();
             }
         }
+
+        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => Console.WriteLine(exception.ToString());
     }
 }

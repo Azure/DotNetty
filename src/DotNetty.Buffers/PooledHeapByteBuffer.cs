@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -185,6 +186,17 @@ namespace DotNetty.Buffers
         //    index = idx(index);
         //    return (ByteBuffer)internalNioBuffer().clear().position(index).limit(index + length);
         //}
+
+        public override int IoBufferCount => 1;
+
+        public override ArraySegment<byte> GetIoBuffer(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            index = index + this.Offset;
+            return new ArraySegment<byte>(this.Memory, index, length);
+        }
+
+        public override ArraySegment<byte>[] GetIoBuffers(int index, int length) => new[] { this.GetIoBuffer(index, length) };
 
         public override bool HasArray => true;
 

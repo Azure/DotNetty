@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -118,12 +119,9 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        protected override void DoBind(EndPoint localAddress)
-        {
-            this.Socket.Bind(localAddress);
-        }
+        protected override void DoBind(EndPoint localAddress) => this.Socket.Bind(localAddress);
 
-        protected override bool DoConnect(EndPoint remoteAddress, EndPoint localAddress)
+      protected override bool DoConnect(EndPoint remoteAddress, EndPoint localAddress)
         {
             if (localAddress != null)
             {
@@ -170,12 +168,9 @@ namespace DotNetty.Transport.Channels.Sockets
             this.CacheRemoteAddress();
         }
 
-        protected override void DoDisconnect()
-        {
-            this.DoClose();
-        }
+        protected override void DoDisconnect() => this.DoClose();
 
-        protected override void DoClose()
+      protected override void DoClose()
         {
             base.DoClose();
             if (this.ResetState(StateFlags.Open | StateFlags.Active))
@@ -239,7 +234,6 @@ namespace DotNetty.Transport.Channels.Sockets
             }
 
             return sent;
-            //return buf.readBytes(javaChannel(), expectedWrittenBytes);
         }
 
         //protected long doWriteFileRegion(FileRegion region)
@@ -248,91 +242,104 @@ namespace DotNetty.Transport.Channels.Sockets
         //    return region.transferTo(javaChannel(), position);
         //}
 
-        //protected void doWrite(ChannelOutboundBuffer input)
-        //{
-        //    for (;;)
-        //    {
-        //        int size = input.size();
-        //        if (size == 0)
-        //        {
-        //            // All written so clear OP_WRITE
-        //            this.clearOpWrite();
-        //            break;
-        //        }
-        //        long writtenBytes = 0;
-        //        bool done = false;
-        //        bool setOpWrite = false;
-
-        //        // Ensure the pending writes are made of ByteBufs only.
-        //        IByteBuffer[] nioBuffers = input.nioBuffers();
-        //        int nioBufferCnt = input.nioBufferCount();
-        //        long expectedWrittenBytes = input.nioBufferSize();
-        //        SocketChannel ch = javaChannel();
-
-        //        // Always us nioBuffers() to workaround data-corruption.
-        //        // See https://github.com/netty/netty/issues/2761
-        //        switch (nioBufferCnt)
-        //        {
-        //            case 0:
-        //                // We have something else beside ByteBuffers to write so fallback to normal writes.
-        //                base.doWrite(input);
-        //                return;
-        //            case 1:
-        //                // Only one ByteBuf so use non-gathering write
-        //                ByteBuffer nioBuffer = nioBuffers[0];
-        //                for (int i = config().getWriteSpinCount() - 1; i >= 0; i --)
-        //                {
-        //                    int localWrittenBytes = ch.write(nioBuffer);
-        //                    if (localWrittenBytes == 0)
-        //                    {
-        //                        setOpWrite = true;
-        //                        break;
-        //                    }
-        //                    expectedWrittenBytes -= localWrittenBytes;
-        //                    writtenBytes += localWrittenBytes;
-        //                    if (expectedWrittenBytes == 0)
-        //                    {
-        //                        done = true;
-        //                        break;
-        //                    }
-        //                }
-        //                break;
-        //            default:
-        //                for (int i = config().getWriteSpinCount() - 1; i >= 0; i --)
-        //                {
-        //                    long localWrittenBytes = ch.write(nioBuffers, 0, nioBufferCnt);
-        //                    if (localWrittenBytes == 0)
-        //                    {
-        //                        setOpWrite = true;
-        //                        break;
-        //                    }
-        //                    expectedWrittenBytes -= localWrittenBytes;
-        //                    writtenBytes += localWrittenBytes;
-        //                    if (expectedWrittenBytes == 0)
-        //                    {
-        //                        done = true;
-        //                        break;
-        //                    }
-        //                }
-        //                break;
-        //        }
-
-        //        // Release the fully written buffers, and update the indexes of the partially written buffer.
-        //        input.removeBytes(writtenBytes);
-
-        //        if (!done)
-        //        {
-        //            // Did not write all buffers completely.
-        //            incompleteWrite(setOpWrite);
-        //            break;
-        //        }
-        //    }
-        //}
-
-        protected override IChannelUnsafe NewUnsafe()
+        protected override void DoWrite(ChannelOutboundBuffer input)
         {
-            return new TcpSocketChannelUnsafe(this);
+            while (true)
+            {
+                int size = input.Count;
+                if (size == 0)
+                {
+                    // All written
+                    break;
+                }
+                long writtenBytes = 0;
+                bool done = false;
+                bool setOpWrite = false;
+
+                // Ensure the pending writes are made of ByteBufs only.
+                List<ArraySegment<byte>> nioBuffers = input.GetNioBuffers();
+                int nioBufferCnt = nioBuffers.Count;
+                long expectedWrittenBytes = input.NioBufferSize;
+                Socket socket = this.Socket;
+
+                // Always us nioBuffers() to workaround data-corruption.
+                // See https://github.com/netty/netty/issues/2761
+                switch (nioBufferCnt)
+                {
+                    case 0:
+                        // We have something else beside ByteBuffers to write so fallback to normal writes.
+                        base.DoWrite(input);
+                        return;
+                    case 1:
+                        // Only one ByteBuf so use non-gathering write
+                        ArraySegment<byte> nioBuffer = nioBuffers[0];
+                        for (int i = this.Configuration.WriteSpinCount - 1; i >= 0; i--)
+                        {
+                            SocketError errorCode;
+                            int localWrittenBytes = socket.Send(nioBuffer.Array, nioBuffer.Offset, nioBuffer.Count, SocketFlags.None, out errorCode);
+                            if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
+                            {
+                                throw new SocketException((int)errorCode);
+                            }
+
+                            if (localWrittenBytes == 0)
+                            {
+                                setOpWrite = true;
+                                break;
+                            }
+                            expectedWrittenBytes -= localWrittenBytes;
+                            writtenBytes += localWrittenBytes;
+                            if (expectedWrittenBytes == 0)
+                            {
+                                done = true;
+                                break;
+                            }
+                        }
+                        break;
+                    default:
+                        for (int i = this.Configuration.WriteSpinCount - 1; i >= 0; i--)
+                        {
+                            SocketError errorCode;
+                            long localWrittenBytes = socket.Send(nioBuffers, SocketFlags.None, out errorCode);
+                            if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
+                            {
+                                throw new SocketException((int)errorCode);
+                            }
+
+                            if (localWrittenBytes == 0)
+                            {
+                                setOpWrite = true;
+                                break;
+                            }
+                            expectedWrittenBytes -= localWrittenBytes;
+                            writtenBytes += localWrittenBytes;
+                            if (expectedWrittenBytes == 0)
+                            {
+                                done = true;
+                                break;
+                            }
+                        }
+                        break;
+                }
+
+                if (!done)
+                {
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(nioBuffers);
+
+                    // Release the fully written buffers, and update the indexes of the partially written buffer.
+                    input.RemoveBytes(writtenBytes);
+                    
+                    // Did not write all buffers completely.
+                    this.IncompleteWrite(setOpWrite, asyncOperation);
+                    break;
+                }
+                
+                // Release the fully written buffers, and update the indexes of the partially written buffer.
+                input.RemoveBytes(writtenBytes);
+            }
         }
+
+        protected override IChannelUnsafe NewUnsafe() => new TcpSocketChannelUnsafe(this);
 
         sealed class TcpSocketChannelUnsafe : SocketByteChannelUnsafe
         {
@@ -359,10 +366,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            protected override void AutoReadCleared()
-            {
-                ((TcpSocketChannel)this.Channel).ReadPending = false;
-            }
+            protected override void AutoReadCleared() => ((TcpSocketChannel)this.Channel).ClearReadPending();
         }
     }
 }

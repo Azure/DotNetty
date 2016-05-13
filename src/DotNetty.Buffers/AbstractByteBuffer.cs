@@ -668,6 +668,16 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public abstract int IoBufferCount { get; }
+
+        public ArraySegment<byte> GetIoBuffer() => this.GetIoBuffer(this.ReaderIndex, this.ReadableBytes);
+
+        public abstract ArraySegment<byte> GetIoBuffer(int index, int length);
+
+        public ArraySegment<byte>[] GetIoBuffers() => this.GetIoBuffers(this.ReaderIndex, this.ReadableBytes);
+
+        public abstract ArraySegment<byte>[] GetIoBuffers(int index, int length);
+
         public async Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken)
         {
             this.EnsureAccessible();

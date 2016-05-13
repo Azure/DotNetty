@@ -35,6 +35,8 @@ namespace DotNetty.Buffers
             }
         }
 
+        static readonly ArraySegment<byte> EmptyNioBuffer = Unpooled.Empty.GetIoBuffer();
+
         readonly IResourceLeak leak;
         readonly IByteBufferAllocator allocator;
         readonly List<ComponentEntry> components = new List<ComponentEntry>();
@@ -402,6 +404,96 @@ namespace DotNetty.Buffers
             }
 
             return slice;
+        }
+
+        public override int IoBufferCount
+        {
+            get
+            {
+                switch (this.components.Count)
+                {
+                    case 0:
+                        return 1;
+                    case 1:
+                        return this.components[0].Buffer.IoBufferCount;
+                    default:
+                        int count = 0;
+                        int componentsCount = this.components.Count;
+                        for (int i = 0; i < componentsCount; i++)
+                        {
+                            ComponentEntry c = this.components[i];
+                            count += c.Buffer.IoBufferCount;
+                        }
+                        return count;
+                }
+            }
+        }
+
+        public override ArraySegment<byte> GetIoBuffer(int index, int length)
+        {
+            this.CheckIndex(index, length);
+
+            switch (this.components.Count)
+            {
+                case 0:
+                    return EmptyNioBuffer;
+                case 1:
+                    IByteBuffer buf = this.components[0].Buffer;
+                    if (buf.IoBufferCount == 1)
+                    {
+                        return this.components[0].Buffer.GetIoBuffer(index, length);
+                    }
+                    break;
+            }
+
+            var merged = new byte[length];
+            ArraySegment<byte>[] buffers = this.GetIoBuffers(index, length);
+
+            int offset = 0;
+            foreach (ArraySegment<byte> buf in buffers)
+            {
+                Contract.Assert(merged.Length - offset >= buf.Count);
+                System.Array.Copy(buf.Array, buf.Offset, merged, offset, buf.Count);
+                offset += buf.Count;
+            }
+
+            return new ArraySegment<byte>(merged);
+        }
+
+        public override ArraySegment<byte>[] GetIoBuffers(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            if (length == 0)
+            {
+                return new[] { EmptyNioBuffer };
+            }
+
+            var buffers = new List<ArraySegment<byte>>(this.components.Count);
+            int i = this.ToComponentIndex(index);
+            while (length > 0)
+            {
+                ComponentEntry c = this.components[i];
+                IByteBuffer s = c.Buffer;
+                int adjustment = c.Offset;
+                int localLength = Math.Min(length, s.Capacity - (index - adjustment));
+                switch (s.IoBufferCount)
+                {
+                    case 0:
+                        throw new NotSupportedException();
+                    case 1:
+                        buffers.Add(s.GetIoBuffer(index - adjustment, localLength));
+                        break;
+                    default:
+                        buffers.AddRange(s.GetIoBuffers(index - adjustment, localLength));
+                        break;
+                }
+
+                index += localLength;
+                length -= localLength;
+                i++;
+            }
+
+            return buffers.ToArray();
         }
 
         public override bool HasArray

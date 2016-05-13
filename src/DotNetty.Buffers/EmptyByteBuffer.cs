@@ -17,6 +17,9 @@ namespace DotNetty.Buffers
     /// </summary>
     public sealed class EmptyByteBuffer : IByteBuffer
     {
+        static readonly ArraySegment<byte> EmptyBuffer = new ArraySegment<byte>(ArrayExtensions.ZeroBytes);
+        static readonly ArraySegment<byte>[] EmptyBuffers = { EmptyBuffer };
+
         readonly IByteBufferAllocator allocator;
         readonly ByteOrder order;
         readonly string str;
@@ -455,6 +458,24 @@ namespace DotNetty.Buffers
         public IByteBuffer WriteBytes(byte[] src, int srcIndex, int length)
         {
             return this.CheckLength(length);
+        }
+
+        public int IoBufferCount => 1;
+
+        public ArraySegment<byte> GetIoBuffer() => EmptyBuffer;
+
+        public ArraySegment<byte> GetIoBuffer(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            return this.GetIoBuffer();
+        }
+
+        public ArraySegment<byte>[] GetIoBuffers() => EmptyBuffers;
+
+        public ArraySegment<byte>[] GetIoBuffers(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            return this.GetIoBuffers();
         }
 
         public bool HasArray => true;

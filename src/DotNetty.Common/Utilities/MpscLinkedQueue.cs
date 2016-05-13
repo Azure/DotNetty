@@ -29,9 +29,6 @@ namespace DotNetty.Common.Utilities
         // offer() appends a new node next to the tail using AtomicReference.getAndSet()
         // poll() removes head from the linked list and promotes the 1st element to the head,
         // setting its value to null if possible.
-        //
-        // Also note that this class : AtomicReference for the "tail" slot (which is the one that is appended to)
-        // since Unsafe does not expose XCHG operation intrinsically.
         public MpscLinkedQueue()
         {
             MpscLinkedQueueNode<T> tombstone = new DefaultNode(null);
@@ -174,12 +171,12 @@ namespace DotNetty.Common.Utilities
 
     abstract class MpscLinkedQueueHeadRef<T> : MpscLinkedQueuePad0<T>
     {
-        volatile MpscLinkedQueueNode<T> headRef;
+        MpscLinkedQueueNode<T> headRef;
 
         protected MpscLinkedQueueNode<T> HeadRef
         {
-            get { return this.headRef; }
-            set { this.headRef = value; }
+            get { return Volatile.Read(ref this.headRef); }
+            set { Volatile.Write(ref this.headRef, value); }
         }
     }
 
@@ -231,12 +228,12 @@ namespace DotNetty.Common.Utilities
 
     abstract class MpscLinkedQueueTailRef<T> : MpscLinkedQueuePad1<T>
     {
-        volatile MpscLinkedQueueNode<T> tailRef;
+        MpscLinkedQueueNode<T> tailRef;
 
         protected MpscLinkedQueueNode<T> TailRef
         {
-            get { return this.tailRef; }
-            set { this.tailRef = value; }
+            get { return Volatile.Read(ref this.tailRef); }
+            set { Volatile.Write(ref this.tailRef, value); }
         }
 
         protected MpscLinkedQueueNode<T> GetAndSetTailRef(MpscLinkedQueueNode<T> value)

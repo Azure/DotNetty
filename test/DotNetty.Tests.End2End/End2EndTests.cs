@@ -213,7 +213,7 @@ namespace DotNetty.Tests.End2End
             var publishPacket = Assert.IsType<PublishPacket>(currentMessageFunc());
             Assert.Equal(QualityOfService.AtLeastOnce, publishPacket.QualityOfService);
             Assert.Equal(PublishS2CQos1Topic, publishPacket.TopicName);
-            Assert.Equal(PublishS2CQos1Payload, Encoding.UTF8.GetString(publishPacket.Payload.ToArray()));
+            Assert.Equal(PublishS2CQos1Payload, publishPacket.Payload.ToString(Encoding.UTF8));
 
             yield return TestScenarioStep.Messages(
                 PubAckPacket.InResponseTo(publishPacket),
@@ -330,7 +330,7 @@ namespace DotNetty.Tests.End2End
                 yield return TestScenarioStep.Message(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(message)));
 
                 var responseMessage = Assert.IsAssignableFrom<IByteBuffer>(currentMessageFunc());
-                Assert.Equal(message, Encoding.UTF8.GetString(responseMessage.ToArray()));
+                Assert.Equal(message, responseMessage.ToString(Encoding.UTF8));
             }
         }
     }

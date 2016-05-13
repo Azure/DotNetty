@@ -1637,6 +1637,52 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
+        public void TestIoBuffer1()
+        {
+            if (this.buffer.IoBufferCount != 1)
+            {
+                // skipping
+                return;
+            }
+
+            var value = new byte[this.buffer.Capacity];
+            this.random.NextBytes(value);
+            this.buffer.Clear();
+            this.buffer.WriteBytes(value);
+
+            AssertRemainingEquals(new ArraySegment<byte>(value), this.buffer.GetIoBuffer());
+        }
+
+        [Fact]
+        public void TestToByteBuffer2()
+        {
+            if (this.buffer.IoBufferCount != 1)
+            {
+                // skipping 
+                return;
+            }
+
+            var value = new byte[this.buffer.Capacity];
+            this.random.NextBytes(value);
+            this.buffer.Clear();
+            this.buffer.WriteBytes(value);
+
+            for (int i = 0; i < this.buffer.Capacity - BlockSize + 1; i += BlockSize)
+            {
+                AssertRemainingEquals(new ArraySegment<byte>(value, i, BlockSize), this.buffer.GetIoBuffer(i, BlockSize));
+            }
+        }
+
+        static void AssertRemainingEquals(ArraySegment<byte> expected, ArraySegment<byte> actual)
+        {
+            int remaining = expected.Count;
+            int remaining2 = actual.Count;
+
+            Assert.Equal(remaining, remaining2);
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
         public void TestSkipBytes1()
         {
             this.buffer.SetIndex(Capacity / 4, Capacity / 2);
@@ -2316,6 +2362,18 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
+        public void TestIoBufferAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetIoBuffer());
+
+        [Fact]
+        public void TestIoBufferAfterRelease1() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetIoBuffer(0, 1));
+
+        [Fact]
+        public void TestIoBuffersAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetIoBuffers());
+
+        [Fact]
+        public void TestIoBuffersAfterRelease2() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetIoBuffers(0, 1));
+
+        [Fact]
         public void TestArrayAfterRelease()
         {
             IByteBuffer buf = this.ReleasedBuffer();
@@ -2415,6 +2473,17 @@ namespace DotNetty.Buffers.Tests
                 Assert.Equal(0, Volatile.Read(ref cnt));
                 innerLatch.Set();
             }
+        }
+
+        [Fact]
+        public void TestEmptyIoBuffers()
+        {
+            IByteBuffer buffer = ReferenceCountUtil.ReleaseLater(this.NewBuffer(8));
+            buffer.Clear();
+            Assert.False(buffer.IsReadable());
+            ArraySegment<byte>[] nioBuffers = buffer.GetIoBuffers();
+            Assert.Equal(1, nioBuffers.Length);
+            Assert.Equal(0, nioBuffers[0].Count);
         }
 
         sealed class TestByteProcessor : ByteProcessor

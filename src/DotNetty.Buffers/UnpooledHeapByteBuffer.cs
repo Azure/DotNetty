@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Threading;
@@ -97,6 +98,16 @@ namespace DotNetty.Buffers
             }
             return this;
         }
+
+        public override int IoBufferCount => 1;
+
+        public override ArraySegment<byte> GetIoBuffer(int index, int length)
+        {
+            this.EnsureAccessible();
+            return new ArraySegment<byte>(this.array, index, length);
+        }
+
+        public override ArraySegment<byte>[] GetIoBuffers(int index, int length) => new[] { this.GetIoBuffer(index, length) };
 
         public override bool HasArray => true;
 

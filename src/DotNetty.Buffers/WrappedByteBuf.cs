@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Text;
@@ -521,6 +522,16 @@ namespace DotNetty.Buffers
             this.Buf.WriteBytes(src, srcIndex, length);
             return this;
         }
+
+        public int IoBufferCount => this.Buf.IoBufferCount;
+
+        public ArraySegment<byte> GetIoBuffer() => this.Buf.GetIoBuffer();
+
+        public ArraySegment<byte> GetIoBuffer(int index, int length) => this.Buf.GetIoBuffer(index, length);
+
+        public ArraySegment<byte>[] GetIoBuffers() => this.Buf.GetIoBuffers();
+
+        public ArraySegment<byte>[] GetIoBuffers(int index, int length) => this.Buf.GetIoBuffers(index, length);
 
         public virtual Task WriteBytesAsync(Stream input, int length, CancellationToken cancellationToken)
         {
