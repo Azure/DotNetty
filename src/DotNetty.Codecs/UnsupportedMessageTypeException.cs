@@ -9,13 +9,10 @@ namespace DotNetty.Codecs
     /// <summary>
     ///     Thrown if an unsupported message is received by an codec.
     /// </summary>
-    [Serializable]
     public class UnsupportedMessageTypeException : CodecException
     {
-        public UnsupportedMessageTypeException(
-            object message, params Type[] expectedTypes)
-            : base(ComposeMessage(
-                message?.GetType().Name ?? "null", expectedTypes))
+        public UnsupportedMessageTypeException(object message, params Type[] expectedTypes)
+            : base(ComposeMessage(message?.GetType().Name ?? "null", expectedTypes))
         {
         }
 

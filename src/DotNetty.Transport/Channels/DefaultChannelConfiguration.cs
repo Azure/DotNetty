@@ -26,7 +26,7 @@ namespace DotNetty.Transport.Channels
         volatile int maxMessagesPerRead;
         volatile int writeBufferHighWaterMark = 64 * 1024;
         volatile int writeBufferLowWaterMark = 32 * 1024;
-        TimeSpan connectTimeout = DefaultConnectTimeout;
+        long connectTimeout = DefaultConnectTimeout.Ticks;
 
         protected readonly IChannel Channel;
 
@@ -150,17 +150,11 @@ namespace DotNetty.Transport.Channels
 
         public TimeSpan ConnectTimeout
         {
-            get
-            {
-                TimeSpan result = this.connectTimeout;
-                Thread.MemoryBarrier();
-                return result;
-            }
+            get { return new TimeSpan(Volatile.Read(ref this.connectTimeout)); }
             set
             {
                 Contract.Requires(value >= TimeSpan.Zero);
-                Thread.MemoryBarrier();
-                this.connectTimeout = value;
+                Volatile.Write(ref this.connectTimeout, value.Ticks);
             }
         }
 

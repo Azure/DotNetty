@@ -6,7 +6,6 @@ namespace DotNetty.Common
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Runtime.CompilerServices;
     using System.Text;
@@ -210,7 +209,7 @@ namespace DotNetty.Common
                     DetectionLevel level = Level;
                     if (level >= DetectionLevel.Advanced)
                     {
-                        this.creationRecord = NewRecord(null, 3);
+                        this.creationRecord = NewRecord(null);
                     }
                     else
                     {
@@ -226,15 +225,15 @@ namespace DotNetty.Common
                 }
             }
 
-            public void Record() => this.RecordInternal(null, 3);
+            public void Record() => this.RecordInternal(null);
 
-            public void Record(object hint) => this.RecordInternal(hint, 3);
+            public void Record(object hint) => this.RecordInternal(hint);
 
-            void RecordInternal(object hint, int recordsToSkip)
+            void RecordInternal(object hint)
             {
                 if (this.creationRecord != null)
                 {
-                    string value = NewRecord(hint, recordsToSkip);
+                    string value = NewRecord(hint);
 
                     lock (this.lastRecords)
                     {
@@ -310,15 +309,7 @@ namespace DotNetty.Common
             }
         }
 
-        static readonly string[] StackTraceElementExclusions =
-        {
-            "DotNetty.Common.Utilities.ReferenceCountUtil.Touch(",
-            "DotNetty.Buffers.AdvancedLeakAwareByteBuf.Touch(",
-            "DotNetty.Buffers.AbstractByteBufAllocator.ToLeakAwareBuffer(",
-            "DotNetty.Buffers.AdvancedLeakAwareByteBuf.RecordLeakNonRefCountingOperation("
-        };
-
-        static string NewRecord(object hint, int recordsToSkip)
+        static string NewRecord(object hint)
         {
             Contract.Ensures(Contract.Result<string>() != null);
 
@@ -342,39 +333,7 @@ namespace DotNetty.Common
             }
 
             // Append the stack trace.
-            StackFrame[] array = new StackTrace().GetFrames();
-            if (array != null)
-            {
-                foreach (StackFrame e in array)
-                {
-                    if (recordsToSkip > 0)
-                    {
-                        recordsToSkip--;
-                    }
-                    else
-                    {
-                        string estr = e.ToString();
-
-                        // Strip the noisy stack trace elements.
-                        bool excluded = false;
-                        foreach (string exclusion in StackTraceElementExclusions)
-                        {
-                            if (estr.StartsWith(exclusion, StringComparison.InvariantCulture))
-                            {
-                                excluded = true;
-                                break;
-                            }
-                        }
-
-                        if (!excluded)
-                        {
-                            buf.Append('\t');
-                            buf.Append(estr);
-                            buf.Append(StringUtil.Newline);
-                        }
-                    }
-                }
-            }
+            buf.Append(Environment.StackTrace);
 
             return buf.ToString();
         }

@@ -38,8 +38,5 @@ namespace DotNetty.Transport.Tests.Channel
             string b = DefaultChannelId.NewInstance().AsLongText().Substring(9, 4);
             Assert.Equal(a, b);
         }
-
-        // TODO: port TestSerialization https://github.com/netty/netty/blob/master/transport/src/test/java/io/netty/channel/DefaultChannelIdTest.java
-        // requires ByteBufOutputStream and InputStream
     }
 }

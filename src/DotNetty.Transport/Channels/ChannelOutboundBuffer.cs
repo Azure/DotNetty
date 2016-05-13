@@ -622,7 +622,7 @@ namespace DotNetty.Transport.Channels
             this.ClearNioBuffers();
         }
 
-        public long TotalPendingWriteBytes() => Thread.VolatileRead(ref this.totalPendingSize);
+        public long TotalPendingWriteBytes() => Volatile.Read(ref this.totalPendingSize);
 
         /// <summary>
         ///     Call {@link IMessageProcessor#processMessage(Object)} for each flushed message
