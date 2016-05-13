@@ -16,9 +16,6 @@ namespace DotNetty.Common.Concurrency
             this.action = action;
         }
 
-        protected override void Execute()
-        {
-            this.action();
-        }
+        protected override void Execute() => this.action();
     }
 }

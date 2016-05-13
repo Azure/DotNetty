@@ -115,15 +115,9 @@ namespace DotNetty.Common
             this.maxActive = maxActive;
         }
 
-        public static ResourceLeakDetector Create<T>()
-        {
-            return new ResourceLeakDetector(StringUtil.SimpleClassName<T>());
-        }
+        public static ResourceLeakDetector Create<T>() => new ResourceLeakDetector(StringUtil.SimpleClassName<T>());
 
-        public static ResourceLeakDetector Create<T>(int samplingInterval, long maxActive)
-        {
-            return new ResourceLeakDetector(StringUtil.SimpleClassName<T>(), samplingInterval, maxActive);
-        }
+        public static ResourceLeakDetector Create<T>(int samplingInterval, long maxActive) => new ResourceLeakDetector(StringUtil.SimpleClassName<T>(), samplingInterval, maxActive);
 
         /// <summary>
         ///     Creates a new <see cref="IResourceLeak" /> which is expected to be closed via <see cref="IResourceLeak.Close()" />
@@ -232,15 +226,9 @@ namespace DotNetty.Common
                 }
             }
 
-            public void Record()
-            {
-                this.RecordInternal(null, 3);
-            }
+            public void Record() => this.RecordInternal(null, 3);
 
-            public void Record(object hint)
-            {
-                this.RecordInternal(hint, 3);
-            }
+            public void Record(object hint) => this.RecordInternal(hint, 3);
 
             void RecordInternal(object hint, int recordsToSkip)
             {

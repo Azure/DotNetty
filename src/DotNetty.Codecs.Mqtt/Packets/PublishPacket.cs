@@ -57,15 +57,9 @@ namespace DotNetty.Codecs.Mqtt.Packets
             return this;
         }
 
-        public bool Release()
-        {
-            return this.Payload.Release();
-        }
+        public bool Release() => this.Payload.Release();
 
-        public bool Release(int decrement)
-        {
-            return this.Payload.Release(decrement);
-        }
+        public bool Release(int decrement) => this.Payload.Release(decrement);
 
         IByteBuffer IByteBufferHolder.Content => this.Payload;
 

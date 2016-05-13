@@ -11,20 +11,15 @@ namespace Echo.Client
     public class EchoClientHandler : ChannelHandlerAdapter
     {
         readonly IByteBuffer initialMessage;
-        readonly byte[] buffer;
 
         public EchoClientHandler()
         {
-            this.buffer = new byte[EchoClientSettings.Size];
             this.initialMessage = Unpooled.Buffer(EchoClientSettings.Size);
             byte[] messageBytes = Encoding.UTF8.GetBytes("Hello world");
             this.initialMessage.WriteBytes(messageBytes);
         }
 
-        public override void ChannelActive(IChannelHandlerContext context)
-        {
-            context.WriteAndFlushAsync(this.initialMessage);
-        }
+        public override void ChannelActive(IChannelHandlerContext context) => context.WriteAndFlushAsync(this.initialMessage);
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
@@ -36,14 +31,8 @@ namespace Echo.Client
             context.WriteAsync(message);
         }
 
-        public override void ChannelReadComplete(IChannelHandlerContext context)
-        {
-            context.Flush();
-        }
+        public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
 
-        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
-        {
-            context.CloseAsync();
-        }
+        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => context.CloseAsync();
     }
 }

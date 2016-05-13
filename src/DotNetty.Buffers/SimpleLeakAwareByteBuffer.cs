@@ -15,15 +15,9 @@ namespace DotNetty.Buffers
             this.leak = leak;
         }
 
-        public override IReferenceCounted Touch()
-        {
-            return this;
-        }
+        public override IReferenceCounted Touch() => this;
 
-        public override IReferenceCounted Touch(object hint)
-        {
-            return this;
-        }
+        public override IReferenceCounted Touch(object hint) => this;
 
         public override bool Release()
         {
@@ -58,24 +52,12 @@ namespace DotNetty.Buffers
             }
         }
 
-        public override IByteBuffer Slice()
-        {
-            return new SimpleLeakAwareByteBuffer(base.Slice(), this.leak);
-        }
+        public override IByteBuffer Slice() => new SimpleLeakAwareByteBuffer(base.Slice(), this.leak);
 
-        public override IByteBuffer Slice(int index, int length)
-        {
-            return new SimpleLeakAwareByteBuffer(base.Slice(index, length), this.leak);
-        }
+        public override IByteBuffer Slice(int index, int length) => new SimpleLeakAwareByteBuffer(base.Slice(index, length), this.leak);
 
-        public override IByteBuffer Duplicate()
-        {
-            return new SimpleLeakAwareByteBuffer(base.Duplicate(), this.leak);
-        }
+        public override IByteBuffer Duplicate() => new SimpleLeakAwareByteBuffer(base.Duplicate(), this.leak);
 
-        public override IByteBuffer ReadSlice(int length)
-        {
-            return new SimpleLeakAwareByteBuffer(base.ReadSlice(length), this.leak);
-        }
+        public override IByteBuffer ReadSlice(int length) => new SimpleLeakAwareByteBuffer(base.ReadSlice(length), this.leak);
     }
 }

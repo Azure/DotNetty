@@ -104,15 +104,9 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected bool InputShutdown => this.inputShutdown;
 
-        protected void ShutdownInput()
-        {
-            this.inputShutdown = true;
-        }
+        protected void ShutdownInput() => this.inputShutdown = true;
 
-        protected void SetState(StateFlags stateToSet)
-        {
-            this.state |= stateToSet;
-        }
+        protected void SetState(StateFlags stateToSet) => this.state |= stateToSet;
 
         protected bool ResetState(StateFlags stateToReset)
         {
@@ -125,10 +119,7 @@ namespace DotNetty.Transport.Channels.Sockets
             return false;
         }
 
-        protected bool IsInState(StateFlags stateToCheck)
-        {
-            return (this.state & stateToCheck) == stateToCheck;
-        }
+        protected bool IsInState(StateFlags stateToCheck) => (this.state & stateToCheck) == stateToCheck;
 
         protected SocketChannelAsyncOperation ReadOperation => this.readOperation ?? (this.readOperation = new SocketChannelAsyncOperation(this, true));
 
@@ -295,10 +286,7 @@ namespace DotNetty.Transport.Channels.Sockets
                             (t, s) =>
                             {
                                 var c = (AbstractSocketChannel)s;
-                                if (c.connectCancellationTask != null)
-                                {
-                                    c.connectCancellationTask.Cancel();
-                                }
+                                c.connectCancellationTask?.Cancel();
                                 c.connectPromise = null;
                                 c.CloseAsync();
                             },
@@ -369,17 +357,14 @@ namespace DotNetty.Transport.Channels.Sockets
                 catch (Exception ex)
                 {
                     TaskCompletionSource promise = ch.connectPromise;
-                    EndPoint remoteAddress = promise == null ? null : (EndPoint)promise.Task.AsyncState;
+                    var remoteAddress = (EndPoint)promise?.Task.AsyncState;
                     this.FulfillConnectPromise(this.AnnotateConnectException(ex, remoteAddress));
                 }
                 finally
                 {
                     // Check for null as the connectTimeoutFuture is only created if a connectTimeoutMillis > 0 is used
                     // See https://github.com/netty/netty/issues/1770
-                    if (ch.connectCancellationTask != null)
-                    {
-                        ch.connectCancellationTask.Cancel();
-                    }
+                    ch.connectCancellationTask?.Cancel();
                     ch.connectPromise = null;
                 }
             }
@@ -425,16 +410,10 @@ namespace DotNetty.Transport.Channels.Sockets
                 base.Flush0(); // todo: does it make sense now that we've actually written out everything that was flushed previously? concurrent flush handling?
             }
 
-            bool IsFlushPending()
-            {
-                return this.Channel.IsInState(StateFlags.WriteScheduled);
-            }
+            bool IsFlushPending() => this.Channel.IsInState(StateFlags.WriteScheduled);
         }
 
-        protected override bool IsCompatible(IEventLoop eventLoop)
-        {
-            return true;
-        }
+        protected override bool IsCompatible(IEventLoop eventLoop) => true;
 
         protected override void DoBeginRead()
         {

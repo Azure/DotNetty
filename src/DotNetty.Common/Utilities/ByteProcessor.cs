@@ -23,10 +23,7 @@ namespace DotNetty.Common.Utilities
                 this.byteToFind = byteToFind;
             }
 
-            public override bool Process(byte value)
-            {
-                return value != this.byteToFind;
-            }
+            public override bool Process(byte value) => value != this.byteToFind;
         }
 
         public sealed class IndexNotOfProcessor : ByteProcessor
@@ -38,10 +35,7 @@ namespace DotNetty.Common.Utilities
                 this.byteToNotFind = byteToNotFind;
             }
 
-            public override bool Process(byte value)
-            {
-                return value == this.byteToNotFind;
-            }
+            public override bool Process(byte value) => value == this.byteToNotFind;
         }
 
         public sealed class CustomProcessor : ByteProcessor
@@ -54,21 +48,18 @@ namespace DotNetty.Common.Utilities
                 this.customHandler = customHandler;
             }
 
-            public override bool Process(byte value)
-            {
-                return this.customHandler(value);
-            }
+            public override bool Process(byte value) => this.customHandler(value);
         }
 
         /// <summary>
         ///     Aborts on a <c>NUL (0x00)</c>.
         /// </summary>
-        public static ByteProcessor FIND_NUL = new IndexOfProcessor((byte)0);
+        public static ByteProcessor FIND_NUL = new IndexOfProcessor(0);
 
         /// <summary>
         ///     Aborts on a non-{@code NUL (0x00)}.
         /// </summary>
-        public static ByteProcessor FIND_NON_NUL = new IndexNotOfProcessor((byte)0);
+        public static ByteProcessor FIND_NON_NUL = new IndexNotOfProcessor(0);
 
         /// <summary>
         ///     Aborts on a {@code CR ('\r')}.

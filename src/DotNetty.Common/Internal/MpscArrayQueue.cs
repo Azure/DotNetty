@@ -20,7 +20,6 @@ namespace DotNetty.Common.Internal
     /// method for polling from the queue (with minor change to correctly publish the index) and an extension of
     /// the Leslie Lamport concurrent queue algorithm (originated by Martin Thompson) on the producer side.
     /// <br />
-    /// @param <E>
     sealed class MpscArrayQueue<T> : MpscArrayQueueConsumerField<T>
         where T : class
     {
@@ -256,15 +255,9 @@ namespace DotNetty.Common.Internal
         {
         }
 
-        protected long ProducerIndex
-        {
-            get { return Volatile.Read(ref this.producerIndex); }
-        }
+        protected long ProducerIndex => Volatile.Read(ref this.producerIndex);
 
-        protected bool TrySetProducerIndex(long expect, long newValue)
-        {
-            return Interlocked.CompareExchange(ref this.producerIndex, newValue, expect) == expect;
-        }
+        protected bool TrySetProducerIndex(long expect, long newValue) => Interlocked.CompareExchange(ref this.producerIndex, newValue, expect) == expect;
     }
 
     abstract class MpscArrayQueueMidPad<T> : MpscArrayQueueTailField<T>

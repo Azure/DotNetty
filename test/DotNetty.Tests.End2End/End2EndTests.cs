@@ -86,10 +86,7 @@ namespace DotNetty.Tests.End2End
             finally
             {
                 Task serverCloseTask = closeServerFunc();
-                if (clientChannel != null)
-                {
-                    clientChannel.CloseAsync().Wait(TimeSpan.FromSeconds(5));
-                }
+                clientChannel?.CloseAsync().Wait(TimeSpan.FromSeconds(5));
                 group.ShutdownGracefullyAsync();
                 if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
@@ -143,10 +140,7 @@ namespace DotNetty.Tests.End2End
             finally
             {
                 Task serverCloseTask = closeServerFunc();
-                if (clientChannel != null)
-                {
-                    clientChannel.CloseAsync().Wait(TimeSpan.FromSeconds(5));
-                }
+                clientChannel?.CloseAsync().Wait(TimeSpan.FromSeconds(5));
                 group.ShutdownGracefullyAsync();
                 if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
@@ -268,10 +262,7 @@ namespace DotNetty.Tests.End2End
             var disconnectPacket = Assert.IsType<DisconnectPacket>(currentMessageFunc());
         }
 
-        static int GetRandomPacketId()
-        {
-            return Guid.NewGuid().GetHashCode() & ushort.MaxValue;
-        }
+        static int GetRandomPacketId() => Guid.NewGuid().GetHashCode() & ushort.MaxValue;
 
         /// <summary>
         ///     Starts Echo server.

@@ -31,15 +31,12 @@ namespace DotNetty.Common
             }
         }
 
-        /**
- * Schedules the specified {@code task} to run when the specified {@code thread} dies.
- *
- * @param thread the {@link Thread} to watch
- * @param task the {@link Runnable} to run when the {@code thread} dies
- *
- * @throws IllegalArgumentException if the specified {@code thread} is not alive
- */
-
+        /// Schedules the specified {@code task} to run when the specified {@code thread} dies.
+        /// 
+        /// @param thread the {@link Thread} to watch
+        /// @param task the {@link Runnable} to run when the {@code thread} dies
+        /// 
+        /// @throws IllegalArgumentException if the specified {@code thread} is not alive
         public static void Watch(Thread thread, Action task)
         {
             Contract.Requires(thread != null);
@@ -49,10 +46,7 @@ namespace DotNetty.Common
             Schedule(thread, task, true);
         }
 
-        /**
- * Cancels the task scheduled via {@link #watch(Thread, Runnable)}.
- */
-
+        /// Cancels the task scheduled via {@link #watch(Thread, Runnable)}.
         public static void Unwatch(Thread thread, Action task)
         {
             Contract.Requires(thread != null);
@@ -67,22 +61,20 @@ namespace DotNetty.Common
 
             if (Interlocked.CompareExchange(ref started, 1, 0) == 0)
             {
-                Thread watcherThread = new Thread(s => ((IRunnable)s).Run());
+                var watcherThread = new Thread(s => ((IRunnable)s).Run());
                 watcherThread.Start(watcher);
                 ThreadDeathWatcher.watcherThread = watcherThread;
             }
         }
 
-        /**
- * Waits until the thread of this watcher has no threads to watch and terminates itself.
- * Because a new watcher thread will be started again on {@link #watch(Thread, Runnable)},
- * this operation is only useful when you want to ensure that the watcher thread is terminated
- * <strong>after</strong> your application is shut down and there's no chance of calling
- * {@link #watch(Thread, Runnable)} afterwards.
- *
- * @return {@code true} if and only if the watcher thread has been terminated
- */
-
+        /// Waits until the thread of this watcher has no threads to watch and terminates itself.
+        /// Because a new watcher thread will be started again on {@link #watch(Thread, Runnable)},
+        /// this operation is only useful when you want to ensure that the watcher thread is terminated
+        /// <strong>after</strong>
+        /// your application is shut down and there's no chance of calling
+        /// {@link #watch(Thread, Runnable)} afterwards.
+        /// 
+        /// @return {@code true} if and only if the watcher thread has been terminated
         public static bool AwaitInactivity(TimeSpan timeout)
         {
             Thread watcherThread = ThreadDeathWatcher.watcherThread;
@@ -207,15 +199,9 @@ namespace DotNetty.Common
                 this.IsWatch = isWatch;
             }
 
-            public override Entry Value
-            {
-                get { return this; }
-            }
+            public override Entry Value => this;
 
-            public override int GetHashCode()
-            {
-                return this.Thread.GetHashCode() ^ this.Task.GetHashCode();
-            }
+            public override int GetHashCode() => this.Thread.GetHashCode() ^ this.Task.GetHashCode();
 
             public override bool Equals(object obj)
             {

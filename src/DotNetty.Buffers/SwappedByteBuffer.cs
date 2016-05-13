@@ -6,7 +6,6 @@ namespace DotNetty.Buffers
     using System;
     using System.Diagnostics.Contracts;
     using System.IO;
-    using System.Linq;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -19,7 +18,6 @@ namespace DotNetty.Buffers
     public class SwappedByteBuffer : IByteBuffer
     {
         readonly IByteBuffer buf;
-        readonly ByteOrder order;
 
         public SwappedByteBuffer(IByteBuffer buf)
         {
@@ -28,11 +26,11 @@ namespace DotNetty.Buffers
             this.buf = buf;
             if (buf.Order == ByteOrder.BigEndian)
             {
-                this.order = ByteOrder.LittleEndian;
+                this.Order = ByteOrder.LittleEndian;
             }
             else
             {
-                this.order = ByteOrder.BigEndian;
+                this.Order = ByteOrder.BigEndian;
             }
         }
 
@@ -62,22 +60,13 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public bool Release()
-        {
-            return this.buf.Release();
-        }
+        public bool Release() => this.buf.Release();
 
-        public bool Release(int decrement)
-        {
-            return this.buf.Release(decrement);
-        }
+        public bool Release(int decrement) => this.buf.Release(decrement);
 
         public int Capacity => this.buf.Capacity;
 
-        public IByteBuffer AdjustCapacity(int newCapacity)
-        {
-            return this.buf.AdjustCapacity(newCapacity);
-        }
+        public IByteBuffer AdjustCapacity(int newCapacity) => this.buf.AdjustCapacity(newCapacity);
 
         public int MaxCapacity => this.buf.MaxCapacity;
 
@@ -111,25 +100,13 @@ namespace DotNetty.Buffers
 
         public int MaxWritableBytes => this.buf.MaxWritableBytes;
 
-        public bool IsReadable()
-        {
-            return this.buf.IsReadable();
-        }
+        public bool IsReadable() => this.buf.IsReadable();
 
-        public bool IsReadable(int size)
-        {
-            return this.buf.IsReadable(size);
-        }
+        public bool IsReadable(int size) => this.buf.IsReadable(size);
 
-        public bool IsWritable()
-        {
-            return this.buf.IsWritable();
-        }
+        public bool IsWritable() => this.buf.IsWritable();
 
-        public bool IsWritable(int size)
-        {
-            return this.buf.IsWritable(size);
-        }
+        public bool IsWritable(int size) => this.buf.IsWritable(size);
 
         public IByteBuffer Clear()
         {
@@ -183,20 +160,11 @@ namespace DotNetty.Buffers
             throw new NotImplementedException();
         }
 
-        public bool GetBoolean(int index)
-        {
-            return this.buf.GetBoolean(index);
-        }
+        public bool GetBoolean(int index) => this.buf.GetBoolean(index);
 
-        public byte GetByte(int index)
-        {
-            return this.buf.GetByte(index);
-        }
+        public byte GetByte(int index) => this.buf.GetByte(index);
 
-        public short GetShort(int index)
-        {
-            return ByteBufferUtil.SwapShort(this.buf.GetShort(index));
-        }
+        public short GetShort(int index) => ByteBufferUtil.SwapShort(this.buf.GetShort(index));
 
         public ushort GetUnsignedShort(int index)
         {
@@ -206,10 +174,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        public int GetInt(int index)
-        {
-            return ByteBufferUtil.SwapInt(this.buf.GetInt(index));
-        }
+        public int GetInt(int index) => ByteBufferUtil.SwapInt(this.buf.GetInt(index));
 
         public uint GetUnsignedInt(int index)
         {
@@ -219,20 +184,11 @@ namespace DotNetty.Buffers
             }
         }
 
-        public long GetLong(int index)
-        {
-            return ByteBufferUtil.SwapLong(this.buf.GetLong(index));
-        }
+        public long GetLong(int index) => ByteBufferUtil.SwapLong(this.buf.GetLong(index));
 
-        public char GetChar(int index)
-        {
-            return (char)this.GetShort(index);
-        }
+        public char GetChar(int index) => (char)this.GetShort(index);
 
-        public double GetDouble(int index)
-        {
-            return BitConverter.Int64BitsToDouble(this.GetLong(index));
-        }
+        public double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
 
         public IByteBuffer GetBytes(int index, IByteBuffer destination)
         {
@@ -365,25 +321,13 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
-        {
-            return this.buf.SetBytesAsync(index, src, length, cancellationToken);
-        }
+        public Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken) => this.buf.SetBytesAsync(index, src, length, cancellationToken);
 
-        public bool ReadBoolean()
-        {
-            return this.buf.ReadBoolean();
-        }
+        public bool ReadBoolean() => this.buf.ReadBoolean();
 
-        public byte ReadByte()
-        {
-            return this.buf.ReadByte();
-        }
+        public byte ReadByte() => this.buf.ReadByte();
 
-        public short ReadShort()
-        {
-            return ByteBufferUtil.SwapShort(this.buf.ReadShort());
-        }
+        public short ReadShort() => ByteBufferUtil.SwapShort(this.buf.ReadShort());
 
         public ushort ReadUnsignedShort()
         {
@@ -393,10 +337,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        public int ReadInt()
-        {
-            return ByteBufferUtil.SwapInt(this.buf.ReadInt());
-        }
+        public int ReadInt() => ByteBufferUtil.SwapInt(this.buf.ReadInt());
 
         public uint ReadUnsignedInt()
         {
@@ -406,25 +347,13 @@ namespace DotNetty.Buffers
             }
         }
 
-        public long ReadLong()
-        {
-            return ByteBufferUtil.SwapLong(this.buf.ReadLong());
-        }
+        public long ReadLong() => ByteBufferUtil.SwapLong(this.buf.ReadLong());
 
-        public char ReadChar()
-        {
-            return (char)this.ReadShort();
-        }
+        public char ReadChar() => (char)this.ReadShort();
 
-        public double ReadDouble()
-        {
-            return BitConverter.Int64BitsToDouble(this.ReadLong());
-        }
+        public double ReadDouble() => BitConverter.Int64BitsToDouble(this.ReadLong());
 
-        public IByteBuffer ReadBytes(int length)
-        {
-            return this.buf.ReadBytes(length).WithOrder(this.Order);
-        }
+        public IByteBuffer ReadBytes(int length) => this.buf.ReadBytes(length).WithOrder(this.Order);
 
         public IByteBuffer ReadBytes(IByteBuffer destination)
         {
@@ -577,17 +506,11 @@ namespace DotNetty.Buffers
 
         public byte[] ToArray() => this.buf.ToArray();
 
-        public IByteBuffer Duplicate()
-        {
-            return this.buf.Duplicate().WithOrder(this.Order);
-        }
+        public IByteBuffer Duplicate() => this.buf.Duplicate().WithOrder(this.Order);
 
-        public IByteBuffer Unwrap()
-        {
-            return this.buf.Unwrap();
-        }
+        public IByteBuffer Unwrap() => this.buf.Unwrap();
 
-        public ByteOrder Order => this.order;
+        public ByteOrder Order { get; }
 
         public IByteBuffer WithOrder(ByteOrder endianness)
         {
@@ -598,72 +521,33 @@ namespace DotNetty.Buffers
             return this.buf;
         }
 
-        public IByteBuffer Copy()
-        {
-            return this.buf.Copy().WithOrder(this.Order);
-        }
+        public IByteBuffer Copy() => this.buf.Copy().WithOrder(this.Order);
 
-        public IByteBuffer Copy(int index, int length)
-        {
-            return this.buf.Copy(index, length).WithOrder(this.Order);
-        }
+        public IByteBuffer Copy(int index, int length) => this.buf.Copy(index, length).WithOrder(this.Order);
 
-        public IByteBuffer Slice()
-        {
-            return this.buf.Slice().WithOrder(this.Order);
-        }
+        public IByteBuffer Slice() => this.buf.Slice().WithOrder(this.Order);
 
-        public IByteBuffer Slice(int index, int length)
-        {
-            return this.buf.Slice(index, length).WithOrder(this.Order);
-        }
+        public IByteBuffer Slice(int index, int length) => this.buf.Slice(index, length).WithOrder(this.Order);
 
         public int ArrayOffset => this.buf.ArrayOffset;
 
-        public IByteBuffer ReadSlice(int length)
-        {
-            return this.buf.ReadSlice(length).WithOrder(this.Order);
-        }
+        public IByteBuffer ReadSlice(int length) => this.buf.ReadSlice(length).WithOrder(this.Order);
 
-        public Task WriteBytesAsync(Stream stream, int length)
-        {
-            return this.buf.WriteBytesAsync(stream, length);
-        }
+        public Task WriteBytesAsync(Stream stream, int length) => this.buf.WriteBytesAsync(stream, length);
 
-        public Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken)
-        {
-            return this.buf.WriteBytesAsync(stream, length, cancellationToken);
-        }
+        public Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken) => this.buf.WriteBytesAsync(stream, length, cancellationToken);
 
-        public int ForEachByte(ByteProcessor processor)
-        {
-            return this.buf.ForEachByte(processor);
-        }
+        public int ForEachByte(ByteProcessor processor) => this.buf.ForEachByte(processor);
 
-        public int ForEachByte(int index, int length, ByteProcessor processor)
-        {
-            return this.buf.ForEachByte(index, length, processor);
-        }
+        public int ForEachByte(int index, int length, ByteProcessor processor) => this.buf.ForEachByte(index, length, processor);
 
-        public int ForEachByteDesc(ByteProcessor processor)
-        {
-            return this.buf.ForEachByteDesc(processor);
-        }
+        public int ForEachByteDesc(ByteProcessor processor) => this.buf.ForEachByteDesc(processor);
 
-        public int ForEachByteDesc(int index, int length, ByteProcessor processor)
-        {
-            return this.buf.ForEachByteDesc(index, length, processor);
-        }
+        public int ForEachByteDesc(int index, int length, ByteProcessor processor) => this.buf.ForEachByteDesc(index, length, processor);
 
-        public override int GetHashCode()
-        {
-            return this.buf.GetHashCode();
-        }
+        public override int GetHashCode() => this.buf.GetHashCode();
 
-        public override bool Equals(object obj)
-        {
-            return this.Equals(obj as IByteBuffer);
-        }
+        public override bool Equals(object obj) => this.Equals(obj as IByteBuffer);
 
         public bool Equals(IByteBuffer buffer)
         {
@@ -678,24 +562,12 @@ namespace DotNetty.Buffers
             return false;
         }
 
-        public int CompareTo(IByteBuffer buffer)
-        {
-            return ByteBufferUtil.Compare(this, buffer);
-        }
+        public int CompareTo(IByteBuffer buffer) => ByteBufferUtil.Compare(this, buffer);
 
-        public override string ToString()
-        {
-            return "Swapped(" + this.buf + ")";
-        }
+        public override string ToString() => "Swapped(" + this.buf + ")";
 
-        public string ToString(Encoding encoding)
-        {
-            return this.buf.ToString(encoding);
-        }
+        public string ToString(Encoding encoding) => this.buf.ToString(encoding);
 
-        public string ToString(int index, int length, Encoding encoding)
-        {
-            return this.buf.ToString(index, length, encoding);
-        }
+        public string ToString(int index, int length, Encoding encoding) => this.buf.ToString(index, length, encoding);
     }
 }

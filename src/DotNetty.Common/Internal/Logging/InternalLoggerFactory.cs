@@ -24,17 +24,18 @@ namespace DotNetty.Common.Internal.Logging
     {
         static InternalLoggerFactory defaultFactory;
 
-        static InternalLoggerFactory()
-        {
-            // todo: port: revisit
-            // Initiate some time-consuming background jobs here,
-            // because this class is often initialized at the earliest time.
-            //try {
-            //    Class.forName(ThreadLocalRandom.class.getName(), true, InternalLoggerFactory.class.getClassLoader());
-            //} catch (Exception ignored) {
-            //    // Should not fail, but it does not harm to fail.
-            //}
-        }
+        // todo: port: revisit
+        //static InternalLoggerFactory()
+        //{
+        //    // Initiate some time-consuming background jobs here,
+        //    // because this class is often initialized at the earliest time.
+        //    try
+        //    {
+        //        Class.forName(ThreadLocalRandom.class.getName(), true, InternalLoggerFactory.class.getClassLoader());
+        //    } catch (Exception ignored) {
+        //        // Should not fail, but it does not harm to fail.
+        //    }
+        //}
 
         static InternalLoggerFactory NewDefaultFactory(string name)
         {
@@ -75,30 +76,21 @@ namespace DotNetty.Common.Internal.Logging
         /// </summary>
         /// <typeparam name="T">type where logger is used</typeparam>
         /// <returns>logger instance</returns>
-        public static IInternalLogger GetInstance<T>()
-        {
-            return GetInstance(typeof(T));
-        }
+        public static IInternalLogger GetInstance<T>() => GetInstance(typeof(T));
 
         /// <summary>
         ///     Creates a new logger instance with the name of the specified type.
         /// </summary>
         /// <param name="type">type where logger is used</param>
         /// <returns>logger instance</returns>
-        public static IInternalLogger GetInstance(Type type)
-        {
-            return GetInstance(type.FullName);
-        }
+        public static IInternalLogger GetInstance(Type type) => GetInstance(type.FullName);
 
         /// <summary>
         ///     Creates a new logger instance with the specified name.
         /// </summary>
         /// <param name="name">logger name</param>
         /// <returns>logger instance</returns>
-        public static IInternalLogger GetInstance(string name)
-        {
-            return DefaultFactory.NewInstance(name);
-        }
+        public static IInternalLogger GetInstance(string name) => DefaultFactory.NewInstance(name);
 
         /// <summary>
         ///     Creates a new logger instance with the specified name.

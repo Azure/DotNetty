@@ -103,7 +103,7 @@ namespace DotNetty.Common.Utilities
         public T Peek()
         {
             MpscLinkedQueueNode<T> next = this.PeekNode();
-            return next == null ? null : next.Value;
+            return next?.Value;
         }
 
         public int Count
@@ -137,10 +137,7 @@ namespace DotNetty.Common.Utilities
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
         public void Clear()
         {
@@ -169,7 +166,7 @@ namespace DotNetty.Common.Utilities
         }
     }
 
-    abstract class MpscLinkedQueueHeadRef<T> : MpscLinkedQueuePad0<T>
+    abstract class MpscLinkedQueueHeadRef<T> : MpscLinkedQueuePad0
     {
         MpscLinkedQueueNode<T> headRef;
 
@@ -196,21 +193,15 @@ namespace DotNetty.Common.Utilities
         ///     Sets the element this node contains to <code>null</code> so that the node can be used as a tombstone.
         /// </summary>
         /// <returns></returns>
-        protected internal virtual T ClearMaybe()
-        {
-            return this.Value;
-        }
+        protected internal virtual T ClearMaybe() => this.Value;
 
         /// <summary>
         ///     Unlink to allow GC
         /// </summary>
-        internal virtual void Unlink()
-        {
-            this.Next = null;
-        }
+        internal virtual void Unlink() => this.Next = null;
     }
 
-    abstract class MpscLinkedQueuePad0<T>
+    abstract class MpscLinkedQueuePad0
     {
 #pragma warning disable 169 // padded reference
         long p00, p01, p02, p03, p04, p05, p06, p07;

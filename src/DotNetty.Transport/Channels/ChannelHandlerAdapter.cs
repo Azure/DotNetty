@@ -12,46 +12,25 @@ namespace DotNetty.Transport.Channels
         internal bool Added;
 
         [Skip]
-        public virtual void ChannelRegistered(IChannelHandlerContext context)
-        {
-            context.FireChannelRegistered();
-        }
+        public virtual void ChannelRegistered(IChannelHandlerContext context) => context.FireChannelRegistered();
 
         [Skip]
-        public virtual void ChannelUnregistered(IChannelHandlerContext context)
-        {
-            context.FireChannelUnregistered();
-        }
+        public virtual void ChannelUnregistered(IChannelHandlerContext context) => context.FireChannelUnregistered();
 
         [Skip]
-        public virtual void ChannelActive(IChannelHandlerContext context)
-        {
-            context.FireChannelActive();
-        }
+        public virtual void ChannelActive(IChannelHandlerContext context) => context.FireChannelActive();
 
         [Skip]
-        public virtual void ChannelInactive(IChannelHandlerContext context)
-        {
-            context.FireChannelInactive();
-        }
+        public virtual void ChannelInactive(IChannelHandlerContext context) => context.FireChannelInactive();
 
         [Skip]
-        public virtual void ChannelRead(IChannelHandlerContext context, object message)
-        {
-            context.FireChannelRead(message);
-        }
+        public virtual void ChannelRead(IChannelHandlerContext context, object message) => context.FireChannelRead(message);
 
         [Skip]
-        public virtual void ChannelReadComplete(IChannelHandlerContext context)
-        {
-            context.FireChannelReadComplete();
-        }
+        public virtual void ChannelReadComplete(IChannelHandlerContext context) => context.FireChannelReadComplete();
 
         [Skip]
-        public virtual void ChannelWritabilityChanged(IChannelHandlerContext context)
-        {
-            context.FireChannelWritabilityChanged();
-        }
+        public virtual void ChannelWritabilityChanged(IChannelHandlerContext context) => context.FireChannelWritabilityChanged();
 
         [Skip]
         public virtual void HandlerAdded(IChannelHandlerContext context)
@@ -64,64 +43,34 @@ namespace DotNetty.Transport.Channels
         }
 
         [Skip]
-        public virtual void UserEventTriggered(IChannelHandlerContext context, object evt)
-        {
-            context.FireUserEventTriggered(evt);
-        }
+        public virtual void UserEventTriggered(IChannelHandlerContext context, object evt) => context.FireUserEventTriggered(evt);
 
         [Skip]
-        public virtual Task WriteAsync(IChannelHandlerContext context, object message)
-        {
-            return context.WriteAsync(message);
-        }
+        public virtual Task WriteAsync(IChannelHandlerContext context, object message) => context.WriteAsync(message);
 
         [Skip]
-        public virtual void Flush(IChannelHandlerContext context)
-        {
-            context.Flush();
-        }
+        public virtual void Flush(IChannelHandlerContext context) => context.Flush();
 
         [Skip]
-        public virtual Task BindAsync(IChannelHandlerContext context, EndPoint localAddress)
-        {
-            return context.BindAsync(localAddress);
-        }
+        public virtual Task BindAsync(IChannelHandlerContext context, EndPoint localAddress) => context.BindAsync(localAddress);
 
         [Skip]
-        public virtual Task ConnectAsync(IChannelHandlerContext context, EndPoint remoteAddress, EndPoint localAddress)
-        {
-            return context.ConnectAsync(remoteAddress, localAddress);
-        }
+        public virtual Task ConnectAsync(IChannelHandlerContext context, EndPoint remoteAddress, EndPoint localAddress) => context.ConnectAsync(remoteAddress, localAddress);
 
         [Skip]
-        public virtual Task DisconnectAsync(IChannelHandlerContext context)
-        {
-            return context.DisconnectAsync();
-        }
+        public virtual Task DisconnectAsync(IChannelHandlerContext context) => context.DisconnectAsync();
 
         [Skip]
-        public virtual Task CloseAsync(IChannelHandlerContext context)
-        {
-            return context.CloseAsync();
-        }
+        public virtual Task CloseAsync(IChannelHandlerContext context) => context.CloseAsync();
 
         [Skip]
-        public virtual void ExceptionCaught(IChannelHandlerContext context, Exception exception)
-        {
-            context.FireExceptionCaught(exception);
-        }
+        public virtual void ExceptionCaught(IChannelHandlerContext context, Exception exception) => context.FireExceptionCaught(exception);
 
         [Skip]
-        public virtual Task DeregisterAsync(IChannelHandlerContext context)
-        {
-            return context.DeregisterAsync();
-        }
+        public virtual Task DeregisterAsync(IChannelHandlerContext context) => context.DeregisterAsync();
 
         [Skip]
-        public virtual void Read(IChannelHandlerContext context)
-        {
-            context.Read();
-        }
+        public virtual void Read(IChannelHandlerContext context) => context.Read();
 
         public virtual bool IsSharable => false;
     }

@@ -22,10 +22,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Log a message object at level TRACE.
         /// </summary>
         /// <param name="msg">the message object to be logged</param>
-        public override void Trace(string msg)
-        {
-            DefaultEventSource.Log.Trace(this.Name, msg);
-        }
+        public override void Trace(string msg) => DefaultEventSource.Log.Trace(this.Name, msg);
 
         /// <summary>
         ///     Log a message at level TRACE according to the specified format and
@@ -90,10 +87,7 @@ namespace DotNetty.Common.Internal.Logging
         /// </summary>
         /// <param name="msg">the message accompanying the exception</param>
         /// <param name="t">the exception to log</param>
-        public override void Trace(string msg, Exception t)
-        {
-            DefaultEventSource.Log.Trace(this.Name, msg, t);
-        }
+        public override void Trace(string msg, Exception t) => DefaultEventSource.Log.Trace(this.Name, msg, t);
 
         /// <summary>
         ///     Is this logger instance enabled for the DEBUG level?
@@ -105,10 +99,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Log a message object at level DEBUG.
         /// </summary>
         /// <param name="msg">the message object to be logged</param>
-        public override void Debug(string msg)
-        {
-            DefaultEventSource.Log.Debug(this.Name, msg);
-        }
+        public override void Debug(string msg) => DefaultEventSource.Log.Debug(this.Name, msg);
 
         /// <summary>
         ///     Log a message at level DEBUG according to the specified format and
@@ -173,10 +164,7 @@ namespace DotNetty.Common.Internal.Logging
         /// </summary>
         /// <param name="msg">the message accompanying the exception</param>
         /// <param name="t">the exception to log</param>
-        public override void Debug(string msg, Exception t)
-        {
-            DefaultEventSource.Log.Debug(this.Name, msg, t);
-        }
+        public override void Debug(string msg, Exception t) => DefaultEventSource.Log.Debug(this.Name, msg, t);
 
         /// <summary>
         ///     Is this logger instance enabled for the INFO level?
@@ -188,10 +176,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Log a message object at level INFO.
         /// </summary>
         /// <param name="msg">the message object to be logged</param>
-        public override void Info(string msg)
-        {
-            DefaultEventSource.Log.Info(this.Name, msg);
-        }
+        public override void Info(string msg) => DefaultEventSource.Log.Info(this.Name, msg);
 
         /// <summary>
         ///     Log a message at level INFO according to the specified format and
@@ -256,10 +241,7 @@ namespace DotNetty.Common.Internal.Logging
         /// </summary>
         /// <param name="msg">the message accompanying the exception</param>
         /// <param name="t">the exception to log</param>
-        public override void Info(string msg, Exception t)
-        {
-            DefaultEventSource.Log.Info(this.Name, msg, t);
-        }
+        public override void Info(string msg, Exception t) => DefaultEventSource.Log.Info(this.Name, msg, t);
 
         /// <summary>
         ///     Is this logger instance enabled for the WARN level?
@@ -271,10 +253,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Log a message object at level WARN.
         /// </summary>
         /// <param name="msg">the message object to be logged</param>
-        public override void Warn(string msg)
-        {
-            DefaultEventSource.Log.Warning(this.Name, msg);
-        }
+        public override void Warn(string msg) => DefaultEventSource.Log.Warning(this.Name, msg);
 
         /// <summary>
         ///     Log a message at level WARN according to the specified format and
@@ -339,10 +318,7 @@ namespace DotNetty.Common.Internal.Logging
         /// </summary>
         /// <param name="msg">the message accompanying the exception</param>
         /// <param name="t">the exception to log</param>
-        public override void Warn(string msg, Exception t)
-        {
-            DefaultEventSource.Log.Warning(this.Name, msg, t);
-        }
+        public override void Warn(string msg, Exception t) => DefaultEventSource.Log.Warning(this.Name, msg, t);
 
         /// <summary>
         ///     Is this logger instance enabled for the ERROR level?
@@ -354,10 +330,7 @@ namespace DotNetty.Common.Internal.Logging
         ///     Log a message object at level ERROR.
         /// </summary>
         /// <param name="msg">the message object to be logged</param>
-        public override void Error(string msg)
-        {
-            DefaultEventSource.Log.Error(this.Name, msg);
-        }
+        public override void Error(string msg) => DefaultEventSource.Log.Error(this.Name, msg);
 
         /// <summary>
         ///     Log a message at level ERROR according to the specified format and
@@ -422,9 +395,6 @@ namespace DotNetty.Common.Internal.Logging
         /// </summary>
         /// <param name="msg">the message accompanying the exception</param>
         /// <param name="t">the exception to log</param>
-        public override void Error(string msg, Exception t)
-        {
-            DefaultEventSource.Log.Error(this.Name, msg, t);
-        }
+        public override void Error(string msg, Exception t) => DefaultEventSource.Log.Error(this.Name, msg, t);
     }
 }

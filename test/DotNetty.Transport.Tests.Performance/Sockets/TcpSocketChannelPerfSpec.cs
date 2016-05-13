@@ -60,15 +60,9 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             //LoggingFactory.DefaultFactory = new NoOpLoggerFactory();
         }
 
-        protected virtual IChannelHandler GetEncoder()
-        {
-            return new LengthFieldPrepender(4, false);
-        }
+        protected virtual IChannelHandler GetEncoder() => new LengthFieldPrepender(4, false);
 
-        protected virtual IChannelHandler GetDecoder()
-        {
-            return new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4);
-        }
+        protected virtual IChannelHandler GetDecoder() => new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4);
 
         [PerfSetup]
         public void SetUp(BenchmarkContext context)
@@ -170,9 +164,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             Task.WaitAll(this.ClientGroup.ShutdownGracefullyAsync(), this.ServerGroup.ShutdownGracefullyAsync(), this.WorkerGroup.ShutdownGracefullyAsync());
         }
 
-        static void CloseChannel(IChannel cc)
-        {
-            cc?.CloseAsync().Wait();
-        }
+        static void CloseChannel(IChannel cc) => cc?.CloseAsync().Wait();
     }
 }

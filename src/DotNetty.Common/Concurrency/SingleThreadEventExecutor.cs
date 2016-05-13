@@ -35,7 +35,6 @@ namespace DotNetty.Common.Concurrency
         readonly TaskScheduler scheduler;
         readonly TaskCompletionSource terminationCompletionSource;
         PreciseTimeSpan gracefulShutdownStartTime;
-        bool disposed;
         PreciseTimeSpan gracefulShutdownQuietPeriod;
         PreciseTimeSpan gracefulShutdownTimeout;
 
@@ -89,10 +88,7 @@ namespace DotNetty.Common.Concurrency
 
         public override bool IsTerminated => this.executionState == ST_TERMINATED;
 
-        public override bool IsInEventLoop(Thread t)
-        {
-            return this.thread == t;
-        }
+        public override bool IsInEventLoop(Thread t) => this.thread == t;
 
         public override void Execute(IRunnable task)
         {

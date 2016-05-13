@@ -19,12 +19,10 @@ namespace DotNetty.Common.Concurrency
 
         // TODO: support for EventExecutorGroup
 
-        protected static PreciseTimeSpan GetNanos()
-        {
-            return PreciseTimeSpan.FromStart;
-        }
+        protected static PreciseTimeSpan GetNanos() => PreciseTimeSpan.FromStart;
 
-        protected static bool IsNullOrEmpty<T>(PriorityQueue<T> taskQueue) where T : class
+        protected static bool IsNullOrEmpty<T>(PriorityQueue<T> taskQueue)
+            where T : class
         {
             return taskQueue == null || taskQueue.Count == 0;
         }
@@ -51,10 +49,7 @@ namespace DotNetty.Common.Concurrency
             this.ScheduledTaskQueue.Clear();
         }
 
-        protected IScheduledRunnable PollScheduledTask()
-        {
-            return this.PollScheduledTask(GetNanos());
-        }
+        protected IScheduledRunnable PollScheduledTask() => this.PollScheduledTask(GetNanos());
 
         protected IScheduledRunnable PollScheduledTask(PreciseTimeSpan nanoTime)
         {

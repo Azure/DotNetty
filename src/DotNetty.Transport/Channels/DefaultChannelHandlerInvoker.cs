@@ -169,11 +169,11 @@ namespace DotNetty.Transport.Channels
 
             if (this.executor.InEventLoop)
             {
-                return ChannelHandlerInvokerUtil.InvokeBindAsyncNow(ctx, localAddress);
+                return ChannelHandlerInvokerUtil.InvokeBindNowAsync(ctx, localAddress);
             }
             else
             {
-                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeBindAsyncNow(ctx, localAddress));
+                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeBindNowAsync(ctx, localAddress));
             }
         }
 
@@ -190,11 +190,11 @@ namespace DotNetty.Transport.Channels
 
             if (this.executor.InEventLoop)
             {
-                return ChannelHandlerInvokerUtil.InvokeConnectAsyncNow(ctx, remoteAddress, localAddress);
+                return ChannelHandlerInvokerUtil.InvokeConnectNowAsync(ctx, remoteAddress, localAddress);
             }
             else
             {
-                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeConnectAsyncNow(ctx, remoteAddress, localAddress));
+                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeConnectNowAsync(ctx, remoteAddress, localAddress));
             }
         }
 
@@ -208,11 +208,11 @@ namespace DotNetty.Transport.Channels
 
             if (this.executor.InEventLoop)
             {
-                return ChannelHandlerInvokerUtil.InvokeDisconnectAsyncNow(ctx);
+                return ChannelHandlerInvokerUtil.InvokeDisconnectNowAsync(ctx);
             }
             else
             {
-                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeDisconnectAsyncNow(ctx));
+                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeDisconnectNowAsync(ctx));
             }
         }
 
@@ -226,11 +226,11 @@ namespace DotNetty.Transport.Channels
 
             if (this.executor.InEventLoop)
             {
-                return ChannelHandlerInvokerUtil.InvokeCloseAsyncNow(ctx);
+                return ChannelHandlerInvokerUtil.InvokeCloseNowAsync(ctx);
             }
             else
             {
-                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeCloseAsyncNow(ctx));
+                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeCloseNowAsync(ctx));
             }
         }
 
@@ -244,11 +244,11 @@ namespace DotNetty.Transport.Channels
 
             if (this.executor.InEventLoop)
             {
-                return ChannelHandlerInvokerUtil.InvokeDeregisterAsyncNow(ctx);
+                return ChannelHandlerInvokerUtil.InvokeDeregisterNowAsync(ctx);
             }
             else
             {
-                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeDeregisterAsyncNow(ctx));
+                return this.SafeExecuteOutboundAsync(() => ChannelHandlerInvokerUtil.InvokeDeregisterNowAsync(ctx));
             }
         }
 
@@ -285,7 +285,7 @@ namespace DotNetty.Transport.Channels
 
             if (this.executor.InEventLoop)
             {
-                return ChannelHandlerInvokerUtil.InvokeWriteAsyncNow(ctx, msg);
+                return ChannelHandlerInvokerUtil.InvokeWriteNowAsync(ctx, msg);
             }
             else
             {
@@ -419,7 +419,7 @@ namespace DotNetty.Transport.Channels
                     {
                         buffer?.DecrementPendingOutboundBytes(this.size);
                     }
-                    ChannelHandlerInvokerUtil.InvokeWriteAsyncNow(this.ctx, this.msg).LinkOutcome(this.promise);
+                    ChannelHandlerInvokerUtil.InvokeWriteNowAsync(this.ctx, this.msg).LinkOutcome(this.promise);
                 }
                 finally
                 {

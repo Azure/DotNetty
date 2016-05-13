@@ -53,37 +53,19 @@ namespace DotNetty.Handlers.Tls
             this.sslStream = new SslStream(this.mediationStream, true, certificateValidationCallback);
         }
 
-        public static TlsHandler Client(string targetHost)
-        {
-            return new TlsHandler(false, null, targetHost, null);
-        }
+        public static TlsHandler Client(string targetHost) => new TlsHandler(false, null, targetHost, null);
 
-        public static TlsHandler Client(string targetHost, X509Certificate2 certificate)
-        {
-            return new TlsHandler(false, certificate, targetHost, null);
-        }
+        public static TlsHandler Client(string targetHost, X509Certificate2 certificate) => new TlsHandler(false, certificate, targetHost, null);
 
-        public static TlsHandler Client(string targetHost, X509Certificate2 certificate, RemoteCertificateValidationCallback certificateValidationCallback)
-        {
-            return new TlsHandler(false, certificate, targetHost, certificateValidationCallback);
-        }
+        public static TlsHandler Client(string targetHost, X509Certificate2 certificate, RemoteCertificateValidationCallback certificateValidationCallback) => new TlsHandler(false, certificate, targetHost, certificateValidationCallback);
 
-        public static TlsHandler Server(X509Certificate2 certificate)
-        {
-            return new TlsHandler(true, certificate, null, null);
-        }
+        public static TlsHandler Server(X509Certificate2 certificate) => new TlsHandler(true, certificate, null, null);
 
         public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
 
         public X509Certificate RemoteCertificate => this.sslStream.RemoteCertificate;
 
-        public void Dispose()
-        {
-            if (this.sslStream != null)
-            {
-                this.sslStream.Dispose();
-            }
-        }
+        public void Dispose() => this.sslStream?.Dispose();
 
         public override void ChannelActive(IChannelHandlerContext context)
         {
@@ -448,11 +430,7 @@ namespace DotNetty.Handlers.Tls
                     this.pendingReadBuffer = input;
                 }
 
-                AsyncCallback callback = this.readCallback;
-                if (callback != null)
-                {
-                    callback(tcs.Task);
-                }
+                this.readCallback?.Invoke(tcs.Task);
             }
 
             public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -506,10 +484,7 @@ namespace DotNetty.Handlers.Tls
                 }
             }
 
-            public override void Write(byte[] buffer, int offset, int count)
-            {
-                this.owner.FinishWrap(buffer, offset, count);
-            }
+            public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count);
 
             public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
             {
@@ -549,10 +524,7 @@ namespace DotNetty.Handlers.Tls
                         throw new ArgumentOutOfRangeException("Unexpected task status: " + writeTask.Status);
                 }
 
-                if (self.writeCallback != null)
-                {
-                    self.writeCallback(self.writeCompletion.Task);
-                }
+                self.writeCallback?.Invoke(self.writeCompletion.Task);
             }
 
             public override void EndWrite(IAsyncResult asyncResult)

@@ -7,13 +7,13 @@ namespace DotNetty.Transport.Channels.Groups
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
 
-    public sealed class CombinedEnumerator<E> : IEnumerator<E>
+    public sealed class CombinedEnumerator<T> : IEnumerator<T>
     {
-        readonly IEnumerator<E> e1;
-        readonly IEnumerator<E> e2;
-        IEnumerator<E> currentEnumerator;
+        readonly IEnumerator<T> e1;
+        readonly IEnumerator<T> e2;
+        IEnumerator<T> currentEnumerator;
 
-        public CombinedEnumerator(IEnumerator<E> e1, IEnumerator<E> e2)
+        public CombinedEnumerator(IEnumerator<T> e1, IEnumerator<T> e2)
         {
             Contract.Requires(e1 != null);
             Contract.Requires(e2 != null);
@@ -22,12 +22,9 @@ namespace DotNetty.Transport.Channels.Groups
             this.currentEnumerator = e1;
         }
 
-        public E Current => this.currentEnumerator.Current;
+        public T Current => this.currentEnumerator.Current;
 
-        public void Dispose()
-        {
-            this.currentEnumerator.Dispose();
-        }
+        public void Dispose() => this.currentEnumerator.Dispose();
 
         object IEnumerator.Current => this.Current;
 
@@ -50,9 +47,6 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public void Reset()
-        {
-            this.currentEnumerator.Reset();
-        }
+        public void Reset() => this.currentEnumerator.Reset();
     }
 }

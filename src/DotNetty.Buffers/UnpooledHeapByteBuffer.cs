@@ -47,10 +47,7 @@ namespace DotNetty.Buffers
             this.SetIndex(readerIndex, writerIndex);
         }
 
-        protected void SetArray(byte[] initialArray)
-        {
-            this.array = initialArray;
-        }
+        protected void SetArray(byte[] initialArray) => this.array = initialArray;
 
         public override IByteBufferAllocator Allocator => this.allocator;
 
@@ -191,10 +188,7 @@ namespace DotNetty.Buffers
             return this._GetByte(index);
         }
 
-        protected override byte _GetByte(int index)
-        {
-            return this.array[index];
-        }
+        protected override byte _GetByte(int index) => this.array[index];
 
         public override short GetShort(int index)
         {
@@ -202,10 +196,7 @@ namespace DotNetty.Buffers
             return this._GetShort(index);
         }
 
-        protected override short _GetShort(int index)
-        {
-            return unchecked((short)(this.array[index] << 8 | this.array[index + 1]));
-        }
+        protected override short _GetShort(int index) => unchecked((short)(this.array[index] << 8 | this.array[index + 1]));
 
         public override int GetInt(int index)
         {
@@ -250,10 +241,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        protected override void _SetByte(int index, int value)
-        {
-            this.array[index] = (byte)value;
-        }
+        protected override void _SetByte(int index, int value) => this.array[index] = (byte)value;
 
         public override IByteBuffer SetShort(int index, int value)
         {
@@ -321,14 +309,8 @@ namespace DotNetty.Buffers
             return new UnpooledHeapByteBuffer(this.Allocator, copiedArray, this.MaxCapacity);
         }
 
-        protected override void Deallocate()
-        {
-            this.array = null;
-        }
+        protected override void Deallocate() => this.array = null;
 
-        public override IByteBuffer Unwrap()
-        {
-            return null;
-        }
+        public override IByteBuffer Unwrap() => null;
     }
 }

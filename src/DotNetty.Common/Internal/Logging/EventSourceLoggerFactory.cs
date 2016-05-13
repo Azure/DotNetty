@@ -5,9 +5,6 @@ namespace DotNetty.Common.Internal.Logging
 {
     class EventSourceLoggerFactory : InternalLoggerFactory
     {
-        protected internal override IInternalLogger NewInstance(string name)
-        {
-            return new EventSourceLogger(name);
-        }
+        protected internal override IInternalLogger NewInstance(string name) => new EventSourceLogger(name);
     }
 }

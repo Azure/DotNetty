@@ -1,80 +1,86 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using DotNetty.Buffers;
-using DotNetty.Transport.Channels;
-
 namespace DotNetty.Codecs
 {
+    using System;
+    using System.Collections.Generic;
+    using DotNetty.Buffers;
+    using DotNetty.Transport.Channels;
+
     /// <summary>
-    /// A decoder that splits the received <see cref="DotNetty.Buffers.IByteBuffer"/> by one or more
-    /// delimiters.It is particularly useful for decoding the frames which ends
-    /// with a delimiter such as <see cref = "DotNetty.Codecs.Delimiters.NullDelimiter" /> or
-    /// <see cref = "DotNetty.Codecs.Delimiters.LineDelimiter" />
-    /// --- Specifying more than one delimiter </ h3 >
-    /// <see cref = "DotNetty.Codecs.Delimiters.NullDelimiter" /> allows you to specify more than one
-    /// delimiter.  If more than one delimiter is found in the buffer, it chooses
-    /// the delimiter which produces the shortest frame.  For example, if you have
-    /// the following data in the buffer:
-    ///  +--------------+
-    ///  | ABC\nDEF\r\n |
-    ///  +--------------+
-    ///  a <see cref = "DotNetty.Codecs.Delimiters.LineDelimiter" /> will choose '\n' as the first delimiter and produce two frames:
-    ///  +-----+-----+
-    ///   | ABC | DEF |
-    ///  +-----+-----+
-    ///  rather than incorrectly choosing '\r\n' as the first delimiter:
-    ///  +----------+
-    ///  | ABC\nDEF |
-    ///  +----------+
+    ///     A decoder that splits the received <see cref="DotNetty.Buffers.IByteBuffer" /> by one or more
+    ///     delimiters.It is particularly useful for decoding the frames which ends
+    ///     with a delimiter such as <see cref="DotNetty.Codecs.Delimiters.NullDelimiter" /> or
+    ///     <see cref="DotNetty.Codecs.Delimiters.LineDelimiter" />
+    ///     <h3>Specifying more than one delimiter </h3>
+    ///     <see cref="DotNetty.Codecs.Delimiters.NullDelimiter" /> allows you to specify more than one
+    ///     delimiter.  If more than one delimiter is found in the buffer, it chooses
+    ///     the delimiter which produces the shortest frame.  For example, if you have
+    ///     the following data in the buffer:
+    ///     +--------------+
+    ///     | ABC\nDEF\r\n |
+    ///     +--------------+
+    ///     a <see cref="DotNetty.Codecs.Delimiters.LineDelimiter" /> will choose '\n' as the first delimiter and produce two
+    ///     frames:
+    ///     +-----+-----+
+    ///     | ABC | DEF |
+    ///     +-----+-----+
+    ///     rather than incorrectly choosing '\r\n' as the first delimiter:
+    ///     +----------+
+    ///     | ABC\nDEF |
+    ///     +----------+
     /// </summary>
     public class DelimiterBasedFrameDecoder : ByteToMessageDecoder
     {
-        IByteBuffer[] delimiters;
-        int maxFrameLength;
-        bool stripDelimiter;
-        bool failFast;
+        readonly IByteBuffer[] delimiters;
+        readonly int maxFrameLength;
+        readonly bool stripDelimiter;
+        readonly bool failFast;
         bool discardingTooLongFrame;
         int tooLongFrameLength;
-        LineBasedFrameDecoder lineBasedDecoder; // Set only when decoding with "\n" and "\r\n" as the delimiter.
+        readonly LineBasedFrameDecoder lineBasedDecoder; // Set only when decoding with "\n" and "\r\n" as the delimiter.
 
         /// <summary>Common constructor</summary>
-        /// <param name="maxFrameLength">The maximum length of the decoded frame
-        ///		NOTE: A see <cref="DotNetty.Codecs.TooLongFrameException" /> is thrown if the length of the frame exceeds this value.</param>
+        /// <param name="maxFrameLength">
+        ///     The maximum length of the decoded frame
+        ///     NOTE: A see <see cref="DotNetty.Codecs.TooLongFrameException" /> is thrown if the length of the frame exceeds this
+        ///     value.
+        /// </param>
         /// <param name="stripDelimiter">whether the decoded frame should strip out the delimiter or not</param>
-        /// <param name="failFast">If true, a <cref="DotNetty.Codecs.TooLongFrameException" /> is
-        ///		thrown as soon as the decoder notices the length of the
-        ///		frame will exceed<tt>maxFrameLength</tt> regardless of
-        ///		whether the entire frame has been read.
-        ///		If false, a <cref="DotNetty.Codecs.TooLongFrameException" /> is
-        ///		thrown after the entire frame that exceeds maxFrameLength has been read.</param>
-        /// <param name="delimiter">the delimiter</param>
+        /// <param name="failFast">
+        ///     If true, a <see cref="DotNetty.Codecs.TooLongFrameException" /> is
+        ///     thrown as soon as the decoder notices the length of the
+        ///     frame will exceed<tt>maxFrameLength</tt> regardless of
+        ///     whether the entire frame has been read.
+        ///     If false, a <see cref="DotNetty.Codecs.TooLongFrameException" /> is
+        ///     thrown after the entire frame that exceeds maxFrameLength has been read.
+        /// </param>
+        /// <param name="delimiters">delimiters</param>
         public DelimiterBasedFrameDecoder(int maxFrameLength, bool stripDelimiter, bool failFast, params IByteBuffer[] delimiters)
         {
             ValidateMaxFrameLength(maxFrameLength);
-            if(delimiters == null)
+            if (delimiters == null)
                 throw new NullReferenceException("delimiters");
 
-            if(delimiters.Length == 0)
+            if (delimiters.Length == 0)
                 throw new ArgumentException("empty delimiters");
 
-            if(IsLineBased(delimiters) && !IsSubclass())
+            if (IsLineBased(delimiters) && !this.IsSubclass())
             {
-                lineBasedDecoder = new LineBasedFrameDecoder(maxFrameLength, stripDelimiter, failFast);
+                this.lineBasedDecoder = new LineBasedFrameDecoder(maxFrameLength, stripDelimiter, failFast);
                 this.delimiters = null;
             }
             else
             {
                 this.delimiters = new IByteBuffer[delimiters.Length];
-                for(int i = 0; i < delimiters.Length; i++)
+                for (int i = 0; i < delimiters.Length; i++)
                 {
                     IByteBuffer d = delimiters[i];
                     ValidateDelimiter(d);
                     this.delimiters[i] = d.Slice(d.ReaderIndex, d.ReadableBytes);
                 }
-                lineBasedDecoder = null;
+                this.lineBasedDecoder = null;
             }
             this.maxFrameLength = maxFrameLength;
             this.stripDelimiter = stripDelimiter;
@@ -82,22 +88,22 @@ namespace DotNetty.Codecs
         }
 
         public DelimiterBasedFrameDecoder(int maxFrameLength, IByteBuffer delimiter)
-            : this(maxFrameLength, true, true, new IByteBuffer[] { delimiter })
+            : this(maxFrameLength, true, true, new[] { delimiter })
         {
         }
 
         public DelimiterBasedFrameDecoder(int maxFrameLength, bool stripDelimiter, IByteBuffer delimiter)
-            : this(maxFrameLength, stripDelimiter, true, new IByteBuffer[] { delimiter })
+            : this(maxFrameLength, stripDelimiter, true, new[] { delimiter })
         {
         }
 
         public DelimiterBasedFrameDecoder(int maxFrameLength, bool stripDelimiter, bool failFast, IByteBuffer delimiter)
-            : this(maxFrameLength, true, failFast, new IByteBuffer[] { delimiter })
+            : this(maxFrameLength, stripDelimiter, failFast, new[] { delimiter })
         {
         }
 
         public DelimiterBasedFrameDecoder(int maxFrameLength, params IByteBuffer[] delimiters)
-            : this(maxFrameLength, true, true, delimiters )
+            : this(maxFrameLength, true, true, delimiters)
         {
         }
 
@@ -110,9 +116,9 @@ namespace DotNetty.Codecs
         static bool IsLineBased(IByteBuffer[] delimiters)
         {
             if (delimiters.Length != 2)
-			{
+            {
                 return false;
-			}
+            }
 
             IByteBuffer a = delimiters[0];
             IByteBuffer b = delimiters[1];
@@ -124,35 +130,37 @@ namespace DotNetty.Codecs
             return a.Capacity == 2 && b.Capacity == 1 && a.GetByte(0) == '\r' && a.GetByte(1) == '\n' && b.GetByte(0) == '\n';
         }
 
-
         /// <summary>ReturnsReturn true if the current instance is a subclass of DelimiterBasedFrameDecoder</summary>
-        bool IsSubclass()
-        {
-            return (this is DelimiterBasedFrameDecoder);
-        }
+        bool IsSubclass() => this.GetType() != typeof(DelimiterBasedFrameDecoder);
 
-        override protected internal void Decode(IChannelHandlerContext ctx, IByteBuffer input, List<object> output)
+        protected internal override void Decode(IChannelHandlerContext ctx, IByteBuffer input, List<object> output)
         {
-            var decoded = Decode(ctx, input);
+            object decoded = this.Decode(ctx, input);
             if (decoded != null)
                 output.Add(decoded);
         }
 
-        /// <summary>Create a frame out of the <see cref="DotNetty.Buffers.IByteBuffer"/> and return it</summary>
-        /// <param name="ctx">the <see cref="DotNetty.Transport.Channels.IChannelHandlerContext" /> which this <see cref="DotNetty.Codecs.ByteToMessageDecoder"/> belongs to</param>
+        /// <summary>Create a frame out of the <see cref="DotNetty.Buffers.IByteBuffer" /> and return it</summary>
+        /// <param name="ctx">
+        ///     the <see cref="DotNetty.Transport.Channels.IChannelHandlerContext" /> which this
+        ///     <see cref="DotNetty.Codecs.ByteToMessageDecoder" /> belongs to
+        /// </param>
         /// <param name="buffer">the <see cref="DotNetty.Buffers.IByteBuffer" /> from which to read data</param>
-        /// <returns>the <see cref="DotNetty.Buffers.IByteBuffer" /> which represent the frame or null if no frame could be created.</returns>
+        /// <returns>
+        ///     the <see cref="DotNetty.Buffers.IByteBuffer" /> which represent the frame or null if no frame could be
+        ///     created.
+        /// </returns>
         protected object Decode(IChannelHandlerContext ctx, IByteBuffer buffer)
         {
-            if (lineBasedDecoder != null)
-			{
-                return lineBasedDecoder.Decode(ctx, buffer);
-			}
+            if (this.lineBasedDecoder != null)
+            {
+                return this.lineBasedDecoder.Decode(ctx, buffer);
+            }
 
             // Try all delimiters and choose the delimiter which yields the shortest frame.
             int minFrameLength = int.MaxValue;
             IByteBuffer minDelim = null;
-            foreach (IByteBuffer delim in delimiters)
+            foreach (IByteBuffer delim in this.delimiters)
             {
                 int frameLength = IndexOf(buffer, delim);
                 if (frameLength >= 0 && frameLength < minFrameLength)
@@ -167,18 +175,18 @@ namespace DotNetty.Codecs
                 int minDelimLength = minDelim.Capacity;
                 IByteBuffer frame;
 
-                if (discardingTooLongFrame)
+                if (this.discardingTooLongFrame)
                 {
                     // We've just finished discarding a very large frame.
                     // Go back to the initial state.
-                    discardingTooLongFrame = false;
+                    this.discardingTooLongFrame = false;
                     buffer.SkipBytes(minFrameLength + minDelimLength);
 
                     int tooLongFrameLength = this.tooLongFrameLength;
                     this.tooLongFrameLength = 0;
-                    if (!failFast)
+                    if (!this.failFast)
                     {
-                        Fail(tooLongFrameLength);
+                        this.Fail(tooLongFrameLength);
                     }
                     return null;
                 }
@@ -187,11 +195,11 @@ namespace DotNetty.Codecs
                 {
                     // Discard read frame.
                     buffer.SkipBytes(minFrameLength + minDelimLength);
-                    Fail(minFrameLength);
+                    this.Fail(minFrameLength);
                     return null;
                 }
 
-                if (stripDelimiter)
+                if (this.stripDelimiter)
                 {
                     frame = buffer.ReadSlice(minFrameLength);
                     buffer.SkipBytes(minDelimLength);
@@ -205,24 +213,24 @@ namespace DotNetty.Codecs
             }
             else
             {
-                if (!discardingTooLongFrame)
+                if (!this.discardingTooLongFrame)
                 {
-                    if (buffer.ReadableBytes > maxFrameLength)
+                    if (buffer.ReadableBytes > this.maxFrameLength)
                     {
                         // Discard the content of the buffer until a delimiter is found.
-                        tooLongFrameLength = buffer.ReadableBytes;
+                        this.tooLongFrameLength = buffer.ReadableBytes;
                         buffer.SkipBytes(buffer.ReadableBytes);
-                        discardingTooLongFrame = true;
-                        if (failFast)
+                        this.discardingTooLongFrame = true;
+                        if (this.failFast)
                         {
-                            Fail(tooLongFrameLength);
+                            this.Fail(this.tooLongFrameLength);
                         }
                     }
                 }
                 else
                 {
                     // Still discarding the buffer since a delimiter is not found.
-                    tooLongFrameLength += buffer.ReadableBytes;
+                    this.tooLongFrameLength += buffer.ReadableBytes;
                     buffer.SkipBytes(buffer.ReadableBytes);
                 }
                 return null;
@@ -232,9 +240,9 @@ namespace DotNetty.Codecs
         void Fail(long frameLength)
         {
             if (frameLength > 0)
-                throw new TooLongFrameException("frame length exceeds " + maxFrameLength +": " + frameLength + " - discarded");
+                throw new TooLongFrameException("frame length exceeds " + this.maxFrameLength + ": " + frameLength + " - discarded");
             else
-                throw new TooLongFrameException("frame length exceeds " + maxFrameLength +" - discarding");
+                throw new TooLongFrameException("frame length exceeds " + this.maxFrameLength + " - discarding");
         }
 
         /**
@@ -242,6 +250,7 @@ namespace DotNetty.Codecs
          * the first needle found in the haystack.  -1 is returned if no needle is
          * found in the haystack.
          */
+
         static int IndexOf(IByteBuffer haystack, IByteBuffer needle)
         {
             for (int i = haystack.ReaderIndex; i < haystack.WriterIndex; i++)

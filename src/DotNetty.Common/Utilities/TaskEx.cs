@@ -76,7 +76,7 @@ namespace DotNetty.Common.Utilities
             }
         }
 
-        class LinkOutcomeActionHost<T>
+        static class LinkOutcomeActionHost<T>
         {
             public static readonly Action<Task<T>, object> Action =
                 (t, tcs) =>

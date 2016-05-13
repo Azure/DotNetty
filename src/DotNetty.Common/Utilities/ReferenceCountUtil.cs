@@ -143,10 +143,7 @@ namespace DotNetty.Common.Utilities
         ///     intended to simplify reference counting of ephemeral objects during unit tests. Do not use it beyond the
         ///     intended use case.
         /// </summary>
-        public static T ReleaseLater<T>(T msg)
-        {
-            return ReleaseLater(msg, 1);
-        }
+        public static T ReleaseLater<T>(T msg) => ReleaseLater(msg, 1);
 
         /// <summary>
         ///     Schedules the specified object to be released when the caller thread terminates. Note that this operation is
@@ -182,7 +179,8 @@ namespace DotNetty.Common.Utilities
 
         static string FormatReleaseString(IReferenceCounted referenceCounted, int decrement)
         {
-            return referenceCounted.GetType().Name + ".Release(" + decrement + ") refCnt: " + referenceCounted.ReferenceCount;
+            return referenceCounted.GetType().Name + ".Release(" + decrement.ToString() + ") refCnt: "
+                + referenceCounted.ReferenceCount.ToString();
         }
     }
 }

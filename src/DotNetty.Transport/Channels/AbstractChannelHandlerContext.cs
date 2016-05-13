@@ -64,7 +64,7 @@ namespace DotNetty.Transport.Channels
                 handler.GetType(),
                 handlerType => Tuple.Create(CalculateSkipPropagationFlags(handlerType)));
 
-            return skipDirection == null ? 0 : skipDirection.Item1;
+            return skipDirection?.Item1 ?? 0;
         }
 
         protected static int CalculateSkipPropagationFlags(Type handlerType)
@@ -284,8 +284,7 @@ namespace DotNetty.Transport.Channels
 
         public Task WriteAndFlushAsync(object message) // todo: cancellationToken?
         {
-            AbstractChannelHandlerContext target;
-            target = this.FindContextOutbound();
+            AbstractChannelHandlerContext target = this.FindContextOutbound();
             Task writeFuture = target.Invoker.InvokeWriteAsync(target, this.pipeline.Touch(message, target));
             target = this.FindContextOutbound();
             target.Invoker.InvokeFlush(target);
@@ -298,10 +297,7 @@ namespace DotNetty.Transport.Channels
             return next.Invoker.InvokeBindAsync(next, localAddress);
         }
 
-        public Task ConnectAsync(EndPoint remoteAddress)
-        {
-            return this.ConnectAsync(remoteAddress, null);
-        }
+        public Task ConnectAsync(EndPoint remoteAddress) => this.ConnectAsync(remoteAddress, null);
 
         public Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {

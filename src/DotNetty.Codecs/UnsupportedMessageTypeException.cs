@@ -15,7 +15,7 @@ namespace DotNetty.Codecs
         public UnsupportedMessageTypeException(
             object message, params Type[] expectedTypes)
             : base(ComposeMessage(
-                message == null ? "null" : message.GetType().Name, expectedTypes))
+                message?.GetType().Name ?? "null", expectedTypes))
         {
         }
 

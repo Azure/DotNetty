@@ -70,97 +70,97 @@ namespace DotNetty.Transport.Channels
     ///     connections
     ///     and closed connections) or the inbound data was read from a remote peer.  If an inbound event goes beyond the
     ///     {@link ChannelHandler} at the top of the diagram, it is discarded and logged, depending on your loglevel.
-    ///     <p>
-    ///         An outbound event is handled by the {@link ChannelHandler}s in the top-down direction as shown on the right
-    ///         side of
-    ///         the diagram.  An outbound event is usually triggered by your code that requests an outbound I/O operation, such
-    ///         as
-    ///         a write request and a connection attempt.  If an outbound event goes beyond the {@link ChannelHandler} at the
-    ///         bottom of the diagram, it is handled by an I/O thread associated with the {@link Channel}. The I/O thread often
-    ///         performs the actual output operation such as {@link SocketChannel#write(ByteBuffer)}.
-    ///         <p>
-    ///             <h3>Forwarding an event to the next handler</h3>
-    ///             As explained briefly above, a {@link ChannelHandler} has to invoke the event propagation methods in
-    ///             {@link ChannelHandlerContext} to forward an event to its next handler.  Those methods include:
+    ///     <p />
+    ///     An outbound event is handled by the {@link ChannelHandler}s in the top-down direction as shown on the right
+    ///     side of
+    ///     the diagram.  An outbound event is usually triggered by your code that requests an outbound I/O operation, such
+    ///     as
+    ///     a write request and a connection attempt.  If an outbound event goes beyond the {@link ChannelHandler} at the
+    ///     bottom of the diagram, it is handled by an I/O thread associated with the {@link Channel}. The I/O thread often
+    ///     performs the actual output operation such as {@link SocketChannel#write(ByteBuffer)}.
+    ///     <p />
+    ///     <h3>Forwarding an event to the next handler</h3>
+    ///     As explained briefly above, a {@link ChannelHandler} has to invoke the event propagation methods in
+    ///     {@link ChannelHandlerContext} to forward an event to its next handler.  Those methods include:
+    ///     <ul>
+    ///         <li>
+    ///             Inbound event propagation methods:
     ///             <ul>
-    ///                 <li>
-    ///                     Inbound event propagation methods:
-    ///                     <ul>
-    ///                         <li>{@link ChannelHandlerContext#fireChannelRegistered()}</li>
-    ///                         <li>{@link ChannelHandlerContext#fireChannelActive()}</li>
-    ///                         <li>{@link ChannelHandlerContext#fireChannelRead(Object)}</li>
-    ///                         <li>{@link ChannelHandlerContext#fireChannelReadComplete()}</li>
-    ///                         <li>{@link ChannelHandlerContext#fireExceptionCaught(Throwable)}</li>
-    ///                         <li>{@link ChannelHandlerContext#fireUserEventTriggered(Object)}</li>
-    ///                         <li>{@link ChannelHandlerContext#fireChannelWritabilityChanged()}</li>
-    ///                         <li>{@link ChannelHandlerContext#fireChannelInactive()}</li>
-    ///                     </ul>
-    ///                 </li>
-    ///                 <li>
-    ///                     Outbound event propagation methods:
-    ///                     <ul>
-    ///                         <li>{@link ChannelHandlerContext#bind(SocketAddress, ChannelPromise)}</li>
-    ///                         <li>{@link ChannelHandlerContext#connect(SocketAddress, SocketAddress, ChannelPromise)}</li>
-    ///                         <li>{@link ChannelHandlerContext#write(Object, ChannelPromise)}</li>
-    ///                         <li>{@link ChannelHandlerContext#flush()}</li>
-    ///                         <li>{@link ChannelHandlerContext#read()}</li>
-    ///                         <li>{@link ChannelHandlerContext#disconnect(ChannelPromise)}</li>
-    ///                         <li>{@link ChannelHandlerContext#close(ChannelPromise)}</li>
-    ///                     </ul>
-    ///                 </li>
+    ///                 <li>{@link ChannelHandlerContext#fireChannelRegistered()}</li>
+    ///                 <li>{@link ChannelHandlerContext#fireChannelActive()}</li>
+    ///                 <li>{@link ChannelHandlerContext#fireChannelRead(Object)}</li>
+    ///                 <li>{@link ChannelHandlerContext#fireChannelReadComplete()}</li>
+    ///                 <li>{@link ChannelHandlerContext#fireExceptionCaught(Throwable)}</li>
+    ///                 <li>{@link ChannelHandlerContext#fireUserEventTriggered(Object)}</li>
+    ///                 <li>{@link ChannelHandlerContext#fireChannelWritabilityChanged()}</li>
+    ///                 <li>{@link ChannelHandlerContext#fireChannelInactive()}</li>
     ///             </ul>
-    ///             and the following example shows how the event propagation is usually done:
-    ///             <pre>
-    ///                 public class MyInboundHandler extends {@link ChannelHandlerAdapter} {
-    ///                 {@code }
-    ///                 public void channelActive({@link ChannelHandlerContext} ctx) {
-    ///                 System.out.println("Connected!");
-    ///                 ctx.fireChannelActive();
-    ///                 }
-    ///                 }
-    ///                 public clas MyOutboundHandler extends {@link ChannelHandlerAdapter} {
-    ///                 {@code }
-    ///                 public void close({@link ChannelHandlerContext} ctx, {@link ChannelPromise} promise) {
-    ///                 System.out.println("Closing ..");
-    ///                 ctx.close(promise);
-    ///                 }
-    ///                 }
-    ///             </pre>
-    ///             <h3>Building a pipeline</h3>
-    ///             <p>
-    ///                 A user is supposed to have one or more {@link ChannelHandler}s in a pipeline to receive I/O events
-    ///                 (e.g. read) and
-    ///                 to request I/O operations (e.g. write and close).  For example, a typical server will have the
-    ///                 following handlers
-    ///                 in each channel's pipeline, but your mileage may vary depending on the complexity and characteristics
-    ///                 of the
-    ///                 protocol and business logic:
-    ///                 <ol>
-    ///                     <li>Protocol Decoder - translates binary data (e.g. {@link ByteBuf}) into a Java object.</li>
-    ///                     <li>Protocol Encoder - translates a Java object into binary data.</li>
-    ///                     <li>Business Logic Handler - performs the actual business logic (e.g. database access).</li>
-    ///                 </ol>
-    ///                 and it could be represented as shown in the following example:
-    ///                 <pre>
-    ///                     static final {@link EventExecutorGroup} group = new {@link DefaultEventExecutorGroup}(16);
-    ///                     ...
-    ///                     {@link ChannelPipeline} pipeline = ch.pipeline();
-    ///                     pipeline.addLast("decoder", new MyProtocolDecoder());
-    ///                     pipeline.addLast("encoder", new MyProtocolEncoder());
-    ///                     // Tell the pipeline to run MyBusinessLogicHandler's event handler methods
-    ///                     // in a different thread than an I/O thread so that the I/O thread is not blocked by
-    ///                     // a time-consuming task.
-    ///                     // If your business logic is fully asynchronous or finished very quickly, you don't
-    ///                     // need to specify a group.
-    ///                     pipeline.addLast(group, "handler", new MyBusinessLogicHandler());
-    ///                 </pre>
-    ///                 <h3>Thread safety</h3>
-    ///                 <p>
-    ///                     A {@link ChannelHandler} can be added or removed at any time because a {@link ChannelPipeline} is
-    ///                     thread safe.
-    ///                     For example, you can insert an encryption handler when sensitive information is about to be
-    ///                     exchanged, and remove it
-    ///                     after the exchange.
+    ///         </li>
+    ///         <li>
+    ///             Outbound event propagation methods:
+    ///             <ul>
+    ///                 <li>{@link ChannelHandlerContext#bind(SocketAddress, ChannelPromise)}</li>
+    ///                 <li>{@link ChannelHandlerContext#connect(SocketAddress, SocketAddress, ChannelPromise)}</li>
+    ///                 <li>{@link ChannelHandlerContext#write(Object, ChannelPromise)}</li>
+    ///                 <li>{@link ChannelHandlerContext#flush()}</li>
+    ///                 <li>{@link ChannelHandlerContext#read()}</li>
+    ///                 <li>{@link ChannelHandlerContext#disconnect(ChannelPromise)}</li>
+    ///                 <li>{@link ChannelHandlerContext#close(ChannelPromise)}</li>
+    ///             </ul>
+    ///         </li>
+    ///     </ul>
+    ///     and the following example shows how the event propagation is usually done:
+    ///     <pre>
+    ///         public class MyInboundHandler extends {@link ChannelHandlerAdapter} {
+    ///         {@code }
+    ///         public void channelActive({@link ChannelHandlerContext} ctx) {
+    ///         System.out.println("Connected!");
+    ///         ctx.fireChannelActive();
+    ///         }
+    ///         }
+    ///         public clas MyOutboundHandler extends {@link ChannelHandlerAdapter} {
+    ///         {@code }
+    ///         public void close({@link ChannelHandlerContext} ctx, {@link ChannelPromise} promise) {
+    ///         System.out.println("Closing ..");
+    ///         ctx.close(promise);
+    ///         }
+    ///         }
+    ///     </pre>
+    ///     <h3>Building a pipeline</h3>
+    ///     <p />
+    ///     A user is supposed to have one or more {@link ChannelHandler}s in a pipeline to receive I/O events
+    ///     (e.g. read) and
+    ///     to request I/O operations (e.g. write and close).  For example, a typical server will have the
+    ///     following handlers
+    ///     in each channel's pipeline, but your mileage may vary depending on the complexity and characteristics
+    ///     of the
+    ///     protocol and business logic:
+    ///     <ol>
+    ///         <li>Protocol Decoder - translates binary data (e.g. {@link ByteBuf}) into a Java object.</li>
+    ///         <li>Protocol Encoder - translates a Java object into binary data.</li>
+    ///         <li>Business Logic Handler - performs the actual business logic (e.g. database access).</li>
+    ///     </ol>
+    ///     and it could be represented as shown in the following example:
+    ///     <pre>
+    ///         static final {@link EventExecutorGroup} group = new {@link DefaultEventExecutorGroup}(16);
+    ///         ...
+    ///         {@link ChannelPipeline} pipeline = ch.pipeline();
+    ///         pipeline.addLast("decoder", new MyProtocolDecoder());
+    ///         pipeline.addLast("encoder", new MyProtocolEncoder());
+    ///         // Tell the pipeline to run MyBusinessLogicHandler's event handler methods
+    ///         // in a different thread than an I/O thread so that the I/O thread is not blocked by
+    ///         // a time-consuming task.
+    ///         // If your business logic is fully asynchronous or finished very quickly, you don't
+    ///         // need to specify a group.
+    ///         pipeline.addLast(group, "handler", new MyBusinessLogicHandler());
+    ///     </pre>
+    ///     <h3>Thread safety</h3>
+    ///     <p />
+    ///     A {@link ChannelHandler} can be added or removed at any time because a {@link ChannelPipeline} is
+    ///     thread safe.
+    ///     For example, you can insert an encryption handler when sensitive information is about to be
+    ///     exchanged, and remove it
+    ///     after the exchange.
     /// </summary>
     public interface IChannelPipeline : IEnumerable<IChannelHandler>
     {
@@ -450,7 +450,7 @@ namespace DotNetty.Transport.Channels
         IChannelHandlerContext Context<T>() where T : class, IChannelHandler;
 
         /// <summary>
-        ///     Returns the <see cref="IChannel"/> that this pipeline is attached to.
+        ///     Returns the <see cref="IChannel" /> that this pipeline is attached to.
         /// </summary>
         /// <returns>the channel. <c>null</c> if this pipeline is not attached yet.</returns>
         IChannel Channel { get; }
@@ -611,11 +611,11 @@ namespace DotNetty.Transport.Channels
         ///     read, and triggers a
         ///     {@link ChannelHandler#channelReadComplete(ChannelHandlerContext) channelReadComplete} event so the
         ///     handler can decide to continue reading.  If there's a pending read operation already, this method does nothing.
-        ///     <p>
-        ///         This will result in having the
-        ///         {@link ChannelHandler#read(ChannelHandlerContext)}
-        ///         method called of the next {@link ChannelHandler} contained in the  {@link ChannelPipeline} of the
-        ///         {@link Channel}.
+        ///     <p />
+        ///     This will result in having the
+        ///     {@link ChannelHandler#read(ChannelHandlerContext)}
+        ///     method called of the next {@link ChannelHandler} contained in the  {@link ChannelPipeline} of the
+        ///     {@link Channel}.
         /// </summary>
         IChannelPipeline Read();
 

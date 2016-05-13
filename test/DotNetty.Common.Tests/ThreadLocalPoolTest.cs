@@ -54,15 +54,9 @@ namespace DotNetty.Common.Tests
                 this.handle = handle;
             }
 
-            public static RecyclableObject NewInstance()
-            {
-                return pool.Take();
-            }
+            public static RecyclableObject NewInstance() => pool.Take();
 
-            public bool Release()
-            {
-                return pool.Release(this, this.handle);
-            }
+            public bool Release() => pool.Release(this, this.handle);
         }
 
         class HandledObject
@@ -74,10 +68,7 @@ namespace DotNetty.Common.Tests
                 this.handle = handle;
             }
 
-            public void Release()
-            {
-                this.handle.Release(this);
-            }
+            public void Release() => this.handle.Release(this);
         }
 
         [Fact]

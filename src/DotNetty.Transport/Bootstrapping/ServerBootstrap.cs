@@ -49,10 +49,7 @@ namespace DotNetty.Transport.Bootstrapping
         /// <summary>
         ///     Specify the {@link EventLoopGroup} which is used for the parent (acceptor) and the child (client).
         /// </summary>
-        public override ServerBootstrap Group(IEventLoopGroup group)
-        {
-            return this.Group(group, group);
-        }
+        public override ServerBootstrap Group(IEventLoopGroup group) => this.Group(@group, @group);
 
         /// <summary>
         ///     Set the {@link EventLoopGroup} for the parent (acceptor) and the child (client). These
@@ -124,10 +121,7 @@ namespace DotNetty.Transport.Bootstrapping
         ///     Return the configured {@link EventLoopGroup} which will be used for the child channels or {@code null}
         ///     if non is configured yet.
         /// </summary>
-        public IEventLoopGroup ChildGroup()
-        {
-            return this.childGroup;
-        }
+        public IEventLoopGroup ChildGroup() => this.childGroup;
 
         protected override void Init(IChannel channel)
         {
@@ -306,10 +300,7 @@ namespace DotNetty.Transport.Bootstrapping
             }
         }
 
-        public override object Clone()
-        {
-            return new ServerBootstrap(this);
-        }
+        public override object Clone() => new ServerBootstrap(this);
 
         public override string ToString()
         {

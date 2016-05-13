@@ -68,9 +68,6 @@ namespace DotNetty.Codecs
             output.Add(decoded);
         }
 
-        protected string Decode(IChannelHandlerContext context, IByteBuffer input)
-        {
-            return input.ToString(this.encoding);
-        }
+        protected string Decode(IChannelHandlerContext context, IByteBuffer input) => input.ToString(this.encoding);
     }
 }

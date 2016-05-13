@@ -75,10 +75,7 @@ namespace DotNetty.Transport.Bootstrapping
         ///     {@link Channel} implementation has no no-args constructor.
         /// </summary>
         public TBootstrap Channel<T>()
-            where T : TChannel, new()
-        {
-            return this.ChannelFactory(() => new T());
-        }
+            where T : TChannel, new() => this.ChannelFactory(() => new T());
 
         public TBootstrap ChannelFactory(Func<TChannel> channelFactory)
         {
@@ -99,26 +96,17 @@ namespace DotNetty.Transport.Bootstrapping
         /// <summary>
         ///     @see {@link #localAddress(SocketAddress)}
         /// </summary>
-        public TBootstrap LocalAddress(int inetPort)
-        {
-            return this.LocalAddress(new IPEndPoint(IPAddress.Any, inetPort));
-        }
+        public TBootstrap LocalAddress(int inetPort) => this.LocalAddress(new IPEndPoint(IPAddress.Any, inetPort));
 
         /// <summary>
         ///     @see {@link #localAddress(SocketAddress)}
         /// </summary>
-        public TBootstrap LocalAddress(string inetHost, int inetPort)
-        {
-            return this.LocalAddress(new DnsEndPoint(inetHost, inetPort));
-        }
+        public TBootstrap LocalAddress(string inetHost, int inetPort) => this.LocalAddress(new DnsEndPoint(inetHost, inetPort));
 
         /// <summary>
         ///     @see {@link #localAddress(SocketAddress)}
         /// </summary>
-        public TBootstrap LocalAddress(IPAddress inetHost, int inetPort)
-        {
-            return this.LocalAddress(new IPEndPoint(inetHost, inetPort));
-        }
+        public TBootstrap LocalAddress(IPAddress inetHost, int inetPort) => this.LocalAddress(new IPEndPoint(inetHost, inetPort));
 
         /// <summary>
         ///     Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they got
@@ -170,7 +158,7 @@ namespace DotNetty.Transport.Bootstrapping
         /// <summary>
         ///     Create a new {@link Channel} and register it with an {@link EventLoop}.
         /// </summary>
-        public Task Register()
+        public Task RegisterAsync()
         {
             this.Validate();
             return this.InitAndRegisterAsync();
@@ -187,32 +175,23 @@ namespace DotNetty.Transport.Bootstrapping
             {
                 throw new InvalidOperationException("localAddress must be set beforehand.");
             }
-            return this.DoBind(address);
+            return this.DoBindAsync(address);
         }
 
         /// <summary>
         ///     Create a new {@link Channel} and bind it.
         /// </summary>
-        public Task<IChannel> BindAsync(int inetPort)
-        {
-            return this.BindAsync(new IPEndPoint(IPAddress.Any, inetPort));
-        }
+        public Task<IChannel> BindAsync(int inetPort) => this.BindAsync(new IPEndPoint(IPAddress.Any, inetPort));
 
         /// <summary>
         ///     Create a new {@link Channel} and bind it.
         /// </summary>
-        public Task<IChannel> BindAsync(string inetHost, int inetPort)
-        {
-            return this.BindAsync(new DnsEndPoint(inetHost, inetPort));
-        }
+        public Task<IChannel> BindAsync(string inetHost, int inetPort) => this.BindAsync(new DnsEndPoint(inetHost, inetPort));
 
         /// <summary>
         ///     Create a new {@link Channel} and bind it.
         /// </summary>
-        public Task<IChannel> BindAsync(IPAddress inetHost, int inetPort)
-        {
-            return this.BindAsync(new IPEndPoint(inetHost, inetPort));
-        }
+        public Task<IChannel> BindAsync(IPAddress inetHost, int inetPort) => this.BindAsync(new IPEndPoint(inetHost, inetPort));
 
         /// <summary>
         ///     Create a new {@link Channel} and bind it.
@@ -222,13 +201,13 @@ namespace DotNetty.Transport.Bootstrapping
             this.Validate();
             Contract.Requires(localAddress != null);
 
-            return this.DoBind(localAddress);
+            return this.DoBindAsync(localAddress);
         }
 
-        async Task<IChannel> DoBind(EndPoint localAddress)
+        async Task<IChannel> DoBindAsync(EndPoint localAddress)
         {
             IChannel channel = await this.InitAndRegisterAsync();
-            await DoBind0(channel, localAddress);
+            await DoBind0Async(channel, localAddress);
 
             return channel;
         }
@@ -276,7 +255,7 @@ namespace DotNetty.Transport.Bootstrapping
             return channel;
         }
 
-        static Task DoBind0(IChannel channel, EndPoint localAddress)
+        static Task DoBind0Async(IChannel channel, EndPoint localAddress)
         {
             // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
             // the pipeline in its channelRegistered() implementation.
@@ -308,28 +287,16 @@ namespace DotNetty.Transport.Bootstrapping
             return (TBootstrap)this;
         }
 
-        protected EndPoint LocalAddress()
-        {
-            return this.localAddress;
-        }
+        protected EndPoint LocalAddress() => this.localAddress;
 
-        protected IChannelHandler Handler()
-        {
-            return this.handler;
-        }
+        protected IChannelHandler Handler() => this.handler;
 
         /// <summary>
         ///     Return the configured {@link EventLoopGroup} or {@code null} if non is configured yet.
         /// </summary>
-        public IEventLoopGroup Group()
-        {
-            return this.group;
-        }
+        public IEventLoopGroup Group() => this.group;
 
-        protected IDictionary<ChannelOption, object> Options()
-        {
-            return this.options;
-        }
+        protected IDictionary<ChannelOption, object> Options() => this.options;
 
         // todo: attr
         //Dictionary<AttributeKey, object> attrs()

@@ -222,8 +222,8 @@ namespace DotNetty.Buffers
         ///     identical to each other for {@code length} bytes starting at {@code aStartIndex}
         ///     index for the {@code a} buffer and {@code bStartIndex} index for the {@code b} buffer.
         ///     A more compact way to express this is:
-        ///     <p>
-        ///         {@code a[aStartIndex : aStartIndex + length] == b[bStartIndex : bStartIndex + length]}
+        ///     <p />
+        ///     {@code a[aStartIndex : aStartIndex + length] == b[bStartIndex : bStartIndex + length]}
         /// </summary>
         public static bool Equals(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
         {
@@ -404,19 +404,44 @@ namespace DotNetty.Buffers
             }
         }
 
-        //todo: port
-        //static int firstIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
-        //{
-        //    fromIndex = Math.max(fromIndex, 0);
-        //    if (fromIndex >= toIndex || buffer.capacity() == 0)
-        //    {
-        //        return -1;
-        //    }
+        /// <summary>
+        /// The default implementation of <see cref="IByteBuffer.IndexOf(int, int, byte)"/>.
+        /// This method is useful when implementing a new buffer type.
+        /// </summary>
+        public static int IndexOf(IByteBuffer buffer, int fromIndex, int toIndex, byte value)
+        {
+            if (fromIndex <= toIndex)
+            {
+                return FirstIndexOf(buffer, fromIndex, toIndex, value);
+            }
+            else
+            {
+                return LastIndexOf(buffer, fromIndex, toIndex, value);
+            }
+        }
 
-        //    return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
-        //}
+        static int FirstIndexOf(IByteBuffer buffer, int fromIndex, int toIndex, byte value)
+        {
+            fromIndex = Math.Max(fromIndex, 0);
+            if (fromIndex >= toIndex || buffer.Capacity == 0)
+            {
+                return -1;
+            }
 
-        /// todo: port
+            return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
+        }
+
+        static int LastIndexOf(IByteBuffer buffer, int fromIndex, int toIndex, byte value)
+        {
+            fromIndex = Math.Min(fromIndex, buffer.Capacity);
+            if (fromIndex < 0 || buffer.Capacity == 0)
+            {
+                return -1;
+            }
+
+            return buffer.ForEachByteDesc(toIndex, fromIndex - toIndex, new ByteProcessor.IndexOfProcessor(value));
+        }
+
         /// <summary>
         ///     Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans.
         /// </summary>
@@ -524,7 +549,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///     Appends the prefix of each hex dump row.  Uses the look-up table for the buffer <= 64 KiB.
+        ///     Appends the prefix of each hex dump row.  Uses the look-up table for the buffer &lt;= 64 KiB.
         /// </summary>
         static void AppendHexDumpRowPrefix(StringBuilder dump, int row, int rowStartIndex)
         {

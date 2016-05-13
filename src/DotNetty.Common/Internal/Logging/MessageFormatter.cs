@@ -91,10 +91,7 @@ namespace DotNetty.Common.Internal.Logging
         /// <param name="messagePattern">The message pattern which will be parsed and formatted</param>
         /// <param name="arg">The argument to be substituted in place of the formatting anchor</param>
         /// <returns>The formatted message</returns>
-        public static FormattingTuple Format(string messagePattern, object arg)
-        {
-            return ArrayFormat(messagePattern, new[] { arg });
-        }
+        public static FormattingTuple Format(string messagePattern, object arg) => ArrayFormat(messagePattern, new[] { arg });
 
         /// <summary>
         ///     Performs a two argument substitution for the 'messagePattern' passed as
@@ -112,11 +109,7 @@ namespace DotNetty.Common.Internal.Logging
         /// <param name="argA">The argument to be substituted in place of the first formatting anchor</param>
         /// <param name="argB">The argument to be substituted in place of the second formatting anchor</param>
         /// <returns>The formatted message</returns>
-        public static FormattingTuple Format(string messagePattern,
-            object argA, object argB)
-        {
-            return ArrayFormat(messagePattern, new object[] { argA, argB });
-        }
+        public static FormattingTuple Format(string messagePattern, object argA, object argB) => ArrayFormat(messagePattern, new[] { argA, argB });
 
         public static Exception GetThrowableCandidate(object[] argArray)
         {
@@ -125,12 +118,7 @@ namespace DotNetty.Common.Internal.Logging
                 return null;
             }
 
-            object lastEntry = argArray[argArray.Length - 1];
-            if (lastEntry is Exception)
-            {
-                return (Exception)lastEntry;
-            }
-            return null;
+            return argArray[argArray.Length - 1] as Exception;
         }
 
         /// <summary>
@@ -157,13 +145,12 @@ namespace DotNetty.Common.Internal.Logging
             }
 
             int i = 0;
-            int j;
             var sbuf = new StringBuilder(messagePattern.Length + 50);
 
             int l;
             for (l = 0; l < argArray.Length; l++)
             {
-                j = messagePattern.IndexOf(DELIM_STR, i, StringComparison.Ordinal);
+                int j = messagePattern.IndexOf(DELIM_STR, i, StringComparison.Ordinal);
 
                 if (j == -1)
                 {
@@ -235,11 +222,7 @@ namespace DotNetty.Common.Internal.Logging
             return messagePattern[delimeterStartIndex - 1] == ESCAPE_CHAR;
         }
 
-        public static bool IsDoubleEscaped(string messagePattern,
-            int delimeterStartIndex)
-        {
-            return delimeterStartIndex >= 2 && messagePattern[delimeterStartIndex - 2] == ESCAPE_CHAR;
-        }
+        public static bool IsDoubleEscaped(string messagePattern, int delimeterStartIndex) => delimeterStartIndex >= 2 && messagePattern[delimeterStartIndex - 2] == ESCAPE_CHAR;
 
         // special treatment of array values was suggested by 'lizongbo'
         static void DeeplyAppendParameter(StringBuilder sbuf, object o,

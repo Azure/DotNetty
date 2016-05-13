@@ -438,15 +438,9 @@ namespace DotNetty.Codecs.Mqtt
             return buffer.ReadUnsignedShort();
         }
 
-        static string DecodeString(IByteBuffer buffer, ref int remainingLength)
-        {
-            return DecodeString(buffer, ref remainingLength, 0, int.MaxValue);
-        }
+        static string DecodeString(IByteBuffer buffer, ref int remainingLength) => DecodeString(buffer, ref remainingLength, 0, int.MaxValue);
 
-        static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes)
-        {
-            return DecodeString(buffer, ref remainingLength, minBytes, int.MaxValue);
-        }
+        static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes) => DecodeString(buffer, ref remainingLength, minBytes, int.MaxValue);
 
         static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes, int maxBytes)
         {

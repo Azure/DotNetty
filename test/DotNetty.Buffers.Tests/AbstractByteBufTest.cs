@@ -25,10 +25,7 @@ namespace DotNetty.Buffers.Tests
 
         protected abstract IByteBuffer NewBuffer(int capacity);
 
-        protected virtual bool DiscardReadBytesDoesNotMoveWritableBytes()
-        {
-            return true;
-        }
+        protected virtual bool DiscardReadBytesDoesNotMoveWritableBytes() => true;
 
         protected AbstractByteBufTest()
         {
@@ -94,10 +91,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void WriterIndexBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetWriterIndex(-1));
-        }
+        public void WriterIndexBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetWriterIndex(-1));
 
         [Fact]
         public void WriterIndexBoundaryCheck2()
@@ -126,76 +120,40 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void GetBooleanBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBoolean(-1));
-        }
+        public void GetBooleanBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBoolean(-1));
 
         [Fact]
-        public void GetBooleanBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBoolean(this.buffer.Capacity));
-        }
+        public void GetBooleanBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBoolean(this.buffer.Capacity));
 
         [Fact]
-        public void GetByteBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetByte(-1));
-        }
+        public void GetByteBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetByte(-1));
 
         [Fact]
-        public void GetByteBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetByte(this.buffer.Capacity));
-        }
+        public void GetByteBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetByte(this.buffer.Capacity));
 
         [Fact]
-        public void GetShortBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetShort(-1));
-        }
+        public void GetShortBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetShort(-1));
 
         [Fact]
-        public void GetShortBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetShort(this.buffer.Capacity - 1));
-        }
+        public void GetShortBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetShort(this.buffer.Capacity - 1));
 
         [Fact]
-        public void GetIntBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetInt(-1));
-        }
+        public void GetIntBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetInt(-1));
 
         [Fact]
-        public void GetIntBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetInt(this.buffer.Capacity - 3));
-        }
+        public void GetIntBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetInt(this.buffer.Capacity - 3));
 
         [Fact]
-        public void GetLongBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetLong(-1));
-        }
+        public void GetLongBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetLong(-1));
 
         [Fact]
-        public void GetLongBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetLong(this.buffer.Capacity - 7));
-        }
+        public void GetLongBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetLong(this.buffer.Capacity - 7));
 
         [Fact]
-        public void GetByteArrayBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBytes(-1, ArrayExtensions.ZeroBytes));
-        }
+        public void GetByteArrayBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBytes(-1, ArrayExtensions.ZeroBytes));
 
         [Fact]
-        public void GetByteArrayBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBytes(-1, ArrayExtensions.ZeroBytes, 0, 0));
-        }
+        public void GetByteArrayBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBytes(-1, ArrayExtensions.ZeroBytes, 0, 0));
 
         [Fact]
         public void GetByteArrayBoundaryCheck3()
@@ -226,46 +184,25 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void CopyBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(-1, 0));
-        }
+        public void CopyBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(-1, 0));
 
         [Fact]
-        public void CopyBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(0, this.buffer.Capacity + 1));
-        }
+        public void CopyBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(0, this.buffer.Capacity + 1));
 
         [Fact]
-        public void CopyBoundaryCheck3()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(this.buffer.Capacity + 1, 0));
-        }
+        public void CopyBoundaryCheck3() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(this.buffer.Capacity + 1, 0));
 
         [Fact]
-        public void CopyBoundaryCheck4()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(this.buffer.Capacity, 1));
-        }
+        public void CopyBoundaryCheck4() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.Copy(this.buffer.Capacity, 1));
 
         [Fact]
-        public void SetIndexBoundaryCheck1()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetIndex(-1, Capacity));
-        }
+        public void SetIndexBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetIndex(-1, Capacity));
 
         [Fact]
-        public void SetIndexBoundaryCheck2()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetIndex(Capacity / 2, Capacity / 4));
-        }
+        public void SetIndexBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetIndex(Capacity / 2, Capacity / 4));
 
         [Fact]
-        public void SetIndexBoundaryCheck3()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetIndex(0, Capacity + 1));
-        }
+        public void SetIndexBoundaryCheck3() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.SetIndex(0, Capacity + 1));
 
         [Fact]
         public void GetByteBufferState()
@@ -285,10 +222,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void GetDirectByteBufferBoundaryCheck()
-        {
-            Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBytes(-1, new byte[0]));
-        }
+        public void GetDirectByteBufferBoundaryCheck() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetBytes(-1, new byte[0]));
 
         [Fact]
         public void TestRandomByteAccess()
@@ -308,16 +242,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestRandomShortAccess()
-        {
-            this.TestRandomShortAccess(true);
-        }
+        public void TestRandomShortAccess() => this.TestRandomShortAccess(true);
 
         [Fact]
-        public void TestRandomShortLeAccess()
-        {
-            this.TestRandomShortAccess(false);
-        }
+        public void TestRandomShortLeAccess() => this.TestRandomShortAccess(false);
 
         void TestRandomShortAccess(bool testBigEndian)
         {
@@ -350,16 +278,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestRandomUnsignedShortAccess()
-        {
-            this.TestRandomUnsignedShortAccess(true);
-        }
+        public void TestRandomUnsignedShortAccess() => this.TestRandomUnsignedShortAccess(true);
 
         [Fact]
-        public void TestRandomUnsignedShortLeAccess()
-        {
-            this.TestRandomUnsignedShortAccess(false);
-        }
+        public void TestRandomUnsignedShortLeAccess() => this.TestRandomUnsignedShortAccess(false);
 
         void TestRandomUnsignedShortAccess(bool testBigEndian)
         {
@@ -392,16 +314,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestRandomIntAccess()
-        {
-            this.TestRandomIntAccess(true);
-        }
+        public void TestRandomIntAccess() => this.TestRandomIntAccess(true);
 
         [Fact]
-        public void TestRandomIntLeAccess()
-        {
-            this.TestRandomIntAccess(false);
-        }
+        public void TestRandomIntLeAccess() => this.TestRandomIntAccess(false);
 
         void TestRandomIntAccess(bool testBigEndian)
         {
@@ -434,16 +350,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestRandomUnsignedIntAccess()
-        {
-            this.TestRandomUnsignedIntAccess(true);
-        }
+        public void TestRandomUnsignedIntAccess() => this.TestRandomUnsignedIntAccess(true);
 
         [Fact]
-        public void TestRandomUnsignedIntLeAccess()
-        {
-            this.TestRandomUnsignedIntAccess(false);
-        }
+        public void TestRandomUnsignedIntLeAccess() => this.TestRandomUnsignedIntAccess(false);
 
         void TestRandomUnsignedIntAccess(bool testBigEndian)
         {
@@ -476,16 +386,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestRandomLongAccess()
-        {
-            this.TestRandomLongAccess(true);
-        }
+        public void TestRandomLongAccess() => this.TestRandomLongAccess(true);
 
         [Fact]
-        public void TestRandomLongLeAccess()
-        {
-            this.TestRandomLongAccess(false);
-        }
+        public void TestRandomLongLeAccess() => this.TestRandomLongAccess(false);
 
         void TestRandomLongAccess(bool testBigEndian)
         {
@@ -566,16 +470,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestSequentialShortAccess()
-        {
-            this.TestSequentialShortAccess(true);
-        }
+        public void TestSequentialShortAccess() => this.TestSequentialShortAccess(true);
 
         [Fact]
-        public void TestSequentialShortLeAccess()
-        {
-            this.TestSequentialShortAccess(false);
-        }
+        public void TestSequentialShortLeAccess() => this.TestSequentialShortAccess(false);
 
         void TestSequentialShortAccess(bool testBigEndian)
         {
@@ -622,16 +520,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestSequentialUnsignedShortAccess()
-        {
-            this.TestSequentialUnsignedShortAccess(true);
-        }
+        public void TestSequentialUnsignedShortAccess() => this.TestSequentialUnsignedShortAccess(true);
 
         [Fact]
-        public void TestSequentialUnsignedShortLeAccess()
-        {
-            this.TestSequentialUnsignedShortAccess(true);
-        }
+        public void TestSequentialUnsignedShortLeAccess() => this.TestSequentialUnsignedShortAccess(true);
 
         void TestSequentialUnsignedShortAccess(bool testBigEndian)
         {
@@ -678,16 +570,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestSequentialIntAccess()
-        {
-            this.TestSequentialIntAccess(true);
-        }
+        public void TestSequentialIntAccess() => this.TestSequentialIntAccess(true);
 
         [Fact]
-        public void TestSequentialIntLeAccess()
-        {
-            this.TestSequentialIntAccess(false);
-        }
+        public void TestSequentialIntLeAccess() => this.TestSequentialIntAccess(false);
 
         void TestSequentialIntAccess(bool testBigEndian)
         {
@@ -734,16 +620,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestSequentialUnsignedIntAccess()
-        {
-            this.TestSequentialUnsignedIntAccess(true);
-        }
+        public void TestSequentialUnsignedIntAccess() => this.TestSequentialUnsignedIntAccess(true);
 
         [Fact]
-        public void TestSequentialUnsignedIntLeAccess()
-        {
-            this.TestSequentialUnsignedIntAccess(false);
-        }
+        public void TestSequentialUnsignedIntLeAccess() => this.TestSequentialUnsignedIntAccess(false);
 
         void TestSequentialUnsignedIntAccess(bool testBigEndian)
         {
@@ -790,16 +670,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestSequentialLongAccess()
-        {
-            this.TestSequentialLongAccess(true);
-        }
+        public void TestSequentialLongAccess() => this.TestSequentialLongAccess(true);
 
         [Fact]
-        public void TestSequentialLongLeAccess()
-        {
-            this.TestSequentialLongAccess(false);
-        }
+        public void TestSequentialLongLeAccess() => this.TestSequentialLongAccess(false);
 
         void TestSequentialLongAccess(bool testBigEndian)
         {
@@ -1809,16 +1683,10 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestDuplicateBytesInArrayMultipleThreads()
-        {
-            this.TestBytesInArrayMultipleThreads(false);
-        }
+        public void TestDuplicateBytesInArrayMultipleThreads() => this.TestBytesInArrayMultipleThreads(false);
 
         [Fact]
-        public void TestSliceBytesInArrayMultipleThreads()
-        {
-            this.TestBytesInArrayMultipleThreads(true);
-        }
+        public void TestSliceBytesInArrayMultipleThreads() => this.TestBytesInArrayMultipleThreads(true);
 
         void TestBytesInArrayMultipleThreads(bool slice)
         {
@@ -1894,472 +1762,238 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestDiscardReadBytesAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().DiscardReadBytes());
-        }
+        public void TestDiscardReadBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().DiscardReadBytes());
 
         [Fact]
-        public void TestDiscardSomeReadBytesAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().DiscardSomeReadBytes());
-        }
+        public void TestDiscardSomeReadBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().DiscardSomeReadBytes());
 
         [Fact]
-        public void TestEnsureWritableAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().EnsureWritable(16));
-        }
+        public void TestEnsureWritableAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().EnsureWritable(16));
 
         [Fact]
-        public void TestGetBooleanAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBoolean(0));
-        }
+        public void TestGetBooleanAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBoolean(0));
 
         [Fact]
-        public void TestGetByteAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetByte(0));
-        }
+        public void TestGetByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetByte(0));
 
         [Fact]
-        public void TestGetShortAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetShort(0));
-        }
+        public void TestGetShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetShort(0));
 
         [Fact]
-        public void TestGetShortLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetShort(0));
-        }
+        public void TestGetShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetShort(0));
 
         [Fact]
-        public void TestGetUnsignedShortAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetUnsignedShort(0));
-        }
+        public void TestGetUnsignedShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetUnsignedShort(0));
 
         [Fact]
-        public void TestGetUnsignedShortLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetUnsignedShort(0));
-        }
+        public void TestGetUnsignedShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetUnsignedShort(0));
 
         [Fact]
-        public void TestGetIntAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetInt(0));
-        }
+        public void TestGetIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetInt(0));
 
         [Fact]
-        public void TestGetIntLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetInt(0));
-        }
+        public void TestGetIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetInt(0));
 
         [Fact]
-        public void TestGetUnsignedIntAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetUnsignedInt(0));
-        }
+        public void TestGetUnsignedIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetUnsignedInt(0));
 
         [Fact]
-        public void TestGetUnsignedIntLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetUnsignedInt(0));
-        }
+        public void TestGetUnsignedIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetUnsignedInt(0));
 
         [Fact]
-        public void TestGetLongAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetLong(0));
-        }
+        public void TestGetLongAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetLong(0));
 
         [Fact]
-        public void TestGetLongLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetLong(0));
-        }
+        public void TestGetLongLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetLong(0));
 
         [Fact]
-        public void TestGetCharAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetChar(0));
-        }
+        public void TestGetCharAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetChar(0));
 
         [Fact]
-        public void TestGetDoubleAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetDouble(0));
-        }
+        public void TestGetDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetDouble(0));
 
         [Fact]
-        public void TestGetBytesAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
-        }
+        public void TestGetBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
 
         [Fact]
-        public void TestGetBytesAfterRelease2()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 1));
-        }
+        public void TestGetBytesAfterRelease2() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 1));
 
         [Fact]
-        public void TestGetBytesAfterRelease3()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 0, 1));
-        }
+        public void TestGetBytesAfterRelease3() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 0, 1));
 
         [Fact]
-        public void TestGetBytesAfterRelease4()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, new byte[8]));
-        }
+        public void TestGetBytesAfterRelease4() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, new byte[8]));
 
         [Fact]
-        public void TestGetBytesAfterRelease5()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, new byte[8], 0, 1));
-        }
+        public void TestGetBytesAfterRelease5() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, new byte[8], 0, 1));
 
         [Fact]
-        public void TestSetBooleanAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBoolean(0, true));
-        }
+        public void TestSetBooleanAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBoolean(0, true));
 
         [Fact]
-        public void TestSetByteAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetByte(0, 1));
-        }
+        public void TestSetByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetByte(0, 1));
 
         [Fact]
-        public void TestSetShortAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetShort(0, 1));
-        }
+        public void TestSetShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetShort(0, 1));
 
         [Fact]
-        public void TestSetShortLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetShort(0, 1));
-        }
+        public void TestSetShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetShort(0, 1));
 
         [Fact]
-        public void TestSetIntAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetInt(0, 1));
-        }
+        public void TestSetIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetInt(0, 1));
 
         [Fact]
-        public void TestSetIntLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetInt(0, 1));
-        }
+        public void TestSetIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetInt(0, 1));
 
         [Fact]
-        public void TestSetLongAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetLong(0, 1));
-        }
+        public void TestSetLongAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetLong(0, 1));
 
         [Fact]
-        public void TestSetLongLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetLong(0, 1));
-        }
+        public void TestSetLongLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetLong(0, 1));
 
         [Fact]
-        public void TestSetCharAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetChar(0, (char)1));
-        }
+        public void TestSetCharAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetChar(0, (char)1));
 
         [Fact]
-        public void TestSetDoubleAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetDouble(0, 1));
-        }
+        public void TestSetDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetDouble(0, 1));
 
         [Fact]
-        public void TestSetBytesAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer())));
-        }
+        public void TestSetBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer())));
 
         [Fact]
-        public void TestSetBytesAfterRelease2()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 1));
-        }
+        public void TestSetBytesAfterRelease2() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 1));
 
         [Fact]
-        public void TestSetBytesAfterRelease3()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 0, 1));
-        }
+        public void TestSetBytesAfterRelease3() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer()), 0, 1));
 
         [Fact]
-        public void TestSetBytesAfterRelease4()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, new byte[8]));
-        }
+        public void TestSetBytesAfterRelease4() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, new byte[8]));
 
         [Fact]
-        public void TestSetBytesAfterRelease5()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, new byte[8], 0, 1));
-        }
+        public void TestSetBytesAfterRelease5() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, new byte[8], 0, 1));
 
         [Fact]
-        public void TestReadBooleanAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBoolean());
-        }
+        public void TestReadBooleanAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBoolean());
 
         [Fact]
-        public void TestReadByteAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadByte());
-        }
+        public void TestReadByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadByte());
 
         [Fact]
-        public void TestReadShortAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadShort());
-        }
+        public void TestReadShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadShort());
 
         [Fact]
-        public void TestReadShortLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadShort());
-        }
+        public void TestReadShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadShort());
 
         [Fact]
-        public void TestReadUnsignedShortAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadUnsignedShort());
-        }
+        public void TestReadUnsignedShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadUnsignedShort());
 
         [Fact]
-        public void TestReadUnsignedShortLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadUnsignedShort());
-        }
+        public void TestReadUnsignedShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadUnsignedShort());
 
         [Fact]
-        public void TestReadIntAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadInt());
-        }
+        public void TestReadIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadInt());
 
         [Fact]
-        public void TestReadIntLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadInt());
-        }
+        public void TestReadIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadInt());
 
         [Fact]
-        public void TestReadUnsignedIntAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadUnsignedInt());
-        }
+        public void TestReadUnsignedIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadUnsignedInt());
 
         [Fact]
-        public void TestReadUnsignedIntLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadUnsignedInt());
-        }
+        public void TestReadUnsignedIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadUnsignedInt());
 
         [Fact]
-        public void TestReadLongAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadLong());
-        }
+        public void TestReadLongAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadLong());
 
         [Fact]
-        public void TestReadLongLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadLong());
-        }
+        public void TestReadLongLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadLong());
 
         [Fact]
-        public void TestReadCharAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadChar());
-        }
+        public void TestReadCharAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadChar());
 
         [Fact]
-        public void TestReadDoubleAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadDouble());
-        }
+        public void TestReadDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadDouble());
 
         [Fact]
-        public void TestReadBytesAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(1));
-        }
+        public void TestReadBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(1));
 
         [Fact]
-        public void TestReadBytesAfterRelease2()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
-        }
+        public void TestReadBytesAfterRelease2() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
 
         [Fact]
-        public void TestReadBytesAfterRelease3()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8), 1)));
-        }
+        public void TestReadBytesAfterRelease3() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8), 1)));
 
         [Fact]
-        public void TestReadBytesAfterRelease4()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8)), 0, 1));
-        }
+        public void TestReadBytesAfterRelease4() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8)), 0, 1));
 
         [Fact]
-        public void TestReadBytesAfterRelease5()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(new byte[8]));
-        }
+        public void TestReadBytesAfterRelease5() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(new byte[8]));
 
         [Fact]
-        public void TestReadBytesAfterRelease6()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(new byte[8], 0, 1));
-        }
+        public void TestReadBytesAfterRelease6() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(new byte[8], 0, 1));
 
         [Fact]
-        public void TestWriteBooleanAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBoolean(true));
-        }
+        public void TestWriteBooleanAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBoolean(true));
 
         [Fact]
-        public void TestWriteByteAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteByte(1));
-        }
+        public void TestWriteByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteByte(1));
 
         [Fact]
-        public void TestWriteShortAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteShort(1));
-        }
+        public void TestWriteShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteShort(1));
 
         [Fact]
-        public void TestWriteShortLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteShort(1));
-        }
+        public void TestWriteShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteShort(1));
 
         [Fact]
-        public void TestWriteIntAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteInt(1));
-        }
+        public void TestWriteIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteInt(1));
 
         [Fact]
-        public void TestWriteIntLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteInt(1));
-        }
+        public void TestWriteIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteInt(1));
 
         [Fact]
-        public void TestWriteLongAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteLong(1));
-        }
+        public void TestWriteLongAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteLong(1));
 
         [Fact]
-        public void TestWriteLongLeAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteLong(1));
-        }
+        public void TestWriteLongLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteLong(1));
 
         [Fact]
-        public void TestWriteCharAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteChar((char)1));
-        }
+        public void TestWriteCharAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteChar((char)1));
 
         [Fact]
-        public void TestWriteDoubleAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteDouble(1));
-        }
+        public void TestWriteDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteDouble(1));
 
         [Fact]
-        public void TestWriteBytesAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
-        }
+        public void TestWriteBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
 
         [Fact]
-        public void TestWriteBytesAfterRelease2()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(ReferenceCountUtil.ReleaseLater(Unpooled.CopiedBuffer(new byte[8])), 1));
-        }
+        public void TestWriteBytesAfterRelease2() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(ReferenceCountUtil.ReleaseLater(Unpooled.CopiedBuffer(new byte[8])), 1));
 
         [Fact]
-        public void TestWriteBytesAfterRelease3()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8)), 0, 1));
-        }
+        public void TestWriteBytesAfterRelease3() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8)), 0, 1));
 
         [Fact]
-        public void TestWriteBytesAfterRelease4()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(new byte[8]));
-        }
+        public void TestWriteBytesAfterRelease4() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(new byte[8]));
 
         [Fact]
-        public void TestWriteBytesAfterRelease5()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(new byte[8], 0, 1));
-        }
+        public void TestWriteBytesAfterRelease5() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(new byte[8], 0, 1));
 
         [Fact]
-        public void TestForEachByteAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByte(new TestByteProcessor()));
-        }
+        public void TestForEachByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByte(new TestByteProcessor()));
 
         [Fact]
-        public void TestForEachByteAfterRelease1()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByte(0, 1, new TestByteProcessor()));
-        }
+        public void TestForEachByteAfterRelease1() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByte(0, 1, new TestByteProcessor()));
 
         [Fact]
-        public void TestForEachByteDescAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByteDesc(new TestByteProcessor()));
-        }
+        public void TestForEachByteDescAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByteDesc(new TestByteProcessor()));
 
         [Fact]
-        public void TestForEachByteDescAfterRelease1()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByteDesc(0, 1, new TestByteProcessor()));
-        }
+        public void TestForEachByteDescAfterRelease1() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByteDesc(0, 1, new TestByteProcessor()));
 
         [Fact]
-        public void TestCopyAfterRelease()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().Copy());
-        }
+        public void TestCopyAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().Copy());
 
         [Fact]
-        public void TestCopyAfterRelease1()
-        {
-            Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().Copy());
-        }
+        public void TestCopyAfterRelease1() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().Copy());
 
         [Fact]
         public void TestIoBufferAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetIoBuffer());
@@ -2423,18 +2057,12 @@ namespace DotNetty.Buffers.Tests
         // Test-case trying to reproduce:
         // https://github.com/netty/netty/issues/2843
         [Fact]
-        public void TestRefCnt()
-        {
-            this.TestRefCnt0(false);
-        }
+        public void TestRefCnt() => this.TestRefCnt0(false);
 
         // Test-case trying to reproduce:
         // https://github.com/netty/netty/issues/2843
         [Fact]
-        public void TestRefCnt2()
-        {
-            this.TestRefCnt0(true);
-        }
+        public void TestRefCnt2() => this.TestRefCnt0(true);
 
         void TestRefCnt0(bool parameter)
         {
@@ -2488,10 +2116,7 @@ namespace DotNetty.Buffers.Tests
 
         sealed class TestByteProcessor : ByteProcessor
         {
-            public override bool Process(byte value)
-            {
-                return true;
-            }
+            public override bool Process(byte value) => true;
         }
     }
 }

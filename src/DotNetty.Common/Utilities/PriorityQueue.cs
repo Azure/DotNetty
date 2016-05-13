@@ -51,10 +51,7 @@ namespace DotNetty.Common.Utilities
             return result;
         }
 
-        public T Peek()
-        {
-            return this.count == 0 ? null : this.items[0];
-        }
+        public T Peek() => this.count == 0 ? null : this.items[0];
 
         public void Enqueue(T item)
         {
@@ -152,10 +149,7 @@ namespace DotNetty.Common.Utilities
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
         public void Clear()
         {

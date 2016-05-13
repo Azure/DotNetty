@@ -11,28 +11,28 @@ namespace DotNetty.Codecs
     /// <summary>
     ///     An encoder that prepends the length of the message.  The length value is
     ///     prepended as a binary form.
-    ///     <p>
-    ///         For example, <tt>{@link LengthFieldPrepender}(2)</tt> will encode the
-    ///         following 12-bytes string:
-    ///         <pre>
-    ///             +----------------+
-    ///             | "HELLO, WORLD" |
-    ///             +----------------+
-    ///         </pre>
-    ///         into the following:
-    ///         <pre>
-    ///             +--------+----------------+
-    ///             + 0x000C | "HELLO, WORLD" |
-    ///             +--------+----------------+
-    ///         </pre>
-    ///         If you turned on the {@code lengthIncludesLengthFieldLength} flag in the
-    ///         constructor, the encoded data would look like the following
-    ///         (12 (original data) + 2 (prepended data) = 14 (0xE)):
-    ///         <pre>
-    ///             +--------+----------------+
-    ///             + 0x000E | "HELLO, WORLD" |
-    ///             +--------+----------------+
-    ///         </pre>
+    ///     <p />
+    ///     For example, <tt>{@link LengthFieldPrepender}(2)</tt> will encode the
+    ///     following 12-bytes string:
+    ///     <pre>
+    ///         +----------------+
+    ///         | "HELLO, WORLD" |
+    ///         +----------------+
+    ///     </pre>
+    ///     into the following:
+    ///     <pre>
+    ///         +--------+----------------+
+    ///         + 0x000C | "HELLO, WORLD" |
+    ///         +--------+----------------+
+    ///     </pre>
+    ///     If you turned on the {@code lengthIncludesLengthFieldLength} flag in the
+    ///     constructor, the encoded data would look like the following
+    ///     (12 (original data) + 2 (prepended data) = 14 (0xE)):
+    ///     <pre>
+    ///         +--------+----------------+
+    ///         + 0x000E | "HELLO, WORLD" |
+    ///         +--------+----------------+
+    ///     </pre>
     /// </summary>
     public class LengthFieldPrepender : MessageToMessageEncoder<IByteBuffer>
     {
