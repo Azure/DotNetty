@@ -1,3 +1,12 @@
+#### 0.3.0 May 13 2016
+- BREAKING CHANGE: default byte buffer is now PooledByteBufferAllocator (unless overriden through environment variable).
+- Port of PooledByteBuffer (support for flexible buffer sizes).
+- Enables sending of multiple buffers in a single socket call.
+- Refreshed DefaultChannelPipeline, AbstractChannelHandlerContext.
+- Port of JsonObjectDecoder, DelimeterBasedFrameDecoder.
+- Fixes to async sending in TcpSocketChannel.
+- IoBufferCount, GetIoBuffer(s) introduced in IByteBuffer.
+
 #### 0.2.6 April 27 2016
 - TlsHandler negotiates TLS 1.0+ on server side (#89).
 - STEE properly supports graceful shutdown (#7).
