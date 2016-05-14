@@ -4,8 +4,6 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
-    using System.Diagnostics;
-    using System.Linq.Expressions;
     using System.Net;
     using System.Threading.Tasks;
     using DotNetty.Common.Utilities;
@@ -242,32 +240,8 @@ namespace DotNetty.Transport.Channels
         static Task ComposeExceptionTask(Exception cause) => TaskEx.FromException(cause);
 
         // todo: use "nameof" once available
-        static readonly string ExceptionCaughtMethodName = ((MethodCallExpression)((Expression<Action<IChannelHandler>>)(_ => _.ExceptionCaught(null, null))).Body).Method.Name;
+        static readonly string ExceptionCaughtMethodName = nameof(IChannelHandler.ExceptionCaught);
 
-        static bool InExceptionCaught(Exception cause)
-        {
-            do
-            {
-                var trace = new StackTrace(cause);
-                for (int index = 0; index < trace.FrameCount; index++)
-                {
-                    StackFrame frame = trace.GetFrame(index);
-                    if (frame == null)
-                    {
-                        break;
-                    }
-
-                    if (ExceptionCaughtMethodName.Equals(frame.GetMethod().Name, StringComparison.Ordinal))
-                    {
-                        return true;
-                    }
-                }
-
-                cause = cause.InnerException;
-            }
-            while (cause != null);
-
-            return false;
-        }
+        static bool InExceptionCaught(Exception cause) => cause.StackTrace.IndexOf("." + ExceptionCaughtMethodName + "(", StringComparison.Ordinal) >= 0;
     }
 }

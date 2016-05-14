@@ -18,7 +18,6 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
 
-    [Serializable]
     sealed class DefaultChannelId : IChannelId
     {
         const int MachineIdLen = 8;
@@ -39,10 +38,8 @@ namespace DotNetty.Transport.Channels
         readonly byte[] data = new byte[MachineIdLen + ProcessIdLen + SequenceLen + TimestampLen + RandomLen];
         int hashCode;
 
-        [NonSerialized]
         string longValue;
 
-        [NonSerialized]
         string shortValue;
 
         static DefaultChannelId()

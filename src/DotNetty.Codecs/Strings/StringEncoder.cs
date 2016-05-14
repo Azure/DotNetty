@@ -40,7 +40,7 @@ namespace DotNetty.Codecs
         ///     character set.
         /// </summary>
         public StringEncoder()
-            : this(Encoding.Default)
+            : this(Encoding.GetEncoding(0))
         {
         }
 

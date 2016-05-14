@@ -8,6 +8,7 @@ namespace Nito
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Reflection;
 
     /// <summary>
     ///     A double-ended queue (deque), which provides O(1) indexed access, O(1) removals from the front and back, amortized
@@ -276,12 +277,12 @@ namespace Nito
 
             if (item == null)
             {
-                Type type = typeof(T);
-                if (type.IsClass && !type.IsPointer)
+                TypeInfo typeInfo = typeof(T).GetTypeInfo();
+                if (typeInfo.IsClass && !typeInfo.IsPointer)
                     return true; // classes, arrays, and delegates
-                if (type.IsInterface)
+                if (typeInfo.IsInterface)
                     return true; // interfaces
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                if (typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == typeof(Nullable<>))
                     return true; // nullable value types
             }
 

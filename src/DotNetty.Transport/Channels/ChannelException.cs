@@ -4,9 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
-    using System.Runtime.Serialization;
 
-    [Serializable]
     public class ChannelException : Exception
     {
         public ChannelException()
@@ -20,11 +18,6 @@ namespace DotNetty.Transport.Channels
 
         public ChannelException(string message, Exception innerException)
             : base(message, innerException)
-        {
-        }
-
-        protected ChannelException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
         {
         }
 
