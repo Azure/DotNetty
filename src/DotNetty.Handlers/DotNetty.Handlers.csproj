@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -48,22 +48,30 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tls\TlsHandshakeCompletionEvent.cs" />
     <Compile Include="Tls\TlsHandler.cs" />
+    <Compile Include="Timeout\IdleState.cs" />
+    <Compile Include="Timeout\IdleStateEvent.cs" />
+    <Compile Include="Timeout\IdleStateHandler.cs" />
+    <Compile Include="Timeout\ReadTimeoutException.cs" />
+    <Compile Include="Timeout\TimeoutException.cs" />
+    <Compile Include="Timeout\WriteTimeoutException.cs" />
+    <Compile Include="Timeout\ReadTimeoutHandler.cs" />
+    <Compile Include="Timeout\WriteTimeoutHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj">
-      <Project>{5de3c557-48bf-4cdb-9f47-474d343dd841}</Project>
+      <Project>{5DE3C557-48BF-4CDB-9F47-474D343DD841}</Project>
       <Name>DotNetty.Buffers</Name>
     </ProjectReference>
     <ProjectReference Include="..\DotNetty.Codecs\DotNetty.Codecs.csproj">
-      <Project>{2abd244e-ef8f-460d-9c30-39116499e6e4}</Project>
+      <Project>{2ABD244E-EF8F-460D-9C30-39116499E6E4}</Project>
       <Name>DotNetty.Codecs</Name>
     </ProjectReference>
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj">
-      <Project>{de58fe41-5e99-44e5-86bc-fc9ed8761daf}</Project>
+      <Project>{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}</Project>
       <Name>DotNetty.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\DotNetty.Transport\DotNetty.Transport.csproj">
-      <Project>{8218c9ee-0a4a-432f-a12a-b54202f97b05}</Project>
+      <Project>{8218C9EE-0A4A-432F-A12A-B54202F97B05}</Project>
       <Name>DotNetty.Transport</Name>
     </ProjectReference>
   </ItemGroup>
@@ -78,4 +86,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="Timeout\" />
+  </ItemGroup>
 </Project>

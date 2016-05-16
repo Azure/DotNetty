@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Signed|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -37,6 +39,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -121,14 +125,15 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Channels\DefaultChannelConfiguration.cs" />
     <Compile Include="Properties\Friends.cs" />
+    <Compile Include="Channels\ChannelDuplexHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj">
-      <Project>{5de3c557-48bf-4cdb-9f47-474d343dd841}</Project>
+      <Project>{5DE3C557-48BF-4CDB-9F47-474D343DD841}</Project>
       <Name>DotNetty.Buffers</Name>
     </ProjectReference>
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj">
-      <Project>{de58fe41-5e99-44e5-86bc-fc9ed8761daf}</Project>
+      <Project>{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}</Project>
       <Name>DotNetty.Common</Name>
     </ProjectReference>
   </ItemGroup>
