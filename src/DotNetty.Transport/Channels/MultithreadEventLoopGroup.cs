@@ -81,5 +81,14 @@ namespace DotNetty.Transport.Channels
             }
             return this.TerminationCompletion;
         }
+
+        public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
+        {
+            foreach (IEventLoop eventLoop in this.eventLoops)
+            {
+                eventLoop.ShutdownGracefullyAsync(quietPeriod, timeout);
+            }
+            return this.TerminationCompletion;
+        }
     }
 }

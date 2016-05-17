@@ -161,7 +161,10 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
         {
             CloseChannel(this.clientChannel);
             CloseChannel(this.serverChannel);
-            Task.WaitAll(this.ClientGroup.ShutdownGracefullyAsync(), this.ServerGroup.ShutdownGracefullyAsync(), this.WorkerGroup.ShutdownGracefullyAsync());
+            Task.WaitAll(
+                this.ClientGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
+                this.ServerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
+                this.WorkerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
         }
 
         static void CloseChannel(IChannel cc) => cc?.CloseAsync().Wait();

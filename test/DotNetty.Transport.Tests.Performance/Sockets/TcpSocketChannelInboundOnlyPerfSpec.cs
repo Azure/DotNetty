@@ -21,8 +21,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
     {
         const string InboundThroughputCounterName = "inbound ops";
 
-        const string OutboundThroughputCounterName = "outbound ops";
-
         // The number of times we're going to warmup + run each benchmark
         public const int IterationCount = 5;
         public const int WriteCount = 1000000;
@@ -33,12 +31,11 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
         static readonly IPEndPoint TEST_ADDRESS = new IPEndPoint(IPAddress.IPv6Loopback, 0);
         protected readonly ManualResetEventSlim ResetEvent = new ManualResetEventSlim(false);
         Counter inboundThroughputCounter;
-        Counter outboundThroughputCounter;
 
         IChannel serverChannel;
         IReadFinishedSignal signal;
 
-        protected System.Net.Sockets.Socket ClientSocket;
+        protected Socket ClientSocket;
         protected NetworkStream Stream;
 
         byte[] message;
@@ -68,7 +65,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.message = Unpooled.Buffer().WriteInt(3).WriteBytes(iso.GetBytes("ABC")).ToArray();
 
             this.inboundThroughputCounter = context.GetCounter(InboundThroughputCounterName);
-            this.outboundThroughputCounter = context.GetCounter(OutboundThroughputCounterName);
             var counterHandler = new CounterHandlerInbound(this.inboundThroughputCounter);
             this.signal = new ManualResetEventSlimReadFinishedSignal(this.ResetEvent);
 
@@ -79,13 +75,13 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                 .Group(this.ServerGroup, this.WorkerGroup)
                 .Channel<TcpServerSocketChannel>()
                 .ChildOption(ChannelOption.Allocator, this.serverBufferAllocator)
-                .ChildHandler(new ActionChannelInitializer<TcpSocketChannel>(channel => {
+                .ChildHandler(new ActionChannelInitializer<TcpSocketChannel>(channel =>
+                {
                     channel.Pipeline
-                    .AddLast(this.GetEncoder())
-                    .AddLast(this.GetDecoder())
-                    .AddLast(counterHandler)
-                    .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter))
-                    .AddLast(new ReadFinishedHandler(this.signal, WriteCount));
+                        .AddLast(this.GetEncoder())
+                        .AddLast(this.GetDecoder())
+                        .AddLast(counterHandler)
+                        .AddLast(new ReadFinishedHandler(this.signal, WriteCount));
                 }));
 
             // start server
@@ -93,7 +89,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
 
             // connect to server
             var address = (IPEndPoint)this.serverChannel.LocalAddress;
-            this.ClientSocket = new System.Net.Sockets.Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+            this.ClientSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             this.ClientSocket.Connect(address.Address, address.Port);
 
             this.Stream = new NetworkStream(this.ClientSocket, true);
@@ -102,7 +98,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
         [PerfBenchmark(Description = "Measures how quickly and with how much GC overhead a TcpSocketChannel --> TcpServerSocketChannel connection can decode / encode realistic messages, 100 writes per flush",
             NumberOfIterations = IterationCount, RunMode = RunMode.Iterations)]
         [CounterMeasurement(InboundThroughputCounterName)]
-        [CounterMeasurement(OutboundThroughputCounterName)]
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
         public void TcpChannel_InboundOnly_Throughput(BenchmarkContext context)
@@ -124,11 +119,12 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             finally
             {
                 CloseChannel(this.serverChannel);
-                Task.WaitAll(this.ServerGroup.ShutdownGracefullyAsync(), this.WorkerGroup.ShutdownGracefullyAsync());
+                Task.WaitAll(
+                    this.ServerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
+                    this.WorkerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
             }
         }
 
         static void CloseChannel(IChannel cc) => cc?.CloseAsync().Wait();
     }
 }
-

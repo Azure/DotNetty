@@ -3,6 +3,7 @@
 
 namespace DotNetty.Transport.Channels
 {
+    using System;
     using System.Threading.Tasks;
 
     public interface IEventLoopGroup
@@ -12,5 +13,7 @@ namespace DotNetty.Transport.Channels
         IEventLoop GetNext();
 
         Task ShutdownGracefullyAsync();
+
+        Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
     }
 }

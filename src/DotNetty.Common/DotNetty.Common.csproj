@@ -196,10 +196,17 @@
     <Compile Include="ThreadLocalObjectList.cs" />
     <Compile Include="ThreadLocalPool.cs" />
     <Compile Include="PreciseTimeSpan.cs" />
+    <Compile Include="Utilities\AbstractConstant.cs" />
     <Compile Include="Utilities\AtomicReference.cs" />
+    <Compile Include="Utilities\DefaultAttributeMap.cs" />
+    <Compile Include="Utilities\IAttribute.cs" />
+    <Compile Include="Utilities\AttributeKey.cs" />
     <Compile Include="Utilities\BitOps.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
+    <Compile Include="Utilities\ConstantPool.cs" />
     <Compile Include="Utilities\DebugExtensions.cs" />
+    <Compile Include="Utilities\IAttributeMap.cs" />
+    <Compile Include="Utilities\IConstant.cs" />
     <Compile Include="Utilities\IntegerExtensions.cs" />
     <Compile Include="Utilities\MpscLinkedQueue.cs" />
     <Compile Include="Utilities\PriorityQueue.cs" />

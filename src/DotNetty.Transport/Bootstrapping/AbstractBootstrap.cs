@@ -29,14 +29,14 @@ namespace DotNetty.Transport.Bootstrapping
         volatile IEventLoopGroup group;
         volatile Func<TChannel> channelFactory;
         volatile EndPoint localAddress;
-        readonly ConcurrentDictionary<ChannelOption, object> options;
-        // todo: attr
-        //readonly Dictionary<AttributeKey, object> attrs = new Dictionary<AttributeKey, object>();
+        readonly ConcurrentDictionary<ChannelOption, ChannelOptionValue> options;
+        readonly ConcurrentDictionary<IConstant, AttributeValue> attrs;
         volatile IChannelHandler handler;
 
         protected internal AbstractBootstrap()
         {
-            this.options = new ConcurrentDictionary<ChannelOption, object>();
+            this.options = new ConcurrentDictionary<ChannelOption, ChannelOptionValue>();
+            this.attrs = new ConcurrentDictionary<IConstant, AttributeValue>();
             // Disallow extending from a different package.
         }
 
@@ -46,12 +46,8 @@ namespace DotNetty.Transport.Bootstrapping
             this.channelFactory = bootstrap.channelFactory;
             this.handler = bootstrap.handler;
             this.localAddress = bootstrap.localAddress;
-            this.options = new ConcurrentDictionary<ChannelOption, object>(bootstrap.options);
-            // todo: attr
-            //lock (bootstrap.attrs)
-            //{
-            //    this.attrs.putAll(bootstrap.attrs);
-            //}
+            this.options = new ConcurrentDictionary<ChannelOption, ChannelOptionValue>(bootstrap.options);
+            this.attrs = new ConcurrentDictionary<IConstant, AttributeValue>(bootstrap.attrs);
         }
 
         /// <summary>
@@ -61,6 +57,7 @@ namespace DotNetty.Transport.Bootstrapping
         public virtual TBootstrap Group(IEventLoopGroup group)
         {
             Contract.Requires(group != null);
+
             if (this.group != null)
             {
                 throw new InvalidOperationException("group has already been set.");
@@ -115,14 +112,36 @@ namespace DotNetty.Transport.Bootstrapping
         public TBootstrap Option<T>(ChannelOption<T> option, T value)
         {
             Contract.Requires(option != null);
+
             if (value == null)
             {
-                object removed;
+                ChannelOptionValue removed;
                 this.options.TryRemove(option, out removed);
             }
             else
             {
-                this.options[option] = value;
+                this.options[option] = new ChannelOptionValue<T>(option, value);
+            }
+            return (TBootstrap)this;
+        }
+
+        /// <summary>
+        ///     Allow to specify an initial attribute of the newly created <see cref="IChannel" /> . If the <c>value</c> is
+        ///     <c>null</c>, the attribute of the specified <c>key</c> is removed.
+        /// </summary>
+        public TBootstrap Attribute<T>(AttributeKey<T> key, T value)
+            where T : class
+        {
+            Contract.Requires(key != null);
+
+            if (value == null)
+            {
+                AttributeValue removed;
+                this.attrs.TryRemove(key, out removed);
+            }
+            else
+            {
+                this.attrs[key] = new AttributeValue<T>(key, value);
             }
             return (TBootstrap)this;
         }
@@ -296,13 +315,9 @@ namespace DotNetty.Transport.Bootstrapping
         /// </summary>
         public IEventLoopGroup Group() => this.group;
 
-        protected IDictionary<ChannelOption, object> Options() => this.options;
+        protected ICollection<ChannelOptionValue> Options => this.options.Values;
 
-        // todo: attr
-        //Dictionary<AttributeKey, object> attrs()
-        //{
-        //    return this.attrs;
-        //}
+        protected ICollection<AttributeValue> Attributes => this.attrs.Values;
 
         public override string ToString()
         {
@@ -328,20 +343,20 @@ namespace DotNetty.Transport.Bootstrapping
                     .Append(", ");
             }
 
-            buf.Append("options: ")
-                .Append(this.options.ToDebugString())
-                .Append(", ");
+            if (this.options.Count > 0)
+            {
+                buf.Append("options: ")
+                    .Append(this.options.ToDebugString())
+                    .Append(", ");
+            }
 
-            // todo: attr
-            //lock (this.attrs)
-            //{
-            //    if (!this.attrs.isEmpty())
-            //    {
-            //        buf.Append("attrs: ")
-            //            .Append(this.attrs)
-            //            .Append(", ");
-            //    }
-            //}
+            if (this.attrs.Count > 0)
+            {
+                buf.Append("attrs: ")
+                    .Append(this.attrs.ToDebugString())
+                    .Append(", ");
+            }
+
             if (this.handler != null)
             {
                 buf.Append("handler: ")
@@ -385,5 +400,44 @@ namespace DotNetty.Transport.Bootstrapping
         //        return GlobalEventExecutor.INSTANCE;
         //    }
         //}
+
+        protected abstract class ChannelOptionValue
+        {
+            public abstract bool Set(IChannelConfiguration config);
+        }
+
+        protected sealed class ChannelOptionValue<T> : ChannelOptionValue
+        {
+            readonly ChannelOption option;
+            readonly T value;
+
+            public ChannelOptionValue(ChannelOption option, T value)
+            {
+                this.option = option;
+                this.value = value;
+            }
+
+            public override bool Set(IChannelConfiguration config) => config.SetOption(this.option, this.value);
+        }
+
+        protected abstract class AttributeValue
+        {
+            public abstract void Set(IAttributeMap map);
+        }
+
+        protected sealed class AttributeValue<T> : AttributeValue
+            where T : class
+        {
+            readonly AttributeKey<T> key;
+            readonly T value;
+
+            public AttributeValue(AttributeKey<T> key, T value)
+            {
+                this.key = key;
+                this.value = value;
+            }
+
+            public override void Set(IAttributeMap config) => config.GetAttribute(this.key).Set(this.value);
+        }
     }
 }

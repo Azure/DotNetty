@@ -43,7 +43,7 @@ namespace DotNetty.Common.Utilities
         ///     <see cref="newValue" />.
         ///     Returns true if <see cref="newValue" /> was set, false otherwise.
         /// </summary>
-        public T CompareAndSet(T expected, T newValue) => Interlocked.CompareExchange(ref this.atomicValue, expected, newValue);
+        public bool CompareAndSet(T expected, T newValue) => Interlocked.CompareExchange(ref this.atomicValue, newValue, expected) == expected;
 
         #region Conversion operators
 

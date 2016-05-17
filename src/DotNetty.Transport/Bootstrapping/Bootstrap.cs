@@ -189,12 +189,12 @@ namespace DotNetty.Transport.Bootstrapping
             IChannelPipeline p = channel.Pipeline;
             p.AddLast(null, (string)null, this.Handler());
 
-            IDictionary<ChannelOption, object> options = this.Options();
-            foreach (KeyValuePair<ChannelOption, object> e in options)
+            ICollection<ChannelOptionValue> options = this.Options;
+            foreach (ChannelOptionValue e in options)
             {
                 try
                 {
-                    if (!channel.Configuration.SetOption(e.Key, e.Value))
+                    if (!e.Set(channel.Configuration))
                     {
                         Logger.Warn("Unknown channel option: " + e);
                     }
@@ -205,15 +205,11 @@ namespace DotNetty.Transport.Bootstrapping
                 }
             }
 
-            // todo: attrs
-            //var attrs = attrs();
-            //lock (attrs)
-            //{
-            //    foreach (var e in attrs)
-            //    {
-            //        channel.attr((AttributeKey<object>)e.getKey()).set(e.getValue());
-            //    }
-            //}
+            ICollection<AttributeValue> attrs = this.Attributes;
+            foreach (AttributeValue e in attrs)
+            {
+                e.Set(channel);
+            }
         }
 
         public override Bootstrap Validate()
