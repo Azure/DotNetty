@@ -14,7 +14,7 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
-    public abstract class AbstractChannel : /*DefaultAttributeMap, */ IChannel
+    public abstract class AbstractChannel : DefaultAttributeMap, IChannel
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractChannel>();
 
@@ -121,10 +121,7 @@ namespace DotNetty.Transport.Channels
 
         protected abstract EndPoint LocalAddressInternal { get; }
 
-        protected void InvalidateLocalAddress()
-        {
-            this.localAddress = null;
-        }
+        protected void InvalidateLocalAddress() => this.localAddress = null;
 
         protected EndPoint CacheLocalAddress()
         {
@@ -141,10 +138,7 @@ namespace DotNetty.Transport.Channels
 
         protected abstract EndPoint RemoteAddressInternal { get; }
 
-        protected void InvalidateRemoteAddress()
-        {
-            this.remoteAddress = null;
-        }
+        protected void InvalidateRemoteAddress() => this.remoteAddress = null;
 
         protected EndPoint CacheRemoteAddress()
         {

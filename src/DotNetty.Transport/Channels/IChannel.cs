@@ -7,8 +7,9 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Utilities;
 
-    public interface IChannel : IComparable<IChannel>
+    public interface IChannel : IAttributeMap, IComparable<IChannel>
     {
         IChannelId Id { get; }
 

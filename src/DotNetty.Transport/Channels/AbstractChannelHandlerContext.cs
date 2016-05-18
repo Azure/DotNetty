@@ -12,6 +12,7 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Utilities;
 
     abstract class AbstractChannelHandlerContext : IChannelHandlerContext, IResourceLeakHint
     {
@@ -191,6 +192,17 @@ namespace DotNetty.Transport.Channels
 
         public IChannelHandlerInvoker Invoker => this.invoker ?? this.Channel.EventLoop.Invoker;
 
+        public IAttribute<T> GetAttribute<T>(AttributeKey<T> key)
+            where T : class
+        {
+            return this.Channel.GetAttribute(key);
+        }
+
+        public bool HasAttribute<T>(AttributeKey<T> key)
+            where T : class
+        {
+            return this.Channel.HasAttribute(key);
+        }
         public IChannelHandlerContext FireChannelRegistered()
         {
             AbstractChannelHandlerContext next = this.FindContextInbound();

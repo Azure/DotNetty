@@ -8,8 +8,9 @@ namespace DotNetty.Transport.Channels
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Utilities;
 
-    public interface IChannelHandlerContext
+    public interface IChannelHandlerContext : IAttributeMap
     {
         IChannel Channel { get; }
 
