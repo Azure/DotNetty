@@ -75,7 +75,7 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             if (this.ResetState(StateFlags.Open))
             {
-                this.Socket.Close(0);
+                this.Socket.Dispose();
             }
         }
 
@@ -185,7 +185,7 @@ namespace DotNetty.Transport.Channels.Sockets
                             {
                                 try
                                 {
-                                    connectedSocket.Close();
+                                    connectedSocket.Dispose();
                                 }
                                 catch (Exception ex2)
                                 {

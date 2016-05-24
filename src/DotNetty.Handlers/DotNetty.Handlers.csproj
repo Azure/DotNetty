@@ -46,6 +46,7 @@
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Logging\LogLevelExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tls\NotSslRecordException.cs" />
     <Compile Include="Tls\TlsHandshakeCompletionEvent.cs" />
     <Compile Include="Tls\TlsHandler.cs" />
     <Compile Include="Timeout\IdleState.cs" />
@@ -56,6 +57,7 @@
     <Compile Include="Timeout\WriteTimeoutException.cs" />
     <Compile Include="Timeout\ReadTimeoutHandler.cs" />
     <Compile Include="Timeout\WriteTimeoutHandler.cs" />
+    <Compile Include="Tls\TlsUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj">
@@ -86,7 +88,5 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup>
-    <Folder Include="Timeout\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

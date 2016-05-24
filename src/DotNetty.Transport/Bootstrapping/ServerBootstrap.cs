@@ -257,7 +257,7 @@ namespace DotNetty.Transport.Bootstrapping
             }
         }
 
-        public override object Clone() => new ServerBootstrap(this);
+        public override ServerBootstrap Clone() => new ServerBootstrap(this);
 
         public override string ToString()
         {

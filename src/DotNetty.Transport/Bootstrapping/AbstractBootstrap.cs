@@ -22,7 +22,7 @@ namespace DotNetty.Transport.Bootstrapping
     ///         transports such as datagram (UDP).
     ///     </p>
     /// </summary>
-    public abstract class AbstractBootstrap<TBootstrap, TChannel> : ICloneable
+    public abstract class AbstractBootstrap<TBootstrap, TChannel>
         where TBootstrap : AbstractBootstrap<TBootstrap, TChannel>
         where TChannel : IChannel
     {
@@ -172,7 +172,7 @@ namespace DotNetty.Transport.Bootstrapping
         ///     multiple {@link Channel}s with similar settings.  Please note that this method does not clone the
         ///     {@link EventLoopGroup} deeply but shallowly, making the group a shared resource.
         /// </summary>
-        public abstract object Clone();
+        public abstract TBootstrap Clone();
 
         /// <summary>
         ///     Create a new {@link Channel} and register it with an {@link EventLoop}.
@@ -418,6 +418,8 @@ namespace DotNetty.Transport.Bootstrapping
             }
 
             public override bool Set(IChannelConfiguration config) => config.SetOption(this.option, this.value);
+
+            public override string ToString() => this.value.ToString();
         }
 
         protected abstract class AttributeValue
