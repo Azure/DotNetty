@@ -18,8 +18,6 @@ namespace DotNetty.Transport.Channels
 
         TimeSpan ConnectTimeout { get; set; }
 
-        int MaxMessagesPerRead { get; set; }
-
         int WriteSpinCount { get; set; }
 
         IByteBufferAllocator Allocator { get; set; }

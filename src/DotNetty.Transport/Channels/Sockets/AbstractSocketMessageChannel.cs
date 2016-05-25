@@ -36,26 +36,23 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
-                Contract.Requires(this.channel.EventLoop.InEventLoop);
+                Contract.Assert(this.channel.EventLoop.InEventLoop);
+
                 AbstractSocketMessageChannel ch = this.Channel;
                 ch.ResetState(StateFlags.ReadScheduled);
                 IChannelConfiguration config = ch.Configuration;
-                if (!ch.ReadPending && !config.AutoRead)
-                {
-                    // ChannelConfig.setAutoRead(false) was called in the meantime
-                    //removeReadOp(); -- noop with IOCP, just don't schedule receive again
-                    return;
-                }
 
-                int maxMessagesPerRead = config.MaxMessagesPerRead;
                 IChannelPipeline pipeline = ch.Pipeline;
+                IRecvByteBufAllocatorHandle allocHandle = this.Channel.Unsafe.RecvBufAllocHandle;
+                allocHandle.Reset(config);
+
                 bool closed = false;
                 Exception exception = null;
                 try
                 {
                     try
                     {
-                        while (true)
+                        do
                         {
                             int localRead = ch.DoReadMessages(this.readBuf);
                             if (localRead == 0)
@@ -68,30 +65,23 @@ namespace DotNetty.Transport.Channels.Sockets
                                 break;
                             }
 
-                            // stop reading and remove op
-                            if (!config.AutoRead)
-                            {
-                                break;
-                            }
-
-                            if (this.readBuf.Count >= maxMessagesPerRead)
-                            {
-                                break;
-                            }
+                            allocHandle.IncMessagesRead(localRead);
                         }
+                        while (allocHandle.ContinueReading());
                     }
                     catch (Exception t)
                     {
                         exception = t;
                     }
-                    ch.ReadPending = false;
                     int size = this.readBuf.Count;
                     for (int i = 0; i < size; i++)
                     {
+                        ch.ReadPending = false;
                         pipeline.FireChannelRead(this.readBuf[i]);
                     }
 
                     this.readBuf.Clear();
+                    allocHandle.ReadComplete();
                     pipeline.FireChannelReadComplete();
 
                     if (exception != null)

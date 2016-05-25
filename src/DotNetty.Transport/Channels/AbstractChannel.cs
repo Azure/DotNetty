@@ -99,7 +99,7 @@ namespace DotNetty.Transport.Channels
 
         public abstract bool Active { get; }
 
-        public abstract bool DisconnectSupported { get; }
+        public abstract ChannelMetadata Metadata { get; }
 
         public EndPoint LocalAddress
         {

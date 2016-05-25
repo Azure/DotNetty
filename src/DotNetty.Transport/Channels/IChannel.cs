@@ -19,13 +19,17 @@ namespace DotNetty.Transport.Channels
 
         IChannel Parent { get; }
 
-        bool DisconnectSupported { get; }
-
         bool Open { get; }
 
         bool Active { get; }
 
         bool Registered { get; }
+
+        /// <summary>
+        ///     Return the <see cref="ChannelMetadata" /> of the <see cref="IChannel" /> which describe the nature of the
+        ///     <see cref="IChannel" />.
+        /// </summary>
+        ChannelMetadata Metadata { get; }
 
         EndPoint LocalAddress { get; }
 

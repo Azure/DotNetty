@@ -10,12 +10,13 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Internal.Logging;
 
     /// <summary>
-    ///     A {@link io.netty.channel.socket.ServerSocketChannel} implementation which uses
-    ///     NIO selector based implementation to accept new connections.
+    ///     A <see cref="IServerSocketChannel" /> implementation which uses Socket-based implementation to accept new
+    ///     connections.
     /// </summary>
     public class TcpServerSocketChannel : AbstractSocketChannel, IServerSocketChannel
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<TcpServerSocketChannel>();
+        static readonly ChannelMetadata METADATA = new ChannelMetadata(false, 16);
 
         static readonly Action<object, object> ReadCompletedSyncCallback = OnReadCompletedSync;
 
@@ -40,7 +41,7 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        ///     Create a new instance using the given {@link Socket}.
+        ///     Create a new instance using the given <see cref="Socket"/>.
         /// </summary>
         public TcpServerSocketChannel(Socket socket)
             : base(null, socket)
@@ -52,11 +53,11 @@ namespace DotNetty.Transport.Channels.Sockets
 
         public override bool Active => this.Socket.IsBound;
 
+        public override ChannelMetadata Metadata => METADATA;
+
         protected override EndPoint RemoteAddressInternal => null;
 
         protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
-
-        public override bool DisconnectSupported => false;
 
         SocketChannelAsyncOperation AcceptOperation => this.acceptOperation ?? (this.acceptOperation = new SocketChannelAsyncOperation(this, false));
 
@@ -131,13 +132,12 @@ namespace DotNetty.Transport.Channels.Sockets
                 TcpServerSocketChannel ch = this.Channel;
                 ch.ResetState(StateFlags.ReadScheduled);
                 IChannelConfiguration config = ch.Configuration;
-
-                int maxMessagesPerRead = config.MaxMessagesPerRead;
                 IChannelPipeline pipeline = ch.Pipeline;
+                IRecvByteBufAllocatorHandle allocHandle = this.Channel.Unsafe.RecvBufAllocHandle;
+                allocHandle.Reset(config);
+
                 bool closed = false;
                 Exception exception = null;
-
-                int messageCount = 0;
 
                 try
                 {
@@ -151,7 +151,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         var message = new TcpSocketChannel(ch, connectedSocket, true);
                         ch.ReadPending = false;
                         pipeline.FireChannelRead(message);
-                        messageCount++;
+                        allocHandle.IncMessagesRead(1);
 
                         if (!config.AutoRead && !ch.ReadPending)
                         {
@@ -160,19 +160,15 @@ namespace DotNetty.Transport.Channels.Sockets
                             return;
                         }
 
-                        while (messageCount < maxMessagesPerRead)
+                        while (allocHandle.ContinueReading())
                         {
                             connectedSocket = null;
                             connectedSocket = ch.Socket.Accept();
                             message = new TcpSocketChannel(ch, connectedSocket, true);
+                            ch.ReadPending = false;
                             pipeline.FireChannelRead(message);
 
-                            // stop reading and remove op
-                            if (!config.AutoRead)
-                            {
-                                break;
-                            }
-                            messageCount++;
+                            allocHandle.IncMessagesRead(1);
                         }
                     }
                     catch (ObjectDisposedException)
@@ -200,6 +196,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         }
                     }
 
+                    allocHandle.ReadComplete();
                     pipeline.FireChannelReadComplete();
 
                     if (exception != null)
@@ -221,7 +218,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 finally
                 {
                     // Check if there is a readPending which was not processed yet.
-                    if (!closed && (config.AutoRead || ch.ReadPending))
+                    if (!closed && (ch.ReadPending || config.AutoRead))
                     {
                         ch.DoBeginRead();
                     }

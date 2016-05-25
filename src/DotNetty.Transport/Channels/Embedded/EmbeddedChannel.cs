@@ -26,8 +26,10 @@ namespace DotNetty.Transport.Channels.Embedded
 
         static readonly IChannelHandler[] EMPTY_HANDLERS = new IChannelHandler[0];
 
-        //TODO: ChannelMetadata
         static readonly IInternalLogger logger = InternalLoggerFactory.GetInstance<EmbeddedChannel>();
+
+        static readonly ChannelMetadata METADATA_NO_DISCONNECT = new ChannelMetadata(false);
+        static readonly ChannelMetadata METADATA_DISCONNECT = new ChannelMetadata(true);
 
         readonly EmbeddedEventLoop loop = new EmbeddedEventLoop();
 
@@ -64,16 +66,24 @@ namespace DotNetty.Transport.Channels.Embedded
         {
         }
 
-        /// <summary>
-        ///     Create a new instance with the pipeline initialized with the specified handlers.
-        /// </summary>
+        public EmbeddedChannel(IChannelId id, params IChannelHandler[] handlers)
+            : this(id, false, handlers)
+        {
+        }
+
+        /// <summary>Create a new instance with the pipeline initialized with the specified handlers.</summary>
         /// <param name="id">The <see cref="IChannelId" /> of this channel.</param>
+        /// <param name="hasDisconnect">
+        ///     <c>false</c> if this <see cref="IChannel" /> will delegate <see cref="DisconnectAsync" />
+        ///     to <see cref="CloseAsync" />, <c>true</c> otherwise.
+        /// </param>
         /// <param name="handlers">
         ///     The <see cref="IChannelHandler" />s that will be added to the <see cref="IChannelPipeline" />
         /// </param>
-        public EmbeddedChannel(IChannelId id, params IChannelHandler[] handlers)
+        public EmbeddedChannel(IChannelId id, bool hasDisconnect, params IChannelHandler[] handlers)
             : base(null, id)
         {
+            this.Metadata = hasDisconnect ? METADATA_DISCONNECT : METADATA_NO_DISCONNECT;
             this.Configuration = new DefaultChannelConfiguration(this);
             if (handlers == null)
             {
@@ -99,6 +109,8 @@ namespace DotNetty.Transport.Channels.Embedded
             p.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
         }
 
+        public override ChannelMetadata Metadata { get; }
+
         public override IChannelConfiguration Configuration { get; }
 
         /// <summary>
@@ -116,8 +128,6 @@ namespace DotNetty.Transport.Channels.Embedded
         public T ReadInbound<T>() => (T)Poll(this.inboundMessages);
 
         public T ReadOutbound<T>() => (T)Poll(this.outboundMessages);
-
-        public override bool DisconnectSupported => false;
 
         protected override EndPoint LocalAddressInternal => this.Active ? LOCAL_ADDRESS : null;
 

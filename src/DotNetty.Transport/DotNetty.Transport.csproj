@@ -56,6 +56,8 @@
     <Compile Include="Bootstrapping\DefaultNameResolver.cs" />
     <Compile Include="Bootstrapping\INameResolver.cs" />
     <Compile Include="Bootstrapping\ServerBootstrap.cs" />
+    <Compile Include="Channels\AdaptiveRecvByteBufAllocator.cs" />
+    <Compile Include="Channels\ChannelMetadata.cs" />
     <Compile Include="Channels\ChannelOutboundBuffer.cs" />
     <Compile Include="Channels\AbstractChannel.cs" />
     <Compile Include="Channels\AbstractChannelHandlerContext.cs" />
@@ -71,6 +73,7 @@
     <Compile Include="Channels\DefaultChannelHandlerInvoker.cs" />
     <Compile Include="Channels\DefaultChannelId.cs" />
     <Compile Include="Channels\DefaultChannelPipeline.cs" />
+    <Compile Include="Channels\DefaultMaxMessagesRecvByteBufAllocator.cs" />
     <Compile Include="Channels\DefaultMessageSizeEstimator.cs" />
     <Compile Include="Channels\Embedded\EmbeddedChannel.cs" />
     <Compile Include="Channels\Embedded\EmbeddedChannelId.cs" />
@@ -86,6 +89,7 @@
     <Compile Include="Channels\Groups\IChannelGroupTaskCompletionSource.cs" />
     <Compile Include="Channels\Groups\IChannelMatcher.cs" />
     <Compile Include="Channels\IChannelId.cs" />
+    <Compile Include="Channels\IMaxMessagesRecvByteBufAllocator.cs" />
     <Compile Include="Channels\MultithreadEventLoopGroup.cs" />
     <Compile Include="Channels\IChannel.cs" />
     <Compile Include="Channels\IChannelConfiguration.cs" />

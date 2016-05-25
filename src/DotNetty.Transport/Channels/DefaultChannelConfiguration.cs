@@ -23,7 +23,6 @@ namespace DotNetty.Transport.Channels
 
         volatile int autoRead = 1;
         volatile int writeSpinCount = 16;
-        volatile int maxMessagesPerRead;
         volatile int writeBufferHighWaterMark = 64 * 1024;
         volatile int writeBufferLowWaterMark = 32 * 1024;
         long connectTimeout = DefaultConnectTimeout.Ticks;
@@ -31,22 +30,25 @@ namespace DotNetty.Transport.Channels
         protected readonly IChannel Channel;
 
         public DefaultChannelConfiguration(IChannel channel)
+            : this(channel, new AdaptiveRecvByteBufAllocator())
+        {
+        }
+
+        public DefaultChannelConfiguration(IChannel channel, IRecvByteBufAllocator allocator)
         {
             Contract.Requires(channel != null);
-            this.Channel = channel;
 
-            if (channel is IServerChannel || channel is AbstractSocketByteChannel)
+            this.Channel = channel;
+            var maxMessagesAllocator = allocator as IMaxMessagesRecvByteBufAllocator;
+            if (maxMessagesAllocator != null)
             {
-                // Server channels: Accept as many incoming connections as possible.
-                // NIO byte channels: Implemented to reduce unnecessary system calls even if it's > 1.
-                // See https://github.com/netty/netty/issues/2079
-                // TODO: Add some property to ChannelMetadata so we can remove the ugly instanceof
-                this.maxMessagesPerRead = 16;
+                maxMessagesAllocator.MaxMessagesPerRead = channel.Metadata.DefaultMaxMessagesPerRead;
             }
-            else
+            else if (allocator == null)
             {
-                this.maxMessagesPerRead = 1;
+                throw new ArgumentNullException(nameof(allocator));
             }
+            this.RecvByteBufAllocator = allocator;
         }
 
         public virtual T GetOption<T>(ChannelOption<T> option)
@@ -56,10 +58,6 @@ namespace DotNetty.Transport.Channels
             if (ChannelOption.ConnectTimeout.Equals(option))
             {
                 return (T)(object)this.ConnectTimeout; // no boxing will happen, compiler optimizes away such casts
-            }
-            if (ChannelOption.MaxMessagesPerRead.Equals(option))
-            {
-                return (T)(object)this.MaxMessagesPerRead;
             }
             if (ChannelOption.WriteSpinCount.Equals(option))
             {
@@ -101,10 +99,6 @@ namespace DotNetty.Transport.Channels
             if (ChannelOption.ConnectTimeout.Equals(option))
             {
                 this.ConnectTimeout = (TimeSpan)(object)value;
-            }
-            else if (ChannelOption.MaxMessagesPerRead.Equals(option))
-            {
-                this.MaxMessagesPerRead = (int)(object)value;
             }
             else if (ChannelOption.WriteSpinCount.Equals(option))
             {
@@ -209,16 +203,6 @@ namespace DotNetty.Transport.Channels
 
         protected virtual void AutoReadCleared()
         {
-        }
-
-        public int MaxMessagesPerRead
-        {
-            get { return this.maxMessagesPerRead; }
-            set
-            {
-                Contract.Requires(value >= 1);
-                this.maxMessagesPerRead = value;
-            }
         }
 
         public int WriteBufferHighWaterMark

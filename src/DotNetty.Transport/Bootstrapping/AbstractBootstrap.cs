@@ -408,10 +408,10 @@ namespace DotNetty.Transport.Bootstrapping
 
         protected sealed class ChannelOptionValue<T> : ChannelOptionValue
         {
-            readonly ChannelOption option;
+            readonly ChannelOption<T> option;
             readonly T value;
 
-            public ChannelOptionValue(ChannelOption option, T value)
+            public ChannelOptionValue(ChannelOption<T> option, T value)
             {
                 this.option = option;
                 this.value = value;

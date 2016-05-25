@@ -636,7 +636,7 @@ namespace DotNetty.Buffers
 
             for (int low = 0, high = this.components.Count; low <= high;)
             {
-                int mid = (int)(((uint)low + (uint)high) >> 1);
+                int mid = (low + high).RightUShift(1);
                 ComponentEntry c = this.components[mid];
                 if (offset >= c.EndOffset)
                 {
@@ -1025,7 +1025,7 @@ namespace DotNetty.Buffers
 
             for (int low = 0, high = this.components.Count; low <= high;)
             {
-                int mid = (int)(((uint)low + (uint)high) >> 1);
+                int mid = (low + high).RightUShift(1);
                 ComponentEntry c = this.components[mid];
                 if (offset >= c.EndOffset)
                 {
