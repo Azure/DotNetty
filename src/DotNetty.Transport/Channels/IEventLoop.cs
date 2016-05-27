@@ -8,8 +8,6 @@ namespace DotNetty.Transport.Channels
 
     public interface IEventLoop : IEventExecutor
     {
-        IChannelHandlerInvoker Invoker { get; }
-
         Task RegisterAsync(IChannel channel);
     }
 }

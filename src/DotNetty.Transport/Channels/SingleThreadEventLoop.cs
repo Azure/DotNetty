@@ -24,10 +24,7 @@ namespace DotNetty.Transport.Channels
         public SingleThreadEventLoop(string threadName, TimeSpan breakoutInterval)
             : base(threadName, breakoutInterval)
         {
-            this.Invoker = new DefaultChannelHandlerInvoker(this);
         }
-
-        public IChannelHandlerInvoker Invoker { get; }
 
         public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
     }

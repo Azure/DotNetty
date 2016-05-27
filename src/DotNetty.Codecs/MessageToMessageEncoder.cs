@@ -26,7 +26,7 @@ namespace DotNetty.Codecs
             {
                 if (this.AcceptOutboundMessage(msg))
                 {
-                    output = ThreadLocalObjectList.Take();
+                    output = ThreadLocalObjectList.NewInstance();
                     var cast = (T)msg;
                     try
                     {

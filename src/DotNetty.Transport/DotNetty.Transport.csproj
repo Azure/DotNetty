@@ -67,13 +67,11 @@
     <Compile Include="Channels\ActionChannelInitializer.cs" />
     <Compile Include="Channels\ChannelException.cs" />
     <Compile Include="Channels\ChannelHandlerAdapter.cs" />
-    <Compile Include="Channels\ChannelHandlerInvokerUtil.cs" />
     <Compile Include="Channels\ChannelInitializer.cs" />
     <Compile Include="Channels\ChannelOption.cs" />
     <Compile Include="Channels\ChannelPipelineException.cs" />
     <Compile Include="Channels\ConnectTimeoutException.cs" />
     <Compile Include="Channels\DefaultChannelHandlerContext.cs" />
-    <Compile Include="Channels\DefaultChannelHandlerInvoker.cs" />
     <Compile Include="Channels\DefaultChannelId.cs" />
     <Compile Include="Channels\DefaultChannelPipeline.cs" />
     <Compile Include="Channels\DefaultMaxMessagesRecvByteBufAllocator.cs" />
@@ -98,7 +96,6 @@
     <Compile Include="Channels\IChannelConfiguration.cs" />
     <Compile Include="Channels\IChannelHandler.cs" />
     <Compile Include="Channels\IChannelHandlerContext.cs" />
-    <Compile Include="Channels\IChannelHandlerInvoker.cs" />
     <Compile Include="Channels\IChannelPipeline.cs" />
     <Compile Include="Channels\IChannelUnsafe.cs" />
     <Compile Include="Channels\IEventLoop.cs" />

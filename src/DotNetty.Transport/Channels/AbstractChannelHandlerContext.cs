@@ -12,145 +12,157 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal;
     using DotNetty.Common.Utilities;
 
     abstract class AbstractChannelHandlerContext : IChannelHandlerContext, IResourceLeakHint
     {
-        internal const int MASK_HANDLER_ADDED = 1;
-        internal const int MASK_HANDLER_REMOVED = 1 << 1;
+        static readonly Action<object> InvokeChannelReadCompleteAction = ctx => ((AbstractChannelHandlerContext)ctx).InvokeChannelReadComplete();
+        static readonly Action<object> InvokeReadAction = ctx => ((AbstractChannelHandlerContext)ctx).InvokeRead();
+        static readonly Action<object> InvokeChannelWritabilityChangedAction = ctx => ((AbstractChannelHandlerContext)ctx).InvokeChannelWritabilityChanged();
+        static readonly Action<object> InvokeFlushAction = ctx => ((AbstractChannelHandlerContext)ctx).InvokeFlush();
+        static readonly Action<object, object> InvokeUserEventTriggeredAction = (ctx, evt) => ((AbstractChannelHandlerContext)ctx).InvokeUserEventTriggered(evt);
+        static readonly Action<object, object> InvokeChannelReadAction = (ctx, msg) => ((AbstractChannelHandlerContext)ctx).InvokeChannelRead(msg);
 
-        internal const int MASK_EXCEPTION_CAUGHT = 1 << 2;
-        internal const int MASK_CHANNEL_REGISTERED = 1 << 3;
-        internal const int MASK_CHANNEL_UNREGISTERED = 1 << 4;
-        internal const int MASK_CHANNEL_ACTIVE = 1 << 5;
-        internal const int MASK_CHANNEL_INACTIVE = 1 << 6;
-        internal const int MASK_CHANNEL_READ = 1 << 7;
-        internal const int MASK_CHANNEL_READ_COMPLETE = 1 << 8;
-        internal const int MASK_CHANNEL_WRITABILITY_CHANGED = 1 << 9;
-        internal const int MASK_USER_EVENT_TRIGGERED = 1 << 10;
-
-        internal const int MASK_BIND = 1 << 11;
-        internal const int MASK_CONNECT = 1 << 12;
-        internal const int MASK_DISCONNECT = 1 << 13;
-        internal const int MASK_CLOSE = 1 << 14;
-        internal const int MASK_DEREGISTER = 1 << 15;
-        internal const int MASK_READ = 1 << 16;
-        internal const int MASK_WRITE = 1 << 17;
-        internal const int MASK_FLUSH = 1 << 18;
-
-        internal const int MASKGROUP_INBOUND = MASK_EXCEPTION_CAUGHT |
-            MASK_CHANNEL_REGISTERED |
-            MASK_CHANNEL_UNREGISTERED |
-            MASK_CHANNEL_ACTIVE |
-            MASK_CHANNEL_INACTIVE |
-            MASK_CHANNEL_READ |
-            MASK_CHANNEL_READ_COMPLETE |
-            MASK_CHANNEL_WRITABILITY_CHANGED |
-            MASK_USER_EVENT_TRIGGERED;
-
-        internal const int MASKGROUP_OUTBOUND = MASK_BIND |
-            MASK_CONNECT |
-            MASK_DISCONNECT |
-            MASK_CLOSE |
-            MASK_DEREGISTER |
-            MASK_READ |
-            MASK_WRITE |
-            MASK_FLUSH;
-
-        static readonly ConditionalWeakTable<Type, Tuple<int>> SkipTable = new ConditionalWeakTable<Type, Tuple<int>>();
-
-        protected static int GetSkipPropagationFlags(IChannelHandler handler)
+        [Flags]
+        protected internal enum SkipFlags
         {
-            Tuple<int> skipDirection = SkipTable.GetValue(
+            HandlerAdded = 1,
+            HandlerRemoved = 1 << 1,
+            ExceptionCaught = 1 << 2,
+            ChannelRegistered = 1 << 3,
+            ChannelUnregistered = 1 << 4,
+            ChannelActive = 1 << 5,
+            ChannelInactive = 1 << 6,
+            ChannelRead = 1 << 7,
+            ChannelReadComplete = 1 << 8,
+            ChannelWritabilityChanged = 1 << 9,
+            UserEventTriggered = 1 << 10,
+            Bind = 1 << 11,
+            Connect = 1 << 12,
+            Disconnect = 1 << 13,
+            Close = 1 << 14,
+            Deregister = 1 << 15,
+            Read = 1 << 16,
+            Write = 1 << 17,
+            Flush = 1 << 18,
+
+            Inbound = ExceptionCaught |
+                ChannelRegistered |
+                ChannelUnregistered |
+                ChannelActive |
+                ChannelInactive |
+                ChannelRead |
+                ChannelReadComplete |
+                ChannelWritabilityChanged |
+                UserEventTriggered,
+
+            Outbound = Bind |
+                Connect |
+                Disconnect |
+                Close |
+                Deregister |
+                Read |
+                Write |
+                Flush,
+        }
+
+        static readonly ConditionalWeakTable<Type, Tuple<SkipFlags>> SkipTable = new ConditionalWeakTable<Type, Tuple<SkipFlags>>();
+
+        protected static SkipFlags GetSkipPropagationFlags(IChannelHandler handler)
+        {
+            Tuple<SkipFlags> skipDirection = SkipTable.GetValue(
                 handler.GetType(),
                 handlerType => Tuple.Create(CalculateSkipPropagationFlags(handlerType)));
 
             return skipDirection?.Item1 ?? 0;
         }
 
-        protected static int CalculateSkipPropagationFlags(Type handlerType)
+        protected static SkipFlags CalculateSkipPropagationFlags(Type handlerType)
         {
-            int flags = 0;
+            SkipFlags flags = 0;
 
             // this method should never throw
-            if (IsSkippable(handlerType, "HandlerAdded"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.HandlerAdded)))
             {
-                flags |= MASK_HANDLER_ADDED;
+                flags |= SkipFlags.HandlerAdded;
             }
-            if (IsSkippable(handlerType, "HandlerRemoved"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.HandlerRemoved)))
             {
-                flags |= MASK_HANDLER_REMOVED;
+                flags |= SkipFlags.HandlerRemoved;
             }
-            if (IsSkippable(handlerType, "ExceptionCaught", typeof(Exception)))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ExceptionCaught), typeof(Exception)))
             {
-                flags |= MASK_EXCEPTION_CAUGHT;
+                flags |= SkipFlags.ExceptionCaught;
             }
-            if (IsSkippable(handlerType, "ChannelRegistered"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ChannelRegistered)))
             {
-                flags |= MASK_CHANNEL_REGISTERED;
+                flags |= SkipFlags.ChannelRegistered;
             }
-            if (IsSkippable(handlerType, "ChannelUnregistered"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ChannelUnregistered)))
             {
-                flags |= MASK_CHANNEL_UNREGISTERED;
+                flags |= SkipFlags.ChannelUnregistered;
             }
-            if (IsSkippable(handlerType, "ChannelActive"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ChannelActive)))
             {
-                flags |= MASK_CHANNEL_ACTIVE;
+                flags |= SkipFlags.ChannelActive;
             }
-            if (IsSkippable(handlerType, "ChannelInactive"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ChannelInactive)))
             {
-                flags |= MASK_CHANNEL_INACTIVE;
+                flags |= SkipFlags.ChannelInactive;
             }
-            if (IsSkippable(handlerType, "ChannelRead", typeof(object)))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ChannelRead), typeof(object)))
             {
-                flags |= MASK_CHANNEL_READ;
+                flags |= SkipFlags.ChannelRead;
             }
-            if (IsSkippable(handlerType, "ChannelReadComplete"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ChannelReadComplete)))
             {
-                flags |= MASK_CHANNEL_READ_COMPLETE;
+                flags |= SkipFlags.ChannelReadComplete;
             }
-            if (IsSkippable(handlerType, "ChannelWritabilityChanged"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ChannelWritabilityChanged)))
             {
-                flags |= MASK_CHANNEL_WRITABILITY_CHANGED;
+                flags |= SkipFlags.ChannelWritabilityChanged;
             }
-            if (IsSkippable(handlerType, "UserEventTriggered", typeof(object)))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.UserEventTriggered), typeof(object)))
             {
-                flags |= MASK_USER_EVENT_TRIGGERED;
+                flags |= SkipFlags.UserEventTriggered;
             }
-            if (IsSkippable(handlerType, "BindAsync", typeof(EndPoint)))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.BindAsync), typeof(EndPoint)))
             {
-                flags |= MASK_BIND;
+                flags |= SkipFlags.Bind;
             }
-            if (IsSkippable(handlerType, "ConnectAsync", typeof(EndPoint), typeof(EndPoint)))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.ConnectAsync), typeof(EndPoint), typeof(EndPoint)))
             {
-                flags |= MASK_CONNECT;
+                flags |= SkipFlags.Connect;
             }
-            if (IsSkippable(handlerType, "DisconnectAsync"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.DisconnectAsync)))
             {
-                flags |= MASK_DISCONNECT;
+                flags |= SkipFlags.Disconnect;
             }
-            if (IsSkippable(handlerType, "CloseAsync"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.CloseAsync)))
             {
-                flags |= MASK_CLOSE;
+                flags |= SkipFlags.Close;
             }
-            if (IsSkippable(handlerType, "DeregisterAsync"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.DeregisterAsync)))
             {
-                flags |= MASK_DEREGISTER;
+                flags |= SkipFlags.Deregister;
             }
-            if (IsSkippable(handlerType, "Read"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.Read)))
             {
-                flags |= MASK_READ;
+                flags |= SkipFlags.Read;
             }
-            if (IsSkippable(handlerType, "WriteAsync", typeof(object)))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.WriteAsync), typeof(object)))
             {
-                flags |= MASK_WRITE;
+                flags |= SkipFlags.Write;
             }
-            if (IsSkippable(handlerType, "Flush"))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.Flush)))
             {
-                flags |= MASK_FLUSH;
+                flags |= SkipFlags.Flush;
             }
             return flags;
         }
+
+        protected static bool IsSkippable(Type handlerType, string methodName) => IsSkippable(handlerType, methodName, Type.EmptyTypes);
 
         protected static bool IsSkippable(Type handlerType, string methodName, params Type[] paramTypes)
         {
@@ -163,20 +175,34 @@ namespace DotNetty.Transport.Channels
         internal volatile AbstractChannelHandlerContext Next;
         internal volatile AbstractChannelHandlerContext Prev;
 
-        internal readonly int SkipPropagationFlags;
+        internal readonly SkipFlags SkipPropagationFlags;
 
-        readonly DefaultChannelPipeline pipeline;
-        internal readonly IChannelHandlerInvoker invoker;
+        enum HandlerState
+        {
+            /// <summary>Neither <see cref="IChannelHandler.HandlerAdded"/> nor <see cref="IChannelHandler.HandlerRemoved"/> was called.</summary>
+            Init = 0,
+            /// <summary><see cref="IChannelHandler.HandlerAdded"/> was called.</summary>
+            Added = 1,
+            /// <summary><see cref="IChannelHandler.HandlerRemoved"/> was called.</summary>
+            Removed = 2
+        }
 
-        protected AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, IChannelHandlerInvoker invoker,
-            string name, int skipPropagationDirections)
+        internal readonly DefaultChannelPipeline pipeline;
+
+        // Will be set to null if no child executor should be used, otherwise it will be set to the
+        // child executor.
+        internal readonly IEventExecutor executor;
+        HandlerState handlerState = HandlerState.Init;
+
+        protected AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, IEventExecutor executor,
+            string name, SkipFlags skipPropagationDirections)
         {
             Contract.Requires(pipeline != null);
             Contract.Requires(name != null);
 
             this.pipeline = pipeline;
             this.Name = name;
-            this.invoker = invoker;
+            this.executor = executor;
             this.SkipPropagationFlags = skipPropagationDirections;
         }
 
@@ -184,13 +210,29 @@ namespace DotNetty.Transport.Channels
 
         public IByteBufferAllocator Allocator => this.Channel.Allocator;
 
-        public bool Removed { get; internal set; }
+        public abstract IChannelHandler Handler { get; }
 
-        public IEventExecutor Executor => this.Invoker.Executor;
+        /// <summary>
+        ///     Makes best possible effort to detect if <see cref="IChannelHandler.HandlerAdded(IChannelHandlerContext)" /> was
+        ///     called
+        ///     yet. If not return <c>false</c> and if called or could not detect return <c>true</c>.
+        ///     If this method returns <c>true</c> we will not invoke the <see cref="IChannelHandler" /> but just forward the
+        ///     event.
+        ///     This is needed as <see cref="DefaultChannelPipeline" /> may already put the <see cref="IChannelHandler" /> in the
+        ///     linked-list
+        ///     but not called
+        /// </summary>
+        public bool Added => handlerState == HandlerState.Added;
+
+        public bool Removed => handlerState == HandlerState.Removed;
+
+        internal void SetAdded() => handlerState = HandlerState.Added;
+
+        internal void SetRemoved() => handlerState = HandlerState.Removed;
+
+        public IEventExecutor Executor => this.executor ?? this.Channel.EventLoop;
 
         public string Name { get; }
-
-        public IChannelHandlerInvoker Invoker => this.invoker ?? this.Channel.EventLoop.Invoker;
 
         public IAttribute<T> GetAttribute<T>(AttributeKey<T> key)
             where T : class
@@ -205,108 +247,401 @@ namespace DotNetty.Transport.Channels
         }
         public IChannelHandlerContext FireChannelRegistered()
         {
-            AbstractChannelHandlerContext next = this.FindContextInbound();
-            next.Invoker.InvokeChannelRegistered(next);
+            InvokeChannelRegistered(this.FindContextInbound());
             return this;
+        }
+
+        internal static void InvokeChannelRegistered(AbstractChannelHandlerContext next)
+        {
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeChannelRegistered();
+            }
+            else
+            {
+                nextExecutor.Execute(c => ((AbstractChannelHandlerContext)c).InvokeChannelRegistered(), next);
+            }
+        }
+
+        void InvokeChannelRegistered()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.ChannelRegistered(this);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.FireChannelRegistered();
+            }
         }
 
         public IChannelHandlerContext FireChannelUnregistered()
         {
-            AbstractChannelHandlerContext next = this.FindContextInbound();
-            next.Invoker.InvokeChannelUnregistered(next);
+            InvokeChannelUnregistered(this.FindContextInbound());
             return this;
+        }
+
+        internal static void InvokeChannelUnregistered(AbstractChannelHandlerContext next)
+        {
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeChannelUnregistered();
+            }
+            else
+            {
+                nextExecutor.Execute(c => ((AbstractChannelHandlerContext)c).InvokeChannelUnregistered(), next);
+            }
+        }
+
+        void InvokeChannelUnregistered()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.ChannelUnregistered(this);
+                }
+                catch (Exception t)
+                {
+                    this.NotifyHandlerException(t);
+                }
+            }
+            else
+            {
+                this.FireChannelUnregistered();
+            }
         }
 
         public IChannelHandlerContext FireChannelActive()
         {
-            AbstractChannelHandlerContext target = this.FindContextInbound();
-            target.Invoker.InvokeChannelActive(target);
+            InvokeChannelActive(this.FindContextInbound());
             return this;
+        }
+
+        internal static void InvokeChannelActive(AbstractChannelHandlerContext next)
+        {
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeChannelActive();
+            }
+            else
+            {
+                nextExecutor.Execute(c => ((AbstractChannelHandlerContext)c).InvokeChannelActive(), next);
+            }
+        }
+
+        void InvokeChannelActive()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    (this.Handler).ChannelActive(this);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.FireChannelActive();
+            }
         }
 
         public IChannelHandlerContext FireChannelInactive()
         {
-            AbstractChannelHandlerContext target = this.FindContextInbound();
-            target.Invoker.InvokeChannelInactive(target);
+            InvokeChannelInactive(this.FindContextInbound());
             return this;
+        }
+
+        internal static void InvokeChannelInactive(AbstractChannelHandlerContext next)
+        {
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeChannelInactive();
+            }
+            else
+            {
+                nextExecutor.Execute(c => ((AbstractChannelHandlerContext)c).InvokeChannelInactive(), next);
+            }
+        }
+
+        void InvokeChannelInactive()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.ChannelInactive(this);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.FireChannelInactive();
+            }
         }
 
         public virtual IChannelHandlerContext FireExceptionCaught(Exception cause)
         {
-            AbstractChannelHandlerContext target = this.FindContextInbound();
-            target.Invoker.InvokeExceptionCaught(target, cause);
+            InvokeExceptionCaught(this.FindContextInbound(), cause);
             return this;
         }
 
-        public abstract IChannelHandler Handler { get; }
-
-        public IChannelHandlerContext FireChannelRead(object msg)
+        internal static void InvokeExceptionCaught(AbstractChannelHandlerContext next, Exception cause)
         {
-            AbstractChannelHandlerContext target = this.FindContextInbound();
-            target.Invoker.InvokeChannelRead(target, this.pipeline.Touch(msg, target));
-            return this;
+            Contract.Requires(cause != null);
+
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeExceptionCaught(cause);
+            }
+            else
+            {
+                try
+                {
+                    nextExecutor.Execute((c, e) => ((AbstractChannelHandlerContext)c).InvokeExceptionCaught((Exception)e), next, cause);
+                }
+                catch (Exception t)
+                {
+                    if (DefaultChannelPipeline.Logger.WarnEnabled)
+                    {
+                        DefaultChannelPipeline.Logger.Warn("Failed to submit an ExceptionCaught() event.", t);
+                        DefaultChannelPipeline.Logger.Warn("The ExceptionCaught() event that was failed to submit was:", cause);
+                    }
+                }
+            }
         }
 
-        public IChannelHandlerContext FireChannelReadComplete()
+        void InvokeExceptionCaught(Exception cause)
         {
-            AbstractChannelHandlerContext target = this.FindContextInbound();
-            target.Invoker.InvokeChannelReadComplete(target);
-            return this;
-        }
-
-        public IChannelHandlerContext FireChannelWritabilityChanged()
-        {
-            AbstractChannelHandlerContext next = this.FindContextInbound();
-            next.Invoker.InvokeChannelWritabilityChanged(next);
-            return this;
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.ExceptionCaught(this, cause);
+                }
+                catch (Exception t)
+                {
+                    if (DefaultChannelPipeline.Logger.WarnEnabled)
+                    {
+                        DefaultChannelPipeline.Logger.Warn("Failed to submit an ExceptionCaught() event.", t);
+                        DefaultChannelPipeline.Logger.Warn(
+                                "An exception was thrown by a user handler's " +
+                                        "ExceptionCaught() method while handling the following exception:", cause);
+                    }
+                }
+            }
+            else
+            {
+                this.FireExceptionCaught(cause);
+            }
         }
 
         public IChannelHandlerContext FireUserEventTriggered(object evt)
         {
-            AbstractChannelHandlerContext target = this.FindContextInbound();
-            target.Invoker.InvokeUserEventTriggered(target, evt);
+            InvokeUserEventTriggered(this.FindContextInbound(), evt);
             return this;
         }
 
-        public Task DeregisterAsync()
+        internal static void InvokeUserEventTriggered(AbstractChannelHandlerContext next, object evt)
         {
-            AbstractChannelHandlerContext next = this.FindContextOutbound();
-            return next.Invoker.InvokeDeregisterAsync(next);
+            Contract.Requires(evt != null);
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeUserEventTriggered(evt);
+            }
+            else
+            {
+                nextExecutor.Execute(InvokeUserEventTriggeredAction, next, evt);
+            }
         }
 
-        public IChannelHandlerContext Read()
+        void InvokeUserEventTriggered(object evt)
         {
-            AbstractChannelHandlerContext target = this.FindContextOutbound();
-            target.Invoker.InvokeRead(target);
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.UserEventTriggered(this, evt);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.FireUserEventTriggered(evt);
+            }
+        }
+
+        public IChannelHandlerContext FireChannelRead(object msg)
+        {
+            InvokeChannelRead(this.FindContextInbound(), msg);
             return this;
         }
 
-        public Task WriteAsync(object msg) // todo: cancellationToken?
+        internal static void InvokeChannelRead(AbstractChannelHandlerContext next, object msg)
         {
-            AbstractChannelHandlerContext target = this.FindContextOutbound();
-            return target.Invoker.InvokeWriteAsync(target, this.pipeline.Touch(msg, target));
+            Contract.Requires(msg != null);
+
+            object m = next.pipeline.Touch(msg, next);
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeChannelRead(m);
+            }
+            else
+            {
+                nextExecutor.Execute(InvokeChannelReadAction, next, msg);
+            }
         }
 
-        public IChannelHandlerContext Flush()
+        void InvokeChannelRead(object msg)
         {
-            AbstractChannelHandlerContext target = this.FindContextOutbound();
-            target.Invoker.InvokeFlush(target);
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.ChannelRead(this, msg);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.FireChannelRead(msg);
+            }
+        }
+
+        public IChannelHandlerContext FireChannelReadComplete()
+        {
+            InvokeChannelReadComplete(this.FindContextInbound());
             return this;
         }
 
-        public Task WriteAndFlushAsync(object message) // todo: cancellationToken?
+        internal static void InvokeChannelReadComplete(AbstractChannelHandlerContext next) {
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeChannelReadComplete();
+            }
+            else
+            {
+                // todo: consider caching task
+                nextExecutor.Execute(InvokeChannelReadCompleteAction, next);
+            }
+        }
+
+        void InvokeChannelReadComplete()
         {
-            AbstractChannelHandlerContext target = this.FindContextOutbound();
-            Task writeFuture = target.Invoker.InvokeWriteAsync(target, this.pipeline.Touch(message, target));
-            target = this.FindContextOutbound();
-            target.Invoker.InvokeFlush(target);
-            return writeFuture;
+            if (this.Added)
+            {
+                try
+                {
+                    (this.Handler).ChannelReadComplete(this);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.FireChannelReadComplete();
+            }
+        }
+
+        public IChannelHandlerContext FireChannelWritabilityChanged()
+        {
+            InvokeChannelWritabilityChanged(this.FindContextInbound());
+            return this;
+        }
+
+        internal static void InvokeChannelWritabilityChanged(AbstractChannelHandlerContext next)
+        {
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeChannelReadComplete();
+            }
+            else
+            {
+                // todo: consider caching task
+                nextExecutor.Execute(InvokeChannelWritabilityChangedAction, next);
+            }
+        }
+
+        void InvokeChannelWritabilityChanged()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.ChannelWritabilityChanged(this);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.FireChannelWritabilityChanged();
+            }
         }
 
         public Task BindAsync(EndPoint localAddress)
         {
+            Contract.Requires(localAddress != null);
+            // todo: check for cancellation
+            //if (!validatePromise(ctx, promise, false)) {
+            //    // promise cancelled
+            //    return;
+            //}
+
             AbstractChannelHandlerContext next = this.FindContextOutbound();
-            return next.Invoker.InvokeBindAsync(next, localAddress);
+            IEventExecutor nextExecutor = next.Executor;
+            return nextExecutor.InEventLoop 
+                ? next.InvokeBindAsync(localAddress) 
+                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeBindAsync(localAddress));
+        }
+
+        Task InvokeBindAsync(EndPoint localAddress)
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    return this.Handler.BindAsync(this, localAddress);
+                }
+                catch (Exception ex)
+                {
+                    return ComposeExceptionTask(ex);
+                }
+            }
+
+            return this.BindAsync(localAddress);
         }
 
         public Task ConnectAsync(EndPoint remoteAddress) => this.ConnectAsync(remoteAddress, null);
@@ -314,7 +649,30 @@ namespace DotNetty.Transport.Channels
         public Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
             AbstractChannelHandlerContext next = this.FindContextOutbound();
-            return next.Invoker.InvokeConnectAsync(next, remoteAddress, localAddress);
+            Contract.Requires(remoteAddress != null);
+            // todo: check for cancellation
+
+            IEventExecutor nextExecutor = next.Executor;
+            return nextExecutor.InEventLoop
+                ? next.InvokeConnectAsync(remoteAddress, localAddress)
+                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeConnectAsync(remoteAddress, localAddress));
+        }
+
+        Task InvokeConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    return this.Handler.ConnectAsync(this, remoteAddress, localAddress);
+                }
+                catch (Exception ex)
+                {
+                    return ComposeExceptionTask(ex);
+                }
+            }
+
+            return this.ConnectAsync(remoteAddress, localAddress);
         }
 
         public Task DisconnectAsync()
@@ -324,15 +682,239 @@ namespace DotNetty.Transport.Channels
                 return this.CloseAsync();
             }
 
+            // todo: check for cancellation
             AbstractChannelHandlerContext next = this.FindContextOutbound();
-            return next.Invoker.InvokeDisconnectAsync(next);
+            IEventExecutor nextExecutor = next.Executor;
+            return nextExecutor.InEventLoop
+                ? next.InvokeDisconnectAsync()
+                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeDisconnectAsync());
         }
 
-        public Task CloseAsync() // todo: cancellationToken?
+        Task InvokeDisconnectAsync()
         {
-            AbstractChannelHandlerContext target = this.FindContextOutbound();
-            return target.Invoker.InvokeCloseAsync(target);
+            if (this.Added)
+            {
+                try
+                {
+                    return this.Handler.DisconnectAsync(this);
+                }
+                catch (Exception ex)
+                {
+                    return ComposeExceptionTask(ex);
+                }
+            }
+            return this.DisconnectAsync();
         }
+
+        public Task CloseAsync()
+        {
+            // todo: check for cancellation
+            AbstractChannelHandlerContext next = this.FindContextOutbound();
+            IEventExecutor nextExecutor = next.Executor;
+            return nextExecutor.InEventLoop
+                ? next.InvokeCloseAsync()
+                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeCloseAsync());
+        }
+
+        Task InvokeCloseAsync()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    return this.Handler.CloseAsync(this);
+                }
+                catch (Exception ex)
+                {
+                    return ComposeExceptionTask(ex);
+                }
+            }
+            return this.CloseAsync();
+        }
+
+        public Task DeregisterAsync()
+        {
+            // todo: check for cancellation
+            AbstractChannelHandlerContext next = this.FindContextOutbound();
+            IEventExecutor nextExecutor = next.Executor;
+            return nextExecutor.InEventLoop
+                ? next.InvokeDeregisterAsync()
+                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeDeregisterAsync());
+        }
+
+        Task InvokeDeregisterAsync()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    return this.Handler.DeregisterAsync(this);
+                }
+                catch (Exception ex)
+                {
+                    return ComposeExceptionTask(ex);
+                }
+            }
+            return this.DeregisterAsync();
+        }
+
+        public IChannelHandlerContext Read()
+        {
+            AbstractChannelHandlerContext next = this.FindContextOutbound();
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeRead();
+            }
+            else
+            {
+                // todo: consider caching task
+                nextExecutor.Execute(InvokeReadAction, next);
+            }
+            return this;
+        }
+
+        void InvokeRead()
+        {
+            if (this.Added)
+            {
+                try
+                {
+                    this.Handler.Read(this);
+                }
+                catch (Exception ex)
+                {
+                    this.NotifyHandlerException(ex);
+                }
+            }
+            else
+            {
+                this.Read();
+            }
+        }
+
+        public Task WriteAsync(object msg)
+        {
+            Contract.Requires(msg != null);
+            // todo: check for cancellation
+            return this.WriteAsync(msg, false);
+        }
+
+        Task InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
+
+        Task InvokeWriteAsync0(object msg)
+        {
+            try
+            {
+                return this.Handler.WriteAsync(this, msg);
+            }
+            catch (Exception ex)
+            {
+                return ComposeExceptionTask(ex);
+            }
+        }
+
+        public IChannelHandlerContext Flush()
+        {
+            AbstractChannelHandlerContext next = this.FindContextOutbound();
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                next.InvokeFlush();
+            }
+            else
+            {
+                nextExecutor.Execute(InvokeFlushAction, next);
+            }
+            return this;
+        }
+
+        void InvokeFlush()
+        {
+            if (this.Added)
+            {
+                this.InvokeFlush0();
+            }
+            else
+            {
+                this.Flush();
+            }
+        }
+
+        void InvokeFlush0()
+        {
+            try
+            {
+                this.Handler.Flush(this);
+            }
+            catch (Exception ex)
+            {
+                this.NotifyHandlerException(ex);
+            }
+        }
+
+        public Task WriteAndFlushAsync(object message)
+        {
+            Contract.Requires(message != null);
+            // todo: check for cancellation
+
+            return this.WriteAsync(message, true);
+        }
+
+        Task InvokeWriteAndFlushAsync(object msg)
+        {
+            if (this.Added)
+            {
+                Task task = this.InvokeWriteAsync0(msg);
+                this.InvokeFlush0();
+                return task;
+            }
+            return this.WriteAndFlushAsync(msg);
+        }
+
+        Task WriteAsync(object msg, bool flush)
+        {
+            AbstractChannelHandlerContext next = this.FindContextOutbound();
+            object m = this.pipeline.Touch(msg, next);
+            IEventExecutor nextExecutor = next.Executor;
+            if (nextExecutor.InEventLoop)
+            {
+                return flush
+                    ? next.InvokeWriteAndFlushAsync(m)
+                    : next.InvokeWriteAsync(m);
+            }
+            else
+            {
+                var promise = new TaskCompletionSource();
+                AbstractWriteTask task = flush 
+                    ? WriteAndFlushTask.NewInstance(next, m, promise)
+                    : (AbstractWriteTask)WriteTask.NewInstance(next, m, promise);
+                SafeExecuteOutbound(nextExecutor, task, promise, msg);
+                return promise.Task;
+            }
+        }
+
+        void NotifyHandlerException(Exception cause)
+        {
+            if (InExceptionCaught(cause))
+            {
+                if (DefaultChannelPipeline.Logger.WarnEnabled)
+                {
+                    DefaultChannelPipeline.Logger.Warn(
+                        "An exception was thrown by a user handler " +
+                            "while handling an exceptionCaught event", cause);
+                }
+                return;
+            }
+
+            this.InvokeExceptionCaught(cause);
+        }
+
+        static Task ComposeExceptionTask(Exception cause) => TaskEx.FromException(cause);
+
+        const string ExceptionCaughtMethodName = nameof(IChannelHandler.ExceptionCaught);
+
+        static bool InExceptionCaught(Exception cause) => cause.StackTrace.IndexOf("." + ExceptionCaughtMethodName + "(", StringComparison.Ordinal) >= 0;
 
         AbstractChannelHandlerContext FindContextInbound()
         {
@@ -341,7 +923,7 @@ namespace DotNetty.Transport.Channels
             {
                 ctx = ctx.Next;
             }
-            while ((ctx.SkipPropagationFlags & MASKGROUP_INBOUND) == MASKGROUP_INBOUND);
+            while ((ctx.SkipPropagationFlags & SkipFlags.Inbound) == SkipFlags.Inbound);
             return ctx;
         }
 
@@ -352,12 +934,159 @@ namespace DotNetty.Transport.Channels
             {
                 ctx = ctx.Prev;
             }
-            while ((ctx.SkipPropagationFlags & MASKGROUP_OUTBOUND) == MASKGROUP_OUTBOUND);
+            while ((ctx.SkipPropagationFlags & SkipFlags.Outbound) == SkipFlags.Outbound);
             return ctx;
+        }
+
+        static Task SafeExecuteOutboundAsync(IEventExecutor executor, Func<Task> function)
+        {
+            var promise = new TaskCompletionSource();
+            try
+            {
+                executor.Execute((p, func) => ((Func<Task>)func)().LinkOutcome((TaskCompletionSource)p), promise, function);
+            }
+            catch (Exception cause)
+            {
+                promise.TrySetException(cause);
+            }
+            return promise.Task;
+        }
+
+        static void SafeExecuteOutbound(IEventExecutor executor, IRunnable task, TaskCompletionSource promise, object msg)
+        {
+            try
+            {
+                executor.Execute(task);
+            }
+            catch (Exception cause)
+            {
+                try
+                {
+                    promise.TrySetException(cause);
+                }
+                finally
+                {
+                    ReferenceCountUtil.Release(msg);
+                }
+            }
         }
 
         public string ToHintString() => $"\'{this.Name}\' will handle the message from this point.";
 
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
+
+
+        abstract class AbstractWriteTask : RecyclableMpscLinkedQueueNode<IRunnable>, IRunnable
+        {
+            static readonly bool EstimateTaskSizeOnSubmit =
+                SystemPropertyUtil.GetBoolean("io.netty.transport.estimateSizeOnSubmit", true);
+
+            // Assuming a 64-bit .NET VM, 16 bytes object header, 4 reference fields and 2 int field
+            static readonly int WriteTaskOverhead =
+                SystemPropertyUtil.GetInt("io.netty.transport.writeTaskSizeOverhead", 56);
+
+            AbstractChannelHandlerContext ctx;
+            object msg;
+            TaskCompletionSource promise;
+            int size;
+
+            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            {
+                task.ctx = ctx;
+                task.msg = msg;
+                task.promise = promise;
+
+                if (EstimateTaskSizeOnSubmit)
+                {
+                    ChannelOutboundBuffer buffer = ctx.Channel.Unsafe.OutboundBuffer;
+
+                    // Check for null as it may be set to null if the channel is closed already
+                    if (buffer != null)
+                    {
+                        task.size = ctx.pipeline.EstimatorHandle.Size(msg) + WriteTaskOverhead;
+                        buffer.IncrementPendingOutboundBytes(task.size);
+                    }
+                    else
+                    {
+                        task.size = 0;
+                    }
+                }
+                else
+                {
+                    task.size = 0;
+                }
+            }
+
+            protected AbstractWriteTask(ThreadLocalPool.Handle handle)
+                : base(handle)
+            {
+            }
+
+            public void Run()
+            {
+                try
+                {
+                    ChannelOutboundBuffer buffer = this.ctx.Channel.Unsafe.OutboundBuffer;
+                    // Check for null as it may be set to null if the channel is closed already
+                    if (EstimateTaskSizeOnSubmit)
+                    {
+                        buffer?.DecrementPendingOutboundBytes(this.size);
+                    }
+                    this.WriteAsync(this.ctx, this.msg).LinkOutcome(this.promise);
+                }
+                finally
+                {
+                    // Set to null so the GC can collect them directly
+                    this.ctx = null;
+                    this.msg = null;
+                    this.promise = null;
+                }
+            }
+
+            public override IRunnable Value => this;
+
+            protected virtual Task WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
+        }
+        sealed class WriteTask : AbstractWriteTask {
+
+            static readonly ThreadLocalPool<WriteTask> Recycler = new ThreadLocalPool<WriteTask>(handle => new WriteTask(handle));
+
+            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            {
+                WriteTask task = Recycler.Take();
+                Init(task, ctx, msg, promise);
+                return task;
+            }
+
+            WriteTask(ThreadLocalPool.Handle handle)
+                : base(handle)
+            {
+            }
+        }
+
+        sealed class WriteAndFlushTask : AbstractWriteTask
+    {
+
+            static readonly ThreadLocalPool<WriteAndFlushTask> Recycler = new ThreadLocalPool<WriteAndFlushTask>(handle => new WriteAndFlushTask(handle));
+
+            public static WriteAndFlushTask NewInstance(
+                    AbstractChannelHandlerContext ctx, object msg,  TaskCompletionSource promise) {
+                WriteAndFlushTask task = Recycler.Take();
+                Init(task, ctx, msg, promise);
+                return task;
+            }
+
+            WriteAndFlushTask(ThreadLocalPool.Handle handle)
+                : base(handle)
+            {
+            }
+
+            protected override Task WriteAsync(AbstractChannelHandlerContext ctx, object msg)
+            {
+                Task result = base.WriteAsync(ctx, msg);
+                ctx.InvokeFlush();
+                return result;
+            }
+        }
     }
 }

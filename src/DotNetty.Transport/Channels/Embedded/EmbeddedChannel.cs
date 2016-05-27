@@ -109,6 +109,8 @@ namespace DotNetty.Transport.Channels.Embedded
             p.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
         }
 
+        protected sealed override DefaultChannelPipeline NewChannelPipeline() => new EmbeddedChannelPipeline(this);
+
         public override ChannelMetadata Metadata { get; }
 
         public override IChannelConfiguration Configuration { get; }
@@ -224,13 +226,6 @@ namespace DotNetty.Transport.Channels.Embedded
             }
         }
 
-        void FinishPendingTasks()
-        {
-            this.RunPendingTasks();
-            // Cancel all scheduled tasks that are left
-            this.loop.CancelScheduledTasks();
-        }
-
         /// <summary>
         ///     Write messages to the inbound of this <see cref="IChannel" />
         /// </summary>
@@ -268,8 +263,7 @@ namespace DotNetty.Transport.Channels.Embedded
                 return IsNotEmpty(this.outboundMessages);
             }
 
-            //todo: RecyclableArrayList
-            var futures = new List<Task>(msgs.Length);
+            ThreadLocalObjectList futures = ThreadLocalObjectList.NewInstance(msgs.Length);
 
             foreach (object m in msgs)
             {
@@ -279,13 +273,24 @@ namespace DotNetty.Transport.Channels.Embedded
                 }
                 futures.Add(this.WriteAsync(m));
             }
-
+            // We need to call RunPendingTasks first as a IChannelHandler may have used IEventLoop.Execute(...) to
+            // delay the write on the next event loop run.
+            this.RunPendingTasks();
             this.Flush();
 
             int size = futures.Count;
             for (int i = 0; i < size; i++)
             {
-                Task future = futures[i];
+                var future = (Task)futures[i];
+                if (future.IsCompleted)
+                {
+                    this.RecordException(future);
+                }
+                else
+                {
+                    // The write may be delayed to run later by runPendingTasks()
+                    future.ContinueWith(t => this.RecordException(t));
+                }
                 Debug.Assert(future.IsCompleted);
                 if (future.Exception != null)
                 {
@@ -298,6 +303,19 @@ namespace DotNetty.Transport.Channels.Embedded
             return IsNotEmpty(this.outboundMessages);
         }
 
+        void RecordException(Task future)
+        {
+            switch (future.Status)
+            {
+                case TaskStatus.Canceled:
+                case TaskStatus.Faulted:
+                    this.RecordException(future.Exception);
+                    break;
+                default:
+                    break;  
+            }
+        }
+
         void RecordException(Exception cause)
         {
             if (this.lastException == null)
@@ -306,9 +324,7 @@ namespace DotNetty.Transport.Channels.Embedded
             }
             else
             {
-                logger.Warn(
-                    "More than one exception was raised. " +
-                        "Will report only the first one and log others.", cause);
+                logger.Warn("More than one exception was raised. " + "Will report only the first one and log others.", cause);
             }
         }
 
@@ -316,26 +332,100 @@ namespace DotNetty.Transport.Channels.Embedded
         ///     Mark this <see cref="IChannel" /> as finished. Any further try to write data to it will fail.
         /// </summary>
         /// <returns>bufferReadable returns <c>true</c></returns>
-        public bool Finish()
+        public bool Finish() => this.Finish(false);
+
+        /**
+         * Mark this {@link Channel} as finished and release all pending message in the inbound and outbound buffer.
+         * Any futher try to write data to it will fail.
+         *
+         * @return bufferReadable returns {@code true} if any of the used buffers has something left to read
+         */
+        public bool FinishAndReleaseAll() => this.Finish(true);
+
+        /**
+         * Mark this {@link Channel} as finished. Any futher try to write data to it will fail.
+         *
+         * @param releaseAll if {@code true} all pending message in the inbound and outbound buffer are released.
+         * @return bufferReadable returns {@code true} if any of the used buffers has something left to read
+         */
+        bool Finish(bool releaseAll)
         {
             this.CloseAsync();
-            this.CheckException();
-            return IsNotEmpty(this.inboundMessages) || IsNotEmpty(this.outboundMessages);
+            try
+            {
+                this.CheckException();
+                return IsNotEmpty(this.inboundMessages) || IsNotEmpty(this.outboundMessages);
+            }
+            finally
+            {
+                if (releaseAll)
+                {
+                    ReleaseAll(this.inboundMessages);
+                    ReleaseAll(this.outboundMessages);
+                }
+            }
+        }
+
+        /**
+         * Release all buffered inbound messages and return {@code true} if any were in the inbound buffer, {@code false}
+         * otherwise.
+         */
+        public bool ReleaseInbound() => ReleaseAll(this.inboundMessages);
+
+        /**
+         * Release all buffered outbound messages and return {@code true} if any were in the outbound buffer, {@code false}
+         * otherwise.
+         */
+        public bool ReleaseOutbound() => ReleaseAll(this.outboundMessages);
+
+        static bool ReleaseAll(Queue<object> queue)
+        {
+            if (queue.Count > 0)
+            {
+                for (;;)
+                {
+                    if (queue.Count == 0)
+                    {
+                        break;
+                    }
+                    object msg = queue.Dequeue();
+                    ReferenceCountUtil.Release(msg);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        void FinishPendingTasks(bool cancel)
+        {
+            this.RunPendingTasks();
+            if (cancel)
+            {
+                // Cancel all scheduled tasks that are left.
+                this.loop.CancelScheduledTasks();
+            }
         }
 
         public override Task CloseAsync()
         {
+            // We need to call RunPendingTasks() before calling super.CloseAsync() as there may be something in the queue
+            // that needs to be run before the actual close takes place.
+            this.RunPendingTasks();
             Task future = base.CloseAsync();
-            this.FinishPendingTasks();
+
+            // Now finish everything else and cancel all scheduled tasks that were not ready set.
+            this.FinishPendingTasks(true);
             return future;
         }
 
         public override Task DisconnectAsync()
         {
             Task future = base.DisconnectAsync();
-            this.FinishPendingTasks();
+            this.FinishPendingTasks(false); // todo
             return future;
         }
+
+        static bool IsNotEmpty(Queue<object> queue) => queue != null && queue.Count > 0;
 
         /// <summary>
         ///     Check to see if there was any <see cref="Exception" /> and rethrow if so.
@@ -364,8 +454,6 @@ namespace DotNetty.Transport.Channels.Embedded
             }
         }
 
-        static bool IsNotEmpty(Queue<object> queue) => queue != null && queue.Count > 0;
-
         static object Poll(Queue<object> queue) => IsNotEmpty(queue) ? queue.Dequeue() : null;
 
         class DefaultUnsafe : AbstractUnsafe
@@ -392,6 +480,18 @@ namespace DotNetty.Transport.Channels.Embedded
             public override void ChannelRead(IChannelHandlerContext context, object message) => this.inboundMessages.Enqueue(message);
 
             public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => this.recordException(exception);
+        }
+
+        sealed class EmbeddedChannelPipeline : DefaultChannelPipeline
+        {
+            public EmbeddedChannelPipeline(EmbeddedChannel channel)
+                : base(channel)
+            {
+            }
+
+            protected override void OnUnhandledInboundException(Exception cause) => ((EmbeddedChannel)this.Channel).RecordException(cause);
+
+            protected override void OnUnhandledInboundMessage(object msg) => ((EmbeddedChannel)this.Channel).InboundMessages.Enqueue(msg);
         }
     }
 }

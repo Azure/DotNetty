@@ -18,7 +18,7 @@ namespace DotNetty.Codecs
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
-            ThreadLocalObjectList output = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList output = ThreadLocalObjectList.NewInstance();
 
             try
             {

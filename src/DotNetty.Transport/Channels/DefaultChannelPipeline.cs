@@ -18,9 +18,11 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
-    sealed class DefaultChannelPipeline : IChannelPipeline
+    public class DefaultChannelPipeline : IChannelPipeline
     {
         internal static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<DefaultChannelPipeline>();
+
+        static readonly Action<object, object> CallHandlerAddedAction = (self, ctx) => ((DefaultChannelPipeline)self).CallHandlerAdded0((AbstractChannelHandlerContext)ctx);
 
         static readonly NameCachesLocal NameCaches = new NameCachesLocal();
 
@@ -29,12 +31,15 @@ namespace DotNetty.Transport.Channels
             protected override ConditionalWeakTable<Type, string> GetInitialValue() => new ConditionalWeakTable<Type, string>();
         }
 
-        readonly AbstractChannel channel;
+        readonly IChannel channel;
 
-        readonly AbstractChannelHandlerContext head; // also used for syncing
+        readonly AbstractChannelHandlerContext head;
         readonly AbstractChannelHandlerContext tail;
 
         readonly bool touch = ResourceLeakDetector.Enabled;
+
+        private Dictionary<IEventExecutorGroup, IEventExecutor> childExecutors;
+        private IMessageSizeEstimatorHandle estimatorHandle;
 
         /// <summary>
         ///     This is the head of a linked list that is processed by <see cref="CallHandlerAddedForAllHandlers" /> and so process
@@ -55,7 +60,7 @@ namespace DotNetty.Transport.Channels
         /// change.
         bool registered;
 
-        public DefaultChannelPipeline(AbstractChannel channel)
+        public DefaultChannelPipeline(IChannel channel)
         {
             Contract.Requires(channel != null);
 
@@ -67,6 +72,8 @@ namespace DotNetty.Transport.Channels
             this.head.Next = this.tail;
             this.tail.Prev = this.head;
         }
+
+        internal IMessageSizeEstimatorHandle EstimatorHandle => this.estimatorHandle ?? (this.estimatorHandle = this.channel.Configuration.MessageSizeEstimator.NewHandle());
 
         internal object Touch(object msg, AbstractChannelHandlerContext next) => this.touch ? ReferenceCountUtil.Touch(msg, next) : msg;
 
@@ -82,56 +89,66 @@ namespace DotNetty.Transport.Channels
             }
         }
 
+        AbstractChannelHandlerContext NewContext(IEventExecutorGroup group, string name, IChannelHandler handler) => new DefaultChannelHandlerContext(this, this.GetChildExecutor(group), name, handler);
+
+        AbstractChannelHandlerContext NewContext(IEventExecutor executor, string name, IChannelHandler handler) => new DefaultChannelHandlerContext(this, executor, name, handler);
+
+        IEventExecutor GetChildExecutor(IEventExecutorGroup group)
+        {
+            if (group == null)
+            {
+                return null;
+            }
+            // Use size of 4 as most people only use one extra EventExecutor.
+            Dictionary<IEventExecutorGroup, IEventExecutor> executorMap = this.childExecutors 
+                ?? (this.childExecutors = new Dictionary<IEventExecutorGroup, IEventExecutor>(4, ReferenceEqualityComparer.Default));
+
+            // Pin one of the child executors once and remember it so that the same child executor
+            // is used to fire events for the same channel.
+            IEventExecutor childExecutor;
+            if (!executorMap.TryGetValue(group, out childExecutor))
+            {
+                childExecutor = group.GetNext();
+                executorMap[group] = childExecutor;
+            }
+            return childExecutor;
+        }
+
         IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<IChannelHandler>)this).GetEnumerator();
 
         public IChannelPipeline AddFirst(string name, IChannelHandler handler) => this.AddFirst(null, name, handler);
 
-        public IChannelPipeline AddFirst(IChannelHandlerInvoker invoker, string name, IChannelHandler handler)
+        public IChannelPipeline AddFirst(IEventExecutorGroup group, string name, IChannelHandler handler)
         {
             Contract.Requires(handler != null);
 
             AbstractChannelHandlerContext newCtx;
-            IEventExecutor executor;
-            bool inEventLoop;
             lock (this)
             {
                 CheckMultiplicity(handler);
 
-                newCtx = new DefaultChannelHandlerContext(this, invoker, this.FilterName(name, handler), handler);
-                executor = this.ExecutorSafe(invoker);
+                newCtx = this.NewContext(group, this.FilterName(name, handler), handler);
+                IEventExecutor executor = this.ExecutorSafe(newCtx.executor);
+
+                this.AddFirst0(newCtx);
 
                 // If the executor is null it means that the channel was not registered on an eventloop yet.
                 // In this case we add the context to the pipeline and add a task that will call
                 // ChannelHandler.handlerAdded(...) once the channel is registered.
                 if (executor == null)
                 {
-                    this.AddFirst0(newCtx);
                     this.CallHandlerCallbackLater(newCtx, true);
                     return this;
                 }
-                inEventLoop = executor.InEventLoop;
-                if (inEventLoop)
+
+                if (!executor.InEventLoop)
                 {
-                    this.AddFirst0(newCtx);
+                    executor.Execute(CallHandlerAddedAction, this, newCtx);
+                    return this;
                 }
             }
 
-            if (inEventLoop)
-            {
-                this.CallHandlerAdded0(newCtx);
-            }
-            else
-            {
-                executor.SubmitAsync(() =>
-                {
-                    lock (this)
-                    {
-                        this.AddFirst0(newCtx);
-                    }
-                    this.CallHandlerAdded0(newCtx);
-                    return 0;
-                }).Wait();
-            }
+            this.CallHandlerAdded0(newCtx);
             return this;
         }
 
@@ -146,51 +163,36 @@ namespace DotNetty.Transport.Channels
 
         public IChannelPipeline AddLast(string name, IChannelHandler handler) => this.AddLast(null, name, handler);
 
-        public IChannelPipeline AddLast(IChannelHandlerInvoker invoker, string name, IChannelHandler handler)
+        public IChannelPipeline AddLast(IEventExecutorGroup group, string name, IChannelHandler handler)
         {
             Contract.Requires(handler != null);
 
-            IEventExecutor executor;
             AbstractChannelHandlerContext newCtx;
-            bool inEventLoop;
             lock (this)
             {
                 CheckMultiplicity(handler);
 
-                newCtx = new DefaultChannelHandlerContext(this, invoker, this.FilterName(name, handler), handler);
-                executor = this.ExecutorSafe(invoker);
+                newCtx = this.NewContext(group, this.FilterName(name, handler), handler);
+                IEventExecutor executor = this.ExecutorSafe(newCtx.executor);
+
+                this.AddLast0(newCtx);
 
                 // If the executor is null it means that the channel was not registered on an eventloop yet.
                 // In this case we add the context to the pipeline and add a task that will call
                 // ChannelHandler.handlerAdded(...) once the channel is registered.
                 if (executor == null)
                 {
-                    this.AddLast0(newCtx);
                     this.CallHandlerCallbackLater(newCtx, true);
                     return this;
                 }
-                inEventLoop = executor.InEventLoop;
-                if (inEventLoop)
+
+                if (!executor.InEventLoop)
                 {
-                    this.AddLast0(newCtx);
+                    executor.Execute(CallHandlerAddedAction, this, newCtx);
+                    return this;
                 }
             }
-            if (inEventLoop)
-            {
-                this.CallHandlerAdded0(newCtx);
-            }
-            else
-            {
-                executor.SubmitAsync(() =>
-                {
-                    lock (this)
-                    {
-                        this.AddLast0(newCtx);
-                    }
-                    this.CallHandlerAdded0(newCtx);
-                    return 0;
-                });
-            }
+            this.CallHandlerAdded0(newCtx);
             return this;
         }
 
@@ -205,53 +207,37 @@ namespace DotNetty.Transport.Channels
 
         public IChannelPipeline AddBefore(string baseName, string name, IChannelHandler handler) => this.AddBefore(null, baseName, name, handler);
 
-        public IChannelPipeline AddBefore(IChannelHandlerInvoker invoker, string baseName, string name, IChannelHandler handler)
+        public IChannelPipeline AddBefore(IEventExecutorGroup group, string baseName, string name, IChannelHandler handler)
         {
-            IEventExecutor executor;
+            Contract.Requires(handler != null);
+
             AbstractChannelHandlerContext newCtx;
-            AbstractChannelHandlerContext ctx;
-            bool inEventLoop;
             lock (this)
             {
                 CheckMultiplicity(handler);
-                ctx = this.GetContextOrThrow(baseName);
+                AbstractChannelHandlerContext ctx = this.GetContextOrThrow(baseName);
 
-                newCtx = new DefaultChannelHandlerContext(this, invoker, this.FilterName(name, handler), handler);
-                executor = this.ExecutorSafe(invoker);
+                newCtx = this.NewContext(group, this.FilterName(name, handler), handler);
+                IEventExecutor executor = this.ExecutorSafe(newCtx.executor);
+
+                AddBefore0(ctx, newCtx);
 
                 // If the executor is null it means that the channel was not registered on an eventloop yet.
                 // In this case we add the context to the pipeline and add a task that will call
                 // ChannelHandler.handlerAdded(...) once the channel is registered.
                 if (executor == null)
                 {
-                    AddBefore0(ctx, newCtx);
                     this.CallHandlerCallbackLater(newCtx, true);
                     return this;
                 }
 
-                inEventLoop = executor.InEventLoop;
-                if (inEventLoop)
+                if (!executor.InEventLoop)
                 {
-                    AddBefore0(ctx, newCtx);
+                    executor.Execute(CallHandlerAddedAction, this, newCtx);
+                    return this;
                 }
             }
-
-            if (inEventLoop)
-            {
-                this.CallHandlerAdded0(newCtx);
-            }
-            else
-            {
-                executor.SubmitAsync(() =>
-                {
-                    lock (this)
-                    {
-                        AddBefore0(ctx, newCtx);
-                    }
-                    this.CallHandlerAdded0(newCtx);
-                    return 0;
-                }).Wait();
-            }
+            this.CallHandlerAdded0(newCtx);
             return this;
         }
 
@@ -265,52 +251,38 @@ namespace DotNetty.Transport.Channels
 
         public IChannelPipeline AddAfter(string baseName, string name, IChannelHandler handler) => this.AddAfter(null, baseName, name, handler);
 
-        public IChannelPipeline AddAfter(IChannelHandlerInvoker invoker, string baseName, string name, IChannelHandler handler)
+        public IChannelPipeline AddAfter(IEventExecutorGroup group, string baseName, string name, IChannelHandler handler)
         {
-            IEventExecutor executor;
+            Contract.Requires(handler != null);
+
             AbstractChannelHandlerContext newCtx;
-            AbstractChannelHandlerContext ctx;
-            bool inEventLoop;
 
             lock (this)
             {
                 CheckMultiplicity(handler);
-                ctx = this.GetContextOrThrow(baseName);
+                AbstractChannelHandlerContext ctx = this.GetContextOrThrow(baseName);
 
-                newCtx = new DefaultChannelHandlerContext(this, invoker, this.FilterName(name, handler), handler);
-                executor = this.ExecutorSafe(invoker);
+                newCtx = this.NewContext(group, this.FilterName(name, handler), handler);
+                IEventExecutor executor = this.ExecutorSafe(newCtx.executor);
+
+                AddAfter0(ctx, newCtx);
 
                 // If the executor is null it means that the channel was not registered on an eventloop yet.
                 // In this case we remove the context from the pipeline and add a task that will call
                 // ChannelHandler.handlerRemoved(...) once the channel is registered.
                 if (executor == null)
                 {
-                    AddAfter0(ctx, newCtx);
                     this.CallHandlerCallbackLater(newCtx, true);
                     return this;
                 }
-                inEventLoop = executor.InEventLoop;
-                if (inEventLoop)
+
+                if (!executor.InEventLoop)
                 {
-                    AddAfter0(ctx, newCtx);
+                    executor.Execute(CallHandlerAddedAction, this, newCtx);
+                    return this;
                 }
             }
-            if (inEventLoop)
-            {
-                this.CallHandlerAdded0(newCtx);
-            }
-            else
-            {
-                executor.SubmitAsync(() =>
-                {
-                    lock (this)
-                    {
-                        AddAfter0(ctx, newCtx);
-                    }
-                    this.CallHandlerAdded0(newCtx);
-                    return 0;
-                }).Wait();
-            }
+            this.CallHandlerAdded0(newCtx);
             return this;
         }
 
@@ -324,14 +296,14 @@ namespace DotNetty.Transport.Channels
 
         public IChannelPipeline AddFirst(params IChannelHandler[] handlers) => this.AddFirst(null, handlers);
 
-        public IChannelPipeline AddFirst(IChannelHandlerInvoker invoker, params IChannelHandler[] handlers)
+        public IChannelPipeline AddFirst(IEventExecutorGroup group, params IChannelHandler[] handlers)
         {
             Contract.Requires(handlers != null);
 
             for (int i = handlers.Length - 1; i >= 0; i--)
             {
                 IChannelHandler h = handlers[i];
-                this.AddFirst(invoker, (string)null, h);
+                this.AddFirst(group, (string)null, h);
             }
 
             return this;
@@ -339,11 +311,11 @@ namespace DotNetty.Transport.Channels
 
         public IChannelPipeline AddLast(params IChannelHandler[] handlers) => this.AddLast(null, handlers);
 
-        public IChannelPipeline AddLast(IChannelHandlerInvoker invoker, params IChannelHandler[] handlers)
+        public IChannelPipeline AddLast(IEventExecutorGroup group, params IChannelHandler[] handlers)
         {
             foreach (IChannelHandler h in handlers)
             {
-                this.AddLast(invoker, (string)null, h);
+                this.AddLast(group, (string)null, h);
             }
             return this;
         }
@@ -388,43 +360,27 @@ namespace DotNetty.Transport.Channels
         {
             Contract.Assert(ctx != this.head && ctx != this.tail);
 
-            IEventExecutor executor;
-            bool inEventLoop;
             lock (this)
             {
-                executor = this.ExecutorSafe(ctx.invoker);
+                IEventExecutor executor = this.ExecutorSafe(ctx.executor);
+
+                Remove0(ctx);
 
                 // If the executor is null it means that the channel was not registered on an eventloop yet.
                 // In this case we remove the context from the pipeline and add a task that will call
                 // ChannelHandler.handlerRemoved(...) once the channel is registered.
                 if (executor == null)
                 {
-                    Remove0(ctx);
                     this.CallHandlerCallbackLater(ctx, false);
                     return ctx;
                 }
-                inEventLoop = executor.InEventLoop;
-                if (inEventLoop)
+                if (!executor.InEventLoop)
                 {
-                    Remove0(ctx);
+                    executor.Execute((s, c) => ((DefaultChannelPipeline)s).CallHandlerRemoved0((AbstractChannelHandlerContext)c), this, ctx);
+                    return ctx;
                 }
             }
-            if (inEventLoop)
-            {
-                this.CallHandlerRemoved0(ctx);
-            }
-            else
-            {
-                executor.SubmitAsync(() =>
-                {
-                    lock (this)
-                    {
-                        Remove0(ctx);
-                    }
-                    this.CallHandlerRemoved0(ctx);
-                    return 0;
-                }).Wait();
-            }
+            this.CallHandlerRemoved0(ctx);
             return ctx;
         }
 
@@ -467,71 +423,60 @@ namespace DotNetty.Transport.Channels
 
         IChannelHandler Replace(AbstractChannelHandlerContext ctx, string newName, IChannelHandler newHandler)
         {
+            Contract.Requires(newHandler != null);
             Contract.Assert(ctx != this.head && ctx != this.tail);
 
             AbstractChannelHandlerContext newCtx;
-            IEventExecutor executor;
-            bool inEventLoop;
-
             lock (this)
             {
                 CheckMultiplicity(newHandler);
-
                 if (newName == null)
                 {
-                    newName = ctx.Name;
+                    newName = this.GenerateName(newHandler);
                 }
-                else if (!ctx.Name.Equals(newName, StringComparison.Ordinal))
+                else
                 {
-                    newName = this.FilterName(newName, newHandler);
+                    bool sameName = ctx.Name.Equals(newName, StringComparison.Ordinal);
+                    if (!sameName)
+                    {
+                        this.CheckDuplicateName(newName);
+                    }
                 }
 
-                newCtx = new DefaultChannelHandlerContext(this, ctx.invoker, newName, newHandler);
-                executor = this.ExecutorSafe(ctx.invoker);
+                newCtx = this.NewContext(ctx.executor, newName, newHandler);
+                IEventExecutor executor = this.ExecutorSafe(ctx.executor);
 
-                // If the executor is null it means that the channel was not registered on an eventloop yet.
+                Replace0(ctx, newCtx);
+
+                // If the executor is null it means that the channel was not registered on an event loop yet.
                 // In this case we replace the context in the pipeline
-                // and add a task that will call ChannelHandler.handlerAdded(...) and
-                // ChannelHandler.handlerRemoved(...) once the channel is registered.
+                // and add a task that will signal handler it was added or removed
+                // once the channel is registered.
                 if (executor == null)
                 {
-                    Replace0(ctx, newCtx);
                     this.CallHandlerCallbackLater(newCtx, true);
                     this.CallHandlerCallbackLater(ctx, false);
                     return ctx.Handler;
                 }
-                inEventLoop = executor.InEventLoop;
-                if (inEventLoop)
+
+                if (!executor.InEventLoop)
                 {
-                    Replace0(ctx, newCtx);
+                    executor.Execute(() =>
+                    {
+                        // Indicate new handler was added first (i.e. before old handler removed)
+                        // because "removed" will trigger ChannelRead() or Flush() on newHandler and
+                        // those event handlers must be called after handler was signaled "added".
+                        this.CallHandlerAdded0(newCtx);
+                        this.CallHandlerRemoved0(ctx);
+                    });
+                    return ctx.Handler;
                 }
             }
-
-            if (inEventLoop)
-            {
-                // Invoke newHandler.handlerAdded() first (i.e. before oldHandler.handlerRemoved() is invoked)
-                // because callHandlerRemoved() will trigger channelRead() or flush() on newHandler and those
-                // event handlers must be called after handlerAdded().
-                this.CallHandlerAdded0(newCtx);
-                this.CallHandlerRemoved0(ctx);
-            }
-            else
-            {
-                executor.SubmitAsync(() =>
-                {
-                    lock (this)
-                    {
-                        Replace0(ctx, newCtx);
-                    }
-                    // Invoke newHandler.handlerAdded() first (i.e. before oldHandler.handlerRemoved() is invoked)
-                    // because callHandlerRemoved() will trigger channelRead() or flush() on newHandler and
-                    // those event handlers must be called after handlerAdded().
-                    this.CallHandlerAdded0(newCtx);
-                    this.CallHandlerRemoved0(ctx);
-                    return 0;
-                }).Wait();
-            }
-
+            // Indicate new handler was added first (i.e. before old handler removed)
+            // because "removed" will trigger ChannelRead() or Flush() on newHandler and
+            // those event handlers must be called after handler was signaled "added".
+            this.CallHandlerAdded0(newCtx);
+            this.CallHandlerRemoved0(ctx);
             return ctx.Handler;
         }
 
@@ -574,6 +519,7 @@ namespace DotNetty.Transport.Channels
             try
             {
                 ctx.Handler.HandlerAdded(ctx);
+                ctx.SetAdded();
             }
             catch (Exception ex)
             {
@@ -587,7 +533,7 @@ namespace DotNetty.Transport.Channels
                     }
                     finally
                     {
-                        ctx.Removed = true;
+                        ctx.SetRemoved();
                     }
                     removed = true;
                 }
@@ -621,7 +567,7 @@ namespace DotNetty.Transport.Channels
                 }
                 finally
                 {
-                    ctx.Removed = true;
+                    ctx.SetRemoved();
                 }
             }
             catch (Exception ex)
@@ -713,7 +659,7 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Returns the {@link String} representation of this pipeline.
         /// </summary>
-        public override string ToString()
+        public sealed override string ToString()
         {
             StringBuilder buf = new StringBuilder()
                 .Append(this.GetType().Name)
@@ -746,19 +692,13 @@ namespace DotNetty.Transport.Channels
 
         public IChannelPipeline FireChannelRegistered()
         {
-            this.head.FireChannelRegistered();
+            AbstractChannelHandlerContext.InvokeChannelRegistered(this.head);
             return this;
         }
 
         public IChannelPipeline FireChannelUnregistered()
         {
-            this.head.FireChannelUnregistered();
-
-            // Remove all handlers sequentially if channel is closed and unregistered.
-            if (!this.channel.Open)
-            {
-                this.Destroy();
-            }
+            AbstractChannelHandlerContext.InvokeChannelUnregistered(this.head);
             return this;
         }
 
@@ -914,13 +854,16 @@ namespace DotNetty.Transport.Channels
             {
                 return this.GenerateName(handler);
             }
+            this.CheckDuplicateName(name);
+            return name;
+        }
 
-            if (this.Context0(name) == null)
+        void CheckDuplicateName(string name)
+        {
+            if (this.Context0(name) != null)
             {
-                return name;
+                throw new ArgumentException("Duplicate handler name: " + name, nameof(name));
             }
-
-            throw new ArgumentException("Duplicate handler name: " + name);
         }
 
         AbstractChannelHandlerContext Context0(string name)
@@ -970,14 +913,8 @@ namespace DotNetty.Transport.Channels
             return ctx;
         }
 
-        /// Should be called before
-        /// <see cref="FireChannelRegistered" />
-        /// is called the first time.
-        internal void CallHandlerAddedForAllHandlers()
+        void CallHandlerAddedForAllHandlers()
         {
-            // This should only called from within the EventLoop.
-            Contract.Assert(this.channel.EventLoop.InEventLoop);
-
             PendingHandlerCallback pendingHandlerCallbackHead;
             lock (this)
             {
@@ -1023,26 +960,54 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        IEventExecutor ExecutorSafe(IChannelHandlerInvoker invoker)
+        IEventExecutor ExecutorSafe(IEventExecutor eventExecutor) => eventExecutor ?? (this.channel.Registered || this.registered ? this.channel.EventLoop : null);
+
+        /// <summary>
+        ///     Called once a <see cref="Exception" /> hit the end of the <see cref="IChannelPipeline" /> without been handled by
+        ///     the user in <see cref="IChannelHandler.ExceptionCaught(IChannelHandlerContext, Exception)" />.
+        /// </summary>
+        protected virtual void OnUnhandledInboundException(Exception cause)
         {
-            if (invoker == null)
+            try
             {
-                // We check for channel().isRegistered and handlerAdded because even if isRegistered() is false we
-                // can safely access the invoker() if handlerAdded is true. This is because in this case the Channel
-                // was previously registered and so we can still access the old EventLoop to dispatch things.
-                return this.channel.Registered || this.registered ? this.channel.EventLoop : null;
+                Logger.Warn("An ExceptionCaught() event was fired, and it reached at the tail of the pipeline. " +
+                    "It usually means the last handler in the pipeline did not handle the exception.",
+                    cause);
             }
-            return invoker.Executor;
+            finally
+            {
+                ReferenceCountUtil.Release(cause);
+            }
+        }
+
+        /// <summary>
+        ///     Called once a message hit the end of the <see cref="IChannelPipeline" /> without been handled by the user
+        ///     in <see cref="IChannelHandler.ChannelRead(IChannelHandlerContext, object)" />. This method is responsible
+        ///     to call <see cref="ReferenceCountUtil.Release(object)" /> on the given msg at some point.
+        /// </summary>
+        protected virtual void OnUnhandledInboundMessage(object msg)
+        {
+            try
+            {
+                Logger.Debug("Discarded inbound message {} that reached at the tail of the pipeline. " +
+                    "Please check your pipeline configuration.",
+                    msg);
+            }
+            finally
+            {
+                ReferenceCountUtil.Release(msg);
+            }
         }
 
         sealed class TailContext : AbstractChannelHandlerContext, IChannelHandler
         {
             static readonly string TailName = GenerateName0(typeof(TailContext));
-            static readonly int SkipFlags = CalculateSkipPropagationFlags(typeof(TailContext));
+            static readonly SkipFlags SkipFlags = CalculateSkipPropagationFlags(typeof(TailContext));
 
             public TailContext(DefaultChannelPipeline pipeline)
                 : base(pipeline, null, TailName, SkipFlags)
             {
+                this.SetAdded();
             }
 
             public override IChannelHandler Handler => this;
@@ -1063,37 +1028,9 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            public void ExceptionCaught(IChannelHandlerContext context, Exception exception)
-            {
-                try
-                {
-                    Logger.Warn(
-                        "An ExceptionCaught() event was fired, and it reached at the tail of the pipeline. " +
-                            "It usually means that no handler in the pipeline could handle the exception.",
-                        exception);
-                }
-                finally
-                {
-                    ReferenceCountUtil.Release(exception);
-                }
-            }
+            public void ExceptionCaught(IChannelHandlerContext context, Exception exception) => this.pipeline.OnUnhandledInboundException(exception);
 
-            [Skip]
-            public Task DeregisterAsync(IChannelHandlerContext context) => context.DeregisterAsync();
-
-            public void ChannelRead(IChannelHandlerContext context, object message)
-            {
-                try
-                {
-                    Logger.Debug(
-                        "Discarded inbound message {} that reached at the tail of the pipeline. " +
-                            "Please check your pipeline configuration.", message.ToString());
-                }
-                finally
-                {
-                    ReferenceCountUtil.Release(message);
-                }
-            }
+            public void ChannelRead(IChannelHandlerContext context, object message) => this.pipeline.OnUnhandledInboundMessage(message);
 
             public void ChannelReadComplete(IChannelHandlerContext context)
             {
@@ -1112,6 +1049,9 @@ namespace DotNetty.Transport.Channels
             public void HandlerRemoved(IChannelHandlerContext context)
             {
             }
+
+            [Skip]
+            public Task DeregisterAsync(IChannelHandlerContext context) => context.DeregisterAsync();
 
             [Skip]
             public Task DisconnectAsync(IChannelHandlerContext context) => context.DisconnectAsync();
@@ -1140,14 +1080,16 @@ namespace DotNetty.Transport.Channels
         sealed class HeadContext : AbstractChannelHandlerContext, IChannelHandler
         {
             static readonly string HeadName = GenerateName0(typeof(HeadContext));
-            static readonly int SkipFlags = CalculateSkipPropagationFlags(typeof(HeadContext));
+            static readonly SkipFlags SkipFlags = CalculateSkipPropagationFlags(typeof(HeadContext));
 
             readonly IChannelUnsafe channelUnsafe;
+            bool firstRegistration = true;
 
             public HeadContext(DefaultChannelPipeline pipeline)
                 : base(pipeline, null, HeadName, SkipFlags)
             {
                 this.channelUnsafe = pipeline.Channel.Unsafe;
+                this.SetAdded();
             }
 
             public override IChannelHandler Handler => this;
@@ -1169,9 +1111,6 @@ namespace DotNetty.Transport.Channels
             public Task WriteAsync(IChannelHandlerContext context, object message) => this.channelUnsafe.WriteAsync(message);
 
             [Skip]
-            public void ChannelWritabilityChanged(IChannelHandlerContext context) => context.FireChannelWritabilityChanged();
-
-            [Skip]
             public void HandlerAdded(IChannelHandlerContext context)
             {
             }
@@ -1184,14 +1123,36 @@ namespace DotNetty.Transport.Channels
             [Skip]
             public void ExceptionCaught(IChannelHandlerContext ctx, Exception exception) => ctx.FireExceptionCaught(exception);
 
-            [Skip]
-            public void ChannelRegistered(IChannelHandlerContext context) => context.FireChannelRegistered();
+            public void ChannelRegistered(IChannelHandlerContext context)
+            {
+                if (this.firstRegistration)
+                {
+                    this.firstRegistration = false;
+                    // We are now registered to the EventLoop. It's time to call the callbacks for the ChannelHandlers,
+                    // that were added before the registration was done.
+                    this.pipeline.CallHandlerAddedForAllHandlers();
+                }
 
-            [Skip]
-            public void ChannelUnregistered(IChannelHandlerContext context) => context.FireChannelUnregistered();
+                context.FireChannelRegistered();
+            }
 
-            [Skip]
-            public void ChannelActive(IChannelHandlerContext context) => context.FireChannelActive();
+            public void ChannelUnregistered(IChannelHandlerContext context)
+            {
+                context.FireChannelUnregistered();
+
+                // Remove all handlers sequentially if channel is closed and unregistered.
+                if (!this.pipeline.channel.Open)
+                {
+                    this.pipeline.Destroy();
+                }
+            }
+
+            public void ChannelActive(IChannelHandlerContext context)
+            {
+                context.FireChannelActive();
+
+                this.ReadIfIsAutoRead();
+            }
 
             [Skip]
             public void ChannelInactive(IChannelHandlerContext context) => context.FireChannelInactive();
@@ -1199,13 +1160,26 @@ namespace DotNetty.Transport.Channels
             [Skip]
             public void ChannelRead(IChannelHandlerContext ctx, object msg) => ctx.FireChannelRead(msg);
 
-            [Skip]
-            public void ChannelReadComplete(IChannelHandlerContext ctx) => ctx.FireChannelReadComplete();
+            public void ChannelReadComplete(IChannelHandlerContext ctx)
+            {
+                ctx.FireChannelReadComplete();
+
+                this.ReadIfIsAutoRead();
+            }
+
+            void ReadIfIsAutoRead()
+            {
+                if (this.pipeline.channel.Configuration.AutoRead)
+                {
+                    this.pipeline.channel.Read();
+                }
+            }
 
             [Skip]
-            public void UserEventTriggered(IChannelHandlerContext context, object evt)
-            {
-            }
+            public void UserEventTriggered(IChannelHandlerContext context, object evt) => this.FireUserEventTriggered(evt);
+
+            [Skip]
+            public void ChannelWritabilityChanged(IChannelHandlerContext context) => context.FireChannelWritabilityChanged();
         }
 
         abstract class PendingHandlerCallback : OneTimeTask
@@ -1254,7 +1228,7 @@ namespace DotNetty.Transport.Channels
                                 executor, this.Ctx.Name, e);
                         }
                         Remove0(this.Ctx);
-                        this.Ctx.Removed = true;
+                        this.Ctx.SetRemoved();
                     }
                 }
             }
@@ -1287,11 +1261,11 @@ namespace DotNetty.Transport.Channels
                         if (Logger.WarnEnabled)
                         {
                             Logger.Warn(
-                                "Can't invoke handlerRemoved() as the EventExecutor {} rejected it," +
+                                "Can't invoke HandlerRemoved() as the IEventExecutor {} rejected it," +
                                     " removing handler {}.", executor, this.Ctx.Name, e);
                         }
                         // remove0(...) was call before so just call AbstractChannelHandlerContext.setRemoved().
-                        this.Ctx.Removed = true;
+                        this.Ctx.SetRemoved();
                     }
                 }
             }
