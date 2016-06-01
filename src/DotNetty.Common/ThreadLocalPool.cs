@@ -37,14 +37,14 @@ namespace DotNetty.Common
                 }
 
                 ConditionalWeakTable<Stack, WeakOrderQueue> queueDictionary = DelayedPool.Value;
-                WeakOrderQueue queue;
-                if (!queueDictionary.TryGetValue(stack, out queue))
+                WeakOrderQueue delayedRecycled;
+                if (!queueDictionary.TryGetValue(stack, out delayedRecycled))
                 {
                     var newQueue = new WeakOrderQueue(stack, thread);
-                    queue = newQueue;
-                    queueDictionary.Add(stack, queue);
+                    delayedRecycled = newQueue;
+                    queueDictionary.Add(stack, delayedRecycled);
                 }
-                queue.Add(this);
+                delayedRecycled.Add(this);
             }
         }
 
@@ -429,17 +429,6 @@ namespace DotNetty.Common
             T value = this.valueFactory(handle);
             handle.Value = value;
             return handle;
-        }
-
-        public bool Release(T o, Handle handle)
-        {
-            if (handle.Stack.Parent != this)
-            {
-                return false;
-            }
-
-            handle.Release(o);
-            return true;
         }
 
         internal int ThreadLocalCapacity => this.threadLocal.Value.elements.Length;

@@ -13,7 +13,7 @@ namespace DotNetty.Common.Tests
         public void MultipleReleaseTest()
         {
             RecyclableObject obj = RecyclableObject.NewInstance();
-            Assert.True(obj.Release());
+            obj.Release();
             var exception = Assert.ThrowsAny<InvalidOperationException>(() => obj.Release());
             Assert.True(exception != null);
         }
@@ -22,10 +22,10 @@ namespace DotNetty.Common.Tests
         public void ReleaseTest()
         {
             RecyclableObject obj = RecyclableObject.NewInstance();
-            Assert.True(obj.Release());
+            obj.Release();
             RecyclableObject obj2 = RecyclableObject.NewInstance();
             Assert.Same(obj, obj2);
-            Assert.True(obj2.Release());
+            obj2.Release();
         }
 
         [Fact]
@@ -34,11 +34,11 @@ namespace DotNetty.Common.Tests
             RecyclableObject obj = RecyclableObject.NewInstance();
 
             RecyclableObject prevObject = obj;
-            Task.Run(() => { Assert.True(obj.Release()); }).Wait();
+            Task.Run(() => { obj.Release(); }).Wait();
             obj = RecyclableObject.NewInstance();
 
             Assert.True(obj == prevObject);
-            Assert.True(obj.Release());
+            obj.Release();
         }
 
         class RecyclableObject
@@ -56,7 +56,7 @@ namespace DotNetty.Common.Tests
 
             public static RecyclableObject NewInstance() => pool.Take();
 
-            public bool Release() => pool.Release(this, this.handle);
+            public void Release() => handle.Release(this);
         }
 
         class HandledObject

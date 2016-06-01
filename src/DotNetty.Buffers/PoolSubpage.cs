@@ -138,8 +138,7 @@ namespace DotNetty.Buffers
             {
                 int q = bitmapIdx.RightUShift(6);
                 int r = bitmapIdx & 63;
-                Contract.Assert((this.bitmap[q].RightUShift(r) & 1) != 0)
-                    ;
+                Contract.Assert((this.bitmap[q].RightUShift(r) & 1) != 0);
                 this.bitmap[q] ^= 1L << r;
 
                 this.SetNextAvail(bitmapIdx);

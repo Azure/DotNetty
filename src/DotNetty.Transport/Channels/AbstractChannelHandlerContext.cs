@@ -319,7 +319,7 @@ namespace DotNetty.Transport.Channels
 
         public Task DisconnectAsync()
         {
-            if (!this.Channel.DisconnectSupported)
+            if (!this.Channel.Metadata.HasDisconnect)
             {
                 return this.CloseAsync();
             }

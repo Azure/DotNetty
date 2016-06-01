@@ -12,41 +12,38 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Concurrency;
 
     /// <summary>
-    ///     {@link io.netty.channel.socket.SocketChannel} which uses NIO selector based implementation.
+    ///     <see cref="ISocketChannel" /> which uses Socket-based implementation.
     /// </summary>
     public class TcpSocketChannel : AbstractSocketByteChannel, ISocketChannel
     {
+        static readonly ChannelMetadata METADATA = new ChannelMetadata(false, 16);
+
         readonly ISocketChannelConfiguration config;
 
-        /// <summary>
-        ///     Create a new instance
-        /// </summary>
+        /// <summary>Create a new instance</summary>
         public TcpSocketChannel()
             : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
         }
 
-        /// <summary>
-        ///     Create a new instance
-        /// </summary>
+        /// <summary>Create a new instance</summary>
         public TcpSocketChannel(AddressFamily addressFamily)
             : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
         {
         }
 
-        /// <summary>
-        ///     Create a new instance using the given {@link SocketChannel}.
-        /// </summary>
+        /// <summary>Create a new instance using the given <see cref="ISocketChannel" />.</summary>
         public TcpSocketChannel(Socket socket)
             : this(null, socket)
         {
         }
 
-        /// <summary>
-        ///     Create a new instance
-        ///     @param parent    the {@link Channel} which created this instance or {@code null} if it was created by the user
-        ///     @param socket    the {@link SocketChannel} which will be used
-        /// </summary>
+        /// <summary>Create a new instance</summary>
+        /// <param name="parent">
+        ///     the <see cref="IChannel" /> which created this instance or <c>null</c> if it was created by the
+        ///     user
+        /// </param>
+        /// <param name="socket">the <see cref="ISocketChannel" /> which will be used</param>
         public TcpSocketChannel(IChannel parent, Socket socket)
             : this(parent, socket, false)
         {
@@ -62,12 +59,7 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        //public new IServerSocketChannel Parent
-        //{
-        //    get { return (IServerSocketChannel)base.Parent; }
-        //}
-
-        public override bool DisconnectSupported => false;
+        public override ChannelMetadata Metadata => METADATA;
 
         public override IChannelConfiguration Configuration => this.config;
 
@@ -121,7 +113,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected override void DoBind(EndPoint localAddress) => this.Socket.Bind(localAddress);
 
-      protected override bool DoConnect(EndPoint remoteAddress, EndPoint localAddress)
+        protected override bool DoConnect(EndPoint remoteAddress, EndPoint localAddress)
         {
             if (localAddress != null)
             {
@@ -170,7 +162,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected override void DoDisconnect() => this.DoClose();
 
-      protected override void DoClose()
+        protected override void DoClose()
         {
             base.DoClose();
             if (this.ResetState(StateFlags.Open | StateFlags.Active))
@@ -328,12 +320,12 @@ namespace DotNetty.Transport.Channels.Sockets
 
                     // Release the fully written buffers, and update the indexes of the partially written buffer.
                     input.RemoveBytes(writtenBytes);
-                    
+
                     // Did not write all buffers completely.
                     this.IncompleteWrite(setOpWrite, asyncOperation);
                     break;
                 }
-                
+
                 // Release the fully written buffers, and update the indexes of the partially written buffer.
                 input.RemoveBytes(writtenBytes);
             }
