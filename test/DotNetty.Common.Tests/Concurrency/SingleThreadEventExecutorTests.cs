@@ -114,7 +114,7 @@ namespace DotNetty.Common.Tests.Concurrency
 
             scheduler.Execute(selfQueueAction);
             Task task = scheduler.ScheduleAsync(() => promise.Complete(), TimeSpan.FromMilliseconds(100));
-            await Task.WhenAny(task, Task.Delay(TimeSpan.FromMilliseconds(300)));
+            await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(1)));
             Assert.True(task.IsCompleted);
         }
 

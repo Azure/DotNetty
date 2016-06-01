@@ -56,7 +56,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
                 try
                 {
-                    socket.Close();
+                    socket.Dispose();
                 }
                 catch (SocketException ex2)
                 {

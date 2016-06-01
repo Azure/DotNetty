@@ -8,6 +8,7 @@ namespace DotNetty.Tests.Common
     using System.Diagnostics.Contracts;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
     public class TestScenarioRunner : ChannelHandlerAdapter
@@ -33,7 +34,15 @@ namespace DotNetty.Tests.Common
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
             this.lastReceivedMessage = message;
-            this.ContinueScenarioExecution(context);
+            try
+            {
+                this.ContinueScenarioExecution(context);
+
+            }
+            finally
+            {
+                ReferenceCountUtil.SafeRelease(message);
+            }
         }
 
         public override void ChannelReadComplete(IChannelHandlerContext context)

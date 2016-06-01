@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels
@@ -12,17 +12,17 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
-    /**
- * A queue of write operations which are pending for later execution. It also updates the
- * {@linkplain Channel#isWritable() writability} of the associated {@link Channel}, so that
- * the pending write operations are also considered to determine the writability.
- */
-
-    public sealed class PendingWriteQueue
+    /// <summary>
+    ///     A queue of write operations which are pending for later execution. It also updates the
+    ///     <see cref="IChannel.IsWritable">writability</see> of the associated <see cref="IChannel" />, so that
+    ///     the pending write operations are also considered to determine the writability.
+    /// </summary>
+    public sealed class BatchingPendingWriteQueue
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<PendingWriteQueue>();
 
         readonly IChannelHandlerContext ctx;
+        readonly int maxSize;
         readonly ChannelOutboundBuffer buffer;
         readonly IMessageSizeEstimatorHandle estimatorHandle;
 
@@ -31,19 +31,17 @@ namespace DotNetty.Transport.Channels
         PendingWrite tail;
         int size;
 
-        public PendingWriteQueue(IChannelHandlerContext ctx)
+        public BatchingPendingWriteQueue(IChannelHandlerContext ctx, int maxSize)
         {
             Contract.Requires(ctx != null);
 
             this.ctx = ctx;
+            this.maxSize = maxSize;
             this.buffer = ctx.Channel.Unsafe.OutboundBuffer;
             this.estimatorHandle = ctx.Channel.Configuration.MessageSizeEstimator.NewHandle();
         }
 
-        /**
-     * Returns {@code true} if there are no pending write operations left in this queue.
-     */
-
+        /// <summary>Returns <c>true</c> if there are no pending write operations left in this queue.</summary>
         public bool IsEmpty
         {
             get
@@ -54,10 +52,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        /**
-         * Returns the number of pending write operations.
-         */
-
+        /// <summary>Returns the number of pending write operations.</summary>
         public int Size
         {
             get
@@ -68,10 +63,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        /**
-         * Add the given {@code msg} and {@link ChannelPromise}.
-         */
-
+        /// <summary>Add the given <c>msg</c> and returns <see cref="Task" /> for completion of processing <c>msg</c>.</summary>
         public Task Add(object msg)
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
@@ -83,9 +75,19 @@ namespace DotNetty.Transport.Channels
                 // Size may be unknow so just use 0
                 messageSize = 0;
             }
+            PendingWrite currentTail = this.tail;
+            if (currentTail != null)
+            {
+                bool canBundle = this.CanBatch(msg, messageSize, currentTail.Size);
+                if (canBundle)
+                {
+                    currentTail.Add(msg, messageSize);
+                    return currentTail.Promise.Task;
+                }
+            }
+
             var promise = new TaskCompletionSource();
             PendingWrite write = PendingWrite.NewInstance(msg, messageSize, promise);
-            PendingWrite currentTail = this.tail;
             if (currentTail == null)
             {
                 this.tail = this.head = write;
@@ -99,15 +101,15 @@ namespace DotNetty.Transport.Channels
             // We need to guard against null as channel.Unsafe.OutboundBuffer may returned null
             // if the channel was already closed when constructing the PendingWriteQueue.
             // See https://github.com/netty/netty/issues/3967
-            this.buffer?.IncrementPendingOutboundBytes(write.Size);
+            this.buffer?.IncrementPendingOutboundBytes(messageSize);
             return promise.Task;
         }
 
-        /**
-         * Remove all pending write operation and fail them with the given {@link Throwable}. The message will be released
-         * via {@link ReferenceCountUtil#safeRelease(Object)}.
-         */
-
+        /// <summary>
+        ///     Remove all pending write operation and fail them with the given <see cref="Exception" />. The messages will be
+        ///     released
+        ///     via <see cref="ReferenceCountUtil.SafeRelease(object)" />.
+        /// </summary>
         public void RemoveAndFailAll(Exception cause)
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
@@ -121,7 +123,7 @@ namespace DotNetty.Transport.Channels
             while (write != null)
             {
                 PendingWrite next = write.Next;
-                ReferenceCountUtil.SafeRelease(write.Msg);
+                ReleaseMessages(write.Messages);
                 TaskCompletionSource promise = write.Promise;
                 this.Recycle(write, false);
                 Util.SafeSetFailure(promise, cause, Logger);
@@ -130,11 +132,11 @@ namespace DotNetty.Transport.Channels
             this.AssertEmpty();
         }
 
-        /**
-         * Remove a pending write operation and fail it with the given {@link Throwable}. The message will be released via
-         * {@link ReferenceCountUtil#safeRelease(Object)}.
-         */
-
+        /// <summary>
+        ///     Remove a pending write operation and fail it with the given <see cref="Exception" />. The message will be released
+        ///     via
+        ///     <see cref="ReferenceCountUtil.SafeRelease(object)" />.
+        /// </summary>
         public void RemoveAndFail(Exception cause)
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
@@ -146,20 +148,20 @@ namespace DotNetty.Transport.Channels
             {
                 return;
             }
-            ReferenceCountUtil.SafeRelease(write.Msg);
+            ReleaseMessages(write.Messages);
             TaskCompletionSource promise = write.Promise;
             Util.SafeSetFailure(promise, cause, Logger);
             this.Recycle(write, true);
         }
 
-        /**
-         * Remove all pending write operation and performs them via
-         * {@link ChannelHandlerContext#write(Object, ChannelPromise)}.
-         *
-         * @return  {@link ChannelFuture} if something was written and {@code null}
-         *          if the {@link PendingWriteQueue} is empty.
-         */
-
+        /// <summary>
+        ///     Remove all pending write operation and performs them via
+        ///     <see cref="IChannelHandlerContext.WriteAsync(object)" />.
+        /// </summary>
+        /// <returns>
+        ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
+        ///     is empty.
+        /// </returns>
         public Task RemoveAndWriteAllAsync()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
@@ -185,7 +187,7 @@ namespace DotNetty.Transport.Channels
             while (write != null)
             {
                 PendingWrite next = write.Next;
-                object msg = write.Msg;
+                object msg = write.Messages;
                 TaskCompletionSource promise = write.Promise;
                 this.Recycle(write, false);
                 this.ctx.WriteAsync(msg).LinkOutcome(promise);
@@ -198,14 +200,14 @@ namespace DotNetty.Transport.Channels
 
         void AssertEmpty() => Contract.Assert(this.tail == null && this.head == null && this.size == 0);
 
-        /**
-         * Removes a pending write operation and performs it via
-         * {@link ChannelHandlerContext#write(Object, ChannelPromise)}.
-         *
-         * @return  {@link ChannelFuture} if something was written and {@code null}
-         *          if the {@link PendingWriteQueue} is empty.
-         */
-
+        /// <summary>
+        ///     Removes a pending write operation and performs it via
+        ///     <see cref="IChannelHandlerContext.WriteAsync(object)"/>.
+        /// </summary>
+        /// <returns>
+        ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
+        ///     is empty.
+        /// </returns>
         public Task RemoveAndWriteAsync()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
@@ -215,7 +217,7 @@ namespace DotNetty.Transport.Channels
             {
                 return null;
             }
-            object msg = write.Msg;
+            object msg = write.Messages;
             TaskCompletionSource promise = write.Promise;
             this.Recycle(write, true);
             this.ctx.WriteAsync(msg).LinkOutcome(promise);
@@ -223,9 +225,9 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Removes a pending write operation and release it's message via {@link ReferenceCountUtil#safeRelease(Object)}.
+        ///     Removes a pending write operation and release it's message via <see cref="ReferenceCountUtil.SafeRelease(object)"/>.
         /// </summary>
-        /// <returns><seealso cref="TaskCompletionSource" /> of the pending write or <c>null</c> if the queue is empty.</returns>
+        /// <returns><see cref="TaskCompletionSource" /> of the pending write or <c>null</c> if the queue is empty.</returns>
         public TaskCompletionSource Remove()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
@@ -236,22 +238,47 @@ namespace DotNetty.Transport.Channels
                 return null;
             }
             TaskCompletionSource promise = write.Promise;
-            ReferenceCountUtil.SafeRelease(write.Msg);
+            ReferenceCountUtil.SafeRelease(write.Messages);
             this.Recycle(write, true);
             return promise;
         }
 
         /// <summary>
-        ///     Return the current message or {@code null} if empty.
+        ///     Return the current message or <c>null</c> if empty.
         /// </summary>
-        public object Current
+        public List<object> Current
         {
             get
             {
                 Contract.Assert(this.ctx.Executor.InEventLoop);
 
-                return this.head?.Msg;
+                return this.head?.Messages;
             }
+        }
+
+        public long? CurrentSize
+        {
+            get
+            {
+                Contract.Assert(this.ctx.Executor.InEventLoop);
+
+                return this.head?.Size;
+            }
+        }
+
+        bool CanBatch(object message, int size, long currentBatchSize)
+        {
+            if (size < 0)
+            {
+                return false;
+            }
+
+            if (currentBatchSize + size > this.maxSize)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         void Recycle(PendingWrite write, bool update)
@@ -283,10 +310,15 @@ namespace DotNetty.Transport.Channels
             this.buffer?.DecrementPendingOutboundBytes(writeSize);
         }
 
-        /**
-         * Holds all meta-data and construct the linked-list structure.
-         */
+        static void ReleaseMessages(List<object> messages)
+        {
+            foreach (object msg in messages)
+            {
+                ReferenceCountUtil.SafeRelease(msg);
+            }
+        }
 
+        /// <summary>Holds all meta-data and construct the linked-list structure.</summary>
         sealed class PendingWrite
         {
             static readonly ThreadLocalPool<PendingWrite> Pool = new ThreadLocalPool<PendingWrite>(handle => new PendingWrite(handle));
@@ -295,27 +327,33 @@ namespace DotNetty.Transport.Channels
             public PendingWrite Next;
             public long Size;
             public TaskCompletionSource Promise;
-            public object Msg;
+            public readonly List<object> Messages;
 
             PendingWrite(ThreadLocalPool.Handle handle)
             {
+                this.Messages = new List<object>();
                 this.handle = handle;
             }
 
             public static PendingWrite NewInstance(object msg, int size, TaskCompletionSource promise)
             {
                 PendingWrite write = Pool.Take();
-                write.Size = size;
-                write.Msg = msg;
+                write.Add(msg, size);
                 write.Promise = promise;
                 return write;
+            }
+
+            public void Add(object msg, int size)
+            {
+                this.Messages.Add(msg);
+                this.Size += size;
             }
 
             public void Recycle()
             {
                 this.Size = 0;
                 this.Next = null;
-                this.Msg = null;
+                this.Messages.Clear();
                 this.Promise = null;
                 this.handle.Release(this);
             }

@@ -5,6 +5,7 @@ namespace DotNetty.Transport.Channels
 {
     using System;
     using System.Diagnostics.Contracts;
+    using DotNetty.Common.Utilities;
 
     public sealed class ActionChannelInitializer<T> : ChannelInitializer<T>
         where T : IChannel
@@ -19,5 +20,7 @@ namespace DotNetty.Transport.Channels
         }
 
         protected override void InitChannel(T channel) => this.initializationAction(channel);
+
+        public override string ToString() => nameof(ActionChannelInitializer<T>) + "[" + StringUtil.SimpleClassName(typeof(T)) + "]";
     }
 }

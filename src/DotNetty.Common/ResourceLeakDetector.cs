@@ -298,13 +298,13 @@ namespace DotNetty.Common
                             .Append(StringUtil.Newline)
                             .Append(array[i]);
                     }
+                    buf.Append(StringUtil.Newline);
                 }
 
                 buf.Append("Created at:")
                     .Append(StringUtil.Newline)
                     .Append(this.creationRecord);
 
-                buf.Length -= StringUtil.Newline.Length;
                 return buf.ToString();
             }
         }

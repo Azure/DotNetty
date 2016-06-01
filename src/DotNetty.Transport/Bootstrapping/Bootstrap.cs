@@ -222,7 +222,7 @@ namespace DotNetty.Transport.Bootstrapping
             return this;
         }
 
-        public override object Clone() => new Bootstrap(this);
+        public override Bootstrap Clone() => new Bootstrap(this);
 
         /// <summary>
         ///     Returns a deep clone of this bootstrap which has the identical configuration except that it uses

@@ -57,6 +57,7 @@
     <Compile Include="Bootstrapping\INameResolver.cs" />
     <Compile Include="Bootstrapping\ServerBootstrap.cs" />
     <Compile Include="Channels\AdaptiveRecvByteBufAllocator.cs" />
+    <Compile Include="Channels\BatchingPendingWriteQueue.cs" />
     <Compile Include="Channels\ChannelMetadata.cs" />
     <Compile Include="Channels\ChannelOutboundBuffer.cs" />
     <Compile Include="Channels\AbstractChannel.cs" />

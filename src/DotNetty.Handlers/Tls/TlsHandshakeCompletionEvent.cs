@@ -41,5 +41,11 @@ namespace DotNetty.Handlers.Tls
         ///     and so the handshake failed.
         /// </summary>
         public Exception Exception => this.exception;
+
+        public override string ToString()
+        {
+            Exception ex = this.Exception;
+            return ex == null ? "TlsHandshakeCompletionEvent(SUCCESS)" : $"TlsHandshakeCompletionEvent({ex})";
+        }
     }
 }

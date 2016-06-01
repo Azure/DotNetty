@@ -125,8 +125,14 @@ namespace DotNetty.Transport.Channels.Embedded
         /// </summary>
         public Queue<object> OutboundMessages => this.outboundMessages ?? (this.outboundMessages = new Queue<object>());
 
+        /// <summary>
+        /// Return received data from this <see cref="IChannel"/>.
+        /// </summary>
         public T ReadInbound<T>() => (T)Poll(this.inboundMessages);
 
+        /// <summary>
+        /// Read data from the outbound. This may return <c>null</c> if nothing is readable.
+        /// </summary>
         public T ReadOutbound<T>() => (T)Poll(this.outboundMessages);
 
         protected override EndPoint LocalAddressInternal => this.Active ? LOCAL_ADDRESS : null;

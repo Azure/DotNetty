@@ -168,7 +168,7 @@ namespace DotNetty.Transport.Channels.Sockets
             if (this.ResetState(StateFlags.Open | StateFlags.Active))
             {
                 this.Socket.Shutdown(SocketShutdown.Both);
-                this.Socket.Close(0);
+                this.Socket.Dispose();
             }
         }
 
