@@ -337,7 +337,11 @@ namespace DotNetty.Codecs.Mqtt
 
         static void DecodePacketIdVariableHeader(IByteBuffer buffer, PacketWithId packet, ref int remainingLength)
         {
-            packet.PacketId = DecodeUnsignedShort(buffer, ref remainingLength);
+            int packetId = packet.PacketId = DecodeUnsignedShort(buffer, ref remainingLength);
+            if (packetId == 0)
+            {
+                throw new DecoderException("[MQTT-2.3.1-1]");
+            }
         }
 
         static void DecodeSubscribePayload(IByteBuffer buffer, SubscribePacket packet, ref int remainingLength)
