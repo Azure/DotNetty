@@ -1,3 +1,10 @@
+#### 0.3.1 June 01 2016
+- Port of IdleStateHandler, ReadTimeoutHandler, WriteTimeoutHandler (#98).
+- Fixes and optimization in TlsHandler (#116).
+- Port of AdaptiveRecvByteBufAllocator enabling flexible sizing of read buffer (#117).
+- Support for adding Attributes on Channel (#114).
+- Proper xml-doc configuration (#120).
+
 #### 0.3.0 May 13 2016
 - BREAKING CHANGE: default byte buffer is now PooledByteBufferAllocator (unless overriden through environment variable).
 - Port of PooledByteBuffer (support for flexible buffer sizes).
