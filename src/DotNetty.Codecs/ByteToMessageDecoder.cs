@@ -176,7 +176,7 @@ namespace DotNetty.Codecs
             var data = message as IByteBuffer;
             if (data != null)
             {
-                ThreadLocalObjectList output = ThreadLocalObjectList.Take();
+                ThreadLocalObjectList output = ThreadLocalObjectList.NewInstance();
                 try
                 {
                     this.first = this.cumulation == null;
@@ -252,7 +252,7 @@ namespace DotNetty.Codecs
 
         public override void ChannelInactive(IChannelHandlerContext ctx)
         {
-            ThreadLocalObjectList output = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList output = ThreadLocalObjectList.NewInstance();
             try
             {
                 if (this.cumulation != null)

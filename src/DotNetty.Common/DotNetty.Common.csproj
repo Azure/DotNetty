@@ -154,6 +154,7 @@
     <Compile Include="Concurrency\ActionScheduledAsyncTask.cs" />
     <Compile Include="Concurrency\ActionScheduledTask.cs" />
     <Compile Include="Concurrency\ICallable`T.cs" />
+    <Compile Include="Concurrency\IEventExecutorGroup.cs" />
     <Compile Include="Concurrency\IScheduledRunnable.cs" />
     <Compile Include="Concurrency\IScheduledTask.cs" />
     <Compile Include="Concurrency\RunnableScheduledTask.cs" />
@@ -216,6 +217,7 @@
     <Compile Include="Utilities\RecyclableMpscLinkedQueueNode.cs" />
     <Compile Include="Utilities\ReferenceCountUtil.cs" />
     <Compile Include="Internal\SystemPropertyUtil.cs" />
+    <Compile Include="Utilities\ReferenceEqualityComparer.cs" />
     <Compile Include="Utilities\StringUtil.cs" />
     <Compile Include="Utilities\TaskEx.cs" />
     <Compile Include="Utilities\ByteProcessor.cs" />

@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
     public sealed class MultithreadEventLoopGroup : IEventLoopGroup
     {
@@ -72,6 +73,8 @@ namespace DotNetty.Transport.Channels
             int id = Interlocked.Increment(ref this.requestId);
             return this.eventLoops[Math.Abs(id % this.eventLoops.Length)];
         }
+
+        IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
 
         public Task ShutdownGracefullyAsync()
         {

@@ -21,9 +21,8 @@ namespace DotNetty.Transport.Channels
         protected static readonly ClosedChannelException ClosedChannelException = new ClosedChannelException();
         static readonly NotYetConnectedException NotYetConnectedException = new NotYetConnectedException();
 
-        IMessageSizeEstimatorHandle estimatorHandle;
-
         readonly IChannelUnsafe channelUnsafe;
+
         readonly DefaultChannelPipeline pipeline;
         readonly TaskCompletionSource closeFuture = new TaskCompletionSource();
 
@@ -32,35 +31,33 @@ namespace DotNetty.Transport.Channels
         volatile IEventLoop eventLoop;
         volatile bool registered;
 
-        /// <summary> Cache for the string representation of this channel /// </summary>
+        /// <summary>Cache for the string representation of this channel</summary>
         bool strValActive;
 
         string strVal;
 
         /// <summary>
         ///     Creates a new instance.
-        ///     @param parent
-        ///     the parent of this channel. {@code null} if there's no parent.
         /// </summary>
+        /// <param name="parent">the parent of this channel. <c>null</c> if there's no parent.</param>
         protected AbstractChannel(IChannel parent)
         {
             this.Parent = parent;
             this.Id = this.NewId();
             this.channelUnsafe = this.NewUnsafe();
-            this.pipeline = new DefaultChannelPipeline(this);
+            this.pipeline = this.NewChannelPipeline();
         }
 
-        //* @param parent
-        //*        the parent of this channel. {@code null} if there's no parent.
         /// <summary>
         ///     Creates a new instance.
         /// </summary>
+        /// <param name="parent">the parent of this channel. <c>null</c> if there's no parent.</param>
         protected AbstractChannel(IChannel parent, IChannelId id)
         {
             this.Parent = parent;
             this.Id = id;
             this.channelUnsafe = this.NewUnsafe();
-            this.pipeline = new DefaultChannelPipeline(this);
+            this.pipeline = this.NewChannelPipeline();
         }
 
         public IChannelId Id { get; }
@@ -160,7 +157,10 @@ namespace DotNetty.Transport.Channels
 
         /// Returns a new <see cref="DefaultChannelId"/> instance. Subclasses may override this method to assign custom
         /// <see cref="IChannelId"/>s to <see cref="IChannel"/>s that use the <see cref="AbstractChannel"/> constructor.
-        protected IChannelId NewId() => DefaultChannelId.NewInstance();
+        protected virtual IChannelId NewId() => DefaultChannelId.NewInstance();
+
+        /// <summary>Returns a new pipeline instance.</summary>
+        protected virtual DefaultChannelPipeline NewChannelPipeline() => new DefaultChannelPipeline(this);
 
         public virtual Task BindAsync(EndPoint localAddress) => this.pipeline.BindAsync(localAddress);
 
@@ -277,9 +277,6 @@ namespace DotNetty.Transport.Channels
             return this.strVal;
         }
 
-        internal IMessageSizeEstimatorHandle EstimatorHandle
-            => this.estimatorHandle ?? (this.estimatorHandle = this.Configuration.MessageSizeEstimator.NewHandle());
-
         /// <summary>
         ///     <see cref="IChannelUnsafe" /> implementation which sub-classes must extend and use.
         /// </summary>
@@ -366,13 +363,6 @@ namespace DotNetty.Transport.Channels
                     this.channel.DoRegister();
                     this.neverRegistered = false;
                     this.channel.registered = true;
-
-                    if (firstRegistration)
-                    {
-                        // We are now registered to the EventLoop. It's time to call the callbacks for the ChannelHandlers,
-                        // that were added before the registration was done.
-                        this.channel.pipeline.CallHandlerAddedForAllHandlers();
-                    }
 
                     Util.SafeSetSuccess(promise, Logger);
                     this.channel.pipeline.FireChannelRegistered();
@@ -699,7 +689,7 @@ namespace DotNetty.Transport.Channels
                 try
                 {
                     msg = this.channel.FilterOutboundMessage(msg);
-                    size = this.channel.EstimatorHandle.Size(msg);
+                    size = this.channel.pipeline.EstimatorHandle.Size(msg);
                     if (size < 0)
                     {
                         size = 0;

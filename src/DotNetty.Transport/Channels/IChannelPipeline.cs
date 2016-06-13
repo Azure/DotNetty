@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
     /// <summary>
     ///     A list of {@link ChannelHandler}s which handles or intercepts inbound events and outbound operations of a
@@ -27,7 +28,7 @@ namespace DotNetty.Transport.Channels
     ///     <pre>
     ///         I/O Request
     ///         via {@link Channel} or
-    ///         {@link ChannelHandlerContext}
+    ///         {@link ChannelHandlerContext} 
     ///         |
     ///         +---------------------------------------------------+---------------+
     ///         |                           ChannelPipeline         |               |
@@ -184,7 +185,7 @@ namespace DotNetty.Transport.Channels
         /// <param name="handler">the handler to insert first</param>
         /// <exception cref="ArgumentException">if there's an entry with the same name already in the pipeline</exception>
         /// <exception cref="ArgumentNullException">if the specified handler is <code>null</code></exception>
-        IChannelPipeline AddFirst(IChannelHandlerInvoker invoker, string name, IChannelHandler handler);
+        IChannelPipeline AddFirst(IEventExecutorGroup group, string name, IChannelHandler handler);
 
         /// <summary>
         ///     Appends a {@link ChannelHandler} at the last position of this pipeline.
@@ -205,7 +206,7 @@ namespace DotNetty.Transport.Channels
         /// <param name="handler">the handler to append</param>
         /// <exception cref="ArgumentException">if there's an entry with the same name already in the pipeline</exception>
         /// <exception cref="ArgumentNullException">if the specified handler is <code>null</code></exception>
-        IChannelPipeline AddLast(IChannelHandlerInvoker invoker, string name, IChannelHandler handler);
+        IChannelPipeline AddLast(IEventExecutorGroup group, string name, IChannelHandler handler);
 
         /// <summary>
         ///     Inserts a {@link ChannelHandler} before an existing handler of this pipeline.
@@ -234,7 +235,7 @@ namespace DotNetty.Transport.Channels
         /// if there's an entry with the same name already in the pipeline
         /// @throws NullPointerException
         /// if the specified baseName or handler is {@code null}
-        IChannelPipeline AddBefore(IChannelHandlerInvoker invoker, string baseName, string name, IChannelHandler handler);
+        IChannelPipeline AddBefore(IEventExecutorGroup group, string baseName, string name, IChannelHandler handler);
 
         /// <summary>
         ///     Inserts a {@link ChannelHandler} after an existing handler of this pipeline.
@@ -263,7 +264,7 @@ namespace DotNetty.Transport.Channels
         /// if there's an entry with the same name already in the pipeline
         /// @throws NullPointerException
         /// if the specified baseName or handler is {@code null}
-        IChannelPipeline AddAfter(IChannelHandlerInvoker invoker, string baseName, string name, IChannelHandler handler);
+        IChannelPipeline AddAfter(IEventExecutorGroup group, string baseName, string name, IChannelHandler handler);
 
         /// <summary>
         ///     Inserts a {@link ChannelHandler}s at the first position of this pipeline.
@@ -276,7 +277,7 @@ namespace DotNetty.Transport.Channels
         ///     @param invoker   the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods
         ///     @param handlers  the handlers to insert first
         /// </summary>
-        IChannelPipeline AddFirst(IChannelHandlerInvoker invoker, params IChannelHandler[] handlers);
+        IChannelPipeline AddFirst(IEventExecutorGroup group, params IChannelHandler[] handlers);
 
         /// <summary>
         ///     Inserts a {@link ChannelHandler}s at the last position of this pipeline.
@@ -289,7 +290,7 @@ namespace DotNetty.Transport.Channels
         ///     @param invoker   the {@link ChannelHandlerInvoker} which invokes the {@code handler}s event handler methods
         ///     @param handlers  the handlers to insert last
         /// </summary>
-        IChannelPipeline AddLast(IChannelHandlerInvoker invoker, params IChannelHandler[] handlers);
+        IChannelPipeline AddLast(IEventExecutorGroup group, params IChannelHandler[] handlers);
 
         /// <summary>
         ///     Removes the specified {@link ChannelHandler} from this pipeline.

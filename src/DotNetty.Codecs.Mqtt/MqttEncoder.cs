@@ -260,7 +260,7 @@ namespace DotNetty.Codecs.Mqtt
             const int VariableHeaderSize = PacketIdLength;
             int payloadBufferSize = 0;
 
-            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.NewInstance();
 
             try
             {
@@ -320,7 +320,7 @@ namespace DotNetty.Codecs.Mqtt
             const int VariableHeaderSize = 2;
             int payloadBufferSize = 0;
 
-            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.NewInstance();
 
             try
             {

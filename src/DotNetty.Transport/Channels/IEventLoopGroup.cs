@@ -3,17 +3,10 @@
 
 namespace DotNetty.Transport.Channels
 {
-    using System;
-    using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
-    public interface IEventLoopGroup
+    public interface IEventLoopGroup : IEventExecutorGroup
     {
-        Task TerminationCompletion { get; }
-
-        IEventLoop GetNext();
-
-        Task ShutdownGracefullyAsync();
-
-        Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
+        new IEventLoop GetNext();
     }
 }
