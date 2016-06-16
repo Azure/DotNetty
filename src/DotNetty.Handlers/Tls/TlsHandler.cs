@@ -9,7 +9,6 @@ namespace DotNetty.Handlers.Tls
     using System.IO;
     using System.Net.Security;
     using System.Runtime.ExceptionServices;
-    using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
@@ -21,6 +20,7 @@ namespace DotNetty.Handlers.Tls
 
     public sealed class TlsHandler : ByteToMessageDecoder
     {
+        readonly TlsSettings settings;
         const int FallbackReadBufferSize = 256;
         const int UnencryptedWriteBatchSize = 14 * 1024;
 
@@ -28,41 +28,39 @@ namespace DotNetty.Handlers.Tls
         static readonly Action<Task, object> HandshakeCompletionCallback = new Action<Task, object>(HandleHandshakeCompleted);
 
         readonly SslStream sslStream;
+        readonly MediationStream mediationStream;
+        readonly TaskCompletionSource closeFuture;
+
         TlsHandlerState state;
         int packetLength;
-        readonly MediationStream mediationStream;
         volatile IChannelHandlerContext capturedContext;
         BatchingPendingWriteQueue pendingUnencryptedWrites;
         Task lastContextWriteTask;
-        readonly TaskCompletionSource closeFuture;
-        readonly bool isServer;
-        readonly X509Certificate2 certificate;
-        readonly string targetHost;
         bool firedChannelRead;
         IByteBuffer pendingSslStreamReadBuffer;
         Task<int> pendingSslStreamReadFuture;
 
-        TlsHandler(bool isServer, X509Certificate2 certificate, string targetHost, RemoteCertificateValidationCallback certificateValidationCallback)
+        public TlsHandler(TlsSettings settings)
+            : this(stream => new SslStream(stream, true), settings)
         {
-            Contract.Requires(!isServer || certificate != null);
-            Contract.Requires(isServer || !string.IsNullOrEmpty(targetHost));
-
-            this.closeFuture = new TaskCompletionSource();
-
-            this.isServer = isServer;
-            this.certificate = certificate;
-            this.targetHost = targetHost;
-            this.mediationStream = new MediationStream(this);
-            this.sslStream = new SslStream(this.mediationStream, true, certificateValidationCallback);
         }
 
-        public static TlsHandler Client(string targetHost) => new TlsHandler(false, null, targetHost, null);
+        public TlsHandler(Func<Stream, SslStream> sslStreamFactory, TlsSettings settings)
+        {
+            Contract.Requires(sslStreamFactory != null);
+            Contract.Requires(settings != null);
 
-        public static TlsHandler Client(string targetHost, X509Certificate2 certificate) => new TlsHandler(false, certificate, targetHost, null);
+            this.settings = settings;
+            this.closeFuture = new TaskCompletionSource();
+            this.mediationStream = new MediationStream(this);
+            this.sslStream = sslStreamFactory(this.mediationStream);
+        }
 
-        public static TlsHandler Client(string targetHost, X509Certificate2 certificate, RemoteCertificateValidationCallback certificateValidationCallback) => new TlsHandler(false, certificate, targetHost, certificateValidationCallback);
+        public static TlsHandler Client(string targetHost) => new TlsHandler(new ClientTlsSettings(targetHost));
 
-        public static TlsHandler Server(X509Certificate2 certificate) => new TlsHandler(true, certificate, null, null);
+        public static TlsHandler Client(string targetHost, X509Certificate clientCertificate) => new TlsHandler(new ClientTlsSettings(targetHost, new List<X509Certificate>{ clientCertificate }));
+ 
+        public static TlsHandler Server(X509Certificate certificate) => new TlsHandler(new ServerTlsSettings(certificate));
 
         public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
 
@@ -74,7 +72,7 @@ namespace DotNetty.Handlers.Tls
         {
             base.ChannelActive(context);
 
-            if (!this.isServer)
+            if (this.settings is ServerTlsSettings)
             {
                 this.EnsureAuthenticated();
             }
@@ -161,7 +159,7 @@ namespace DotNetty.Handlers.Tls
             base.HandlerAdded(context);
             this.capturedContext = context;
             this.pendingUnencryptedWrites = new BatchingPendingWriteQueue(context, UnencryptedWriteBatchSize);
-            if (context.Channel.Active && !this.isServer)
+            if (context.Channel.Active && this.settings is ClientTlsSettings)
             {
                 // todo: support delayed initialization on an existing/active channel if in client mode
                 this.EnsureAuthenticated();
@@ -217,23 +215,23 @@ namespace DotNetty.Handlers.Tls
                     break;
                 }
 
-                int packetLength = TlsUtils.GetEncryptedPacketLength(input, offset);
-                if (packetLength == -1)
+                int encryptedPacketLength = TlsUtils.GetEncryptedPacketLength(input, offset);
+                if (encryptedPacketLength == -1)
                 {
                     nonSslRecord = true;
                     break;
                 }
 
-                Contract.Assert(packetLength > 0);
+                Contract.Assert(encryptedPacketLength > 0);
 
-                if (packetLength > readableBytes)
+                if (encryptedPacketLength > readableBytes)
                 {
                     // wait until the whole packet can be read
-                    this.packetLength = packetLength;
+                    this.packetLength = encryptedPacketLength;
                     break;
                 }
 
-                int newTotalLength = totalLength + packetLength;
+                int newTotalLength = totalLength + encryptedPacketLength;
                 if (newTotalLength > TlsUtils.MAX_ENCRYPTED_PACKET_LENGTH)
                 {
                     // Don't read too much.
@@ -245,8 +243,8 @@ namespace DotNetty.Handlers.Tls
 
                 // We have a whole packet.
                 // Increment the offset to handle the next packet.
-                packetLengths.Add(packetLength);
-                offset += packetLength;
+                packetLengths.Add(encryptedPacketLength);
+                offset += encryptedPacketLength;
                 totalLength = newTotalLength;
             }
 
@@ -482,19 +480,16 @@ namespace DotNetty.Handlers.Tls
             if (!oldState.HasAny(TlsHandlerState.AuthenticationStarted))
             {
                 this.state = oldState | TlsHandlerState.Authenticating;
-                if (this.isServer)
+                var serverSettings = settings as ServerTlsSettings;
+                if (serverSettings != null)
                 {
-                    this.sslStream.AuthenticateAsServerAsync(this.certificate, false, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false) // todo: change to begin/end
+                    this.sslStream.AuthenticateAsServerAsync(serverSettings.Certificate, false, serverSettings.EnabledProtocols, serverSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
                 else
                 {
-                    var certificateCollection = new X509Certificate2Collection();
-                    if (this.certificate != null)
-                    {
-                        certificateCollection.Add(this.certificate);
-                    }
-                    this.sslStream.AuthenticateAsClientAsync(this.targetHost, certificateCollection, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, false) // todo: change to begin/end
+                    var clientSettings = (ClientTlsSettings)settings;
+                    this.sslStream.AuthenticateAsClientAsync(clientSettings.TargetHost, clientSettings.X509CertificateCollection, clientSettings.EnabledProtocols, clientSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
                 return false;

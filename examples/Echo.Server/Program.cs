@@ -5,6 +5,7 @@ namespace Echo.Server
 {
     using System;
     using System.Diagnostics.Tracing;
+    using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
@@ -26,6 +27,11 @@ namespace Echo.Server
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
+            X509Certificate2 tlsCertificate = null;
+            if (EchoServerSettings.IsSsl)
+            {
+                tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
+            }
             try
             {
                 var bootstrap = new ServerBootstrap();
@@ -37,10 +43,9 @@ namespace Echo.Server
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
-
-                        if (EchoServerSettings.IsSsl)
+                        if (tlsCertificate != null)
                         {
-                            pipeline.AddLast(TlsHandler.Server(new X509Certificate2("dotnetty.com.pfx", "password")));
+                            pipeline.AddLast(TlsHandler.Server(tlsCertificate));
                         }
                         pipeline.AddLast(new LengthFieldPrepender(2));
                         pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
