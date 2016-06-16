@@ -6,6 +6,7 @@ namespace Echo.Client
     using System;
     using System.Diagnostics.Tracing;
     using System.Net;
+    using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
@@ -26,6 +27,13 @@ namespace Echo.Client
 
             var group = new MultithreadEventLoopGroup();
 
+            X509Certificate2 cert = null;
+            string targetHost = null;
+            if (EchoClientSettings.IsSsl)
+            {
+                cert = new X509Certificate2("dotnetty.com.pfx", "password");
+                targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
+            }
             try
             {
                 var bootstrap = new Bootstrap();
@@ -37,11 +45,9 @@ namespace Echo.Client
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
 
-                        if (EchoClientSettings.IsSsl)
+                        if (cert != null)
                         {
-                            var cert = new X509Certificate2("dotnetty.com.pfx", "password");
-                            string targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
-                            pipeline.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
+                            pipeline.AddLast(new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)));
                         }
                         pipeline.AddLast(new LengthFieldPrepender(2));
                         pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));

@@ -154,7 +154,9 @@ namespace DotNetty.Handlers.Tests
         {
             var tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
             string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
-            TlsHandler tlsHandler = isClient ? TlsHandler.Client(targetHost, null, (_1, _2, _3, _4) => true) : TlsHandler.Server(tlsCertificate);
+            TlsHandler tlsHandler = isClient ? 
+                new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)) : 
+                TlsHandler.Server(tlsCertificate);
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
 
