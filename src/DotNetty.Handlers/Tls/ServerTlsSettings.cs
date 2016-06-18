@@ -9,21 +9,29 @@ namespace DotNetty.Handlers.Tls
     public sealed class ServerTlsSettings : TlsSettings
     {
         public ServerTlsSettings(X509Certificate certificate)
-            : this(false, certificate)
+            : this(certificate, false)
         {
         }
 
-        public ServerTlsSettings(bool checkCertificateRevocation, X509Certificate certificate)
-            : this(SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12, checkCertificateRevocation, certificate)
+        public ServerTlsSettings(X509Certificate certificate, bool negotiateClientCertificate)
+            : this(certificate, negotiateClientCertificate, false)
         {
         }
 
-        public ServerTlsSettings(SslProtocols enabledProtocols, bool checkCertificateRevocation, X509Certificate certificate)
+        public ServerTlsSettings(X509Certificate certificate, bool negotiateClientCertificate, bool checkCertificateRevocation)
+            : this(certificate, negotiateClientCertificate, checkCertificateRevocation, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12)
+        {
+        }
+
+        public ServerTlsSettings(X509Certificate certificate, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
             : base(enabledProtocols, checkCertificateRevocation)
         {
             this.Certificate = certificate;
+            this.NegotiateClientCertificate = negotiateClientCertificate;
         }
 
         public X509Certificate Certificate { get; }
+
+        public bool NegotiateClientCertificate { get; }
     }
 }
