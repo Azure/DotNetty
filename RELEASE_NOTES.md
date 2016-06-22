@@ -1,3 +1,7 @@
+#### 0.3.2 June 22 2016
+- Better API alignment with final version of netty 4.1 (#125).
+- Exposed API for flexible TlsHandler initialization (#132, #134).
+
 #### 0.3.1 June 01 2016
 - Port of IdleStateHandler, ReadTimeoutHandler, WriteTimeoutHandler (#98).
 - Fixes and optimization in TlsHandler (#116).
