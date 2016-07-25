@@ -106,6 +106,7 @@
     <Compile Include="Channels\IRecvByteBufAllocatorHandle.cs" />
     <Compile Include="Channels\PendingWriteQueue.cs" />
     <Compile Include="Channels\RejectedExecutionException.cs" />
+    <Compile Include="Channels\SimpleChannelInboundHandler.cs" />
     <Compile Include="Channels\SingleThreadEventLoop.cs" />
     <Compile Include="Channels\SkipAttribute.cs" />
     <Compile Include="Channels\Sockets\AbstractSocketByteChannel.cs" />

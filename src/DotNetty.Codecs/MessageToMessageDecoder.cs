@@ -56,7 +56,6 @@ namespace DotNetty.Codecs
                 }
                 output.Return();
             }
-            base.ChannelRead(context, message);
         }
 
         /// <summary>
