@@ -1,6 +1,7 @@
 [Oo]bj/
 [Bb]in/
 TestResults/
+PerfResults/
 .nuget/
 .fake/
 _ReSharper.*/

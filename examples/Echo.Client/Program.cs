@@ -11,6 +11,7 @@ namespace Echo.Client
     using System.Threading.Tasks;
     using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
@@ -47,23 +48,24 @@ namespace Echo.Client
 
                         if (cert != null)
                         {
-                            pipeline.AddLast(new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)));
+                            pipeline.AddLast("tls", new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)));
                         }
-                        pipeline.AddLast(new LengthFieldPrepender(2));
-                        pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
+                        //pipeline.AddLast(new LoggingHandler("CLIENT"));
+                        pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
+                        pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
-                        pipeline.AddLast(new EchoClientHandler());
+                        pipeline.AddLast("echo", new EchoClientHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.ConnectAsync(new IPEndPoint(EchoClientSettings.Host, EchoClientSettings.Port));
+                IChannel clientChannel = await bootstrap.ConnectAsync(new IPEndPoint(EchoClientSettings.Host, EchoClientSettings.Port));
 
                 Console.ReadLine();
 
-                await bootstrapChannel.CloseAsync();
+                await clientChannel.CloseAsync();
             }
             finally
             {
-                group.ShutdownGracefullyAsync().Wait(1000);
+                await group.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
                 eventListener.Dispose();
             }
         }

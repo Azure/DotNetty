@@ -5,7 +5,6 @@ namespace Echo.Server
 {
     using System;
     using System.Diagnostics.Tracing;
-    using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
@@ -39,29 +38,32 @@ namespace Echo.Server
                     .Group(bossGroup, workerGroup)
                     .Channel<TcpServerSocketChannel>()
                     .Option(ChannelOption.SoBacklog, 100)
-                    .Handler(new LoggingHandler(LogLevel.INFO))
+                    .Handler(new LoggingHandler("SRV-LSTN"))
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
                         if (tlsCertificate != null)
                         {
-                            pipeline.AddLast(TlsHandler.Server(tlsCertificate));
+                            pipeline.AddLast("tls", TlsHandler.Server(tlsCertificate));
                         }
-                        pipeline.AddLast(new LengthFieldPrepender(2));
-                        pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
+                        //pipeline.AddLast(new LoggingHandler("SRV-CONN"));
+                        pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
+                        pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
-                        pipeline.AddLast(new EchoServerHandler());
+                        pipeline.AddLast("echo", new EchoServerHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(EchoServerSettings.Port);
+                IChannel boundChannel = await bootstrap.BindAsync(EchoServerSettings.Port);
 
                 Console.ReadLine();
 
-                await bootstrapChannel.CloseAsync();
+                await boundChannel.CloseAsync();
             }
             finally
             {
-                Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
+                await Task.WhenAll(
+                    bossGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
+                    workerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
                 eventListener.Dispose();
             }
         }

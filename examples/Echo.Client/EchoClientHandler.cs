@@ -33,6 +33,10 @@ namespace Echo.Client
 
         public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
 
-        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => context.CloseAsync();
+        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+        {
+            Console.WriteLine("Exception: " + exception);
+            context.CloseAsync();
+        }
     }
 }
