@@ -108,7 +108,18 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected void SetState(StateFlags stateToSet) => this.state |= stateToSet;
 
-        protected bool ResetState(StateFlags stateToReset)
+        /// <returns>state before modification</returns>
+        protected StateFlags ResetState(StateFlags stateToReset)
+        {
+            StateFlags oldState = this.state;
+            if ((oldState & stateToReset) != 0)
+            {
+                this.state = oldState & ~stateToReset;
+            }
+            return oldState;
+        }
+
+        protected bool TryResetState(StateFlags stateToReset)
         {
             StateFlags oldState = this.state;
             if ((oldState & stateToReset) != 0)
@@ -385,7 +396,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public void FinishWrite(SocketChannelAsyncOperation operation)
             {
-                bool resetWritePending = this.Channel.ResetState(StateFlags.WriteScheduled);
+                bool resetWritePending = this.Channel.TryResetState(StateFlags.WriteScheduled);
 
                 Contract.Assert(resetWritePending);
 

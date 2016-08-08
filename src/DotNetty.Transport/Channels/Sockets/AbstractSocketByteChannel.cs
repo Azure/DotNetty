@@ -83,7 +83,10 @@ namespace DotNetty.Transport.Channels.Sockets
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
                 AbstractSocketByteChannel ch = this.Channel;
-                ch.ResetState(StateFlags.ReadScheduled);
+                if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
+                { 
+                    return; // read was signaled as a result of channel closure
+                }
                 IChannelConfiguration config = ch.Configuration;
                 IChannelPipeline pipeline = ch.Pipeline;
                 IByteBufferAllocator allocator = config.Allocator;

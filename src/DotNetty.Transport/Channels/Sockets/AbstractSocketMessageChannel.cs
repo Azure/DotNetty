@@ -39,7 +39,10 @@ namespace DotNetty.Transport.Channels.Sockets
                 Contract.Assert(this.channel.EventLoop.InEventLoop);
 
                 AbstractSocketMessageChannel ch = this.Channel;
-                ch.ResetState(StateFlags.ReadScheduled);
+                if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
+                {
+                    return; // read was signaled as a result of channel closure
+                }
                 IChannelConfiguration config = ch.Configuration;
 
                 IChannelPipeline pipeline = ch.Pipeline;

@@ -67,13 +67,14 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             this.Socket.Bind(localAddress);
             this.Socket.Listen(this.config.Backlog);
+            this.SetState(StateFlags.Active);
 
             this.CacheLocalAddress();
         }
 
         protected override void DoClose()
         {
-            if (this.ResetState(StateFlags.Open))
+            if (this.TryResetState(StateFlags.Open | StateFlags.Active))
             {
                 this.Socket.Dispose();
             }
@@ -127,10 +128,13 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
-                Contract.Requires(this.channel.EventLoop.InEventLoop);
+                Contract.Assert(this.channel.EventLoop.InEventLoop);
 
                 TcpServerSocketChannel ch = this.Channel;
-                ch.ResetState(StateFlags.ReadScheduled);
+                if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
+                {
+                    return; // read was signaled as a result of channel closure
+                }
                 IChannelConfiguration config = ch.Configuration;
                 IChannelPipeline pipeline = ch.Pipeline;
                 IRecvByteBufAllocatorHandle allocHandle = this.Channel.Unsafe.RecvBufAllocHandle;

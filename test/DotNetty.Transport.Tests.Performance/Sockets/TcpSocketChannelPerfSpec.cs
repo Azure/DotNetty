@@ -27,7 +27,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
         const string OutboundThroughputCounterName = "outbound ops";
 
         // The number of times we're going to warmup + run each benchmark
-        public const int IterationCount = 5;
+        public const int IterationCount = 3;
         public const int WriteCount = 1000000;
 
         public const int MessagesPerMinute = 1000000;
@@ -133,23 +133,27 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.clientChannel = cb.ConnectAsync(this.serverChannel.LocalAddress).Result;
         }
 
-        [PerfBenchmark(Description = "Measures how quickly and with how much GC overhead a TcpSocketChannel --> TcpServerSocketChannel connection can decode / encode realistic messages, 100 writes per flush",
+        [PerfBenchmark(Description = "Measures how quickly and with how much GC overhead a TcpSocketChannel --> TcpServerSocketChannel connection can decode / encode realistic messages, 10 writes per flush",
             NumberOfIterations = IterationCount, RunMode = RunMode.Iterations)]
         [CounterMeasurement(InboundThroughputCounterName)]
         [CounterMeasurement(OutboundThroughputCounterName)]
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
-        public void TcpChannel_Duplex_Throughput_100_messages_per_flush(BenchmarkContext context)
+        public void TcpChannel_Duplex_Throughput_10_messages_per_flush(BenchmarkContext context)
         {
-            for (int i = 0; i < WriteCount; i++)
+            this.clientChannel.EventLoop.Execute(() =>
             {
-                this.clientChannel.WriteAsync(Unpooled.WrappedBuffer(this.message));
-                if (i % 100 == 0) // flush every 100 writes
+                for (int i = 0; i < WriteCount; i++)
                 {
-                    this.clientChannel.Flush();
+                    this.clientChannel.WriteAsync(Unpooled.WrappedBuffer(this.message));
+                    if (i % 10 == 0) // flush every 10 writes
+                    {
+                        this.clientChannel.Flush();
+                    }
                 }
-            }
-            this.clientChannel.Flush();
+                this.clientChannel.Flush();
+            });
+
             if (!this.ResetEvent.Wait(this.Timeout))
             {
                 Console.WriteLine("*** TIMED OUT ***");

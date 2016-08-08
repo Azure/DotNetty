@@ -164,12 +164,18 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected override void DoClose()
         {
-            base.DoClose();
-            if (this.ResetState(StateFlags.Open | StateFlags.Active))
+            try
             {
-                this.Socket.Shutdown(SocketShutdown.Both);
-                this.Socket.Dispose();
+                if (this.TryResetState(StateFlags.Open | StateFlags.Active))
+                {
+                    this.Socket.Shutdown(SocketShutdown.Both);
+                    this.Socket.Dispose();
+                }
             }
+            finally
+            {
+                base.DoClose();
+            }   
         }
 
         protected override int DoReadBytes(IByteBuffer byteBuf)
@@ -177,6 +183,11 @@ namespace DotNetty.Transport.Channels.Sockets
             if (!byteBuf.HasArray)
             {
                 throw new NotImplementedException("Only IByteBuffer implementations backed by array are supported.");
+            }
+
+            if (!this.Socket.Connected)
+            {
+                return -1; // prevents ObjectDisposedException from being thrown in case connection has been lost in the meantime
             }
 
             SocketError errorCode;
