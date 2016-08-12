@@ -11,6 +11,7 @@ namespace DotNetty.Transport.Bootstrapping
     using System.Text;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
@@ -26,6 +27,8 @@ namespace DotNetty.Transport.Bootstrapping
         where TBootstrap : AbstractBootstrap<TBootstrap, TChannel>
         where TChannel : IChannel
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractBootstrap<TBootstrap, TChannel>>();
+
         volatile IEventLoopGroup group;
         volatile Func<TChannel> channelFactory;
         volatile EndPoint localAddress;
@@ -238,7 +241,7 @@ namespace DotNetty.Transport.Bootstrapping
             {
                 this.Init(channel);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 channel.Unsafe.CloseForcibly();
                 // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
@@ -253,7 +256,14 @@ namespace DotNetty.Transport.Bootstrapping
             {
                 if (channel.Registered)
                 {
-                    channel.CloseAsync();
+                    try
+                    {
+                        await channel.CloseAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                       Logger.Warn("Failed to close channel: " + channel, ex);
+                    }
                 }
                 else
                 {

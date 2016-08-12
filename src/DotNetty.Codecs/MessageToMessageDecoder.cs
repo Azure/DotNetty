@@ -39,7 +39,7 @@ namespace DotNetty.Codecs
                     output.Add(message);
                 }
             }
-            catch (DecoderException e)
+            catch (DecoderException)
             {
                 throw;
             }
