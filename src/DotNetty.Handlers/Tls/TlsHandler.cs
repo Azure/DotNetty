@@ -615,7 +615,7 @@ namespace DotNetty.Handlers.Tls
             {
                 this.sslStream.Dispose();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // todo: evaluate following:
                 // only log in Debug mode as it most likely harmless and latest chrome still trigger
