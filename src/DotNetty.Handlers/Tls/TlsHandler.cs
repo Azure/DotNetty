@@ -66,13 +66,15 @@ namespace DotNetty.Handlers.Tls
 
         public X509Certificate RemoteCertificate => this.sslStream.RemoteCertificate;
 
+        bool IsServer => this.settings is ServerTlsSettings;
+
         public void Dispose() => this.sslStream?.Dispose();
 
         public override void ChannelActive(IChannelHandlerContext context)
         {
             base.ChannelActive(context);
 
-            if (this.settings is ServerTlsSettings)
+            if (!this.IsServer)
             {
                 this.EnsureAuthenticated();
             }
@@ -159,7 +161,7 @@ namespace DotNetty.Handlers.Tls
             base.HandlerAdded(context);
             this.capturedContext = context;
             this.pendingUnencryptedWrites = new BatchingPendingWriteQueue(context, UnencryptedWriteBatchSize);
-            if (context.Channel.Active && this.settings is ClientTlsSettings)
+            if (context.Channel.Active && !this.IsServer)
             {
                 // todo: support delayed initialization on an existing/active channel if in client mode
                 this.EnsureAuthenticated();
@@ -480,15 +482,15 @@ namespace DotNetty.Handlers.Tls
             if (!oldState.HasAny(TlsHandlerState.AuthenticationStarted))
             {
                 this.state = oldState | TlsHandlerState.Authenticating;
-                var serverSettings = settings as ServerTlsSettings;
-                if (serverSettings != null)
+                if (this.IsServer)
                 {
+                    var serverSettings = (ServerTlsSettings)this.settings;
                     this.sslStream.AuthenticateAsServerAsync(serverSettings.Certificate, serverSettings.NegotiateClientCertificate, serverSettings.EnabledProtocols, serverSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
                 else
                 {
-                    var clientSettings = (ClientTlsSettings)settings;
+                    var clientSettings = (ClientTlsSettings)this.settings;
                     this.sslStream.AuthenticateAsClientAsync(clientSettings.TargetHost, clientSettings.X509CertificateCollection, clientSettings.EnabledProtocols, clientSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
