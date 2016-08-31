@@ -65,6 +65,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="Base64Test.cs" />
     <Compile Include="Frame\LengthFieldBasedFrameDecoderTests.cs" />
     <Compile Include="Frame\LengthFieldPrependerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
