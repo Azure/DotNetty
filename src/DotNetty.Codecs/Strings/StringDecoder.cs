@@ -62,6 +62,8 @@ namespace DotNetty.Codecs
             this.encoding = encoding;
         }
 
+        public override bool IsSharable => true;
+
         protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
             string decoded = this.Decode(context, input);
