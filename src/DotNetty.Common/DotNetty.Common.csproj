@@ -153,6 +153,7 @@
     </Compile>
     <Compile Include="Concurrency\ActionScheduledAsyncTask.cs" />
     <Compile Include="Concurrency\ActionScheduledTask.cs" />
+    <Compile Include="Concurrency\ExecutionEnvironment.cs" />
     <Compile Include="Concurrency\ICallable`T.cs" />
     <Compile Include="Concurrency\IEventExecutorGroup.cs" />
     <Compile Include="Concurrency\IScheduledRunnable.cs" />

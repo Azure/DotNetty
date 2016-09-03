@@ -110,6 +110,8 @@ namespace DotNetty.Common.Concurrency
 
         public abstract Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
 
+        protected void SetCurrentExecutor(IEventExecutor executor) => ExecutionEnvironment.SetCurrentExecutor(executor);
+
         #region Queuing data structures
 
         protected abstract class RunnableQueueNode : MpscLinkedQueueNode<IRunnable>, IRunnable
