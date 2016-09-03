@@ -65,6 +65,8 @@ namespace DotNetty.Common.Concurrency
 
         void Loop()
         {
+            this.SetCurrentExecutor(this);
+
             Task.Factory.StartNew(
                 () =>
                 {
