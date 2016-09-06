@@ -371,8 +371,8 @@ namespace DotNetty.Buffers
 
             public bool Allocate(PooledByteBuffer<T> buf, int reqCapacity)
             {
-                Entry entry = this.queue.Dequeue();
-                if (entry == null)
+                Entry entry;
+                if (!this.queue.TryDequeue(out entry))
                 {
                     return false;
                 }
@@ -395,8 +395,8 @@ namespace DotNetty.Buffers
                 int numFreed = 0;
                 for (; numFreed < max; numFreed++)
                 {
-                    Entry entry = this.queue.Dequeue();
-                    if (entry != null)
+                    Entry entry;
+                    if (this.queue.TryDequeue(out entry))
                     {
                         this.FreeEntry(entry);
                     }

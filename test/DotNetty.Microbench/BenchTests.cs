@@ -7,12 +7,14 @@ namespace DotNetty.Microbench
     using System.Collections.Generic;
     using System.Threading;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal;
     using DotNetty.Microbench.Utilities;
     using Xunit;
     using Xunit.Abstractions;
 
     public class BenchTests
     {
+        const int Iterations = 10 * 1000 * 1000;
         readonly ITestOutputHelper output;
 
         public BenchTests(ITestOutputHelper output)
@@ -23,35 +25,19 @@ namespace DotNetty.Microbench
         [Fact]
         public void BenchSingleThreadEventExecutorWaiting()
         {
-            const int Iterations = 10 * 1000 * 1000;
-
             var testSubjects = new Dictionary<string, IEventExecutor>
             {
-                { "MRES", new SingleThreadEventExecutor("MRES", TimeSpan.FromSeconds(1)) },
-                //{ "Semaphore", new SingleThreadEventExecutorOld("Semaphore", TimeSpan.FromSeconds(1)) }
+                { "CompatibleConcurrentQueue", new TestExecutor("ConcurrentQueueCustom", TimeSpan.FromSeconds(1), new CompatibleConcurrentQueue<IRunnable>()) },
+                { "ArrayQueue", new TestExecutor("ArrayQueue", TimeSpan.FromSeconds(1), PlatformDependent.NewFixedMpscQueue<IRunnable>(1 * 1000 * 1000)) }
             };
 
             var mre = new ManualResetEvent(false);
 
-            Action<object, object> action = null;
-            action = (s, i) =>
-            {
-                var container = (Container<int>)i;
-                if (container.Value < Iterations)
-                {
-                    container.Value++;
-                    ((IEventExecutor)s).Execute(action, s, container);
-                }
-                else
-                {
-                    mre.Set();
-                }
-            };
-
             CodeTimer.Benchmark(testSubjects, "STEE in loop ({0})", 1, this.output,
                 scheduler =>
                 {
-                    scheduler.Execute(action, scheduler, new Container<int>());
+                    var action = new BenchActionIn(scheduler, mre);
+                    scheduler.Execute(action);
 
                     if (!mre.WaitOne(TimeSpan.FromMinutes(1)))
                     {
@@ -60,22 +46,13 @@ namespace DotNetty.Microbench
                     mre.Reset();
                 });
 
-            Action<object> execFromOutsideAction = i =>
-            {
-                var container = (Container<int>)i;
-                if (++container.Value >= Iterations)
-                {
-                    mre.Set();
-                }
-            };
-
             CodeTimer.Benchmark(testSubjects, "STEE out of loop ({0})", 1, this.output,
                 scheduler =>
                 {
-                    var container = new Container<int>();
+                    var action = new BenchActionOut(mre);
                     for (int i = 0; i < Iterations; i++)
                     {
-                        scheduler.Execute(execFromOutsideAction, container);
+                        scheduler.Execute(action);
                     }
 
                     if (!mre.WaitOne(TimeSpan.FromMinutes(1)))
@@ -88,6 +65,58 @@ namespace DotNetty.Microbench
             foreach (IEventExecutor scheduler in testSubjects.Values)
             {
                 scheduler.ShutdownGracefullyAsync();
+            }
+        }
+
+        sealed class TestExecutor : SingleThreadEventExecutor
+        {
+            public TestExecutor(string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> queue)
+                : base(threadName, breakoutInterval, queue)
+            {
+            }
+        }
+
+        sealed class BenchActionIn : IRunnable
+        {
+            int value;
+            readonly IEventExecutor executor;
+            readonly ManualResetEvent evt;
+
+            public BenchActionIn(IEventExecutor executor, ManualResetEvent evt)
+            {
+                this.executor = executor;
+                this.evt = evt;
+            }
+
+            public void Run()
+            {
+                if (++this.value < Iterations)
+                {
+                    this.executor.Execute(this);
+                }
+                else
+                {
+                    this.evt.Set();
+                }
+            }
+        }
+
+        sealed class BenchActionOut : IRunnable
+        {
+            int value;
+            readonly ManualResetEvent evt;
+
+            public BenchActionOut(ManualResetEvent evt)
+            {
+                this.evt = evt;
+            }
+
+            public void Run()
+            {
+                if (++this.value >= Iterations)
+                {
+                    this.evt.Set();
+                }
             }
         }
 

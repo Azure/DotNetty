@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal;
 
     public class SingleThreadEventLoop : SingleThreadEventExecutor, IEventLoop
     {
@@ -23,6 +24,11 @@ namespace DotNetty.Transport.Channels
 
         public SingleThreadEventLoop(string threadName, TimeSpan breakoutInterval)
             : base(threadName, breakoutInterval)
+        {
+        }
+
+        protected SingleThreadEventLoop(string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
+            : base(threadName, breakoutInterval, taskQueue)
         {
         }
 
