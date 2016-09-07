@@ -8,9 +8,8 @@ namespace DotNetty.Common.Concurrency
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
-    using DotNetty.Common.Utilities;
 
-    abstract class ScheduledTask : MpscLinkedQueueNode<IRunnable>, IScheduledRunnable
+    abstract class ScheduledTask : IScheduledRunnable
     {
         const int CancellationProhibited = 1;
         const int CancellationRequested = 1 << 1;
@@ -53,8 +52,6 @@ namespace DotNetty.Common.Concurrency
 
             return this.Deadline.CompareTo(other.Deadline);
         }
-
-        public override IRunnable Value => this;
 
         public virtual void Run()
         {

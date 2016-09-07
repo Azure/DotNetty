@@ -976,7 +976,7 @@ namespace DotNetty.Transport.Channels
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
 
 
-        abstract class AbstractWriteTask : RecyclableMpscLinkedQueueNode<IRunnable>, IRunnable
+        abstract class AbstractWriteTask : IRunnable
         {
             static readonly bool EstimateTaskSizeOnSubmit =
                 SystemPropertyUtil.GetBoolean("io.netty.transport.estimateSizeOnSubmit", true);
@@ -985,6 +985,7 @@ namespace DotNetty.Transport.Channels
             static readonly int WriteTaskOverhead =
                 SystemPropertyUtil.GetInt("io.netty.transport.writeTaskSizeOverhead", 56);
 
+            ThreadLocalPool.Handle handle;
             AbstractChannelHandlerContext ctx;
             object msg;
             TaskCompletionSource promise;
@@ -1018,8 +1019,8 @@ namespace DotNetty.Transport.Channels
             }
 
             protected AbstractWriteTask(ThreadLocalPool.Handle handle)
-                : base(handle)
             {
+                this.handle = handle;
             }
 
             public void Run()
@@ -1040,10 +1041,9 @@ namespace DotNetty.Transport.Channels
                     this.ctx = null;
                     this.msg = null;
                     this.promise = null;
+                    this.handle.Release(this);
                 }
             }
-
-            public override IRunnable Value => this;
 
             protected virtual Task WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
         }

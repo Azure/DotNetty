@@ -6,7 +6,6 @@ namespace DotNetty.Common.Concurrency
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using DotNetty.Common.Utilities;
 
     /// <summary>
     ///     Abstract base class for <see cref="IEventExecutor" /> implementations
@@ -114,14 +113,7 @@ namespace DotNetty.Common.Concurrency
 
         #region Queuing data structures
 
-        protected abstract class RunnableQueueNode : MpscLinkedQueueNode<IRunnable>, IRunnable
-        {
-            public abstract void Run();
-
-            public override IRunnable Value => this;
-        }
-
-        sealed class ActionTaskQueueNode : RunnableQueueNode
+        sealed class ActionTaskQueueNode : IRunnable
         {
             readonly Action action;
 
@@ -130,10 +122,10 @@ namespace DotNetty.Common.Concurrency
                 this.action = action;
             }
 
-            public override void Run() => this.action();
+            public void Run() => this.action();
         }
 
-        sealed class StateActionTaskQueueNode : RunnableQueueNode
+        sealed class StateActionTaskQueueNode : IRunnable
         {
             readonly Action<object> action;
             readonly object state;
@@ -144,10 +136,10 @@ namespace DotNetty.Common.Concurrency
                 this.state = state;
             }
 
-            public override void Run() => this.action(this.state);
+            public void Run() => this.action(this.state);
         }
 
-        sealed class StateActionWithContextTaskQueueNode : RunnableQueueNode
+        sealed class StateActionWithContextTaskQueueNode : IRunnable
         {
             readonly Action<object, object> action;
             readonly object context;
@@ -160,10 +152,10 @@ namespace DotNetty.Common.Concurrency
                 this.state = state;
             }
 
-            public override void Run() => this.action(this.context, this.state);
+            public void Run() => this.action(this.context, this.state);
         }
 
-        abstract class FuncQueueNodeBase<T> : RunnableQueueNode
+        abstract class FuncQueueNodeBase<T> : IRunnable
         {
             readonly TaskCompletionSource<T> promise;
             readonly CancellationToken cancellationToken;
@@ -176,7 +168,7 @@ namespace DotNetty.Common.Concurrency
 
             public Task<T> Completion => this.promise.Task;
 
-            public override void Run()
+            public void Run()
             {
                 if (this.cancellationToken.IsCancellationRequested)
                 {

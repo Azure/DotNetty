@@ -5,11 +5,11 @@ namespace DotNetty.Common.Internal
 {
     public interface IQueue<T>
     {
-        bool TryEnqueue(T element);
+        bool TryEnqueue(T item);
 
-        T Dequeue();
+        bool TryDequeue(out T item);
 
-        T Peek();
+        bool TryPeek(out T item);
 
         int Count { get; }
 

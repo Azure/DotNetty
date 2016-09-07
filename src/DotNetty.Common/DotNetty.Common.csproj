@@ -169,11 +169,12 @@
     <Compile Include="FastThreadLocal.cs" />
     <Compile Include="InternalThreadLocalMap.cs" />
     <Compile Include="Internal\AbstractQueue.cs" />
+    <Compile Include="Internal\CompatibleConcurrentQueue.cs" />
     <Compile Include="Internal\IQueue.cs" />
     <Compile Include="Internal\ConcurrentCircularArrayQueue.cs" />
     <Compile Include="Internal\MpscArrayQueue.cs" />
-    <Compile Include="Internal\OneTimeTask.cs" />
     <Compile Include="Internal\PlatformDependent.cs" />
+    <Compile Include="Internal\RefArrayAccessUtil.cs" />
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="Concurrency\AbstractEventExecutor.cs" />
     <Compile Include="Concurrency\AbstractScheduledEventExecutor.cs" />
@@ -212,10 +213,8 @@
     <Compile Include="Utilities\IAttributeMap.cs" />
     <Compile Include="Utilities\IConstant.cs" />
     <Compile Include="Utilities\IntegerExtensions.cs" />
-    <Compile Include="Utilities\MpscLinkedQueue.cs" />
     <Compile Include="Utilities\PriorityQueue.cs" />
     <Compile Include="Utilities\RandomExtensions.cs" />
-    <Compile Include="Utilities\RecyclableMpscLinkedQueueNode.cs" />
     <Compile Include="Utilities\ReferenceCountUtil.cs" />
     <Compile Include="Internal\SystemPropertyUtil.cs" />
     <Compile Include="Utilities\ReferenceEqualityComparer.cs" />

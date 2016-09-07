@@ -8,7 +8,6 @@ namespace DotNetty.Handlers.Timeout
     using System.Threading.Tasks;
     using DotNetty.Common.Utilities;
     using DotNetty.Common.Concurrency;
-    using DotNetty.Common.Internal;
     using DotNetty.Transport.Channels;
 
     /// <summary>
@@ -142,13 +141,13 @@ namespace DotNetty.Handlers.Timeout
             }
         }
 
-        sealed class WriteTimeoutTask : OneTimeTask
+        sealed class WriteTimeoutTask : IRunnable
         {
             readonly WriteTimeoutHandler handler;
             readonly IChannelHandlerContext context;
             readonly Task future;
 
-            readonly static Action<Task, object> OperationCompleteAction = HandleOperationComplete;
+            static readonly Action<Task, object> OperationCompleteAction = HandleOperationComplete;
 
             public WriteTimeoutTask(IChannelHandlerContext context, Task future, WriteTimeoutHandler handler)
             {
@@ -169,9 +168,7 @@ namespace DotNetty.Handlers.Timeout
 
             public IScheduledTask ScheduledTask { get; set; }
 
-            public Task Future => this.future;
-
-            public override void Run()
+            public void Run()
             {
                 if (!this.future.IsCompleted)
                 {
@@ -181,7 +178,7 @@ namespace DotNetty.Handlers.Timeout
                     }
                     catch (Exception ex)
                     {
-                        context.FireExceptionCaught(ex);
+                        this.context.FireExceptionCaught(ex);
                     }
                 }
 

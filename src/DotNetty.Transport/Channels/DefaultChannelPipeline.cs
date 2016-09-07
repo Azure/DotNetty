@@ -14,7 +14,6 @@ namespace DotNetty.Transport.Channels
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
-    using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
@@ -1182,7 +1181,7 @@ namespace DotNetty.Transport.Channels
             public void ChannelWritabilityChanged(IChannelHandlerContext context) => context.FireChannelWritabilityChanged();
         }
 
-        abstract class PendingHandlerCallback : OneTimeTask
+        abstract class PendingHandlerCallback : IRunnable
         {
             protected readonly DefaultChannelPipeline Pipeline;
             protected readonly AbstractChannelHandlerContext Ctx;
@@ -1193,6 +1192,8 @@ namespace DotNetty.Transport.Channels
                 this.Pipeline = pipeline;
                 this.Ctx = ctx;
             }
+
+            public abstract void Run();
 
             internal abstract void Execute();
         }
