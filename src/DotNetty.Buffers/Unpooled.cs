@@ -58,6 +58,20 @@ namespace DotNetty.Buffers
             return WrappedBuffer(array).Slice(offset, length);
         }
 
+        public static IByteBuffer UnreleasableBuffer(IByteBuffer buffer)
+        {
+            Contract.Requires(buffer != null);
+
+            return new UnreleasableByteBuffer(buffer);
+        }
+
+        public static IByteBuffer Unreleasable(this IByteBuffer buffer)
+        {
+            Contract.Requires(buffer != null);
+
+            return buffer is UnreleasableByteBuffer ? buffer : UnreleasableBuffer(buffer);
+        }
+
         /// <summary>
         ///     Creates a new big-endian buffer whose content is a copy of the specified <see cref="array" />.
         ///     The new buffer's <see cref="IByteBuffer.ReaderIndex" /> and <see cref="IByteBuffer.WriterIndex" />

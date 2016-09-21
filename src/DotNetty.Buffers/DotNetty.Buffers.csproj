@@ -52,6 +52,7 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AdvancedLeakAwareByteBuffer.cs" />
+    <Compile Include="DefaultByteBufferHolder.cs" />
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="IPoolArenaMetric.cs" />
     <Compile Include="IPoolChunkListMetric.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="Unpooled.cs" />
     <Compile Include="UnpooledByteBufferAllocator.cs" />
     <Compile Include="UnpooledHeapByteBuffer.cs" />
+    <Compile Include="UnreleasableByteBuffer.cs" />
     <Compile Include="WrappedByteBuf.cs" />
   </ItemGroup>
   <ItemGroup>

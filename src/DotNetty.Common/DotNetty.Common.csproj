@@ -202,6 +202,7 @@
     <Compile Include="ThreadLocalPool.cs" />
     <Compile Include="PreciseTimeSpan.cs" />
     <Compile Include="Utilities\AbstractConstant.cs" />
+    <Compile Include="Utilities\AbstractReferenceCounted.cs" />
     <Compile Include="Utilities\AtomicReference.cs" />
     <Compile Include="Utilities\DefaultAttributeMap.cs" />
     <Compile Include="Utilities\IAttribute.cs" />

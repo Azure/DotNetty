@@ -122,6 +122,7 @@ Target "CopyOutput" (fun _ ->
       "DotNetty.Codecs"
       "DotNetty.Handlers"
       "DotNetty.Codecs.Mqtt"
+      "DotNetty.Codecs.Redis"
     ]
     |> List.iter copyOutput
 )
@@ -141,6 +142,7 @@ Target "ResignAssemblies" (fun _ ->
       "DotNetty.Codecs"
       "DotNetty.Handlers"
       "DotNetty.Codecs.Mqtt"
+      "DotNetty.Codecs.Redis"
     ]
     |> List.iter copyOutput
 )

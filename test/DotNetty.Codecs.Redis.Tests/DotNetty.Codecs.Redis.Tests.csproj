@@ -1,14 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" />
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{94E10283-E26E-441A-A2A7-D9671A6E9818}</ProjectGuid>
+    <ProjectGuid>{258ABFFC-4AF5-4CCA-9145-929AC854D139}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DotNetty.Buffers.Tests</RootNamespace>
-    <AssemblyName>DotNetty.Buffers.Tests</AssemblyName>
+    <RootNamespace>DotNetty.Codecs.Redis.Tests</RootNamespace>
+    <AssemblyName>DotNetty.Codecs.Redis.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -17,10 +16,7 @@
     <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
     <IsCodedUITest>False</IsCodedUITest>
     <TestProjectType>UnitTest</TestProjectType>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,18 +36,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Practices.EnterpriseLibrary.SemanticLogging, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\EnterpriseLibrary.SemanticLogging.2.0.1406.1\lib\net45\Microsoft.Practices.EnterpriseLibrary.SemanticLogging.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Moq, Version=4.2.1510.2205, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Moq.4.2.1510.2205\lib\net40\Moq.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\xunit.abstractions.2.0.0\lib\net35\xunit.abstractions.dll</HintPath>
@@ -76,25 +60,13 @@
         <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
       </ItemGroup>
     </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework">
-          <Private>False</Private>
-        </Reference>
-      </ItemGroup>
-    </Otherwise>
+    <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="AbstractPooledByteBufTest.cs" />
-    <Compile Include="ByteBufferDerivationTests.cs" />
-    <Compile Include="LeakDetectionTest.cs" />
-    <Compile Include="PooledBigEndianHeapByteBufTest.cs" />
-    <Compile Include="PortionedMemoryStream.cs" />
-    <Compile Include="AbstractByteBufferTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PooledBufferAllocatorTests.cs" />
-    <Compile Include="AbstractByteBufTest.cs" />
-    <Compile Include="UnreleaseableByteBufferTest.cs" />
+    <Compile Include="RedisCodecTestUtil.cs" />
+    <Compile Include="RedisDecoderTest.cs" />
+    <Compile Include="RedisEncoderTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -104,9 +76,21 @@
       <Project>{5DE3C557-48BF-4CDB-9F47-474D343DD841}</Project>
       <Name>DotNetty.Buffers</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\DotNetty.Codecs.Redis\DotNetty.Codecs.Redis.csproj">
+      <Project>{6ae7cf76-971c-428b-853a-dbe73a861e60}</Project>
+      <Name>DotNetty.Codecs.Redis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\DotNetty.Codecs\DotNetty.Codecs.csproj">
+      <Project>{2abd244e-ef8f-460d-9c30-39116499e6e4}</Project>
+      <Name>DotNetty.Codecs</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\DotNetty.Common\DotNetty.Common.csproj">
-      <Project>{DE58FE41-5E99-44E5-86BC-FC9ED8761DAF}</Project>
+      <Project>{de58fe41-5e99-44e5-86bc-fc9ed8761daf}</Project>
       <Name>DotNetty.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\DotNetty.Transport\DotNetty.Transport.csproj">
+      <Project>{8218C9EE-0A4A-432F-A12A-B54202F97B05}</Project>
+      <Name>DotNetty.Transport</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>
@@ -129,12 +113,6 @@
   </Choose>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props'))" />
-  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
