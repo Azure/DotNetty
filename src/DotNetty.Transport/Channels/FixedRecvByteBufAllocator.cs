@@ -4,56 +4,41 @@
 namespace DotNetty.Transport.Channels
 {
     using System.Diagnostics.Contracts;
-    using DotNetty.Buffers;
 
     /// <summary>
-    /// The {@link RecvByteBufAllocator} that always yields the same buffer
-    /// size prediction. This predictor ignores the feedback from the I/O thread.
+    ///     The <see cref="IRecvByteBufAllocator" /> that always yields the same buffer
+    ///     size prediction. This predictor ignores the feedback from the I/O thread.
     /// </summary>
-    public sealed class FixedRecvByteBufAllocator : IRecvByteBufAllocator
+    public sealed class FixedRecvByteBufAllocator : DefaultMaxMessagesRecvByteBufAllocator
     {
         public static readonly FixedRecvByteBufAllocator Default = new FixedRecvByteBufAllocator(4 * 1024);
 
-        sealed class HandleImpl : IRecvByteBufAllocatorHandle
+        sealed class HandleImpl : MaxMessageHandle<FixedRecvByteBufAllocator>
         {
             readonly int bufferSize;
 
-            public HandleImpl(int bufferSize)
+            public HandleImpl(FixedRecvByteBufAllocator owner, int bufferSize)
+                : base(owner)
             {
                 this.bufferSize = bufferSize;
             }
 
-            public IByteBuffer Allocate(IByteBufferAllocator alloc)
-            {
-                return alloc.Buffer(this.bufferSize);
-            }
-
-            public int Guess()
-            {
-                return this.bufferSize;
-            }
-
-            public void Record(int actualReadBytes)
-            {
-            }
+            public override int Guess() => this.bufferSize;
         }
 
         readonly IRecvByteBufAllocatorHandle handle;
 
         /// <summary>
-        /// Creates a new predictor that always returns the same prediction of
-        /// the specified buffer size.
+        ///     Creates a new predictor that always returns the same prediction of
+        ///     the specified buffer size.
         /// </summary>
         public FixedRecvByteBufAllocator(int bufferSize)
         {
             Contract.Requires(bufferSize > 0);
 
-            this.handle = new HandleImpl(bufferSize);
+            this.handle = new HandleImpl(this, bufferSize);
         }
 
-        public IRecvByteBufAllocatorHandle NewHandle()
-        {
-            return this.handle;
-        }
+        public override IRecvByteBufAllocatorHandle NewHandle() => this.handle;
     }
 }

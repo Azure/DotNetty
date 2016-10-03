@@ -18,7 +18,6 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
 
-    [Serializable]
     sealed class DefaultChannelId : IChannelId
     {
         const int MachineIdLen = 8;
@@ -39,10 +38,8 @@ namespace DotNetty.Transport.Channels
         readonly byte[] data = new byte[MachineIdLen + ProcessIdLen + SequenceLen + TimestampLen + RandomLen];
         int hashCode;
 
-        [NonSerialized]
         string longValue;
 
-        [NonSerialized]
         string shortValue;
 
         static DefaultChannelId()
@@ -108,10 +105,7 @@ namespace DotNetty.Transport.Channels
             return asLongText;
         }
 
-        public int CompareTo(IChannelId other)
-        {
-            return 0;
-        }
+        public int CompareTo(IChannelId other) => 0;
 
         static byte[] ParseMachineId(string value)
         {
@@ -293,10 +287,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        static int CompareAddresses(IPAddress current, IPAddress candidate)
-        {
-            return ScoreAddress(current) - ScoreAddress(candidate);
-        }
+        static int CompareAddresses(IPAddress current, IPAddress candidate) => ScoreAddress(current) - ScoreAddress(candidate);
 
         static int ScoreAddress(IPAddress addr)
         {
@@ -392,10 +383,7 @@ namespace DotNetty.Transport.Channels
             return i;
         }
 
-        public override int GetHashCode()
-        {
-            return this.hashCode;
-        }
+        public override int GetHashCode() => this.hashCode;
 
         public override bool Equals(object obj)
         {
@@ -412,9 +400,6 @@ namespace DotNetty.Transport.Channels
             return Equals(this.data, ((DefaultChannelId)obj).data);
         }
 
-        public override string ToString()
-        {
-            return this.AsShortText();
-        }
+        public override string ToString() => this.AsShortText();
     }
 }

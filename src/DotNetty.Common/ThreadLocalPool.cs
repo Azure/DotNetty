@@ -4,8 +4,8 @@
 namespace DotNetty.Common
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
     using System.Threading;
 
     public class ThreadLocalPool
@@ -36,15 +36,15 @@ namespace DotNetty.Common
                     return;
                 }
 
-                Dictionary<Stack, WeakOrderQueue> queueDictionary = DelayedPool.Value;
-                WeakOrderQueue queue;
-                if (!queueDictionary.TryGetValue(stack, out queue))
+                ConditionalWeakTable<Stack, WeakOrderQueue> queueDictionary = DelayedPool.Value;
+                WeakOrderQueue delayedRecycled;
+                if (!queueDictionary.TryGetValue(stack, out delayedRecycled))
                 {
                     var newQueue = new WeakOrderQueue(stack, thread);
-                    queue = newQueue;
-                    queueDictionary.Add(stack, queue);
+                    delayedRecycled = newQueue;
+                    queueDictionary.Add(stack, delayedRecycled);
                 }
-                queue.Add(this);
+                delayedRecycled.Add(this);
             }
         }
 
@@ -54,17 +54,12 @@ namespace DotNetty.Common
 
             sealed class Link
             {
-                private int readIndex;
-                private int writeIndex;
+                int writeIndex;
 
                 internal readonly Handle[] elements;
                 internal Link next;
 
-                internal int ReadIndex
-                {
-                    get { return this.readIndex; }
-                    set { this.readIndex = value; }
-                }
+                internal int ReadIndex { get; set; }
 
                 internal int WriteIndex
                 {
@@ -81,12 +76,9 @@ namespace DotNetty.Common
             Link head, tail;
             internal WeakOrderQueue next;
             internal WeakReference<Thread> ownerThread;
-            int id = Interlocked.Increment(ref idSource);
+            readonly int id = Interlocked.Increment(ref idSource);
 
-            internal bool IsEmpty
-            {
-                get { return this.tail.ReadIndex == this.tail.WriteIndex; }
-            }
+            internal bool IsEmpty => this.tail.ReadIndex == this.tail.WriteIndex;
 
             internal WeakOrderQueue(Stack stack, Thread thread)
             {
@@ -201,7 +193,7 @@ namespace DotNetty.Common
 
             internal Handle[] elements;
 
-            int maxCapacity;
+            readonly int maxCapacity;
             internal int size;
 
             WeakOrderQueue headQueue;
@@ -214,10 +206,7 @@ namespace DotNetty.Common
                 set { Volatile.Write(ref this.headQueue, value); }
             }
 
-            internal int Size
-            {
-                get { return this.size; }
-            }
+            internal int Size => this.size;
 
             internal Stack(int maxCapacity, ThreadLocalPool parent, Thread thread)
             {
@@ -377,10 +366,14 @@ namespace DotNetty.Common
         internal static readonly int DefaultMaxCapacity = 262144;
         internal static readonly int InitialCapacity = Math.Min(256, DefaultMaxCapacity);
         static int idSource = int.MinValue;
-        static int ownThreadId = Interlocked.Increment(ref idSource);
+        static readonly int ownThreadId = Interlocked.Increment(ref idSource);
 
-        internal static readonly ThreadLocal<Dictionary<Stack, WeakOrderQueue>> DelayedPool = 
-            new ThreadLocal<Dictionary<Stack, WeakOrderQueue>>(() => new Dictionary<Stack, WeakOrderQueue>());
+        internal static readonly DelayedThreadLocal DelayedPool = new DelayedThreadLocal();
+
+        internal sealed class DelayedThreadLocal : FastThreadLocal<ConditionalWeakTable<Stack, WeakOrderQueue>>
+        {
+            protected override ConditionalWeakTable<Stack, WeakOrderQueue> GetInitialValue() => new ConditionalWeakTable<Stack, WeakOrderQueue>();
+        }
 
         public ThreadLocalPool(int maxCapacity)
         {
@@ -388,13 +381,13 @@ namespace DotNetty.Common
             this.MaxCapacity = maxCapacity;
         }
 
-        public int MaxCapacity { get; private set; }
+        public int MaxCapacity { get; }
     }
 
     public sealed class ThreadLocalPool<T> : ThreadLocalPool
         where T : class
     {
-        readonly ThreadLocal<Stack> threadLocal;
+        readonly ThreadLocalStack threadLocal;
         readonly Func<Handle, T> valueFactory;
         readonly bool preCreate;
 
@@ -415,21 +408,8 @@ namespace DotNetty.Common
 
             this.preCreate = preCreate;
 
-            this.threadLocal = new ThreadLocal<Stack>(this.InitializeStorage, true);
+            this.threadLocal = new ThreadLocalStack(this);
             this.valueFactory = valueFactory;
-        }
-
-        Stack InitializeStorage()
-        {
-            var stack = new Stack(this.MaxCapacity, this, Thread.CurrentThread);
-            if (this.preCreate)
-            {
-                for (int i = 0; i < this.MaxCapacity; i++)
-                {
-                    stack.Push(this.CreateValue(stack));
-                }
-            }
-            return stack;
         }
 
         public T Take()
@@ -451,30 +431,30 @@ namespace DotNetty.Common
             return handle;
         }
 
-        public bool Release(T o, Handle handle)
+        internal int ThreadLocalCapacity => this.threadLocal.Value.elements.Length;
+
+        internal int ThreadLocalSize => this.threadLocal.Value.Size;
+
+        sealed class ThreadLocalStack : FastThreadLocal<Stack>
         {
-            if (handle.Stack.Parent != this)
+            readonly ThreadLocalPool<T> owner;
+
+            public ThreadLocalStack(ThreadLocalPool<T> owner)
             {
-                return false;
+                this.owner = owner;
             }
 
-            handle.Release(o);
-            return true;
-        }
-
-        internal int ThreadLocalCapacity
-        {
-            get
+            protected override Stack GetInitialValue()
             {
-                return this.threadLocal.Value.elements.Length;
-            }
-        }
-
-        internal int ThreadLocalSize
-        {
-            get
-            {
-                return this.threadLocal.Value.Size;
+                var stack = new Stack(this.owner.MaxCapacity, this.owner, Thread.CurrentThread);
+                if (this.owner.preCreate)
+                {
+                    for (int i = 0; i < this.owner.MaxCapacity; i++)
+                    {
+                        stack.Push(this.owner.CreateValue(stack));
+                    }
+                }
+                return stack;
             }
         }
     }

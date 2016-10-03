@@ -7,7 +7,7 @@ namespace DotNetty.Buffers
     using DotNetty.Common;
 
     /// <summary>
-    /// Abstract base class for <see cref="IByteBufferAllocator"/> instances
+    ///     Abstract base class for <see cref="IByteBufferAllocator" /> instances
     /// </summary>
     public abstract class AbstractByteBufferAllocator : IByteBufferAllocator
     {
@@ -23,7 +23,7 @@ namespace DotNetty.Buffers
                     leak = AbstractByteBuffer.LeakDetector.Open(buf);
                     if (leak != null)
                     {
-                        buf = new SimpleLeakAwareByteBuf(buf, leak);
+                        buf = new SimpleLeakAwareByteBuffer(buf, leak);
                     }
                     break;
                 case ResourceLeakDetector.DetectionLevel.Advanced:
@@ -31,7 +31,7 @@ namespace DotNetty.Buffers
                     leak = AbstractByteBuffer.LeakDetector.Open(buf);
                     if (leak != null)
                     {
-                        buf = new AdvancedLeakAwareByteBuf(buf, leak);
+                        buf = new AdvancedLeakAwareByteBuffer(buf, leak);
                     }
                     break;
                 case ResourceLeakDetector.DetectionLevel.Disabled:
@@ -49,15 +49,9 @@ namespace DotNetty.Buffers
             this.emptyBuffer = new EmptyByteBuffer(this);
         }
 
-        public IByteBuffer Buffer()
-        {
-            return this.Buffer(DefaultInitialCapacity, int.MaxValue);
-        }
+        public IByteBuffer Buffer() => this.Buffer(DefaultInitialCapacity, int.MaxValue);
 
-        public IByteBuffer Buffer(int initialCapacity)
-        {
-            return this.Buffer(initialCapacity, int.MaxValue);
-        }
+        public IByteBuffer Buffer(int initialCapacity) => this.Buffer(initialCapacity, int.MaxValue);
 
         public IByteBuffer Buffer(int initialCapacity, int maxCapacity)
         {
@@ -71,15 +65,9 @@ namespace DotNetty.Buffers
             return this.NewBuffer(initialCapacity, maxCapacity);
         }
 
-        public CompositeByteBuffer CompositeBuffer()
-        {
-            return this.CompositeBuffer(DefaultMaxComponents);
-        }
+        public CompositeByteBuffer CompositeBuffer() => this.CompositeBuffer(DefaultMaxComponents);
 
-        public CompositeByteBuffer CompositeBuffer(int maxComponents)
-        {
-            return new CompositeByteBuffer(this, maxComponents);
-        }
+        public CompositeByteBuffer CompositeBuffer(int maxComponents) => new CompositeByteBuffer(this, maxComponents);
 
         protected abstract IByteBuffer NewBuffer(int initialCapacity, int maxCapacity);
 
@@ -89,12 +77,12 @@ namespace DotNetty.Buffers
         {
             if (initialCapacity < 0)
             {
-                throw new ArgumentOutOfRangeException("initialCapacity", "initialCapacity must be greater than zero");
+                throw new ArgumentOutOfRangeException(nameof(initialCapacity), "initialCapacity must be greater than zero");
             }
 
             if (initialCapacity > maxCapacity)
             {
-                throw new ArgumentOutOfRangeException("initialCapacity", string.Format("initialCapacity ({0}) must be greater than maxCapacity ({1})", initialCapacity, maxCapacity));
+                throw new ArgumentOutOfRangeException(nameof(initialCapacity), $"initialCapacity ({initialCapacity}) must be greater than maxCapacity ({maxCapacity})");
             }
         }
 

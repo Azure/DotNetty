@@ -7,8 +7,8 @@ namespace DotNetty.Common.Concurrency
     using System.Diagnostics.Contracts;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using DotNetty.Common.Utilities;
 
     public class SingleThreadEventExecutor : AbstractScheduledEventExecutor
     {
@@ -26,22 +26,27 @@ namespace DotNetty.Common.Concurrency
         static readonly IInternalLogger Logger =
             InternalLoggerFactory.GetInstance<SingleThreadEventExecutor>();
 
-        readonly MpscLinkedQueue<IRunnable> taskQueue = new MpscLinkedQueue<IRunnable>();
-        Thread thread;
+        readonly IQueue<IRunnable> taskQueue;
+        readonly Thread thread;
         volatile int executionState = ST_NOT_STARTED;
         readonly PreciseTimeSpan preciseBreakoutInterval;
         PreciseTimeSpan lastExecutionTime;
-        readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim();
+        readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
         readonly TaskScheduler scheduler;
         readonly TaskCompletionSource terminationCompletionSource;
         PreciseTimeSpan gracefulShutdownStartTime;
-        bool disposed;
         PreciseTimeSpan gracefulShutdownQuietPeriod;
         PreciseTimeSpan gracefulShutdownTimeout;
 
         public SingleThreadEventExecutor(string threadName, TimeSpan breakoutInterval)
+            : this(threadName, breakoutInterval, new CompatibleConcurrentQueue<IRunnable>())
+        {
+        }
+
+        protected SingleThreadEventExecutor(string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
         {
             this.terminationCompletionSource = new TaskCompletionSource();
+            this.taskQueue = taskQueue;
             this.preciseBreakoutInterval = PreciseTimeSpan.FromTimeSpan(breakoutInterval);
             this.scheduler = new ExecutorTaskScheduler(this);
             this.thread = new Thread(this.Loop)
@@ -62,13 +67,12 @@ namespace DotNetty.Common.Concurrency
         /// <summary>
         ///     Task Scheduler that will post work to this executor's queue.
         /// </summary>
-        public TaskScheduler Scheduler
-        {
-            get { return this.scheduler; }
-        }
+        public TaskScheduler Scheduler => this.scheduler;
 
         void Loop()
         {
+            this.SetCurrentExecutor(this);
+
             Task.Factory.StartNew(
                 () =>
                 {
@@ -84,34 +88,19 @@ namespace DotNetty.Common.Concurrency
                 this.scheduler);
         }
 
-        public override bool IsShuttingDown
-        {
-            get { return this.executionState >= ST_SHUTTING_DOWN; }
-        }
+        public override bool IsShuttingDown => this.executionState >= ST_SHUTTING_DOWN;
 
-        public override Task TerminationCompletion
-        {
-            get { return this.terminationCompletionSource.Task; }
-        }
+        public override Task TerminationCompletion => this.terminationCompletionSource.Task;
 
-        public override bool IsShutdown
-        {
-            get { return this.executionState >= ST_SHUTDOWN; }
-        }
+        public override bool IsShutdown => this.executionState >= ST_SHUTDOWN;
 
-        public override bool IsTerminated
-        {
-            get { return this.executionState == ST_TERMINATED; }
-        }
+        public override bool IsTerminated => this.executionState == ST_TERMINATED;
 
-        public override bool IsInEventLoop(Thread t)
-        {
-            return this.thread == t;
-        }
+        public override bool IsInEventLoop(Thread t) => this.thread == t;
 
         public override void Execute(IRunnable task)
         {
-            this.taskQueue.Enqueue(task);
+            this.taskQueue.TryEnqueue(task);
 
             if (!this.InEventLoop)
             {
@@ -121,7 +110,7 @@ namespace DotNetty.Common.Concurrency
 
         protected void WakeUp(bool inEventLoop)
         {
-            if (!inEventLoop || this.executionState == ST_SHUTTING_DOWN)
+            if (!inEventLoop || (this.executionState == ST_SHUTTING_DOWN))
             {
                 this.Execute(WAKEUP_TASK);
             }
@@ -220,7 +209,7 @@ namespace DotNetty.Common.Concurrency
 
             PreciseTimeSpan nanoTime = PreciseTimeSpan.FromStart;
 
-            if (this.IsShutdown || nanoTime - this.gracefulShutdownStartTime > this.gracefulShutdownTimeout)
+            if (this.IsShutdown || (nanoTime - this.gracefulShutdownStartTime > this.gracefulShutdownTimeout))
             {
                 return true;
             }
@@ -246,19 +235,18 @@ namespace DotNetty.Common.Concurrency
             while (true)
             {
                 int oldState = this.executionState;
-                if (oldState >= ST_SHUTTING_DOWN || Interlocked.CompareExchange(ref this.executionState, ST_SHUTTING_DOWN, oldState) == oldState)
+                if ((oldState >= ST_SHUTTING_DOWN) || (Interlocked.CompareExchange(ref this.executionState, ST_SHUTTING_DOWN, oldState) == oldState))
                 {
                     break;
                 }
             }
 
             // Check if confirmShutdown() was called at the end of the loop.
-            if (success && this.gracefulShutdownStartTime == PreciseTimeSpan.Zero)
+            if (success && (this.gracefulShutdownStartTime == PreciseTimeSpan.Zero))
             {
                 Logger.Error(
-                    string.Format("Buggy {0} implementation; {1}.ConfirmShutdown() must be called " + "before run() implementation terminates.",
-                        typeof(IEventExecutor).Name,
-                        typeof(SingleThreadEventExecutor).Name));
+                    $"Buggy {typeof(IEventExecutor).Name} implementation; {typeof(SingleThreadEventExecutor).Name}.ConfirmShutdown() must be called "
+                    + "before run() implementation terminates.");
             }
 
             try
@@ -283,7 +271,7 @@ namespace DotNetty.Common.Concurrency
                     Interlocked.Exchange(ref this.executionState, ST_TERMINATED);
                     if (!this.taskQueue.IsEmpty)
                     {
-                        Logger.Warn(string.Format("An event executor terminated with non-empty task queue ({0})", this.taskQueue.Count));
+                        Logger.Warn($"An event executor terminated with non-empty task queue ({this.taskQueue.Count})");
                     }
 
                     //firstRun = true;
@@ -374,33 +362,32 @@ namespace DotNetty.Common.Concurrency
             return true;
         }
 
-        void FetchFromScheduledTaskQueue()
+        bool FetchFromScheduledTaskQueue()
         {
-            if (this.HasScheduledTasks())
+            PreciseTimeSpan nanoTime = PreciseTimeSpan.FromStart;
+            IScheduledRunnable scheduledTask = this.PollScheduledTask(nanoTime);
+            while (scheduledTask != null)
             {
-                PreciseTimeSpan nanoTime = PreciseTimeSpan.FromStart;
-                while (true)
+                if (!this.taskQueue.TryEnqueue(scheduledTask))
                 {
-                    IScheduledRunnable scheduledTask = this.PollScheduledTask(nanoTime);
-                    if (scheduledTask == null)
-                    {
-                        break;
-                    }
-
-                    this.taskQueue.Enqueue(scheduledTask);
+                    // No space left in the task queue add it back to the scheduledTaskQueue so we pick it up again.
+                    this.ScheduledTaskQueue.Enqueue(scheduledTask);
+                    return false;
                 }
+                scheduledTask = this.PollScheduledTask(nanoTime);
             }
+            return true;
         }
 
         IRunnable PollTask()
         {
             Contract.Assert(this.InEventLoop);
 
-            IRunnable task = this.taskQueue.Dequeue();
-            if (task == null)
+            IRunnable task;
+            if (!this.taskQueue.TryDequeue(out task))
             {
                 this.emptyEvent.Reset();
-                if ((task = this.taskQueue.Dequeue()) == null && !this.IsShuttingDown) // revisit queue as producer might have put a task in meanwhile
+                if (!this.taskQueue.TryDequeue(out task) && !this.IsShuttingDown) // revisit queue as producer might have put a task in meanwhile
                 {
                     IScheduledRunnable nextScheduledTask = this.ScheduledTaskQueue.Peek();
                     if (nextScheduledTask != null)
@@ -411,14 +398,14 @@ namespace DotNetty.Common.Concurrency
                             if (this.emptyEvent.Wait(wakeupTimeout.ToTimeSpan()))
                             {
                                 // woken up before the next scheduled task was due
-                                task = this.taskQueue.Dequeue();
+                                this.taskQueue.TryDequeue(out task);
                             }
                         }
                     }
                     else
                     {
                         this.emptyEvent.Wait();
-                        task = this.taskQueue.Dequeue();
+                        this.taskQueue.TryDequeue(out task);
                     }
                 }
             }

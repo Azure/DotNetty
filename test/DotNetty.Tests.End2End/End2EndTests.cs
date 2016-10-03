@@ -7,6 +7,7 @@ namespace DotNetty.Tests.End2End
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace DotNetty.Tests.End2End
     using DotNetty.Codecs.Mqtt;
     using DotNetty.Codecs.Mqtt.Packets;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
@@ -26,6 +28,7 @@ namespace DotNetty.Tests.End2End
     public class End2EndTests : TestBase
     {
         static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(10);
+        static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
         const int Port = 8009;
 
         public End2EndTests(ITestOutputHelper output)
@@ -44,19 +47,22 @@ namespace DotNetty.Tests.End2End
         const string PublishS2CQos1Payload = "S->C, QoS 1 test. Different data length #2.";
 
         [Fact]
-        public async void EchoServerAndClient()
+        public async Task EchoServerAndClient()
         {
             var testPromise = new TaskCompletionSource();
             var tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
             Func<Task> closeServerFunc = await this.StartServerAsync(true, ch =>
             {
+                ch.Pipeline.AddLast("server logger", new LoggingHandler("SERVER"));
                 ch.Pipeline.AddLast("server tls", TlsHandler.Server(tlsCertificate));
+                ch.Pipeline.AddLast("server logger2", new LoggingHandler("SER***"));
                 ch.Pipeline.AddLast("server prepender", new LengthFieldPrepender(2));
                 ch.Pipeline.AddLast("server decoder", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
                 ch.Pipeline.AddLast(new EchoChannelHandler());
             }, testPromise);
 
             var group = new MultithreadEventLoopGroup();
+            var readListener = new ReadListeningHandler();
             Bootstrap b = new Bootstrap()
                 .Group(group)
                 .Channel<TcpSocketChannel>()
@@ -64,10 +70,13 @@ namespace DotNetty.Tests.End2End
                 .Handler(new ActionChannelInitializer<ISocketChannel>(ch =>
                 {
                     string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
-                    ch.Pipeline.AddLast("client tls", TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
+                    var clientTlsSettings = new ClientTlsSettings(targetHost);
+                    ch.Pipeline.AddLast("client logger", new LoggingHandler("CLIENT"));
+                    ch.Pipeline.AddLast("client tls", new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), clientTlsSettings));
+                    ch.Pipeline.AddLast("client logger2", new LoggingHandler("CLI***"));
                     ch.Pipeline.AddLast("client prepender", new LengthFieldPrepender(2));
                     ch.Pipeline.AddLast("client decoder", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
-                    ch.Pipeline.AddLast(new TestScenarioRunner(this.GetEchoClientScenario, testPromise));
+                    ch.Pipeline.AddLast(readListener);
                 }));
 
             this.Output.WriteLine("Configured Bootstrap: {0}", b);
@@ -79,17 +88,22 @@ namespace DotNetty.Tests.End2End
 
                 this.Output.WriteLine("Connected channel: {0}", clientChannel);
 
-                await Task.WhenAny(testPromise.Task, Task.Delay(TimeSpan.FromSeconds(30)));
-                Assert.True(testPromise.Task.IsCompleted, "timed out");
-                testPromise.Task.Wait();
+                string[] messages = { "message 1", string.Join(",", Enumerable.Range(1, 300)) };
+                foreach (string message in messages)
+                {
+                    await clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(message)));
+
+                    var responseMessage = Assert.IsAssignableFrom<IByteBuffer>(await readListener.ReceiveAsync(DefaultTimeout));
+                    Assert.Equal(message, responseMessage.ToString(Encoding.UTF8));
+                }
+
+                testPromise.TryComplete();
+                await testPromise.Task;
             }
             finally
             {
                 Task serverCloseTask = closeServerFunc();
-                if (clientChannel != null)
-                {
-                    clientChannel.CloseAsync().Wait(TimeSpan.FromSeconds(5));
-                }
+                clientChannel?.CloseAsync().Wait(TimeSpan.FromSeconds(5));
                 group.ShutdownGracefullyAsync();
                 if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
@@ -99,21 +113,27 @@ namespace DotNetty.Tests.End2End
         }
 
         [Fact]
-        public async void MqttServerAndClient()
+        public async Task MqttServerAndClient()
         {
             var testPromise = new TaskCompletionSource();
 
             var tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
+            var serverReadListener = new ReadListeningHandler();
+            IChannel serverChannel = null;
             Func<Task> closeServerFunc = await this.StartServerAsync(true, ch =>
             {
-                ch.Pipeline.AddLast(TlsHandler.Server(tlsCertificate));
+                serverChannel = ch;
+                ch.Pipeline.AddLast("server logger", new LoggingHandler("SERVER"));
+                ch.Pipeline.AddLast("server tls", TlsHandler.Server(tlsCertificate));
+                ch.Pipeline.AddLast("server logger2", new LoggingHandler("SER***"));
                 ch.Pipeline.AddLast(
                     MqttEncoder.Instance,
                     new MqttDecoder(true, 256 * 1024),
-                    new TestScenarioRunner(this.GetMqttServerScenario, testPromise));
+                    serverReadListener);
             }, testPromise);
 
             var group = new MultithreadEventLoopGroup();
+            var clientReadListener = new ReadListeningHandler();
             Bootstrap b = new Bootstrap()
                 .Group(group)
                 .Channel<TcpSocketChannel>()
@@ -121,11 +141,15 @@ namespace DotNetty.Tests.End2End
                 .Handler(new ActionChannelInitializer<ISocketChannel>(ch =>
                 {
                     string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
-                    ch.Pipeline.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true));
+                    var clientTlsSettings = new ClientTlsSettings(targetHost);
+
+                    ch.Pipeline.AddLast("client logger", new LoggingHandler("CLIENT"));
+                    ch.Pipeline.AddLast("client tls", new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), clientTlsSettings));
+                    ch.Pipeline.AddLast("client logger2", new LoggingHandler("CLI***"));
                     ch.Pipeline.AddLast(
                         MqttEncoder.Instance,
                         new MqttDecoder(false, 256 * 1024),
-                        new TestScenarioRunner(this.GetMqttClientScenario, testPromise));
+                        clientReadListener);
                 }));
 
             this.Output.WriteLine("Configured Bootstrap: {0}", b);
@@ -137,16 +161,16 @@ namespace DotNetty.Tests.End2End
 
                 this.Output.WriteLine("Connected channel: {0}", clientChannel);
 
-                await Task.WhenAny(testPromise.Task, Task.Delay(TimeSpan.FromMinutes(1)));
-                Assert.True(testPromise.Task.IsCompleted);
+                await Task.WhenAll(this.RunMqttClientScenarioAsync(clientChannel, clientReadListener), this.RunMqttServerScenarioAsync(serverChannel, serverReadListener))
+                    .WithTimeout(TimeSpan.FromSeconds(30));
+
+                testPromise.TryComplete();
+                await testPromise.Task;
             }
             finally
             {
                 Task serverCloseTask = closeServerFunc();
-                if (clientChannel != null)
-                {
-                    clientChannel.CloseAsync().Wait(TimeSpan.FromSeconds(5));
-                }
+                clientChannel?.CloseAsync().Wait(TimeSpan.FromSeconds(5));
                 group.ShutdownGracefullyAsync();
                 if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
@@ -155,9 +179,9 @@ namespace DotNetty.Tests.End2End
             }
         }
 
-        IEnumerable<TestScenarioStep> GetMqttClientScenario(Func<object> currentMessageFunc)
+        async Task RunMqttClientScenarioAsync(IChannel channel, ReadListeningHandler readListener)
         {
-            yield return TestScenarioStep.Message(new ConnectPacket
+            await channel.WriteAndFlushAsync(new ConnectPacket
             {
                 ClientId = ClientId,
                 Username = "testuser",
@@ -166,32 +190,30 @@ namespace DotNetty.Tests.End2End
                 WillMessage = Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes("oops"))
             });
 
-            var connAckPacket = Assert.IsType<ConnAckPacket>(currentMessageFunc());
+            var connAckPacket = Assert.IsType<ConnAckPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             Assert.Equal(ConnectReturnCode.Accepted, connAckPacket.ReturnCode);
 
             int subscribePacketId = GetRandomPacketId();
             int unsubscribePacketId = GetRandomPacketId();
-            yield return TestScenarioStep.Messages(
+            await channel.WriteAndFlushManyAsync(
                 new SubscribePacket(subscribePacketId,
                     new SubscriptionRequest(SubscribeTopicFilter1, QualityOfService.ExactlyOnce),
                     new SubscriptionRequest(SubscribeTopicFilter2, QualityOfService.AtLeastOnce),
                     new SubscriptionRequest("for/unsubscribe", QualityOfService.AtMostOnce)),
                 new UnsubscribePacket(unsubscribePacketId, "for/unsubscribe"));
 
-            var subAckPacket = Assert.IsType<SubAckPacket>(currentMessageFunc());
+            var subAckPacket = Assert.IsType<SubAckPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             Assert.Equal(subscribePacketId, subAckPacket.PacketId);
             Assert.Equal(3, subAckPacket.ReturnCodes.Count);
             Assert.Equal(QualityOfService.ExactlyOnce, subAckPacket.ReturnCodes[0]);
             Assert.Equal(QualityOfService.AtLeastOnce, subAckPacket.ReturnCodes[1]);
             Assert.Equal(QualityOfService.AtMostOnce, subAckPacket.ReturnCodes[2]);
-
-            yield return TestScenarioStep.MoreFeedbackExpected();
-
-            var unsubAckPacket = Assert.IsType<UnsubAckPacket>(currentMessageFunc());
+            
+            var unsubAckPacket = Assert.IsType<UnsubAckPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             Assert.Equal(unsubscribePacketId, unsubAckPacket.PacketId);
 
             int publishQoS1PacketId = GetRandomPacketId();
-            yield return TestScenarioStep.Messages(
+            await channel.WriteAndFlushManyAsync(
                 new PublishPacket(QualityOfService.AtMostOnce, false, false)
                 {
                     TopicName = PublishC2STopic,
@@ -205,54 +227,49 @@ namespace DotNetty.Tests.End2End
                 });
             //new PublishPacket(QualityOfService.AtLeastOnce, false, false) { TopicName = "feedback/qos/One", Payload = Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes("QoS 1 test. Different data length.")) });
 
-            var pubAckPacket = Assert.IsType<PubAckPacket>(currentMessageFunc());
+            var pubAckPacket = Assert.IsType<PubAckPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             Assert.Equal(publishQoS1PacketId, pubAckPacket.PacketId);
 
-            yield return TestScenarioStep.MoreFeedbackExpected();
-
-            var publishPacket = Assert.IsType<PublishPacket>(currentMessageFunc());
+            var publishPacket = Assert.IsType<PublishPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             Assert.Equal(QualityOfService.AtLeastOnce, publishPacket.QualityOfService);
             Assert.Equal(PublishS2CQos1Topic, publishPacket.TopicName);
-            Assert.Equal(PublishS2CQos1Payload, Encoding.UTF8.GetString(publishPacket.Payload.ToArray()));
+            Assert.Equal(PublishS2CQos1Payload, publishPacket.Payload.ToString(Encoding.UTF8));
 
-            yield return TestScenarioStep.Messages(
+            await channel.WriteAndFlushManyAsync(
                 PubAckPacket.InResponseTo(publishPacket),
                 DisconnectPacket.Instance);
         }
 
-        IEnumerable<TestScenarioStep> GetMqttServerScenario(Func<object> currentMessageFunc)
+        async Task RunMqttServerScenarioAsync(IChannel channel, ReadListeningHandler readListener)
         {
-            yield return TestScenarioStep.MoreFeedbackExpected();
-
-            var connectPacket = Assert.IsType<ConnectPacket>(currentMessageFunc());
+            var connectPacket = Assert.IsType<ConnectPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             // todo verify
 
-            yield return TestScenarioStep.Message(new ConnAckPacket
+            await channel.WriteAndFlushAsync(new ConnAckPacket
             {
                 ReturnCode = ConnectReturnCode.Accepted,
                 SessionPresent = true
             });
 
-            var subscribePacket = Assert.IsType<SubscribePacket>(currentMessageFunc());
+            var subscribePacket = Assert.IsType<SubscribePacket>(await readListener.ReceiveAsync(DefaultTimeout));
             // todo verify
 
-            yield return TestScenarioStep.Message(SubAckPacket.InResponseTo(subscribePacket, QualityOfService.ExactlyOnce));
+            await channel.WriteAndFlushAsync(SubAckPacket.InResponseTo(subscribePacket, QualityOfService.ExactlyOnce));
 
-            var unsubscribePacket = Assert.IsType<UnsubscribePacket>(currentMessageFunc());
+            var unsubscribePacket = Assert.IsType<UnsubscribePacket>(await readListener.ReceiveAsync(DefaultTimeout));
             // todo verify
 
-            yield return TestScenarioStep.Message(UnsubAckPacket.InResponseTo(unsubscribePacket));
+            await channel.WriteAndFlushAsync(UnsubAckPacket.InResponseTo(unsubscribePacket));
 
-            var publishQos0Packet = Assert.IsType<PublishPacket>(currentMessageFunc());
+            var publishQos0Packet = Assert.IsType<PublishPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             // todo verify
 
-            yield return TestScenarioStep.MoreFeedbackExpected();
-
-            var publishQos1Packet = Assert.IsType<PublishPacket>(currentMessageFunc());
+            var publishQos1Packet = Assert.IsType<PublishPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             // todo verify
 
             int publishQos1PacketId = GetRandomPacketId();
-            yield return TestScenarioStep.Messages(PubAckPacket.InResponseTo(publishQos1Packet),
+            await channel.WriteAndFlushManyAsync(
+                PubAckPacket.InResponseTo(publishQos1Packet),
                 new PublishPacket(QualityOfService.AtLeastOnce, false, false)
                 {
                     PacketId = publishQos1PacketId,
@@ -260,18 +277,13 @@ namespace DotNetty.Tests.End2End
                     Payload = Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(PublishS2CQos1Payload))
                 });
 
-            var pubAckPacket = Assert.IsType<PubAckPacket>(currentMessageFunc());
+            var pubAckPacket = Assert.IsType<PubAckPacket>(await readListener.ReceiveAsync(DefaultTimeout));
             Assert.Equal(publishQos1PacketId, pubAckPacket.PacketId);
 
-            yield return TestScenarioStep.MoreFeedbackExpected();
-
-            var disconnectPacket = Assert.IsType<DisconnectPacket>(currentMessageFunc());
+            var disconnectPacket = Assert.IsType<DisconnectPacket>(await readListener.ReceiveAsync(DefaultTimeout));
         }
 
-        static int GetRandomPacketId()
-        {
-            return Guid.NewGuid().GetHashCode() & ushort.MaxValue;
-        }
+        static int GetRandomPacketId() => Guid.NewGuid().GetHashCode() & ushort.MaxValue;
 
         /// <summary>
         ///     Starts Echo server.
@@ -319,18 +331,6 @@ namespace DotNetty.Tests.End2End
                     bossGroup.ShutdownGracefullyAsync();
                     workerGroup.ShutdownGracefullyAsync();
                 }
-            }
-        }
-
-        IEnumerable<TestScenarioStep> GetEchoClientScenario(Func<object> currentMessageFunc)
-        {
-            string[] messages = { "message 1", string.Join(",", Enumerable.Range(1, 300)) };
-            foreach (string message in messages)
-            {
-                yield return TestScenarioStep.Message(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(message)));
-
-                var responseMessage = Assert.IsAssignableFrom<IByteBuffer>(currentMessageFunc());
-                Assert.Equal(message, Encoding.UTF8.GetString(responseMessage.ToArray()));
             }
         }
     }

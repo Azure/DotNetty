@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
     public sealed class MultithreadEventLoopGroup : IEventLoopGroup
     {
@@ -65,7 +66,7 @@ namespace DotNetty.Transport.Channels
             this.TerminationCompletion = Task.WhenAll(terminationTasks);
         }
 
-        public Task TerminationCompletion { get; private set; }
+        public Task TerminationCompletion { get; }
 
         public IEventLoop GetNext()
         {
@@ -73,11 +74,22 @@ namespace DotNetty.Transport.Channels
             return this.eventLoops[Math.Abs(id % this.eventLoops.Length)];
         }
 
+        IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
+
         public Task ShutdownGracefullyAsync()
         {
             foreach (IEventLoop eventLoop in this.eventLoops)
             {
                 eventLoop.ShutdownGracefullyAsync();
+            }
+            return this.TerminationCompletion;
+        }
+
+        public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
+        {
+            foreach (IEventLoop eventLoop in this.eventLoops)
+            {
+                eventLoop.ShutdownGracefullyAsync(quietPeriod, timeout);
             }
             return this.TerminationCompletion;
         }

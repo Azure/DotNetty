@@ -99,10 +99,7 @@ namespace DotNetty.Transport.Channels
             // We need to guard against null as channel.Unsafe.OutboundBuffer may returned null
             // if the channel was already closed when constructing the PendingWriteQueue.
             // See https://github.com/netty/netty/issues/3967
-            if (this.buffer != null)
-            {
-                this.buffer.IncrementPendingOutboundBytes(write.Size);
-            }
+            this.buffer?.IncrementPendingOutboundBytes(write.Size);
             return promise.Task;
         }
 
@@ -127,7 +124,7 @@ namespace DotNetty.Transport.Channels
                 ReferenceCountUtil.SafeRelease(write.Msg);
                 TaskCompletionSource promise = write.Promise;
                 this.Recycle(write, false);
-                SafeFail(promise, cause);
+                Util.SafeSetFailure(promise, cause, Logger);
                 write = next;
             }
             this.AssertEmpty();
@@ -151,7 +148,7 @@ namespace DotNetty.Transport.Channels
             }
             ReferenceCountUtil.SafeRelease(write.Msg);
             TaskCompletionSource promise = write.Promise;
-            SafeFail(promise, cause);
+            Util.SafeSetFailure(promise, cause, Logger);
             this.Recycle(write, true);
         }
 
@@ -163,14 +160,14 @@ namespace DotNetty.Transport.Channels
          *          if the {@link PendingWriteQueue} is empty.
          */
 
-        public Task RemoveAndWriteAll()
+        public Task RemoveAndWriteAllAsync()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
 
             if (this.size == 1)
             {
                 // No need to use ChannelPromiseAggregator for this case.
-                return this.RemoveAndWrite();
+                return this.RemoveAndWriteAsync();
             }
             PendingWrite write = this.head;
             if (write == null)
@@ -199,10 +196,7 @@ namespace DotNetty.Transport.Channels
             return Task.WhenAll(tasks);
         }
 
-        void AssertEmpty()
-        {
-            Contract.Assert(this.tail == null && this.head == null && this.size == 0);
-        }
+        void AssertEmpty() => Contract.Assert(this.tail == null && this.head == null && this.size == 0);
 
         /**
          * Removes a pending write operation and performs it via
@@ -212,7 +206,7 @@ namespace DotNetty.Transport.Channels
          *          if the {@link PendingWriteQueue} is empty.
          */
 
-        public Task RemoveAndWrite()
+        public Task RemoveAndWriteAsync()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
 
@@ -256,12 +250,7 @@ namespace DotNetty.Transport.Channels
             {
                 Contract.Assert(this.ctx.Executor.InEventLoop);
 
-                PendingWrite write = this.head;
-                if (write == null)
-                {
-                    return null;
-                }
-                return write.Msg;
+                return this.head?.Msg;
             }
         }
 
@@ -291,18 +280,7 @@ namespace DotNetty.Transport.Channels
             // We need to guard against null as channel.unsafe().outboundBuffer() may returned null
             // if the channel was already closed when constructing the PendingWriteQueue.
             // See https://github.com/netty/netty/issues/3967
-            if (this.buffer != null)
-            {
-                this.buffer.DecrementPendingOutboundBytes(writeSize);
-            }
-        }
-
-        static void SafeFail(TaskCompletionSource promise, Exception cause)
-        {
-            if ( /*!(promise instanceof VoidChannelPromise) && */!promise.TrySetException(cause))
-            {
-                Logger.Warn("Failed to mark a promise as failure because it's done already: {}", promise, cause);
-            }
+            this.buffer?.DecrementPendingOutboundBytes(writeSize);
         }
 
         /**

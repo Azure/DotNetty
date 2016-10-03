@@ -18,9 +18,6 @@ namespace DotNetty.Common.Concurrency
             this.context = context;
         }
 
-        protected override void Execute()
-        {
-            this.action(this.context, this.Completion.AsyncState);
-        }
+        protected override void Execute() => this.action(this.context, this.Completion.AsyncState);
     }
 }

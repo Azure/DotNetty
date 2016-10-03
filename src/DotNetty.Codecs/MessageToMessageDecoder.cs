@@ -10,25 +10,21 @@ namespace DotNetty.Codecs
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// Message to message decoder.
+    ///     Message to message decoder.
     /// </summary>
     public abstract class MessageToMessageDecoder<T> : ChannelHandlerAdapter
     {
-        public virtual bool AcceptInboundMessage(object msg)
-        {
-            return msg is T;
-        }
+        public virtual bool AcceptInboundMessage(object msg) => msg is T;
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
-            ThreadLocalObjectList output = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList output = ThreadLocalObjectList.NewInstance();
 
             try
             {
                 if (this.AcceptInboundMessage(message))
                 {
-
-                    T cast = (T)message;
+                    var cast = (T)message;
                     try
                     {
                         this.Decode(context, cast, output);
@@ -43,7 +39,7 @@ namespace DotNetty.Codecs
                     output.Add(message);
                 }
             }
-            catch (DecoderException e)
+            catch (DecoderException)
             {
                 throw;
             }
@@ -60,12 +56,11 @@ namespace DotNetty.Codecs
                 }
                 output.Return();
             }
-            base.ChannelRead(context, message);
         }
 
         /// <summary>
-        /// Decode from one message to an other. This method will be called for each written message that can be handled
-        /// by this encoder.
+        ///     Decode from one message to an other. This method will be called for each written message that can be handled
+        ///     by this encoder.
         /// </summary>
         /// <param name="context">the {@link ChannelHandlerContext} which this {@link MessageToMessageDecoder} belongs to</param>
         /// <param name="message">the message to decode to an other one</param>

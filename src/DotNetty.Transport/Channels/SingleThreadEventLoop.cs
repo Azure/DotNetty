@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Internal;
 
     public class SingleThreadEventLoop : SingleThreadEventExecutor, IEventLoop
     {
@@ -24,19 +25,13 @@ namespace DotNetty.Transport.Channels
         public SingleThreadEventLoop(string threadName, TimeSpan breakoutInterval)
             : base(threadName, breakoutInterval)
         {
-            this.Invoker = new DefaultChannelHandlerInvoker(this);
         }
 
-        public IChannelHandlerInvoker Invoker { get; private set; }
-
-        public Task RegisterAsync(IChannel channel)
+        protected SingleThreadEventLoop(string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
+            : base(threadName, breakoutInterval, taskQueue)
         {
-            return channel.Unsafe.RegisterAsync(this);
         }
 
-        IEventLoop IEventLoop.Unwrap()
-        {
-            return this;
-        }
+        public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
     }
 }

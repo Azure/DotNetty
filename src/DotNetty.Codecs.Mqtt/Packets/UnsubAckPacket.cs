@@ -5,10 +5,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 {
     public sealed class UnsubAckPacket : PacketWithId
     {
-        public override PacketType PacketType
-        {
-            get { return PacketType.UNSUBACK; }
-        }
+        public override PacketType PacketType => PacketType.UNSUBACK;
 
         public static UnsubAckPacket InResponseTo(UnsubscribePacket unsubscribePacket)
         {

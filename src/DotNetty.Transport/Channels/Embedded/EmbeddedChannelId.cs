@@ -6,7 +6,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using System;
 
     /// <summary>
-    /// A dummy <see cref="IChannelId"/> implementation
+    ///     A dummy <see cref="IChannelId" /> implementation
     /// </summary>
     public sealed class EmbeddedChannelId : IChannelId
     {
@@ -16,15 +16,9 @@ namespace DotNetty.Transport.Channels.Embedded
         {
         }
 
-        public override int GetHashCode()
-        {
-            return 0;
-        }
+        public override int GetHashCode() => 0;
 
-        public override bool Equals(object obj)
-        {
-            return obj is EmbeddedChannelId;
-        }
+        public override bool Equals(object obj) => obj is EmbeddedChannelId;
 
         public int CompareTo(IChannelId other)
         {
@@ -35,20 +29,10 @@ namespace DotNetty.Transport.Channels.Embedded
             return string.Compare(this.AsLongText(), other.AsLongText(), StringComparison.Ordinal);
         }
 
-        public override string ToString()
-        {
-            return "embedded";
-        }
+        public override string ToString() => "embedded";
 
-        public string AsShortText()
-        {
-            return this.ToString();
-        }
+        public string AsShortText() => this.ToString();
 
-        public string AsLongText()
-        {
-            return this.ToString();
-        }
+        public string AsLongText() => this.ToString();
     }
 }
-

@@ -18,7 +18,7 @@ namespace Echo.Server
 
     class Program
     {
-        static async Task RunServer()
+        static async Task RunServerAsync()
         {
             var eventListener = new ObservableEventListener();
             eventListener.LogToConsole();
@@ -26,6 +26,11 @@ namespace Echo.Server
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
+            X509Certificate2 tlsCertificate = null;
+            if (EchoServerSettings.IsSsl)
+            {
+                tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
+            }
             try
             {
                 var bootstrap = new ServerBootstrap();
@@ -33,37 +38,36 @@ namespace Echo.Server
                     .Group(bossGroup, workerGroup)
                     .Channel<TcpServerSocketChannel>()
                     .Option(ChannelOption.SoBacklog, 100)
-                    .Handler(new LoggingHandler(LogLevel.INFO))
+                    .Handler(new LoggingHandler("SRV-LSTN"))
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
-
-                        if (EchoServerSettings.IsSsl)
+                        if (tlsCertificate != null)
                         {
-                            pipeline.AddLast(TlsHandler.Server(new X509Certificate2("dotnetty.com.pfx", "password")));
+                            pipeline.AddLast("tls", TlsHandler.Server(tlsCertificate));
                         }
-                        pipeline.AddLast(new LengthFieldPrepender(2));
-                        pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
+                        //pipeline.AddLast(new LoggingHandler("SRV-CONN"));
+                        pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
+                        pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
-                        pipeline.AddLast(new EchoServerHandler());
+                        pipeline.AddLast("echo", new EchoServerHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(EchoServerSettings.Port);
+                IChannel boundChannel = await bootstrap.BindAsync(EchoServerSettings.Port);
 
                 Console.ReadLine();
 
-                await bootstrapChannel.CloseAsync();
+                await boundChannel.CloseAsync();
             }
             finally
             {
-                Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
+                await Task.WhenAll(
+                    bossGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
+                    workerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
                 eventListener.Dispose();
             }
         }
 
-        static void Main(string[] args)
-        {
-            Task.Run(() => RunServer()).Wait();
-        }
+        static void Main() => RunServerAsync().Wait();
     }
 }

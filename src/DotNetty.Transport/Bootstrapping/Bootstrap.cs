@@ -15,11 +15,12 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// A {@link Bootstrap} that makes it easy to bootstrap a {@link Channel} to use
-    /// for clients.
-    ///
-    /// <p>The {@link #bind()} methods are useful in combination with connectionless transports such as datagram (UDP).
-    /// For regular TCP connections, please use the provided {@link #connect()} methods.</p>
+    ///     A {@link Bootstrap} that makes it easy to bootstrap a {@link Channel} to use
+    ///     for clients.
+    ///     <p>
+    ///         The {@link #bind()} methods are useful in combination with connectionless transports such as datagram (UDP).
+    ///         For regular TCP connections, please use the provided {@link #connect()} methods.
+    ///     </p>
     /// </summary>
     public class Bootstrap : AbstractBootstrap<Bootstrap, IChannel>
     {
@@ -42,7 +43,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Sets the {@link NameResolver} which will resolve the address of the unresolved named address.
+        ///     Sets the {@link NameResolver} which will resolve the address of the unresolved named address.
         /// </summary>
         public Bootstrap Resolver(INameResolver resolver)
         {
@@ -52,8 +53,8 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// The {@link SocketAddress} to connect to once the {@link #connect()} method
-        /// is called.
+        ///     The {@link SocketAddress} to connect to once the {@link #connect()} method
+        ///     is called.
         /// </summary>
         public Bootstrap RemoteAddress(EndPoint remoteAddress)
         {
@@ -62,7 +63,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #remoteAddress(SocketAddress)}
+        ///     @see {@link #remoteAddress(SocketAddress)}
         /// </summary>
         public Bootstrap RemoteAddress(string inetHost, int inetPort)
         {
@@ -71,7 +72,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// @see {@link #remoteAddress(SocketAddress)}
+        ///     @see {@link #remoteAddress(SocketAddress)}
         /// </summary>
         public Bootstrap RemoteAddress(IPAddress inetHost, int inetPort)
         {
@@ -80,7 +81,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync()
         {
@@ -91,58 +92,52 @@ namespace DotNetty.Transport.Bootstrapping
                 throw new InvalidOperationException("remoteAddress not set");
             }
 
-            return this.DoResolveAndConnect(remoteAddress, this.LocalAddress());
+            return this.DoResolveAndConnectAsync(remoteAddress, this.LocalAddress());
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
-        public Task<IChannel> ConnectAsync(string inetHost, int inetPort)
-        {
-            return this.ConnectAsync(new DnsEndPoint(inetHost, inetPort));
-        }
+        public Task<IChannel> ConnectAsync(string inetHost, int inetPort) => this.ConnectAsync(new DnsEndPoint(inetHost, inetPort));
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
-        public Task<IChannel> ConnectAsync(IPAddress inetHost, int inetPort)
-        {
-            return this.ConnectAsync(new IPEndPoint(inetHost, inetPort));
-        }
+        public Task<IChannel> ConnectAsync(IPAddress inetHost, int inetPort) => this.ConnectAsync(new IPEndPoint(inetHost, inetPort));
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync(EndPoint remoteAddress)
         {
             Contract.Requires(remoteAddress != null);
 
             this.Validate();
-            return this.DoResolveAndConnect(remoteAddress, this.LocalAddress());
+            return this.DoResolveAndConnectAsync(remoteAddress, this.LocalAddress());
         }
 
         /// <summary>
-        /// Connect a {@link Channel} to the remote peer.
+        ///     Connect a {@link Channel} to the remote peer.
         /// </summary>
         public Task<IChannel> ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
             Contract.Requires(remoteAddress != null);
 
             this.Validate();
-            return this.DoResolveAndConnect(remoteAddress, localAddress);
+            return this.DoResolveAndConnectAsync(remoteAddress, localAddress);
         }
 
         /// <summary>
-        /// @see {@link #connect()}
+        ///     @see {@link #connect()}
         /// </summary>
-        async Task<IChannel> DoResolveAndConnect(EndPoint remoteAddress, EndPoint localAddress)
+        async Task<IChannel> DoResolveAndConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
             IChannel channel = await this.InitAndRegisterAsync();
 
             if (this.resolver.IsResolved(remoteAddress))
             {
                 // Resolver has no idea about what to do with the specified remote address or it's resolved already.
-                await DoConnect(channel, remoteAddress, localAddress);
+                await DoConnectAsync(channel, remoteAddress, localAddress);
                 return channel;
             }
 
@@ -151,17 +146,25 @@ namespace DotNetty.Transport.Bootstrapping
             {
                 resolvedAddress = await this.resolver.ResolveAsync(remoteAddress);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                channel.CloseAsync();
+                try
+                {
+                    await channel.CloseAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Failed to close channel: " + channel, ex);
+                }
+
                 throw;
             }
 
-            await DoConnect(channel, resolvedAddress, localAddress);
+            await DoConnectAsync(channel, resolvedAddress, localAddress);
             return channel;
         }
 
-        static Task DoConnect(IChannel channel,
+        static Task DoConnectAsync(IChannel channel,
             EndPoint remoteAddress, EndPoint localAddress)
         {
             // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
@@ -194,12 +197,12 @@ namespace DotNetty.Transport.Bootstrapping
             IChannelPipeline p = channel.Pipeline;
             p.AddLast(null, (string)null, this.Handler());
 
-            IDictionary<ChannelOption, object> options = this.Options();
-            foreach (KeyValuePair<ChannelOption, object> e in options)
+            ICollection<ChannelOptionValue> options = this.Options;
+            foreach (ChannelOptionValue e in options)
             {
                 try
                 {
-                    if (!channel.Configuration.SetOption(e.Key, e.Value))
+                    if (!e.Set(channel.Configuration))
                     {
                         Logger.Warn("Unknown channel option: " + e);
                     }
@@ -210,15 +213,11 @@ namespace DotNetty.Transport.Bootstrapping
                 }
             }
 
-            // todo: attrs
-            //var attrs = attrs();
-            //lock (attrs)
-            //{
-            //    foreach (var e in attrs)
-            //    {
-            //        channel.attr((AttributeKey<object>)e.getKey()).set(e.getValue());
-            //    }
-            //}
+            ICollection<AttributeValue> attrs = this.Attributes;
+            foreach (AttributeValue e in attrs)
+            {
+                e.Set(channel);
+            }
         }
 
         public override Bootstrap Validate()
@@ -231,15 +230,12 @@ namespace DotNetty.Transport.Bootstrapping
             return this;
         }
 
-        public override object Clone()
-        {
-            return new Bootstrap(this);
-        }
+        public override Bootstrap Clone() => new Bootstrap(this);
 
         /// <summary>
-        /// Returns a deep clone of this bootstrap which has the identical configuration except that it uses
-        /// the given {@link EventLoopGroup}. This method is useful when making multiple {@link Channel}s with similar
-        /// settings.
+        ///     Returns a deep clone of this bootstrap which has the identical configuration except that it uses
+        ///     the given {@link EventLoopGroup}. This method is useful when making multiple {@link Channel}s with similar
+        ///     settings.
         /// </summary>
         public Bootstrap Clone(IEventLoopGroup group)
         {

@@ -4,23 +4,19 @@
 namespace DotNetty.Transport.Channels
 {
     using System.Diagnostics.Contracts;
+    using DotNetty.Common.Concurrency;
 
     sealed class DefaultChannelHandlerContext : AbstractChannelHandlerContext
     {
-        readonly IChannelHandler handler;
-
         public DefaultChannelHandlerContext(
-            DefaultChannelPipeline pipeline, IChannelHandlerInvoker invoker, string name, IChannelHandler handler)
-            : base(pipeline, invoker, name, GetSkipPropagationFlags(handler))
+            DefaultChannelPipeline pipeline, IEventExecutor executor, string name, IChannelHandler handler)
+            : base(pipeline, executor, name, GetSkipPropagationFlags(handler))
         {
             Contract.Requires(handler != null);
 
-            this.handler = handler;
+            this.Handler = handler;
         }
 
-        public override IChannelHandler Handler
-        {
-            get { return this.handler; }
-        }
+        public override IChannelHandler Handler { get; }
     }
 }

@@ -19,7 +19,7 @@ namespace DotNetty.Codecs.Mqtt
 
             if (topicName.IndexOfAny(TopicWildcards) > 0)
             {
-                throw new DecoderException(string.Format("Invalid PUBLISH topic name: {0}", topicName));
+                throw new DecoderException($"Invalid PUBLISH topic name: {topicName}");
             }
         }
 

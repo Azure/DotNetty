@@ -6,7 +6,6 @@ namespace DotNetty.Common
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Runtime.CompilerServices;
     using System.Text;
@@ -86,6 +85,9 @@ namespace DotNetty.Common
         /// </summary>
         public static DetectionLevel Level { get; set; }
 
+        /// Returns <c>true</c> if resource leak detection is enabled.
+        public static bool Enabled => Level > DetectionLevel.Disabled;
+
         readonly ConcurrentDictionary<string, bool> reportedLeaks = new ConcurrentDictionary<string, bool>();
 
         readonly string resourceType;
@@ -112,15 +114,9 @@ namespace DotNetty.Common
             this.maxActive = maxActive;
         }
 
-        public static ResourceLeakDetector Create<T>()
-        {
-            return new ResourceLeakDetector(StringUtil.SimpleClassName<T>());
-        }
+        public static ResourceLeakDetector Create<T>() => new ResourceLeakDetector(StringUtil.SimpleClassName<T>());
 
-        public static ResourceLeakDetector Create<T>(int samplingInterval, long maxActive)
-        {
-            return new ResourceLeakDetector(StringUtil.SimpleClassName<T>(), samplingInterval, maxActive);
-        }
+        public static ResourceLeakDetector Create<T>(int samplingInterval, long maxActive) => new ResourceLeakDetector(StringUtil.SimpleClassName<T>(), samplingInterval, maxActive);
 
         /// <summary>
         ///     Creates a new <see cref="IResourceLeak" /> which is expected to be closed via <see cref="IResourceLeak.Close()" />
@@ -213,7 +209,7 @@ namespace DotNetty.Common
                     DetectionLevel level = Level;
                     if (level >= DetectionLevel.Advanced)
                     {
-                        this.creationRecord = NewRecord(null, 3);
+                        this.creationRecord = NewRecord(null);
                     }
                     else
                     {
@@ -229,21 +225,15 @@ namespace DotNetty.Common
                 }
             }
 
-            public void Record()
-            {
-                this.RecordInternal(null, 3);
-            }
+            public void Record() => this.RecordInternal(null);
 
-            public void Record(object hint)
-            {
-                this.RecordInternal(hint, 3);
-            }
+            public void Record(object hint) => this.RecordInternal(hint);
 
-            void RecordInternal(object hint, int recordsToSkip)
+            void RecordInternal(object hint)
             {
                 if (this.creationRecord != null)
                 {
-                    string value = NewRecord(hint, recordsToSkip);
+                    string value = NewRecord(hint);
 
                     lock (this.lastRecords)
                     {
@@ -308,26 +298,18 @@ namespace DotNetty.Common
                             .Append(StringUtil.Newline)
                             .Append(array[i]);
                     }
+                    buf.Append(StringUtil.Newline);
                 }
 
                 buf.Append("Created at:")
                     .Append(StringUtil.Newline)
                     .Append(this.creationRecord);
 
-                buf.Length -= StringUtil.Newline.Length;
                 return buf.ToString();
             }
         }
 
-        static readonly string[] StackTraceElementExclusions =
-        {
-            "DotNetty.Common.Utilities.ReferenceCountUtil.Touch(",
-            "DotNetty.Buffers.AdvancedLeakAwareByteBuf.Touch(",
-            "DotNetty.Buffers.AbstractByteBufAllocator.ToLeakAwareBuffer(",
-            "DotNetty.Buffers.AdvancedLeakAwareByteBuf.RecordLeakNonRefCountingOperation("
-        };
-
-        static string NewRecord(object hint, int recordsToSkip)
+        static string NewRecord(object hint)
         {
             Contract.Ensures(Contract.Result<string>() != null);
 
@@ -351,39 +333,7 @@ namespace DotNetty.Common
             }
 
             // Append the stack trace.
-            StackFrame[] array = new StackTrace().GetFrames();
-            if (array != null)
-            {
-                foreach (StackFrame e in array)
-                {
-                    if (recordsToSkip > 0)
-                    {
-                        recordsToSkip--;
-                    }
-                    else
-                    {
-                        string estr = e.ToString();
-
-                        // Strip the noisy stack trace elements.
-                        bool excluded = false;
-                        foreach (string exclusion in StackTraceElementExclusions)
-                        {
-                            if (estr.StartsWith(exclusion, StringComparison.InvariantCulture))
-                            {
-                                excluded = true;
-                                break;
-                            }
-                        }
-
-                        if (!excluded)
-                        {
-                            buf.Append('\t');
-                            buf.Append(estr);
-                            buf.Append(StringUtil.Newline);
-                        }
-                    }
-                }
-            }
+            buf.Append(Environment.StackTrace);
 
             return buf.ToString();
         }

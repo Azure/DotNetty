@@ -3,11 +3,13 @@
 
 namespace DotNetty.Transport.Channels
 {
+    using System;
     using System.Net;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Utilities;
 
-    public interface IChannel
+    public interface IChannel : IAttributeMap, IComparable<IChannel>
     {
         IChannelId Id { get; }
 
@@ -17,13 +19,17 @@ namespace DotNetty.Transport.Channels
 
         IChannel Parent { get; }
 
-        bool DisconnectSupported { get; }
-
         bool Open { get; }
 
         bool Active { get; }
 
         bool Registered { get; }
+
+        /// <summary>
+        ///     Return the <see cref="ChannelMetadata" /> of the <see cref="IChannel" /> which describe the nature of the
+        ///     <see cref="IChannel" />.
+        /// </summary>
+        ChannelMetadata Metadata { get; }
 
         EndPoint LocalAddress { get; }
 

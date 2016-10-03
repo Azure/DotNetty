@@ -33,19 +33,23 @@ namespace DotNetty.Codecs
     * }
     * </pre>
     */
+
     public class StringDecoder : MessageToMessageDecoder<IByteBuffer>
     {
         readonly Encoding encoding;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Codecs.StringDecoder"/> class with the current system character set.
+        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.StringDecoder" /> class with the current system
+        ///     character set.
         /// </summary>
-        public StringDecoder() : this(Encoding.Default)
+        public StringDecoder()
+            : this(Encoding.GetEncoding(0))
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Codecs.StringDecoder"/> class with the specified character set..
+        ///     Initializes a new instance of the <see cref="DotNetty.Codecs.StringDecoder" /> class with the specified character
+        ///     set..
         /// </summary>
         /// <param name="encoding">Encoding.</param>
         public StringDecoder(Encoding encoding)
@@ -58,15 +62,14 @@ namespace DotNetty.Codecs
             this.encoding = encoding;
         }
 
+        public override bool IsSharable => true;
+
         protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
-            string decoded = Decode(context, input);
+            string decoded = this.Decode(context, input);
             output.Add(decoded);
         }
 
-        protected string Decode(IChannelHandlerContext context, IByteBuffer input)
-        {
-            return input.ToString(this.encoding);
-        }
+        protected string Decode(IChannelHandlerContext context, IByteBuffer input) => input.ToString(this.encoding);
     }
 }

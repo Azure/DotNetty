@@ -13,7 +13,7 @@ namespace DotNetty.Handlers.Tls
         readonly Exception exception;
 
         /// <summary>
-        ///  Creates a new event that indicates a successful handshake.
+        ///     Creates a new event that indicates a successful handshake.
         /// </summary>
         TlsHandshakeCompletionEvent()
         {
@@ -21,8 +21,8 @@ namespace DotNetty.Handlers.Tls
         }
 
         /// <summary>
-        ///  Creates a new event that indicates an unsuccessful handshake.
-        ///  Use {@link #SUCCESS} to indicate a successful handshake.
+        ///     Creates a new event that indicates an unsuccessful handshake.
+        ///     Use {@link #SUCCESS} to indicate a successful handshake.
         /// </summary>
         public TlsHandshakeCompletionEvent(Exception exception)
         {
@@ -32,20 +32,20 @@ namespace DotNetty.Handlers.Tls
         }
 
         /// <summary>
-        ///  Return {@code true} if the handshake was successful
+        ///     Return {@code true} if the handshake was successful
         /// </summary>
-        public bool IsSuccessful
-        {
-            get { return this.exception == null; }
-        }
+        public bool IsSuccessful => this.exception == null;
 
         /// <summary>
-        ///  Return the {@link Throwable} if {@link #isSuccess()} returns {@code false}
-        ///  and so the handshake failed.
+        ///     Return the {@link Throwable} if {@link #isSuccess()} returns {@code false}
+        ///     and so the handshake failed.
         /// </summary>
-        public Exception Exception
+        public Exception Exception => this.exception;
+
+        public override string ToString()
         {
-            get { return this.exception; }
+            Exception ex = this.Exception;
+            return ex == null ? "TlsHandshakeCompletionEvent(SUCCESS)" : $"TlsHandshakeCompletionEvent({ex})";
         }
     }
 }

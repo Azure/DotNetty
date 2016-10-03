@@ -30,6 +30,17 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <DocumentationFile>bin\Release\DotNetty.Buffers.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Signed|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;NOTEST</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\Release\DotNetty.Buffers.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -40,8 +51,12 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="AdvancedLeakAwareByteBuf.cs" />
-    <Compile Include="SimpleLeakAwareByteBuf.cs" />
+    <Compile Include="AdvancedLeakAwareByteBuffer.cs" />
+    <Compile Include="Properties\Friends.cs" />
+    <Compile Include="IPoolArenaMetric.cs" />
+    <Compile Include="IPoolChunkListMetric.cs" />
+    <Compile Include="IPoolSubpageMetric.cs" />
+    <Compile Include="SimpleLeakAwareByteBuffer.cs" />
     <Compile Include="AbstractByteBuffer.cs" />
     <Compile Include="AbstractByteBufferAllocator.cs" />
     <Compile Include="AbstractDerivedByteBuffer.cs" />
@@ -52,13 +67,20 @@
     <Compile Include="CompositeByteBuffer.cs" />
     <Compile Include="DuplicatedByteBuffer.cs" />
     <Compile Include="EmptyByteBuffer.cs" />
+    <Compile Include="IPoolChunkMetric.cs" />
+    <Compile Include="PoolArena.cs" />
+    <Compile Include="PoolChunk.cs" />
+    <Compile Include="PoolChunkList.cs" />
     <Compile Include="PooledByteBuffer.cs" />
+    <Compile Include="PooledByteBufferAllocator.cs" />
+    <Compile Include="PooledHeapByteBuffer.cs" />
+    <Compile Include="PoolSubpage.cs" />
+    <Compile Include="PoolThreadCache.cs" />
     <Compile Include="IByteBuffer.cs" />
     <Compile Include="IByteBufferAllocator.cs" />
     <Compile Include="IllegalReferenceCountException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SlicedByteBuffer.cs" />
-    <Compile Include="PooledByteBufferAllocator.cs" />
     <Compile Include="SwappedByteBuffer.cs" />
     <Compile Include="Unpooled.cs" />
     <Compile Include="UnpooledByteBufferAllocator.cs" />

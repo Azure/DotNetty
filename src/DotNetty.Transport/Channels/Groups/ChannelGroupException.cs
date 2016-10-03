@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Channels.Groups
         {
             if (exceptions == null)
             {
-                throw new ArgumentNullException("exceptions");
+                throw new ArgumentNullException(nameof(exceptions));
             }
             if (exceptions.Count == 0)
             {
@@ -25,14 +25,8 @@ namespace DotNetty.Transport.Channels.Groups
             this.failed = new ReadOnlyCollection<KeyValuePair<IChannel, Exception>>(exceptions);
         }
 
-        public IEnumerator<KeyValuePair<IChannel, Exception>> GetEnumerator()
-        {
-            return this.failed.GetEnumerator();
-        }
+        public IEnumerator<KeyValuePair<IChannel, Exception>> GetEnumerator() => this.failed.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.failed.GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => this.failed.GetEnumerator();
     }
 }

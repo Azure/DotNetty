@@ -18,23 +18,16 @@ namespace DotNetty.Codecs.Mqtt
         const int StringSizeLength = 2;
         const int MaxVariableLength = 4;
 
-        protected override void Encode(IChannelHandlerContext context, Packet message, List<object> output)
-        {
-            DoEncode(context.Allocator, message, output);
-        }
+        protected override void Encode(IChannelHandlerContext context, Packet message, List<object> output) => DoEncode(context.Allocator, message, output);
 
-        public override bool IsSharable
-        {
-            get { return true; }
-        }
+        public override bool IsSharable => true;
 
         /// <summary>
-        /// This is the main encoding method.
-        /// It's only visible for testing.
-        ///
-        /// @param bufferAllocator Allocates ByteBuf
-        /// @param packet MQTT packet to encode
-        /// @return ByteBuf with encoded bytes
+        ///     This is the main encoding method.
+        ///     It's only visible for testing.
+        ///     @param bufferAllocator Allocates ByteBuf
+        ///     @param packet MQTT packet to encode
+        ///     @return ByteBuf with encoded bytes
         /// </summary>
         internal static void DoEncode(IByteBufferAllocator bufferAllocator, Packet packet, List<object> output)
         {
@@ -71,7 +64,7 @@ namespace DotNetty.Codecs.Mqtt
                     EncodePacketWithFixedHeaderOnly(bufferAllocator, packet, output);
                     break;
                 default:
-                    throw new ArgumentException("Unknown packet type: " + packet.PacketType, "packet");
+                    throw new ArgumentException("Unknown packet type: " + packet.PacketType, nameof(packet));
             }
         }
 
@@ -160,7 +153,7 @@ namespace DotNetty.Codecs.Mqtt
             {
                 buf.WriteShort(userNameBytes.Length);
                 buf.WriteBytes(userNameBytes, 0, userNameBytes.Length);
-                
+
                 if (packet.HasPassword)
                 {
                     buf.WriteShort(passwordBytes.Length);
@@ -267,7 +260,7 @@ namespace DotNetty.Codecs.Mqtt
             const int VariableHeaderSize = PacketIdLength;
             int payloadBufferSize = 0;
 
-            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.NewInstance();
 
             try
             {
@@ -327,7 +320,7 @@ namespace DotNetty.Codecs.Mqtt
             const int VariableHeaderSize = 2;
             int payloadBufferSize = 0;
 
-            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.NewInstance();
 
             try
             {

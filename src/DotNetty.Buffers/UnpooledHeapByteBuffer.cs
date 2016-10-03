@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Threading;
@@ -14,10 +15,9 @@ namespace DotNetty.Buffers
         byte[] array;
 
         /// <summary>
-        /// Creates a new heap buffer with a newly allocated byte array.
-        ///
-        /// @param initialCapacity the initial capacity of the underlying byte array
-        /// @param maxCapacity the max capacity of the underlying byte array
+        ///     Creates a new heap buffer with a newly allocated byte array.
+        ///     @param initialCapacity the initial capacity of the underlying byte array
+        ///     @param maxCapacity the max capacity of the underlying byte array
         /// </summary>
         public UnpooledHeapByteBuffer(IByteBufferAllocator allocator, int initialCapacity, int maxCapacity)
             : this(allocator, new byte[initialCapacity], 0, 0, maxCapacity)
@@ -25,10 +25,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Creates a new heap buffer with an existing byte array.
-        ///
-        /// @param initialArray the initial underlying byte array
-        /// @param maxCapacity the max capacity of the underlying byte array
+        ///     Creates a new heap buffer with an existing byte array.
+        ///     @param initialArray the initial underlying byte array
+        ///     @param maxCapacity the max capacity of the underlying byte array
         /// </summary>
         public UnpooledHeapByteBuffer(IByteBufferAllocator allocator, byte[] initialArray, int maxCapacity)
             : this(allocator, initialArray, 0, initialArray.Length, maxCapacity)
@@ -48,20 +47,11 @@ namespace DotNetty.Buffers
             this.SetIndex(readerIndex, writerIndex);
         }
 
-        protected void SetArray(byte[] initialArray)
-        {
-            this.array = initialArray;
-        }
+        protected void SetArray(byte[] initialArray) => this.array = initialArray;
 
-        public override IByteBufferAllocator Allocator
-        {
-            get { return this.allocator; }
-        }
+        public override IByteBufferAllocator Allocator => this.allocator;
 
-        public override ByteOrder Order
-        {
-            get { return ByteOrder.BigEndian; }
-        }
+        public override ByteOrder Order => ByteOrder.BigEndian;
 
         public override int Capacity
         {
@@ -106,10 +96,17 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public override bool HasArray
+        public override int IoBufferCount => 1;
+
+        public override ArraySegment<byte> GetIoBuffer(int index, int length)
         {
-            get { return true; }
+            this.EnsureAccessible();
+            return new ArraySegment<byte>(this.array, index, length);
         }
+
+        public override ArraySegment<byte>[] GetIoBuffers(int index, int length) => new[] { this.GetIoBuffer(index, length) };
+
+        public override bool HasArray => true;
 
         public override byte[] Array
         {
@@ -120,10 +117,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        public override int ArrayOffset
-        {
-            get { return 0; }
-        }
+        public override int ArrayOffset => 0;
 
         public override IByteBuffer GetBytes(int index, IByteBuffer dst, int dstIndex, int length)
         {
@@ -172,6 +166,7 @@ namespace DotNetty.Buffers
             System.Array.Copy(src, srcIndex, this.array, index, length);
             return this;
         }
+
         public override async Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
             int readTotal = 0;
@@ -193,10 +188,7 @@ namespace DotNetty.Buffers
             return this._GetByte(index);
         }
 
-        protected override byte _GetByte(int index)
-        {
-            return this.array[index];
-        }
+        protected override byte _GetByte(int index) => this.array[index];
 
         public override short GetShort(int index)
         {
@@ -204,10 +196,7 @@ namespace DotNetty.Buffers
             return this._GetShort(index);
         }
 
-        protected override short _GetShort(int index)
-        {
-            return unchecked((short)(this.array[index] << 8 | this.array[index + 1]));
-        }
+        protected override short _GetShort(int index) => unchecked((short)(this.array[index] << 8 | this.array[index + 1]));
 
         public override int GetInt(int index)
         {
@@ -252,10 +241,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        protected override void _SetByte(int index, int value)
-        {
-            this.array[index] = (byte)value;
-        }
+        protected override void _SetByte(int index, int value) => this.array[index] = (byte)value;
 
         public override IByteBuffer SetShort(int index, int value)
         {
@@ -323,14 +309,8 @@ namespace DotNetty.Buffers
             return new UnpooledHeapByteBuffer(this.Allocator, copiedArray, this.MaxCapacity);
         }
 
-        protected override void Deallocate()
-        {
-            this.array = null;
-        }
+        protected override void Deallocate() => this.array = null;
 
-        public override IByteBuffer Unwrap()
-        {
-            return null;
-        }
+        public override IByteBuffer Unwrap() => null;
     }
 }

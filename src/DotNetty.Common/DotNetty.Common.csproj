@@ -129,6 +129,7 @@
     <CodeContractsRuntimeCheckingLevel>Preconditions</CodeContractsRuntimeCheckingLevel>
     <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
+    <DocumentationFile>bin\Release\DotNetty.Common.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Signed|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -139,6 +140,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\DotNetty.Common.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -151,9 +153,12 @@
     </Compile>
     <Compile Include="Concurrency\ActionScheduledAsyncTask.cs" />
     <Compile Include="Concurrency\ActionScheduledTask.cs" />
+    <Compile Include="Concurrency\ExecutionEnvironment.cs" />
     <Compile Include="Concurrency\ICallable`T.cs" />
+    <Compile Include="Concurrency\IEventExecutorGroup.cs" />
     <Compile Include="Concurrency\IScheduledRunnable.cs" />
     <Compile Include="Concurrency\IScheduledTask.cs" />
+    <Compile Include="Concurrency\RunnableScheduledTask.cs" />
     <Compile Include="Concurrency\ScheduledAsyncTask.cs" />
     <Compile Include="Concurrency\ScheduledTask.cs" />
     <Compile Include="Concurrency\StateActionScheduledAsyncTask.cs" />
@@ -161,14 +166,21 @@
     <Compile Include="Concurrency\StateActionWithContextScheduledAsyncTask.cs" />
     <Compile Include="Concurrency\StateActionWithContextScheduledTask.cs" />
     <Compile Include="Deque.cs" />
+    <Compile Include="FastThreadLocal.cs" />
+    <Compile Include="InternalThreadLocalMap.cs" />
+    <Compile Include="Internal\AbstractQueue.cs" />
+    <Compile Include="Internal\CompatibleConcurrentQueue.cs" />
+    <Compile Include="Internal\IQueue.cs" />
+    <Compile Include="Internal\ConcurrentCircularArrayQueue.cs" />
+    <Compile Include="Internal\MpscArrayQueue.cs" />
+    <Compile Include="Internal\PlatformDependent.cs" />
+    <Compile Include="Internal\RefArrayAccessUtil.cs" />
     <Compile Include="Properties\Friends.cs" />
     <Compile Include="Concurrency\AbstractEventExecutor.cs" />
     <Compile Include="Concurrency\AbstractScheduledEventExecutor.cs" />
     <Compile Include="Concurrency\ExecutorTaskScheduler.cs" />
     <Compile Include="Concurrency\IEventExecutor.cs" />
-    <Compile Include="Concurrency\IPausableEventExecutor.cs" />
     <Compile Include="Concurrency\IRunnable.cs" />
-    <Compile Include="Concurrency\IWrappedEventExecutor.cs" />
     <Compile Include="Concurrency\SingleThreadEventExecutor.cs" />
     <Compile Include="Concurrency\TaskCompletionSource.cs" />
     <Compile Include="Internal\Logging\AbstractInternalLogger.cs" />
@@ -185,21 +197,31 @@
     <Compile Include="IResourceLeak.cs" />
     <Compile Include="ResourceLeakDetector.cs" />
     <Compile Include="IResourceLeakHint.cs" />
+    <Compile Include="ThreadDeathWatcher.cs" />
     <Compile Include="ThreadLocalObjectList.cs" />
     <Compile Include="ThreadLocalPool.cs" />
     <Compile Include="PreciseTimeSpan.cs" />
+    <Compile Include="Utilities\AbstractConstant.cs" />
     <Compile Include="Utilities\AtomicReference.cs" />
+    <Compile Include="Utilities\DefaultAttributeMap.cs" />
+    <Compile Include="Utilities\IAttribute.cs" />
+    <Compile Include="Utilities\AttributeKey.cs" />
     <Compile Include="Utilities\BitOps.cs" />
-    <Compile Include="Utilities\ByteArrayExtensions.cs" />
+    <Compile Include="Utilities\ArrayExtensions.cs" />
+    <Compile Include="Utilities\ConstantPool.cs" />
     <Compile Include="Utilities\DebugExtensions.cs" />
-    <Compile Include="Utilities\MpscLinkedQueue.cs" />
+    <Compile Include="Utilities\IAttributeMap.cs" />
+    <Compile Include="Utilities\IConstant.cs" />
+    <Compile Include="Utilities\IntegerExtensions.cs" />
     <Compile Include="Utilities\PriorityQueue.cs" />
-    <Compile Include="Utilities\RecyclableMpscLinkedQueueNode.cs" />
+    <Compile Include="Utilities\RandomExtensions.cs" />
     <Compile Include="Utilities\ReferenceCountUtil.cs" />
     <Compile Include="Internal\SystemPropertyUtil.cs" />
+    <Compile Include="Utilities\ReferenceEqualityComparer.cs" />
     <Compile Include="Utilities\StringUtil.cs" />
     <Compile Include="Utilities\TaskEx.cs" />
     <Compile Include="Utilities\ByteProcessor.cs" />
+    <Compile Include="Utilities\TimeUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DotNetty.Common.nuspec" />

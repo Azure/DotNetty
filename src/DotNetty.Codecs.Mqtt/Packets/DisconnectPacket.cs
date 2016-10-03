@@ -11,9 +11,6 @@ namespace DotNetty.Codecs.Mqtt.Packets
         {
         }
 
-        public override PacketType PacketType
-        {
-            get { return PacketType.DISCONNECT; }
-        }
+        public override PacketType PacketType => PacketType.DISCONNECT;
     }
 }

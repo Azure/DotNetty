@@ -5,10 +5,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 {
     public sealed class PubCompPacket : PacketWithId
     {
-        public override PacketType PacketType
-        {
-            get { return PacketType.PUBCOMP; }
-        }
+        public override PacketType PacketType => PacketType.PUBCOMP;
 
         public static PubCompPacket InResponseTo(PubRelPacket publishPacket)
         {

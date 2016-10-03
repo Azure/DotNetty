@@ -22,9 +22,6 @@ namespace DotNetty.Tests.Common
             this.eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
         }
 
-        public void Dispose()
-        {
-            this.eventListener.Dispose();
-        }
+        public void Dispose() => this.eventListener.Dispose();
     }
 }
