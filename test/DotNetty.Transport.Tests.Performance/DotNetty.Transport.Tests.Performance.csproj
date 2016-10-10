@@ -52,10 +52,13 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sockets\TcpServerSocketChannelHorizontalScaleStressSpec.cs" />
     <Compile Include="Sockets\TcpSocketChannelInboundOnlyPerfSpec.cs" />
     <Compile Include="Sockets\TcpSocketChannelPerfSpec.cs" />
     <Compile Include="Utilities\CounterHandlerInbound.cs" />
     <Compile Include="Utilities\CounterHandlerOutbound.cs" />
+    <Compile Include="Utilities\ErrorCounterHandler.cs" />
+    <Compile Include="Utilities\IntCodec.cs" />
     <Compile Include="Utilities\IReadFinishedSignal.cs" />
     <Compile Include="Utilities\ManualResetEventSlimReadFinishedSignal.cs" />
     <Compile Include="Utilities\ReadFinishedHandler.cs" />
