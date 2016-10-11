@@ -96,6 +96,14 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Telnet.Client", "examples\T
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Telnet.Server", "examples\Telnet.Server\Telnet.Server.xproj", "{5543847A-8509-4646-8472-1E4450025FDF}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Protobuf", "src\DotNetty.Codecs.Protobuf\DotNetty.Codecs.Protobuf.xproj", "{94912F93-2E93-4AF0-A976-41BDD52B6AF5}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Protobuf.Tests", "test\DotNetty.Codecs.Protobuf.Tests\DotNetty.Codecs.Protobuf.Tests.xproj", "{57AB7999-1705-4F12-A05D-89FEC4EAA305}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.ProtocolBuffers", "src\DotNetty.Codecs.ProtocolBuffers\DotNetty.Codecs.ProtocolBuffers.xproj", "{676744F7-3B28-4EE5-B3D0-7EBAF418B727}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.ProtocolBuffers.Tests", "test\DotNetty.Codecs.ProtocolBuffers.Tests\DotNetty.Codecs.ProtocolBuffers.Tests.xproj", "{E33A7419-E4E8-4243-A2E5-7376BA32D608}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -222,6 +230,22 @@ Global
 		{5543847A-8509-4646-8472-1E4450025FDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5543847A-8509-4646-8472-1E4450025FDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5543847A-8509-4646-8472-1E4450025FDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94912F93-2E93-4AF0-A976-41BDD52B6AF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94912F93-2E93-4AF0-A976-41BDD52B6AF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94912F93-2E93-4AF0-A976-41BDD52B6AF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94912F93-2E93-4AF0-A976-41BDD52B6AF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57AB7999-1705-4F12-A05D-89FEC4EAA305}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57AB7999-1705-4F12-A05D-89FEC4EAA305}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57AB7999-1705-4F12-A05D-89FEC4EAA305}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57AB7999-1705-4F12-A05D-89FEC4EAA305}.Release|Any CPU.Build.0 = Release|Any CPU
+		{676744F7-3B28-4EE5-B3D0-7EBAF418B727}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{676744F7-3B28-4EE5-B3D0-7EBAF418B727}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{676744F7-3B28-4EE5-B3D0-7EBAF418B727}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{676744F7-3B28-4EE5-B3D0-7EBAF418B727}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E33A7419-E4E8-4243-A2E5-7376BA32D608}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E33A7419-E4E8-4243-A2E5-7376BA32D608}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E33A7419-E4E8-4243-A2E5-7376BA32D608}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E33A7419-E4E8-4243-A2E5-7376BA32D608}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -262,5 +286,9 @@ Global
 		{DDA47BCE-752F-4DEE-BB75-28E7D6921E79} = {1F198DCE-5712-43F0-986A-13A2041C2657}
 		{ABABFE48-551E-4C4B-8640-B334329D5C5D} = {D2EDC657-B73C-4F20-BBEB-5A3B176072DE}
 		{5543847A-8509-4646-8472-1E4450025FDF} = {D2EDC657-B73C-4F20-BBEB-5A3B176072DE}
+		{94912F93-2E93-4AF0-A976-41BDD52B6AF5} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{57AB7999-1705-4F12-A05D-89FEC4EAA305} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
+		{676744F7-3B28-4EE5-B3D0-7EBAF418B727} = {F02D7F30-ABA7-4438-8D28-10898E731906}
+		{E33A7419-E4E8-4243-A2E5-7376BA32D608} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
 	EndGlobalSection
 EndGlobal
