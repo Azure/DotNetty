@@ -4,34 +4,31 @@
 namespace Telnet.Client
 {
     using System;
-    using System.Diagnostics.Tracing;
+    using System.IO;
     using System.Net;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
-    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+    using Examples.Common;
 
     class Program
     {
         static async Task RunClientAsync()
         {
-            var eventListener = new ObservableEventListener();
-            eventListener.LogToConsole();
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+            ExampleHelper.SetConsoleLogger();
 
             var group = new MultithreadEventLoopGroup();
 
             X509Certificate2 cert = null;
             string targetHost = null;
-            if (TelnetClientSettings.IsSsl)
+            if (ClientSettings.IsSsl)
             {
-                cert = new X509Certificate2("dotnetty.com.pfx", "password");
+                cert = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
                 targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
             }
             try
@@ -54,19 +51,24 @@ namespace Telnet.Client
                         pipeline.AddLast(new StringEncoder(), new StringDecoder(), new TelnetClientHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.ConnectAsync(new IPEndPoint(TelnetClientSettings.Host, TelnetClientSettings.Port));
+                IChannel bootstrapChannel = await bootstrap.ConnectAsync(new IPEndPoint(ClientSettings.Host, ClientSettings.Port));
 
                 for (;;)
                 {
                     string line = Console.ReadLine();
-                    if (String.IsNullOrEmpty(line))
+                    if (string.IsNullOrEmpty(line))
                     {
                         continue;
                     }
 
-                    try { await bootstrapChannel.WriteAndFlushAsync(line + "\r\n"); }
-                    catch { }
-                    if (line.ToLower() == "bye")
+                    try
+                    {
+                        await bootstrapChannel.WriteAndFlushAsync(line + "\r\n");
+                    }
+                    catch
+                    {
+                    }
+                    if (string.Equals(line, "bye", StringComparison.OrdinalIgnoreCase))
                     {
                         await bootstrapChannel.CloseAsync();
                         break;
@@ -78,7 +80,6 @@ namespace Telnet.Client
             finally
             {
                 group.ShutdownGracefullyAsync().Wait(1000);
-                eventListener.Dispose();
             }
         }
 

@@ -227,24 +227,26 @@ namespace DotNetty.Buffers
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         void AllocateNormal(PooledByteBuffer<T> buf, int reqCapacity, int normCapacity)
         {
-            if (this.q050.Allocate(buf, reqCapacity, normCapacity) || this.q025.Allocate(buf, reqCapacity, normCapacity)
-                || this.q000.Allocate(buf, reqCapacity, normCapacity) || this.qInit.Allocate(buf, reqCapacity, normCapacity)
-                || this.q075.Allocate(buf, reqCapacity, normCapacity))
+            lock (this)
             {
-                ++this.allocationsNormal;
-                return;
-            }
+                if (this.q050.Allocate(buf, reqCapacity, normCapacity) || this.q025.Allocate(buf, reqCapacity, normCapacity)
+                    || this.q000.Allocate(buf, reqCapacity, normCapacity) || this.qInit.Allocate(buf, reqCapacity, normCapacity)
+                    || this.q075.Allocate(buf, reqCapacity, normCapacity))
+                {
+                    ++this.allocationsNormal;
+                    return;
+                }
 
-            // Add a new chunk.
-            PoolChunk<T> c = this.NewChunk(this.PageSize, this.maxOrder, this.PageShifts, this.ChunkSize);
-            long handle = c.Allocate(normCapacity);
-            ++this.allocationsNormal;
-            Contract.Assert(handle > 0);
-            c.InitBuf(buf, handle, reqCapacity);
-            this.qInit.Add(c);
+                // Add a new chunk.
+                PoolChunk<T> c = this.NewChunk(this.PageSize, this.maxOrder, this.PageShifts, this.ChunkSize);
+                long handle = c.Allocate(normCapacity);
+                ++this.allocationsNormal;
+                Contract.Assert(handle > 0);
+                c.InitBuf(buf, handle, reqCapacity);
+                this.qInit.Add(c);
+            }
         }
 
         void AllocateHuge(PooledByteBuffer<T> buf, int reqCapacity)
@@ -536,84 +538,86 @@ namespace DotNetty.Buffers
 
         protected abstract void DestroyChunk(PoolChunk<T> chunk);
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public override string ToString()
         {
-            StringBuilder buf = new StringBuilder()
-                .Append("Chunk(s) at 0~25%:")
-                .Append(StringUtil.Newline)
-                .Append(this.qInit)
-                .Append(StringUtil.Newline)
-                .Append("Chunk(s) at 0~50%:")
-                .Append(StringUtil.Newline)
-                .Append(this.q000)
-                .Append(StringUtil.Newline)
-                .Append("Chunk(s) at 25~75%:")
-                .Append(StringUtil.Newline)
-                .Append(this.q025)
-                .Append(StringUtil.Newline)
-                .Append("Chunk(s) at 50~100%:")
-                .Append(StringUtil.Newline)
-                .Append(this.q050)
-                .Append(StringUtil.Newline)
-                .Append("Chunk(s) at 75~100%:")
-                .Append(StringUtil.Newline)
-                .Append(this.q075)
-                .Append(StringUtil.Newline)
-                .Append("Chunk(s) at 100%:")
-                .Append(StringUtil.Newline)
-                .Append(this.q100)
-                .Append(StringUtil.Newline)
-                .Append("tiny subpages:");
-            for (int i = 1; i < this.tinySubpagePools.Length; i++)
+            lock (this)
             {
-                PoolSubpage<T> head = this.tinySubpagePools[i];
-                if (head.Next == head)
+                StringBuilder buf = new StringBuilder()
+                    .Append("Chunk(s) at 0~25%:")
+                    .Append(StringUtil.Newline)
+                    .Append(this.qInit)
+                    .Append(StringUtil.Newline)
+                    .Append("Chunk(s) at 0~50%:")
+                    .Append(StringUtil.Newline)
+                    .Append(this.q000)
+                    .Append(StringUtil.Newline)
+                    .Append("Chunk(s) at 25~75%:")
+                    .Append(StringUtil.Newline)
+                    .Append(this.q025)
+                    .Append(StringUtil.Newline)
+                    .Append("Chunk(s) at 50~100%:")
+                    .Append(StringUtil.Newline)
+                    .Append(this.q050)
+                    .Append(StringUtil.Newline)
+                    .Append("Chunk(s) at 75~100%:")
+                    .Append(StringUtil.Newline)
+                    .Append(this.q075)
+                    .Append(StringUtil.Newline)
+                    .Append("Chunk(s) at 100%:")
+                    .Append(StringUtil.Newline)
+                    .Append(this.q100)
+                    .Append(StringUtil.Newline)
+                    .Append("tiny subpages:");
+                for (int i = 1; i < this.tinySubpagePools.Length; i++)
                 {
-                    continue;
-                }
-
-                buf.Append(StringUtil.Newline)
-                    .Append(i)
-                    .Append(": ");
-                PoolSubpage<T> s = head.Next;
-                for (;;)
-                {
-                    buf.Append(s);
-                    s = s.Next;
-                    if (s == head)
+                    PoolSubpage<T> head = this.tinySubpagePools[i];
+                    if (head.Next == head)
                     {
-                        break;
+                        continue;
+                    }
+
+                    buf.Append(StringUtil.Newline)
+                        .Append(i)
+                        .Append(": ");
+                    PoolSubpage<T> s = head.Next;
+                    for (;;)
+                    {
+                        buf.Append(s);
+                        s = s.Next;
+                        if (s == head)
+                        {
+                            break;
+                        }
                     }
                 }
-            }
-            buf.Append(StringUtil.Newline)
-                .Append("small subpages:");
-            for (int i = 1; i < this.smallSubpagePools.Length; i++)
-            {
-                PoolSubpage<T> head = this.smallSubpagePools[i];
-                if (head.Next == head)
-                {
-                    continue;
-                }
-
                 buf.Append(StringUtil.Newline)
-                    .Append(i)
-                    .Append(": ");
-                PoolSubpage<T> s = head.Next;
-                for (;;)
+                    .Append("small subpages:");
+                for (int i = 1; i < this.smallSubpagePools.Length; i++)
                 {
-                    buf.Append(s);
-                    s = s.Next;
-                    if (s == head)
+                    PoolSubpage<T> head = this.smallSubpagePools[i];
+                    if (head.Next == head)
                     {
-                        break;
+                        continue;
+                    }
+
+                    buf.Append(StringUtil.Newline)
+                        .Append(i)
+                        .Append(": ");
+                    PoolSubpage<T> s = head.Next;
+                    for (;;)
+                    {
+                        buf.Append(s);
+                        s = s.Next;
+                        if (s == head)
+                        {
+                            break;
+                        }
                     }
                 }
-            }
-            buf.Append(StringUtil.Newline);
+                buf.Append(StringUtil.Newline);
 
-            return buf.ToString();
+                return buf.ToString();
+            }
         }
     }
 

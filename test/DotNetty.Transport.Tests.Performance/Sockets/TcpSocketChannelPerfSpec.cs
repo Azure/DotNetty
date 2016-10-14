@@ -14,6 +14,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
     using DotNetty.Buffers;
     using DotNetty.Codecs;
     using DotNetty.Handlers.Tls;
+    using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
@@ -86,14 +87,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.clientBufferAllocator = new PooledByteBufferAllocator();
 
             Assembly assembly = typeof(TcpChannelPerfSpecs).Assembly;
-            byte[] certificateData;
-            using (Stream sourceStream = assembly.GetManifestResourceStream(assembly.GetManifestResourceNames()[0]))
-            using (var tempStream = new MemoryStream())
-            {
-                sourceStream.CopyTo(tempStream);
-                certificateData = tempStream.ToArray();
-            }
-            var tlsCertificate = new X509Certificate2(certificateData, "password");
+            var tlsCertificate = TestResourceHelper.GetTestCertificate();
             string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
 
             ServerBootstrap sb = new ServerBootstrap()

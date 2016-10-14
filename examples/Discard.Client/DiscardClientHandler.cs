@@ -6,22 +6,21 @@ namespace Discard.Client
     using System;
     using DotNetty.Buffers;
     using DotNetty.Transport.Channels;
-
+    using Examples.Common;
 
     public class DiscardClientHandler : SimpleChannelInboundHandler<object>
     {
-        private IChannelHandlerContext ctx;
-        private byte[] array;
+        IChannelHandlerContext ctx;
+        byte[] array;
 
         public override void ChannelActive(IChannelHandlerContext ctx)
         {
-            this.array = new byte[DiscardClientSettings.Size];
+            this.array = new byte[ClientSettings.Size];
             this.ctx = ctx;
 
             // Send the initial messages.
             this.GenerateTraffic();
         }
-
 
         protected override void ChannelRead0(IChannelHandlerContext context, object message)
         {
@@ -34,7 +33,7 @@ namespace Discard.Client
             this.ctx.CloseAsync();
         }
 
-        private async void GenerateTraffic()
+        async void GenerateTraffic()
         {
             try
             {
@@ -42,7 +41,7 @@ namespace Discard.Client
                 // Flush the outbound buffer to the socket.
                 // Once flushed, generate the same amount of traffic again.
                 await this.ctx.WriteAndFlushAsync(buffer);
-                GenerateTraffic();
+                this.GenerateTraffic();
             }
             catch
             {

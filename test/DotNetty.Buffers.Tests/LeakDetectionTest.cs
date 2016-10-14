@@ -4,20 +4,13 @@
 namespace DotNetty.Buffers.Tests
 {
     using System;
-    using System.Diagnostics.Tracing;
     using System.Runtime.CompilerServices;
     using DotNetty.Common;
-    using DotNetty.Common.Internal.Logging;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging.Formatters;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging.Utility;
-    using Moq;
+    using DotNetty.Tests.Common;
     using Xunit;
 
     public class LeakDetectionTest
     {
-        readonly MockRepository mockRepo = new MockRepository(MockBehavior.Strict);
-
         [Fact(Skip = "logging or GC is acting funny in xUnit console runner.")]
         public void UnderReleaseBufferLeak()
         {
@@ -25,21 +18,23 @@ namespace DotNetty.Buffers.Tests
             try
             {
                 ResourceLeakDetector.Level = ResourceLeakDetector.DetectionLevel.Paranoid;
-                var eventListener = new ObservableEventListener();
-                Mock<IObserver<EventEntry>> logListener = this.mockRepo.Create<IObserver<EventEntry>>();
-                var eventTextFormatter = new EventTextFormatter();
-                Func<EventEntry, bool> leakPredicate = y => y.TryFormatAsString(eventTextFormatter).Contains("LEAK");
-                logListener.Setup(x => x.OnNext(It.Is<EventEntry>(y => leakPredicate(y)))).Verifiable();
-                logListener.Setup(x => x.OnNext(It.Is<EventEntry>(y => !leakPredicate(y))));
-                eventListener.Subscribe(logListener.Object);
-                eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+                bool observedLeak = false;
+                LogTestHelper.Intercept logInterceptor = (name, level, id, message, exception) =>
+                {
+                    if (message.Contains("LEAK"))
+                    {
+                        observedLeak = true;
+                    }
+                };
+                using (LogTestHelper.SetInterceptionLogger(logInterceptor))
+                {
+                    this.CreateAndForgetBuffer();
 
-                this.CreateAndForgetBuffer();
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                }
 
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-
-                this.mockRepo.Verify();
+                Assert.True(observedLeak);
             }
             finally
             {

@@ -4,26 +4,22 @@
 namespace Telnet.Server
 {
     using System;
-    using System.Diagnostics.Tracing;
-    using System.Net.Security;
+    using System.IO;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
-    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+    using Examples.Common;
 
     class Program
     {
         static async Task RunServerAsync()
         {
-            var eventListener = new ObservableEventListener();
-            eventListener.LogToConsole();
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.LogAlways);
+            ExampleHelper.SetConsoleLogger();
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
@@ -33,9 +29,9 @@ namespace Telnet.Server
             var SERVER_HANDLER = new TelnetServerHandler();
 
             X509Certificate2 tlsCertificate = null;
-            if (TelnetSettings.IsSsl)
+            if (ServerSettings.IsSsl)
             {
-                tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
+                tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
             }
             try
             {
@@ -57,7 +53,7 @@ namespace Telnet.Server
                         pipeline.AddLast(STRING_ENCODER, STRING_DECODER, SERVER_HANDLER);
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(TelnetSettings.Port);
+                IChannel bootstrapChannel = await bootstrap.BindAsync(ServerSettings.Port);
 
                 Console.ReadLine();
 
@@ -66,7 +62,6 @@ namespace Telnet.Server
             finally
             {
                 Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
-                eventListener.Dispose();
             }
         }
 

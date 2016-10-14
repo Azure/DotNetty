@@ -1,0 +1,46 @@
+{
+  "name": "DotNetty.Codecs.Mqtt",
+  "version": "0.3.3",
+  "title": "DotNetty: MQTT codec",
+  "description": "MQTT codec for DotNetty",
+  "language": "en-US",
+  "authors": [
+    "Microsoft Azure"
+  ],
+  "copyright": "Copyright © Microsoft Corporation",
+  "packOptions": {
+    "tags": [ "socket", "tcp", "protocol", "netty", "dotnetty", "network", "mqtt" ],
+    "projectUrl": "https://github.com/Azure/DotNetty/",
+    "licenseUrl": "https://github.com/Azure/DotNetty/blob/master/LICENSE.txt",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/Azure/DotNetty/"
+    }
+  },
+  "buildOptions": {
+    "keyFile": "../../DotNetty.snk"
+  },
+  "dependencies": {
+    "NETStandard.Library": "1.6.0",
+    "DotNetty.Common": {
+      "target": "project"
+    },
+    "DotNetty.Buffers": {
+      "target": "project"
+    },
+    "DotNetty.Codecs": {
+      "target": "project"
+    },
+    "DotNetty.Transport": {
+      "target": "project"
+    }
+  },
+  "frameworks": {
+    "netstandard1.3": {
+      "dependencies": {
+        "System.Diagnostics.Contracts": "4.0.1"
+      }
+    },
+    "net451": { }
+  }
+}

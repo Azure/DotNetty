@@ -69,7 +69,7 @@ namespace DotNetty.Common.Internal.Logging
     ///     <seealso cref="Format(string, object, object)" />
     ///     <seealso cref="ArrayFormat(string, object[])" />
     /// </summary>
-    static class MessageFormatter
+    public static class MessageFormatter
     {
         static readonly char DELIM_START = '{';
         static readonly string DELIM_STR = "{}";

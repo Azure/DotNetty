@@ -621,7 +621,7 @@ namespace DotNetty.Transport.Channels
             }
             this.ClearNioBuffers();
         }
-
+        
         public long TotalPendingWriteBytes() => Volatile.Read(ref this.totalPendingSize);
 
         /// <summary>

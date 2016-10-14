@@ -7,6 +7,7 @@ namespace Echo.Client
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Transport.Channels;
+    using Examples.Common;
 
     public class EchoClientHandler : ChannelHandlerAdapter
     {
@@ -14,7 +15,7 @@ namespace Echo.Client
 
         public EchoClientHandler()
         {
-            this.initialMessage = Unpooled.Buffer(EchoClientSettings.Size);
+            this.initialMessage = Unpooled.Buffer(ClientSettings.Size);
             byte[] messageBytes = Encoding.UTF8.GetBytes("Hello world");
             this.initialMessage.WriteBytes(messageBytes);
         }
