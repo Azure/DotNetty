@@ -9,11 +9,7 @@ namespace Echo.Server
     {
         public static bool IsSsl
         {
-            get
-            {
-                string ssl = ConfigurationManager.AppSettings["ssl"];
-                return !string.IsNullOrEmpty(ssl) && bool.Parse(ssl);
-            }
+            get { return (ConfigurationManager.AppSettings["ssl"] ?? string.Empty).ToLower() == "true"; }
         }
 
         public static int Port => int.Parse(ConfigurationManager.AppSettings["port"]);
