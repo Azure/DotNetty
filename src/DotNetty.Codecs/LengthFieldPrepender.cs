@@ -128,7 +128,7 @@ namespace DotNetty.Codecs
             this.lengthAdjustment = lengthAdjustment;
         }
 
-        protected override void Encode(IChannelHandlerContext context, IByteBuffer message, List<object> output)
+        protected internal override void Encode(IChannelHandlerContext context, IByteBuffer message, List<object> output)
         {
             int length = message.ReadableBytes + this.lengthAdjustment;
             if (this.lengthFieldIncludesLengthFieldLength)

@@ -738,7 +738,7 @@ namespace DotNetty.Transport.Channels
                 this.inFlush0 = true;
 
                 // Mark all pending write requests as failure if the channel is inactive.
-                if (!this.channel.Active)
+                if (!this.CanWrite)
                 {
                     try
                     {
@@ -772,6 +772,8 @@ namespace DotNetty.Transport.Channels
                     this.inFlush0 = false;
                 }
             }
+
+            protected virtual bool CanWrite => this.channel.Active;
 
             protected bool EnsureOpen(TaskCompletionSource promise)
             {

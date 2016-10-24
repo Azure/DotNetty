@@ -12,13 +12,9 @@ namespace DotNetty.Codecs.Base64
         readonly bool breakLines;
         readonly Base64Dialect dialect;
 
-        public Base64Encoder()
-            : this(true)
-        {
-        }
+        public Base64Encoder() : this(true) { }
 
-        public Base64Encoder(bool breakLines)
-            : this(breakLines, Base64Dialect.STANDARD)
+        public Base64Encoder(bool breakLines) : this(breakLines, Base64Dialect.STANDARD)
         {
         }
 
@@ -28,7 +24,7 @@ namespace DotNetty.Codecs.Base64
             this.dialect = dialect;
         }
 
-        protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output) => output.Add(Base64.Encode(message, this.breakLines, this.dialect));
+        protected internal override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output) => output.Add(Base64.Encode(message, this.breakLines, this.dialect));
 
         public override bool IsSharable => true;
     }

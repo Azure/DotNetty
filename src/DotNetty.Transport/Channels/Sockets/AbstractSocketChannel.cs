@@ -196,6 +196,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     break;
                 case SocketAsyncOperation.Receive:
+                case SocketAsyncOperation.ReceiveFrom:
                     if (eventLoop.InEventLoop)
                     {
                         @unsafe.FinishRead(operation);
@@ -206,6 +207,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     break;
                 case SocketAsyncOperation.Send:
+                case SocketAsyncOperation.SendTo:
                     if (eventLoop.InEventLoop)
                     {
                         @unsafe.FinishWrite(operation);

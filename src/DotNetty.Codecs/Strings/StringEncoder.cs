@@ -61,7 +61,7 @@ namespace DotNetty.Codecs
 
         public override bool IsSharable => true;
 
-        protected override void Encode(IChannelHandlerContext context, string message, List<object> output)
+        protected internal override void Encode(IChannelHandlerContext context, string message, List<object> output)
         {
             if (message.Length == 0)
             {
