@@ -5,16 +5,15 @@ namespace Telnet.Server
 {
     using System;
     using System.Net;
-    using DotNetty.Transport.Channels;
     using System.Threading.Tasks;
+    using DotNetty.Transport.Channels;
 
-    public class TelnetServerHandler : SimpleChannelInboundHandler<String>
+    public class TelnetServerHandler : SimpleChannelInboundHandler<string>
     {
-
         public override void ChannelActive(IChannelHandlerContext contex)
         {
-            contex.WriteAsync(String.Format("Welcome to {0} !\r\n", Dns.GetHostName()));
-            contex.WriteAndFlushAsync(String.Format("It is {0} now !\r\n", DateTime.Now));
+            contex.WriteAsync(string.Format("Welcome to {0} !\r\n", Dns.GetHostName()));
+            contex.WriteAndFlushAsync(string.Format("It is {0} now !\r\n", DateTime.Now));
         }
 
         protected override void ChannelRead0(IChannelHandlerContext contex, string msg)
@@ -22,11 +21,11 @@ namespace Telnet.Server
             // Generate and write a response.
             string response;
             bool close = false;
-            if (String.IsNullOrEmpty(msg))
+            if (string.IsNullOrEmpty(msg))
             {
                 response = "Please type something.\r\n";
             }
-            else if ("bye" == msg.ToLower())
+            else if (string.Equals("bye", msg, StringComparison.OrdinalIgnoreCase))
             {
                 response = "Have a good day!\r\n";
                 close = true;
@@ -36,7 +35,7 @@ namespace Telnet.Server
                 response = "Did you say '" + msg + "'?\r\n";
             }
 
-            var wait_close = contex.WriteAndFlushAsync(response);
+            Task wait_close = contex.WriteAndFlushAsync(response);
             if (close)
             {
                 Task.WaitAll(wait_close);

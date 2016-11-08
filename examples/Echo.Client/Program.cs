@@ -4,35 +4,32 @@
 namespace Echo.Client
 {
     using System;
-    using System.Diagnostics.Tracing;
+    using System.IO;
     using System.Net;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
-    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+    using Examples.Common;
 
     class Program
     {
         static async Task RunClientAsync()
         {
-            var eventListener = new ObservableEventListener();
-            eventListener.LogToConsole();
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+            ExampleHelper.SetConsoleLogger();
 
             var group = new MultithreadEventLoopGroup();
 
             X509Certificate2 cert = null;
             string targetHost = null;
-            if (EchoClientSettings.IsSsl)
+            if (ClientSettings.IsSsl)
             {
-                cert = new X509Certificate2("dotnetty.com.pfx", "password");
+                cert = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
                 targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
             }
             try
@@ -50,14 +47,14 @@ namespace Echo.Client
                         {
                             pipeline.AddLast("tls", new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)));
                         }
-                        //pipeline.AddLast(new LoggingHandler("CLIENT"));
+                        pipeline.AddLast(new LoggingHandler());
                         pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
                         pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
                         pipeline.AddLast("echo", new EchoClientHandler());
                     }));
 
-                IChannel clientChannel = await bootstrap.ConnectAsync(new IPEndPoint(EchoClientSettings.Host, EchoClientSettings.Port));
+                IChannel clientChannel = await bootstrap.ConnectAsync(new IPEndPoint(ClientSettings.Host, ClientSettings.Port));
 
                 Console.ReadLine();
 
@@ -66,7 +63,6 @@ namespace Echo.Client
             finally
             {
                 await group.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
-                eventListener.Dispose();
             }
         }
 

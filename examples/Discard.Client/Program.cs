@@ -4,34 +4,31 @@
 namespace Discard.Client
 {
     using System;
-    using System.Diagnostics.Tracing;
+    using System.IO;
     using System.Net;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
-    using DotNetty.Codecs;
-    using DotNetty.Common.Internal.Logging;
+    using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+    using Examples.Common;
 
     class Program
     {
         static async Task RunClientAsync()
         {
-            var eventListener = new ObservableEventListener();
-            eventListener.LogToConsole();
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+            ExampleHelper.SetConsoleLogger();
 
             var group = new MultithreadEventLoopGroup();
 
             X509Certificate2 cert = null;
             string targetHost = null;
-            if (DiscardClientSettings.IsSsl)
+            if (ClientSettings.IsSsl)
             {
-                cert = new X509Certificate2("dotnetty.com.pfx", "password");
+                cert = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
                 targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
             }
             try
@@ -50,10 +47,11 @@ namespace Discard.Client
                             pipeline.AddLast(new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)));
                         }
 
+                        pipeline.AddLast(new LoggingHandler());
                         pipeline.AddLast(new DiscardClientHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.ConnectAsync(new IPEndPoint(DiscardClientSettings.Host, DiscardClientSettings.Port));
+                IChannel bootstrapChannel = await bootstrap.ConnectAsync(new IPEndPoint(ClientSettings.Host, ClientSettings.Port));
 
                 Console.ReadLine();
 
@@ -62,10 +60,9 @@ namespace Discard.Client
             finally
             {
                 group.ShutdownGracefullyAsync().Wait(1000);
-                eventListener.Dispose();
             }
         }
 
-        static void Main() => RunClientAsync().Wait();
+        public static void Main() => RunClientAsync().Wait();
     }
 }

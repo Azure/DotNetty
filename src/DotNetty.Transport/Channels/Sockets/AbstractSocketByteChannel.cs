@@ -153,6 +153,9 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             SocketChannelAsyncOperation operation = this.ReadOperation;
             bool pending;
+#if NETSTANDARD1_3
+            pending = this.Socket.ReceiveAsync(operation);
+#else
             if (ExecutionContext.IsFlowSuppressed())
             {
                 pending = this.Socket.ReceiveAsync(operation);
@@ -164,6 +167,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     pending = this.Socket.ReceiveAsync(operation);
                 }
             }
+#endif
             if (!pending)
             {
                 // todo: potential allocation / non-static field?
@@ -304,6 +308,9 @@ namespace DotNetty.Transport.Channels.Sockets
                 this.SetState(StateFlags.WriteScheduled);
                 bool pending;
 
+#if NETSTANDARD1_3
+                pending = this.Socket.SendAsync(operation);
+#else
                 if (ExecutionContext.IsFlowSuppressed())
                 {
                     pending = this.Socket.SendAsync(operation);
@@ -315,6 +322,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         pending = this.Socket.SendAsync(operation);
                     }
                 }
+#endif
 
                 if (!pending)
                 {

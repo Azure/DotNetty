@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels.Groups
 {
     using System;
+    using System.Reflection;
 
     public static class ChannelMatchers
     {

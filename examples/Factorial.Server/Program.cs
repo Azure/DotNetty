@@ -4,31 +4,28 @@
 namespace Factorial.Server
 {
     using System;
-    using System.Diagnostics.Tracing;
+    using System.IO;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
-    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+    using Examples.Common;
 
     class Program
     {
         static async Task RunServerAsync()
         {
-            var eventListener = new ObservableEventListener();
-            eventListener.LogToConsole();
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.LogAlways);
+            ExampleHelper.SetConsoleLogger();
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
             X509Certificate2 tlsCertificate = null;
-            if (FactorialSettings.IsSsl)
+            if (ServerSettings.IsSsl)
             {
-                tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
+                tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
             }
             try
             {
@@ -37,7 +34,7 @@ namespace Factorial.Server
                     .Group(bossGroup, workerGroup)
                     .Channel<TcpServerSocketChannel>()
                     .Option(ChannelOption.SoBacklog, 100)
-                    .Handler(new LoggingHandler(LogLevel.INFO))
+                    .Handler(new LoggingHandler("LSTN"))
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
@@ -45,10 +42,11 @@ namespace Factorial.Server
                         {
                             pipeline.AddLast(TlsHandler.Server(tlsCertificate));
                         }
-                        pipeline.AddLast(new Factorial.NumberEncoder(), new Factorial.BigIntegerDecoder(), new FactorialServerHandler());
+                        pipeline.AddLast(new LoggingHandler("CONN"));
+                        pipeline.AddLast(new NumberEncoder(), new BigIntegerDecoder(), new FactorialServerHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(FactorialSettings.Port);
+                IChannel bootstrapChannel = await bootstrap.BindAsync(ServerSettings.Port);
 
                 Console.ReadLine();
 
@@ -57,10 +55,9 @@ namespace Factorial.Server
             finally
             {
                 Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
-                eventListener.Dispose();
             }
         }
 
-        static void Main() => RunServerAsync().Wait();
+        public static void Main() => RunServerAsync().Wait();
     }
 }

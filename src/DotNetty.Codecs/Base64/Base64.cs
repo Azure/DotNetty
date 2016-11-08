@@ -15,27 +15,15 @@ namespace DotNetty.Codecs.Base64
         const sbyte WHITE_SPACE_ENC = -5; // Indicates white space in encoding
         const sbyte EQUALS_SIGN_ENC = -1; // Indicates equals sign in encoding
 
-        public static IByteBuffer Encode(IByteBuffer src)
-        {
-            return Encode(src, Base64Dialect.STANDARD);
-        }
+        public static IByteBuffer Encode(IByteBuffer src) => Encode(src, Base64Dialect.STANDARD);
 
-        public static IByteBuffer Encode(IByteBuffer src, Base64Dialect dialect)
-        {
-            return Encode(src, src.ReaderIndex, src.ReadableBytes, dialect.breakLinesByDefault, dialect);
-        }
+        public static IByteBuffer Encode(IByteBuffer src, Base64Dialect dialect) => Encode(src, src.ReaderIndex, src.ReadableBytes, dialect.breakLinesByDefault, dialect);
 
-        public static IByteBuffer Encode(IByteBuffer src, bool breakLines, Base64Dialect dialect)
-        {
-            return Encode(src, src.ReaderIndex, src.ReadableBytes, breakLines, dialect);
-        }
+        public static IByteBuffer Encode(IByteBuffer src, bool breakLines, Base64Dialect dialect) => Encode(src, src.ReaderIndex, src.ReadableBytes, breakLines, dialect);
 
-        public static IByteBuffer Encode(IByteBuffer src, int offset, int length, bool breakLines, Base64Dialect dialect)
-        {
-            return Encode(src, offset, length, breakLines, dialect, src.Allocator);
-        }
+        public static IByteBuffer Encode(IByteBuffer src, int offset, int length, bool breakLines, Base64Dialect dialect) => Encode(src, offset, length, breakLines, dialect, src.Allocator);
 
-        private unsafe static int EncodeUsingPointer(byte* alphabet, IByteBuffer src, IByteBuffer dest, int offset, int length, bool breakLines)
+        static unsafe int EncodeUsingPointer(byte* alphabet, IByteBuffer src, IByteBuffer dest, int offset, int length, bool breakLines)
         {
             //avoid unnecessary range checking
             fixed (byte* srcArray = src.Array, d = dest.Array)
@@ -94,7 +82,8 @@ namespace DotNetty.Codecs.Base64
                 return destLength;
             }
         }
-        private unsafe static int EncodeUsingGetSet(byte* alphabet, IByteBuffer src, IByteBuffer dest, int offset, int length, bool breakLines)
+
+        static unsafe int EncodeUsingGetSet(byte* alphabet, IByteBuffer src, IByteBuffer dest, int offset, int length, bool breakLines)
         {
             int i = 0;
             int j = 0;
@@ -155,7 +144,7 @@ namespace DotNetty.Codecs.Base64
             return destLength;
         }
 
-        public unsafe static IByteBuffer Encode(IByteBuffer src, int offset, int length, bool breakLines, Base64Dialect dialect, IByteBufferAllocator allocator)
+        public static unsafe IByteBuffer Encode(IByteBuffer src, int offset, int length, bool breakLines, Base64Dialect dialect, IByteBufferAllocator allocator)
         {
             if (src == null)
             {
@@ -166,7 +155,7 @@ namespace DotNetty.Codecs.Base64
                 throw new ArgumentNullException(nameof(dialect.alphabet));
             }
             Contract.Assert(dialect.alphabet.Length == 64, "alphabet.Length must be 64!");
-            if (offset < src.ReaderIndex || offset + length > src.ReaderIndex + src.ReadableBytes)
+            if ((offset < src.ReaderIndex) || (offset + length > src.ReaderIndex + src.ReadableBytes))
             {
                 throw new ArgumentOutOfRangeException(nameof(offset));
             }
@@ -184,7 +173,7 @@ namespace DotNetty.Codecs.Base64
 
             fixed (byte* alphabet = dialect.alphabet)
             {
-                if (src.IoBufferCount == 1 && dest.IoBufferCount == 1)
+                if ((src.IoBufferCount == 1) && (dest.IoBufferCount == 1))
                 {
                     destLength = EncodeUsingPointer(alphabet, src, dest, offset, length, breakLines);
                 }
@@ -196,23 +185,13 @@ namespace DotNetty.Codecs.Base64
             return dest.SetIndex(destIndex, destIndex + destLength);
         }
 
+        public static IByteBuffer Decode(IByteBuffer src) => Decode(src, Base64Dialect.STANDARD);
 
-        public static IByteBuffer Decode(IByteBuffer src)
-        {
-            return Decode(src, Base64Dialect.STANDARD);
-        }
+        public static IByteBuffer Decode(IByteBuffer src, Base64Dialect dialect) => Decode(src, src.ReaderIndex, src.ReadableBytes, dialect);
 
-        public static IByteBuffer Decode(IByteBuffer src, Base64Dialect dialect)
-        {
-            return Decode(src, src.ReaderIndex, src.ReadableBytes, dialect);
-        }
+        public static IByteBuffer Decode(IByteBuffer src, int offset, int length, Base64Dialect dialect) => Decode(src, offset, length, dialect, src.Allocator);
 
-        public static IByteBuffer Decode(IByteBuffer src, int offset, int length, Base64Dialect dialect)
-        {
-            return Decode(src, offset, length, dialect, src.Allocator);
-        }
-
-        unsafe static int DecodeUsingPointer(IByteBuffer src, IByteBuffer dest, sbyte* decodabet, int offset, int length)
+        static unsafe int DecodeUsingPointer(IByteBuffer src, IByteBuffer dest, sbyte* decodabet, int offset, int length)
         {
             int charCount = 0;
             fixed (byte* srcArray = src.Array, d = dest.Array)
@@ -227,34 +206,35 @@ namespace DotNetty.Codecs.Base64
                     sbyte value = (sbyte)(srcArray[i] & 0x7F);
                     if (decodabet[value] < WHITE_SPACE_ENC)
                     {
-                        throw new ArgumentException(String.Format("bad Base64 input character at {0}:{1}",
+                        throw new ArgumentException(string.Format("bad Base64 input character at {0}:{1}",
                             i, value));
                     }
                     if (decodabet[value] >= EQUALS_SIGN_ENC)
                     {
                         b4[b4Count++] = (byte)value;
-                        if (b4Count <= 3) continue;
+                        if (b4Count <= 3)
+                            continue;
 
                         if (b4[2] == EQUALS_SIGN)
                         {
-                            int output = (decodabet[b4[0]] & 0xFF) << 18 |
-                                         (decodabet[b4[1]] & 0xFF) << 12;
+                            int output = ((decodabet[b4[0]] & 0xFF) << 18) |
+                                ((decodabet[b4[1]] & 0xFF) << 12);
                             destArray[charCount++] = (byte)((uint)output >> 16);
                         }
                         else if (b4[3] == EQUALS_SIGN)
                         {
-                            int output = (decodabet[b4[0]] & 0xFF) << 18 |
-                                         (decodabet[b4[1]] & 0xFF) << 12 |
-                                         (decodabet[b4[2]] & 0xFF) << 6;
+                            int output = ((decodabet[b4[0]] & 0xFF) << 18) |
+                                ((decodabet[b4[1]] & 0xFF) << 12) |
+                                ((decodabet[b4[2]] & 0xFF) << 6);
                             destArray[charCount++] = (byte)((uint)output >> 16);
                             destArray[charCount++] = (byte)((uint)output >> 8);
                         }
                         else
                         {
-                            int output = (decodabet[b4[0]] & 0xFF) << 18 |
-                                         (decodabet[b4[1]] & 0xFF) << 12 |
-                                         (decodabet[b4[2]] & 0xFF) << 6 |
-                                         (decodabet[b4[3]] & 0xFF) << 0;
+                            int output = ((decodabet[b4[0]] & 0xFF) << 18) |
+                                ((decodabet[b4[1]] & 0xFF) << 12) |
+                                ((decodabet[b4[2]] & 0xFF) << 6) |
+                                ((decodabet[b4[3]] & 0xFF) << 0);
                             destArray[charCount++] = (byte)((uint)output >> 16);
                             destArray[charCount++] = (byte)((uint)output >> 8);
                             destArray[charCount++] = (byte)((uint)output >> 0);
@@ -271,7 +251,7 @@ namespace DotNetty.Codecs.Base64
             return charCount;
         }
 
-        unsafe static int DecodeUsingGetSet(IByteBuffer src, IByteBuffer dest, sbyte* decodabet, int offset, int length)
+        static unsafe int DecodeUsingGetSet(IByteBuffer src, IByteBuffer dest, sbyte* decodabet, int offset, int length)
         {
             int charCount = 0;
 
@@ -284,34 +264,35 @@ namespace DotNetty.Codecs.Base64
                 sbyte value = (sbyte)(src.GetByte(i) & 0x7F);
                 if (decodabet[value] < WHITE_SPACE_ENC)
                 {
-                    throw new ArgumentException(String.Format("bad Base64 input character at {0}:{1}",
+                    throw new ArgumentException(string.Format("bad Base64 input character at {0}:{1}",
                         i, value));
                 }
                 if (decodabet[value] >= EQUALS_SIGN_ENC)
                 {
                     b4[b4Count++] = (byte)value;
-                    if (b4Count <= 3) continue;
+                    if (b4Count <= 3)
+                        continue;
 
                     if (b4[2] == EQUALS_SIGN)
                     {
-                        int output = (decodabet[b4[0]] & 0xFF) << 18 |
-                                     (decodabet[b4[1]] & 0xFF) << 12;
+                        int output = ((decodabet[b4[0]] & 0xFF) << 18) |
+                            ((decodabet[b4[1]] & 0xFF) << 12);
                         dest.SetByte(charCount++, (int)((uint)output >> 16));
                     }
                     else if (b4[3] == EQUALS_SIGN)
                     {
-                        int output = (decodabet[b4[0]] & 0xFF) << 18 |
-                                     (decodabet[b4[1]] & 0xFF) << 12 |
-                                     (decodabet[b4[2]] & 0xFF) << 6;
+                        int output = ((decodabet[b4[0]] & 0xFF) << 18) |
+                            ((decodabet[b4[1]] & 0xFF) << 12) |
+                            ((decodabet[b4[2]] & 0xFF) << 6);
                         dest.SetByte(charCount++, (int)((uint)output >> 16));
                         dest.SetByte(charCount++, (int)((uint)output >> 8));
                     }
                     else
                     {
-                        int output = (decodabet[b4[0]] & 0xFF) << 18 |
-                                     (decodabet[b4[1]] & 0xFF) << 12 |
-                                     (decodabet[b4[2]] & 0xFF) << 6 |
-                                     (decodabet[b4[3]] & 0xFF) << 0;
+                        int output = ((decodabet[b4[0]] & 0xFF) << 18) |
+                            ((decodabet[b4[1]] & 0xFF) << 12) |
+                            ((decodabet[b4[2]] & 0xFF) << 6) |
+                            ((decodabet[b4[3]] & 0xFF) << 0);
                         dest.SetByte(charCount++, (int)((uint)output >> 16));
                         dest.SetByte(charCount++, (int)((uint)output >> 8));
                         dest.SetByte(charCount++, (int)((uint)output >> 0));
@@ -327,7 +308,7 @@ namespace DotNetty.Codecs.Base64
             return charCount;
         }
 
-        public unsafe static IByteBuffer Decode(IByteBuffer src, int offset, int length, Base64Dialect dialect, IByteBufferAllocator allocator)
+        public static unsafe IByteBuffer Decode(IByteBuffer src, int offset, int length, Base64Dialect dialect, IByteBufferAllocator allocator)
         {
             if (src == null)
             {
@@ -337,7 +318,7 @@ namespace DotNetty.Codecs.Base64
             {
                 throw new ArgumentNullException(nameof(dialect.decodabet));
             }
-            if (offset < src.ReaderIndex || offset + length > src.ReaderIndex + src.ReadableBytes)
+            if ((offset < src.ReaderIndex) || (offset + length > src.ReaderIndex + src.ReadableBytes))
             {
                 throw new ArgumentOutOfRangeException(nameof(offset));
             }
@@ -345,16 +326,16 @@ namespace DotNetty.Codecs.Base64
             if (length <= 0)
             {
                 return Unpooled.Empty;
-            }        
+            }
 
             int outLength = length * 3 / 4;
             IByteBuffer dest = allocator.Buffer(outLength).WithOrder(src.Order);
             int charCount = 0;
             int destIndex = dest.WriterIndex;
 
-            fixed(sbyte* decodabet = dialect.decodabet)
+            fixed (sbyte* decodabet = dialect.decodabet)
             {
-                if (src.IoBufferCount == 1 && dest.IoBufferCount == 1)
+                if ((src.IoBufferCount == 1) && (dest.IoBufferCount == 1))
                 {
                     charCount = DecodeUsingPointer(src, dest, decodabet, offset, length);
                 }
@@ -363,7 +344,7 @@ namespace DotNetty.Codecs.Base64
                     charCount = DecodeUsingGetSet(src, dest, decodabet, offset, length);
                 }
             }
-            
+
             return dest.SetIndex(destIndex, destIndex + charCount);
         }
     }

@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Net;
+    using System.Runtime.ExceptionServices;
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Internal.Logging;
@@ -87,7 +88,7 @@ namespace DotNetty.Transport.Channels.Embedded
             this.Configuration = new DefaultChannelConfiguration(this);
             if (handlers == null)
             {
-                throw new NullReferenceException("handlers cannot be null");
+                throw new ArgumentNullException(nameof(handlers));
             }
 
             IChannelPipeline p = this.Pipeline;
@@ -439,7 +440,7 @@ namespace DotNetty.Transport.Channels.Embedded
             }
 
             this.lastException = null;
-            throw e;
+            ExceptionDispatchInfo.Capture(e).Throw();
         }
 
         /// <summary>

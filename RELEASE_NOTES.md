@@ -1,3 +1,8 @@
+#### 0.3.3 November 04 2016
+- .NET Standard 1.3 support.
+- Libraries are strong-named by default.
+- Redis codec.
+
 #### 0.3.2 June 22 2016
 - Better API alignment with final version of netty 4.1 (#125).
 - Exposed API for flexible TlsHandler initialization (#132, #134).

@@ -9,7 +9,7 @@ namespace DotNetty.Common.Internal.Logging
     [EventSource(
         Name = "DotNetty-Default",
         Guid = "d079e771-0495-4124-bd2f-ab63c2b50525")]
-    public class DefaultEventSource : EventSource
+    public sealed class DefaultEventSource : EventSource
     {
         const int TraceEventId = 1;
         const int DebugEventId = 2;
@@ -19,7 +19,7 @@ namespace DotNetty.Common.Internal.Logging
 
         public class Keywords
         {
-            public const EventKeywords TraceEventKeyword = (EventKeywords)(1);
+            public const EventKeywords TraceEventKeyword = (EventKeywords)1;
             public const EventKeywords DebugEventKeyword = (EventKeywords)(1 << 1);
         }
 

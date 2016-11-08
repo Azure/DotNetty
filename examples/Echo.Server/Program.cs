@@ -4,32 +4,29 @@
 namespace Echo.Server
 {
     using System;
-    using System.Diagnostics.Tracing;
+    using System.IO;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
-    using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+    using Examples.Common;
 
     class Program
     {
         static async Task RunServerAsync()
         {
-            var eventListener = new ObservableEventListener();
-            eventListener.LogToConsole();
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+            ExampleHelper.SetConsoleLogger();
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
             X509Certificate2 tlsCertificate = null;
-            if (EchoServerSettings.IsSsl)
+            if (ServerSettings.IsSsl)
             {
-                tlsCertificate = new X509Certificate2("dotnetty.com.pfx", "password");
+                tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
             }
             try
             {
@@ -46,14 +43,14 @@ namespace Echo.Server
                         {
                             pipeline.AddLast("tls", TlsHandler.Server(tlsCertificate));
                         }
-                        //pipeline.AddLast(new LoggingHandler("SRV-CONN"));
+                        pipeline.AddLast(new LoggingHandler("SRV-CONN"));
                         pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
                         pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
                         pipeline.AddLast("echo", new EchoServerHandler());
                     }));
 
-                IChannel boundChannel = await bootstrap.BindAsync(EchoServerSettings.Port);
+                IChannel boundChannel = await bootstrap.BindAsync(ServerSettings.Port);
 
                 Console.ReadLine();
 
@@ -64,7 +61,6 @@ namespace Echo.Server
                 await Task.WhenAll(
                     bossGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
                     workerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
-                eventListener.Dispose();
             }
         }
 

@@ -14,6 +14,17 @@ namespace DotNetty.Tests.Common
         readonly Queue<object> receivedQueue = new Queue<object>();
         TaskCompletionSource<object> readPromise;
         Exception registeredException;
+        readonly TimeSpan defaultReadTimeout;
+
+        public ReadListeningHandler()
+            : this(TimeSpan.Zero)
+        {
+        }
+
+        public ReadListeningHandler(TimeSpan defaultReadTimeout)
+        {
+            this.defaultReadTimeout = defaultReadTimeout;
+        }
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
@@ -60,6 +71,7 @@ namespace DotNetty.Tests.Common
             var promise = new TaskCompletionSource<object>();
             this.readPromise = promise;
 
+            timeout = timeout <= TimeSpan.Zero ? this.defaultReadTimeout : timeout;
             if (timeout > TimeSpan.Zero)
             {
                 Task task = await Task.WhenAny(promise.Task, Task.Delay(timeout));

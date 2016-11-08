@@ -334,7 +334,6 @@ namespace DotNetty.Common
 
             // Append the stack trace.
             buf.Append(Environment.StackTrace);
-
             return buf.ToString();
         }
 

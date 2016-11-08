@@ -9,9 +9,9 @@ namespace Factorial
     using DotNetty.Codecs;
     using DotNetty.Transport.Channels;
 
-    public class NumberEncoder : MessageToMessageEncoder<BigInteger>
+    public class NumberEncoder : MessageToMessageEncoder<System.Numerics.BigInteger>
     {
-        protected override void Encode(IChannelHandlerContext context, BigInteger message, List<object> output)
+        protected override void Encode(IChannelHandlerContext context, System.Numerics.BigInteger message, List<object> output)
         {
             IByteBuffer buffer = context.Allocator.Buffer();
 

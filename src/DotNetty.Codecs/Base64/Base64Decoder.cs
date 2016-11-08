@@ -3,7 +3,6 @@
 
 namespace DotNetty.Codecs.Base64
 {
-    using System;
     using System.Collections.Generic;
     using DotNetty.Buffers;
     using DotNetty.Transport.Channels;
@@ -12,7 +11,8 @@ namespace DotNetty.Codecs.Base64
     {
         readonly Base64Dialect dialect;
 
-        public Base64Decoder() : this(Base64Dialect.STANDARD)
+        public Base64Decoder()
+            : this(Base64Dialect.STANDARD)
         {
         }
 
@@ -21,10 +21,7 @@ namespace DotNetty.Codecs.Base64
             this.dialect = dialect;
         }
 
-        protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output)
-        {
-            output.Add(Base64.Decode(message, this.dialect));
-        }
+        protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output) => output.Add(Base64.Decode(message, this.dialect));
 
         public override bool IsSharable => true;
     }
