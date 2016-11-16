@@ -304,6 +304,10 @@ namespace DotNetty.Codecs
 
         protected virtual void CallDecode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
+            Contract.Requires(context != null);
+            Contract.Requires(input != null);
+            Contract.Requires(output != null);
+
             try
             {
                 while (input.IsReadable())
