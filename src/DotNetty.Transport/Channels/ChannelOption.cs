@@ -5,6 +5,8 @@ namespace DotNetty.Transport.Channels
 {
     using System;
     using System.Diagnostics.Contracts;
+    using System.Net;
+    using System.Net.NetworkInformation;
     using DotNetty.Buffers;
     using DotNetty.Common.Utilities;
 
@@ -52,9 +54,9 @@ namespace DotNetty.Transport.Channels
         public static readonly ChannelOption<int> SoBacklog = ValueOf<int>("SO_BACKLOG");
         public static readonly ChannelOption<int> SoTimeout = ValueOf<int>("SO_TIMEOUT");
 
-        //public static readonly ChannelOption<int> IP_TOS = ValueOf<int>("IP_TOS");
-        //public static readonly ChannelOption<InetAddress> IP_MULTICAST_ADDR = ValueOf<int>("IP_MULTICAST_ADDR");
-        //public static readonly ChannelOption<NetworkInterface> IP_MULTICAST_IF = ValueOf<int>("IP_MULTICAST_IF");
+        public static readonly ChannelOption<int> IpTos = ValueOf<int>("IP_TOS");
+        public static readonly ChannelOption<EndPoint> IpMulticastAddr = ValueOf<EndPoint>("IP_MULTICAST_ADDR");
+        public static readonly ChannelOption<NetworkInterface> IpMulticastIf = ValueOf<NetworkInterface>("IP_MULTICAST_IF");
         public static readonly ChannelOption<int> IpMulticastTtl = ValueOf<int>("IP_MULTICAST_TTL");
         public static readonly ChannelOption<bool> IpMulticastLoopDisabled = ValueOf<bool>("IP_MULTICAST_LOOP_DISABLED");
 

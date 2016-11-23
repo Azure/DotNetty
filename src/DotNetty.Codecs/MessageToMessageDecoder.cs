@@ -65,6 +65,6 @@ namespace DotNetty.Codecs
         /// <param name="context">the {@link ChannelHandlerContext} which this {@link MessageToMessageDecoder} belongs to</param>
         /// <param name="message">the message to decode to an other one</param>
         /// <param name="output">the {@link List} to which decoded messages should be added</param>
-        protected abstract void Decode(IChannelHandlerContext context, T message, List<object> output);
+        protected internal abstract void Decode(IChannelHandlerContext context, T message, List<object> output);
     }
 }

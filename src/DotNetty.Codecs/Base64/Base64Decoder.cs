@@ -21,7 +21,7 @@ namespace DotNetty.Codecs.Base64
             this.dialect = dialect;
         }
 
-        protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output) => output.Add(Base64.Decode(message, this.dialect));
+        protected internal override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output) => output.Add(Base64.Decode(message, this.dialect));
 
         public override bool IsSharable => true;
     }

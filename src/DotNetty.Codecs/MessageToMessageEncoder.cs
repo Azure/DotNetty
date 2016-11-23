@@ -16,7 +16,7 @@ namespace DotNetty.Codecs
         ///     Returns {@code true} if the given message should be handled. If {@code false} it will be passed to the next
         ///     {@link ChannelHandler} in the {@link ChannelPipeline}.
         /// </summary>
-        public bool AcceptOutboundMessage(object msg) => msg is T;
+        public virtual bool AcceptOutboundMessage(object msg) => msg is T;
 
         public override Task WriteAsync(IChannelHandlerContext ctx, object msg)
         {
@@ -101,6 +101,6 @@ namespace DotNetty.Codecs
         ///     needs to do some kind of aggragation
         ///     @throws Exception    is thrown if an error accour
         /// </summary>
-        protected abstract void Encode(IChannelHandlerContext context, T message, List<object> output);
+        protected internal abstract void Encode(IChannelHandlerContext context, T message, List<object> output);
     }
 }
