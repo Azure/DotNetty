@@ -447,7 +447,7 @@ namespace DotNetty.Handlers.Tls
                     }
                     else
                     {
-                        outputBuffer.Release();
+                        outputBuffer.SafeRelease();
                     }
                 }
             }
@@ -579,7 +579,7 @@ namespace DotNetty.Handlers.Tls
             }
             catch (Exception ex)
             {
-                ReferenceCountUtil.SafeRelease(buf);
+                buf.SafeRelease();
                 this.HandleFailure(ex);
                 throw;
             }
