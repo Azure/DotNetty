@@ -11,7 +11,7 @@ namespace DotNetty.Common.Utilities
 
         public int ReferenceCount => this.referenceCount;
 
-        public IReferenceCounted Retain() => this.Retain(1);
+        public IReferenceCounted Retain() => this.RetainCore(1);
 
         public IReferenceCounted Retain(int increment)
         {
@@ -46,7 +46,7 @@ namespace DotNetty.Common.Utilities
 
         public abstract IReferenceCounted Touch(object hint);
 
-        public bool Release() => this.Release(1);
+        public bool Release() => this.ReleaseCore(1);
 
         public bool Release(int decrement)
         {

@@ -466,7 +466,7 @@ namespace DotNetty.Codecs.Mqtt
 
             DecreaseRemainingLength(ref remainingLength, size);
 
-            string value = Encoding.UTF8.GetString(buffer.Array, buffer.ArrayOffset + buffer.ReaderIndex, size);
+            string value = buffer.ToString(buffer.ReaderIndex, size, Encoding.UTF8);
             // todo: enforce string definition by MQTT spec
             buffer.SetReaderIndex(buffer.ReaderIndex + size);
             return value;

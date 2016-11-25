@@ -7,9 +7,9 @@ namespace DotNetty.Common.Utilities
     using System.Threading;
     using DotNetty.Common.Internal.Logging;
 
-    public sealed class ReferenceCountUtil
+    public static class ReferenceCountUtil
     {
-        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ReferenceCountUtil>();
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(ReferenceCountUtil));
 
         /// <summary>
         ///     Try to call {@link ReferenceCounted#retain()} if the specified message implements {@link ReferenceCounted}.
@@ -138,6 +138,30 @@ namespace DotNetty.Common.Utilities
             }
         }
 
+        public static void SafeRelease(this IReferenceCounted msg)
+        {
+            try
+            {
+                msg?.Release();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("Failed to release a message: {}", msg, ex);
+            }
+        }
+
+        public static void SafeRelease(this IReferenceCounted msg, int decrement)
+        {
+            try
+            {
+                msg?.Release(decrement);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("Failed to release a message: {} (decrement: {})", msg, decrement, ex);
+            }
+        }
+
         /// <summary>
         ///     Schedules the specified object to be released when the caller thread terminates. Note that this operation is
         ///     intended to simplify reference counting of ephemeral objects during unit tests. Do not use it beyond the
@@ -178,9 +202,6 @@ namespace DotNetty.Common.Utilities
         }
 
         static string FormatReleaseString(IReferenceCounted referenceCounted, int decrement)
-        {
-            return referenceCounted.GetType().Name + ".Release(" + decrement.ToString() + ") refCnt: "
-                + referenceCounted.ReferenceCount.ToString();
-        }
+            => $"{referenceCounted.GetType().Name}.Release({decrement.ToString()}) refCnt: {referenceCounted.ReferenceCount.ToString()}";
     }
 }

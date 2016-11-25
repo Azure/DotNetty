@@ -28,7 +28,8 @@
     "netstandard1.3": {
       "dependencies": {
         "System.Threading.Thread": "4.0.0",
-        "System.Diagnostics.Contracts": "4.0.1"
+        "System.Diagnostics.Contracts": "4.0.1",
+        "System.Net.NetworkInformation": "4.1.0"
       }
     },
     "net451": {}

@@ -4,13 +4,8 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
-    using System.Linq;
-    using System.Net;
-    using System.Net.NetworkInformation;
-    using System.Net.Sockets;
     using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading;
@@ -74,12 +69,21 @@ namespace DotNetty.Transport.Channels
                 if (MachineIdPattern.Match(customMachineId).Success)
                 {
                     machineId = ParseMachineId(customMachineId);
+                    Logger.Debug("-Dio.netty.machineId: {} (user-set)", customMachineId);
+                }
+                else
+                {
+                    Logger.Warn("-Dio.netty.machineId: {} (malformed)", customMachineId);
                 }
             }
 
             if (machineId == null)
             {
                 machineId = DefaultMachineId();
+                if (Logger.DebugEnabled)
+                {
+                    Logger.Debug("-Dio.netty.machineId: {} (auto-detected)", MacAddressUtil.FormatAddress(machineId));
+                }
             }
             MachineId = machineId;
         }
@@ -139,177 +143,17 @@ namespace DotNetty.Transport.Channels
 
         static byte[] DefaultMachineId()
         {
-            // Find the best MAC address available.
-            byte[] notFound = { byte.MaxValue };
-            byte[] bestMacAddr = notFound;
-            IPAddress bestIpAddr = IPAddress.Loopback;
-            var ifaces = new SortedDictionary<NetworkInterface, IPAddress>();
-            try
-            {
-                foreach (NetworkInterface iface in NetworkInterface.GetAllNetworkInterfaces())
-                {
-                    UnicastIPAddressInformationCollection addrs = iface.GetIPProperties().UnicastAddresses;
-                    UnicastIPAddressInformation addr = addrs.FirstOrDefault(a => !IPAddress.IsLoopback(a.Address));
-                    if (addr != null)
-                    {
-                        ifaces.Add(iface, addr.Address);
-                    }
-                }
-            }
-            catch (SocketException e)
-            {
-                Logger.Warn("Failed to retrieve the list of available network interfaces", e);
-            }
-            catch
-            {
-                // ignored
-            }
-
-            foreach (KeyValuePair<NetworkInterface, IPAddress> entry in ifaces)
-            {
-                NetworkInterface iface = entry.Key;
-                IPAddress addr = entry.Value;
-                //todo check if the iface is virtual(there is no equivvalent method in .Net like in java)
-                byte[] macAddr = iface.GetPhysicalAddress().GetAddressBytes();
-                bool replace = false;
-                int res = CompareAddresses(bestMacAddr, macAddr);
-                if (res < 0)
-                {
-                    replace = true;
-                }
-                else if (res == 0)
-                {
-                    res = CompareAddresses(bestIpAddr, addr);
-                    if (res < 0)
-                    {
-                        replace = true;
-                    }
-                    else if (res == 0)
-                    {
-                        if (bestMacAddr.Length < macAddr.Length)
-                        {
-                            replace = true;
-                        }
-                    }
-                }
-
-                if (replace)
-                {
-                    bestMacAddr = macAddr;
-                    bestIpAddr = addr;
-                }
-            }
-
-            if (bestMacAddr == notFound)
-            {
-                bestMacAddr = new byte[MachineIdLen];
+            byte[] bestMacAddr = MacAddressUtil.GetBestAvailableMac();
+            if (bestMacAddr == null) {
+                bestMacAddr = new byte[MacAddressUtil.MacAddressLength];
                 ThreadLocalRandom.Value.NextBytes(bestMacAddr);
-            }
-
-            switch (bestMacAddr.Length)
-            {
-                case 6: // EUI-48 - convert to EUI-64
-                    var newAddr = new byte[MachineIdLen];
-                    Array.Copy(bestMacAddr, 0, newAddr, 0, 3);
-                    newAddr[3] = 0xFF;
-                    newAddr[4] = 0xFE;
-                    Array.Copy(bestMacAddr, 3, newAddr, 5, 3);
-                    bestMacAddr = newAddr;
-                    break;
-                default: // Unknown
-                    bestMacAddr = bestMacAddr.Take(MachineIdLen).ToArray();
-                    break;
+                Logger.Warn(
+                    "Failed to find a usable hardware address from the network interfaces; using random bytes: {}",
+                    MacAddressUtil.FormatAddress(bestMacAddr));
             }
             return bestMacAddr;
         }
 
-        static int CompareAddresses(byte[] current, byte[] candidate)
-        {
-            if (candidate == null)
-            {
-                return 1;
-            }
-
-            // Must be EUI-48 or longer.
-            if (candidate.Length < 6)
-            {
-                return 1;
-            }
-
-            // Must not be filled with only 0 and 1.
-            bool onlyZeroAndOne = true;
-            foreach (byte b in candidate)
-            {
-                if (b != 0 && b != 1)
-                {
-                    onlyZeroAndOne = false;
-                    break;
-                }
-            }
-
-            if (onlyZeroAndOne)
-            {
-                return 1;
-            }
-
-            // Must not be a multicast address
-            if ((candidate[0] & 1) != 0)
-            {
-                return 1;
-            }
-
-            // Prefer globally unique address.
-            if ((current[0] & 2) == 0)
-            {
-                if ((candidate[0] & 2) == 0)
-                {
-                    // Both current and candidate are globally unique addresses.
-                    return 0;
-                }
-                else
-                {
-                    // Only current is globally unique.
-                    return 1;
-                }
-            }
-            else
-            {
-                if ((candidate[0] & 2) == 0)
-                {
-                    // Only candidate is globally unique.
-                    return -1;
-                }
-                else
-                {
-                    // Both current and candidate are non-unique.
-                    return 0;
-                }
-            }
-        }
-
-        static int CompareAddresses(IPAddress current, IPAddress candidate) => ScoreAddress(current) - ScoreAddress(candidate);
-
-        static int ScoreAddress(IPAddress addr)
-        {
-            if (IPAddress.IsLoopback(addr))
-            {
-                return 0;
-            }
-            if (addr.IsIPv6Multicast)
-            {
-                return 1;
-            }
-            if (addr.IsIPv6LinkLocal)
-            {
-                return 2;
-            }
-            if (addr.IsIPv6SiteLocal)
-            {
-                return 3;
-            }
-
-            return 4;
-        }
 
         string NewLongValue()
         {

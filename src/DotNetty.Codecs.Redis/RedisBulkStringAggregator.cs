@@ -23,7 +23,8 @@ namespace DotNetty.Codecs.Redis
 
         public RedisBulkStringAggregator()
             : this(RedisConstants.MaximumMessageLength)
-        { }
+        {
+        }
 
         RedisBulkStringAggregator(int maximumContentLength)
         {
@@ -36,10 +37,7 @@ namespace DotNetty.Codecs.Redis
 
         public int MaximumCumulationBufferComponents
         {
-            get
-            {
-                return this.maximumCumulationBufferComponents;
-            }
+            get { return this.maximumCumulationBufferComponents; }
             set
             {
                 Contract.Requires(value >= 2);
@@ -66,8 +64,8 @@ namespace DotNetty.Codecs.Redis
             var redisMessage = (IRedisMessage)message;
 
             return (IsContentMessage(redisMessage)
-                || IsStartMessage(redisMessage))
-                    && !IsAggregated(redisMessage);
+                    || IsStartMessage(redisMessage))
+                && !IsAggregated(redisMessage);
         }
 
         protected override void Decode(IChannelHandlerContext context, IRedisMessage message, List<object> output)
@@ -138,6 +136,7 @@ namespace DotNetty.Codecs.Redis
                 throw new MessageAggregationException($"Unexpected message {message}");
             }
         }
+
         static void AppendPartialContent(CompositeByteBuffer content, IByteBuffer partialContent)
         {
             Contract.Requires(content != null);
@@ -154,6 +153,7 @@ namespace DotNetty.Codecs.Redis
             // Note that WriterIndex must be manually increased
             content.SetWriterIndex(content.WriterIndex + buffer.ReadableBytes);
         }
+
         void InvokeHandleOversizedMessage(IChannelHandlerContext context, BulkStringHeaderRedisMessage startMessage)
         {
             Contract.Requires(context != null);
@@ -177,7 +177,7 @@ namespace DotNetty.Codecs.Redis
         {
             Contract.Requires(message != null);
 
-            return message is BulkStringHeaderRedisMessage 
+            return message is BulkStringHeaderRedisMessage
                 && !IsAggregated(message);
         }
 
