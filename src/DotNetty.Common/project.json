@@ -1,6 +1,6 @@
-{
+﻿{
   "name": "DotNetty.Common",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "title": "DotNetty: common routines",
   "description": "DotNetty common routines",
   "language": "en-US",
@@ -21,17 +21,21 @@
     "keyFile": "../../DotNetty.snk"
   },
   "dependencies": {
-    "NETStandard.Library": "1.6.0",
     "Microsoft.Extensions.Logging": "1.0.0" 
   },
   "frameworks": {
     "netstandard1.3": {
       "dependencies": {
+        "NETStandard.Library": "1.6.0",
         "System.Threading.Thread": "4.0.0",
         "System.Diagnostics.Contracts": "4.0.1",
         "System.Net.NetworkInformation": "4.1.0"
       }
     },
-    "net451": {}
+    "net451": {
+      "frameworkAssemblies": {
+        "System.Runtime":  { "type": "build" } 
+      }
+    }
   }
 }

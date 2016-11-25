@@ -1,6 +1,6 @@
-{
+﻿{
   "name": "DotNetty.Transport",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "title": "DotNetty: transport model",
   "description": "Transport model in DotNetty",
   "language": "en-US",
@@ -21,7 +21,6 @@
     "keyFile": "../../DotNetty.snk"
   },
   "dependencies": {
-    "NETStandard.Library": "1.6.0",
     "DotNetty.Common": {
       "target": "project"
     },
@@ -32,6 +31,7 @@
   "frameworks": {
     "netstandard1.3": {
       "dependencies": {
+        "NETStandard.Library": "1.6.0",
         "System.Reflection.TypeExtensions": "4.1.0",
         "System.Diagnostics.Contracts": "4.0.1",
         "System.Net.Sockets": "4.1.0",

@@ -1,7 +1,11 @@
-#### 0.3.3 November 04 2016
+#### 0.4.0 November 25 2016
 - .NET Standard 1.3 support.
 - Libraries are strong-named by default.
 - Redis codec.
+- Protocol Buffers 2 and 3 codecs.
+- Socket Datagram Channel.
+- Base64 encoder and decoder.
+- STEE uses ConcurrentQueue by default (queue impl is pluggable now).
 
 #### 0.3.2 June 22 2016
 - Better API alignment with final version of netty 4.1 (#125).
