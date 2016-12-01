@@ -9,14 +9,17 @@ namespace DotNetty.Codecs.Redis
     {
         public RedisCodecException(string message)
             : this(message, null)
-        { }
+        {
+        }
 
         public RedisCodecException(Exception exception)
             : this(null, exception)
-        { }
+        {
+        }
 
         public RedisCodecException(string message, Exception exception)
             : base(message, exception)
-        { }
+        {
+        }
     }
 }

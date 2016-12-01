@@ -9,7 +9,8 @@ namespace DotNetty.Codecs.Redis.Messages
     {
         public BulkStringRedisContent(IByteBuffer buffer)
             : base(buffer)
-        { }
+        {
+        }
 
         public override IByteBufferHolder Copy()
         {

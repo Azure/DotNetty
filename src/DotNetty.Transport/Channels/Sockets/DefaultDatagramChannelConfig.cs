@@ -345,7 +345,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 {
                     this.socket.SetSocketOption(
                         this.AddressFamilyOptionLevel,
-                        SocketOptionName.MulticastTimeToLive, 
+                        SocketOptionName.MulticastTimeToLive,
                         value);
                 }
                 catch (ObjectDisposedException ex)
@@ -403,12 +403,12 @@ namespace DotNetty.Transport.Channels.Sockets
                 {
                     NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
                     int value = (int)this.socket.GetSocketOption(
-                        this.AddressFamilyOptionLevel, 
+                        this.AddressFamilyOptionLevel,
                         SocketOptionName.MulticastInterface);
                     int index = IPAddress.NetworkToHostOrder(value);
-                    
-                    if (interfaces.Length > 0 
-                        && index >= 0 
+
+                    if (interfaces.Length > 0
+                        && index >= 0
                         && index < interfaces.Length)
                     {
                         return interfaces[index];
@@ -435,8 +435,8 @@ namespace DotNetty.Transport.Channels.Sockets
                     if (index >= 0)
                     {
                         this.socket.SetSocketOption(
-                            this.AddressFamilyOptionLevel, 
-                            SocketOptionName.MulticastInterface, 
+                            this.AddressFamilyOptionLevel,
+                            SocketOptionName.MulticastInterface,
                             index);
                     }
                 }

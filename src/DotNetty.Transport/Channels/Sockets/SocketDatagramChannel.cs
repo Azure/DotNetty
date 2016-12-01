@@ -198,13 +198,13 @@ namespace DotNetty.Transport.Channels.Sockets
             bool pending = this.Socket.SendToAsync(operation);
             if (!pending)
             {
-               ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
+                ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
             }
         }
 
         protected override IChannelUnsafe NewUnsafe() => new DatagramChannelUnsafe(this);
 
-        sealed class  DatagramChannelUnsafe : SocketMessageUnsafe
+        sealed class DatagramChannelUnsafe : SocketMessageUnsafe
         {
             public DatagramChannelUnsafe(SocketDatagramChannel channel)
                 : base(channel)
@@ -230,9 +230,8 @@ namespace DotNetty.Transport.Channels.Sockets
                 data = (IByteBuffer)msg;
                 remoteAddress = this.RemoteAddressInternal;
             }
-            
-            if (data == null 
-                || remoteAddress == null)
+
+            if (data == null || remoteAddress == null)
             {
                 return false;
             }
@@ -254,8 +253,8 @@ namespace DotNetty.Transport.Channels.Sockets
             var packet = msg as DatagramPacket;
             if (packet != null)
             {
-                return IsSingleBuffer(packet.Content) 
-                    ? packet 
+                return IsSingleBuffer(packet.Content)
+                    ? packet
                     : new DatagramPacket(this.CreateNewDirectBuffer(packet, packet.Content), packet.Recipient);
             }
 
@@ -290,14 +289,14 @@ namespace DotNetty.Transport.Channels.Sockets
             int readableBytes = buffer.ReadableBytes;
             if (readableBytes == 0)
             {
-                ReferenceCountUtil.SafeRelease(buffer);
+                buffer.SafeRelease();
                 return Unpooled.Empty;
             }
 
             // Composite
             IByteBuffer data = this.Allocator.Buffer(readableBytes);
             data.WriteBytes(buffer, buffer.ReaderIndex, readableBytes);
-            ReferenceCountUtil.SafeRelease(buffer);
+            buffer.SafeRelease();
 
             return data;
         }
@@ -310,14 +309,14 @@ namespace DotNetty.Transport.Channels.Sockets
             int readableBytes = buffer.ReadableBytes;
             if (readableBytes == 0)
             {
-                ReferenceCountUtil.SafeRelease(holder);
+                holder.SafeRelease();
                 return Unpooled.Empty;
             }
 
             // Composite
             IByteBuffer data = this.Allocator.Buffer(readableBytes);
             data.WriteBytes(buffer, buffer.ReaderIndex, readableBytes);
-            ReferenceCountUtil.SafeRelease(holder);
+            holder.SafeRelease();
 
             return data;
         }

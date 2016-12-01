@@ -34,7 +34,8 @@ namespace DotNetty.Codecs.Redis
 
         public RedisDecoder()
             : this(RedisConstants.MaximumInlineMessageLength, FixedRedisMessagePool.Default)
-        { }
+        {
+        }
 
         public RedisDecoder(int maximumInlineMessageLength, IRedisMessagePool messagePool)
         {
@@ -170,8 +171,8 @@ namespace DotNetty.Codecs.Redis
             }
 
             RedisMessageType redisMessageType = RedisCodecUtil.ParseMessageType(byteBuffer.ReadByte());
-            this.state = IsInline(redisMessageType) 
-                ? State.DecodeInline 
+            this.state = IsInline(redisMessageType)
+                ? State.DecodeInline
                 : State.DecodeLength;
             this.messageType = redisMessageType;
 

@@ -16,7 +16,8 @@ namespace DotNetty.Codecs.Redis.Messages
 
         ArrayRedisMessage()
             : this(new List<IRedisMessage>())
-        { }
+        {
+        }
 
         public ArrayRedisMessage(IList<IRedisMessage> childMessages)
         {

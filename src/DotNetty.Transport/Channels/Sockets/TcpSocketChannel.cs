@@ -175,7 +175,7 @@ namespace DotNetty.Transport.Channels.Sockets
             finally
             {
                 base.DoClose();
-            }   
+            }
         }
 
         protected override int DoReadBytes(IByteBuffer byteBuf)

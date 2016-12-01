@@ -17,7 +17,8 @@ namespace DotNetty.Codecs.Redis
 
         public RedisEncoder()
             : this(FixedRedisMessagePool.Default)
-        { }
+        {
+        }
 
         public RedisEncoder(IRedisMessagePool messagePool)
         {
@@ -296,7 +297,7 @@ namespace DotNetty.Codecs.Redis
         byte[] NumberToBytes(long value)
         {
             byte[] bytes;
-            if (! this.messagePool.TryGetBytes(value, out bytes))
+            if (!this.messagePool.TryGetBytes(value, out bytes))
             {
                 bytes = RedisCodecUtil.LongToAsciiBytes(value);
             }

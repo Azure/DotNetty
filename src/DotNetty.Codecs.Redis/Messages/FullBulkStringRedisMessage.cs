@@ -14,7 +14,8 @@ namespace DotNetty.Codecs.Redis.Messages
 
         public FullBulkStringRedisMessage(IByteBuffer buffer)
             : base(buffer)
-        { }
+        {
+        }
 
         public bool IsNull => false;
 
@@ -28,7 +29,8 @@ namespace DotNetty.Codecs.Redis.Messages
         {
             internal NullOrEmptyFullBulkStringRedisMessage(bool isNull)
                 : this(Unpooled.Empty, isNull)
-            { }
+            {
+            }
 
             NullOrEmptyFullBulkStringRedisMessage(IByteBuffer content, bool isNull)
             {

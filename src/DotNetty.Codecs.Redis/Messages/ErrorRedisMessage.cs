@@ -7,7 +7,8 @@ namespace DotNetty.Codecs.Redis.Messages
     {
         public ErrorRedisMessage(string content)
             : base(content)
-        { }
+        {
+        }
 
         public override string ToString() => $"{nameof(ErrorRedisMessage)}[content={this.Content}]";
     }

@@ -21,7 +21,6 @@ namespace DotNetty.Codecs.ProtocolBuffers
             IByteBuffer buffer = null;
             try
             {
-                
                 int size = message.SerializedSize;
                 if (size <= 0)
                 {
@@ -33,7 +32,7 @@ namespace DotNetty.Codecs.ProtocolBuffers
                 CodedOutputStream stream = CodedOutputStream.CreateInstance(data.Array, data.Offset, size);
                 message.WriteTo(stream);
                 buffer.SetWriterIndex(buffer.WriterIndex + size);
-               
+
                 output.Add(buffer);
                 buffer = null;
             }

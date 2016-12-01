@@ -10,10 +10,10 @@ namespace DotNetty.Codecs.Redis.Messages
     public enum RedisMessageType
     {
         SimpleString = RedisCodecUtil.RedisSimpleString,
-        Error        = RedisCodecUtil.RedisError,
-        Integer      = RedisCodecUtil.RedisInteger,
-        BulkString   = RedisCodecUtil.RedisBulkString,
-        ArrayHeader  = RedisCodecUtil.RedisArray,
-        Array        = RedisCodecUtil.RedisArray
+        Error = RedisCodecUtil.RedisError,
+        Integer = RedisCodecUtil.RedisInteger,
+        BulkString = RedisCodecUtil.RedisBulkString,
+        ArrayHeader = RedisCodecUtil.RedisArray,
+        Array = RedisCodecUtil.RedisArray
     }
 }

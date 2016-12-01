@@ -8,10 +8,10 @@ namespace DotNetty.Codecs.Redis
 
     static class RedisConstants
     {
-        internal static readonly ByteOrder DefaultByteOrder = 
-            BitConverter.IsLittleEndian 
-            ? ByteOrder.LittleEndian 
-            : ByteOrder.BigEndian;
+        internal static readonly ByteOrder DefaultByteOrder =
+            BitConverter.IsLittleEndian
+                ? ByteOrder.LittleEndian
+                : ByteOrder.BigEndian;
 
         internal static readonly int MaximumInlineMessageLength = 1024 * 64;
 
