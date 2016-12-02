@@ -30,13 +30,15 @@ namespace DotNetty.Codecs.Redis
 
         public static IRedisMessagePool Default => Instance;
 
-        static readonly string[] SimpleStrings = {
+        static readonly string[] SimpleStrings =
+        {
             "OK",
             "PONG",
             "QUEUED"
         };
 
-        static readonly string[] Errors = {
+        static readonly string[] Errors =
+        {
             "ERR",
             "ERR index out of range",
             "ERR no such key",
@@ -48,8 +50,8 @@ namespace DotNetty.Codecs.Redis
             "LOADING Redis is loading the dataset in memory",
             "MASTERDOWN Link with MASTER is down and slave-serve-stale-data is set to 'no'.",
             "MISCONF Redis is configured to save RDB snapshots, but is currently not able to persist on disk. "
-                + "Commands that may modify the data set are disabled. Please check Redis logs for details "
-                + "about the error.",
+            + "Commands that may modify the data set are disabled. Please check Redis logs for details "
+            + "about the error.",
             "NOAUTH Authentication required.",
             "NOREPLICAS Not enough good slaves to write.",
             "NOSCRIPT No matching script. Please use EVAL.",
@@ -116,13 +118,13 @@ namespace DotNetty.Codecs.Redis
         static readonly long MinimumCachedIntegerNumber = RedisConstants.NullValue; // inclusive
         const long MaximumCachedIntegerNumber = 128; // exclusive
 
-        public bool TryGetMessage(string content, out SimpleStringRedisMessage message) 
+        public bool TryGetMessage(string content, out SimpleStringRedisMessage message)
             => this.stringToSimpleStringMessages.TryGetValue(content, out message);
 
-        public bool TryGetMessage(IByteBuffer content, out SimpleStringRedisMessage message) 
+        public bool TryGetMessage(IByteBuffer content, out SimpleStringRedisMessage message)
             => this.byteBufferToSimpleStringMessages.TryGetValue(content, out message);
 
-        public bool TryGetMessage(string content, out ErrorRedisMessage message) 
+        public bool TryGetMessage(string content, out ErrorRedisMessage message)
             => this.stringToErrorMessages.TryGetValue(content, out message);
 
         public bool TryGetMessage(IByteBuffer content, out ErrorRedisMessage message)
@@ -131,10 +133,10 @@ namespace DotNetty.Codecs.Redis
         public bool TryGetMessage(long value, out IntegerRedisMessage message)
             => this.longToIntegerMessages.TryGetValue(value, out message);
 
-        public bool TryGetMessage(IByteBuffer content, out IntegerRedisMessage message) 
+        public bool TryGetMessage(IByteBuffer content, out IntegerRedisMessage message)
             => this.byteBufferToIntegerMessages.TryGetValue(content, out message);
 
-        public bool TryGetBytes(long value, out byte[] bytes) 
+        public bool TryGetBytes(long value, out byte[] bytes)
             => this.longToBytes.TryGetValue(value, out bytes);
     }
 }

@@ -16,6 +16,7 @@ namespace DotNetty.Transport.Channels.Sockets
     {
         static readonly string ExpectedTypes =
             $" (expected: {StringUtil.SimpleClassName<IByteBuffer>()})"; //+ ", " +
+
         // todo: FileRegion support        
         //typeof(FileRegion).Name + ')';
 
@@ -84,7 +85,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
                 AbstractSocketByteChannel ch = this.Channel;
                 if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
-                { 
+                {
                     return; // read was signaled as a result of channel closure
                 }
                 IChannelConfiguration config = ch.Configuration;

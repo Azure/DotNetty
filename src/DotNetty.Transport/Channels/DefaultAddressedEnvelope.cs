@@ -8,7 +8,7 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
-    public class DefaultAddressedEnvelope<T> : IAddressedEnvelope<T> 
+    public class DefaultAddressedEnvelope<T> : IAddressedEnvelope<T>
     {
         public DefaultAddressedEnvelope(T content, EndPoint recipient)
             : this(content, null, recipient)
@@ -70,7 +70,7 @@ namespace DotNetty.Transport.Channels
 
         public override string ToString() => $"DefaultAddressedEnvelope<{typeof(T)}>"
             + (this.Sender != null
-               ? $"({this.Sender} => {this.Recipient}, {this.Content})"
-               : $"(=> {this.Recipient}, {this.Content})");
+                ? $"({this.Sender} => {this.Recipient}, {this.Content})"
+                : $"(=> {this.Recipient}, {this.Content})");
     }
 }

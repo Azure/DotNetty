@@ -7,18 +7,23 @@ namespace DotNetty.Codecs.Redis
 
     public class MessageAggregationException : InvalidOperationException
     {
-        public MessageAggregationException() { }
+        public MessageAggregationException()
+        {
+        }
 
         public MessageAggregationException(string message)
             : this(message, null)
-        { }
+        {
+        }
+
         public MessageAggregationException(Exception exception)
             : this(null, exception)
-        { }
+        {
+        }
 
         public MessageAggregationException(string message, Exception exception)
             : base(message, exception)
-        { }
-
+        {
+        }
     }
 }

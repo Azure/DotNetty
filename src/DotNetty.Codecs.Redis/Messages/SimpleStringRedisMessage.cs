@@ -7,7 +7,8 @@ namespace DotNetty.Codecs.Redis.Messages
     {
         public SimpleStringRedisMessage(string content)
             : base(content)
-        { }
+        {
+        }
 
         public override string ToString() => $"{nameof(SimpleStringRedisMessage)}[content={this.Content}]";
     }

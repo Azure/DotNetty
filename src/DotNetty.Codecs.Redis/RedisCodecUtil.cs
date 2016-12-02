@@ -12,10 +12,10 @@ namespace DotNetty.Codecs.Redis
     static class RedisCodecUtil
     {
         internal const char RedisSimpleString = '+';
-        internal const char RedisError        = '-';
-        internal const char RedisInteger      = ':';
-        internal const char RedisBulkString   = '$';
-        internal const char RedisArray        = '*';
+        internal const char RedisError = '-';
+        internal const char RedisInteger = ':';
+        internal const char RedisBulkString = '$';
+        internal const char RedisArray = '*';
 
         internal static RedisMessageType ParseMessageType(byte byteCode)
         {
@@ -37,7 +37,7 @@ namespace DotNetty.Codecs.Redis
         }
 
         // todo: can optimize once ByteBufferUtil.WriteAscii is implemented
-        internal static byte[] LongToAsciiBytes(long value) => 
+        internal static byte[] LongToAsciiBytes(long value) =>
             Encoding.ASCII.GetBytes(Convert.ToString(value, CultureInfo.InvariantCulture));
 
         internal static short ToShort(char first, char second, ByteOrder byteOrder)

@@ -6,7 +6,7 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using DotNetty.Common;
 
-    public interface IAddressedEnvelope<out T> : IReferenceCounted 
+    public interface IAddressedEnvelope<out T> : IReferenceCounted
     {
         T Content { get; }
 
