@@ -12,6 +12,7 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Buffers;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Platform;
 
     sealed class DefaultChannelId : IChannelId
     {
@@ -125,7 +126,7 @@ namespace DotNetty.Transport.Channels
 
         static int DefaultProcessId()
         {
-            int pId = Process.GetCurrentProcess().Id;
+            int pId = PlatformRoutines.GetCurrentProcessId();
 
             if (pId <= 0)
             {
