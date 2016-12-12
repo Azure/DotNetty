@@ -1,5 +1,5 @@
 {
-  "name": "DotNetty.Platform",
+  "name": "DotNetty.Platform.NETStandard",
   "version": "0.4.0",
   "title": "DotNetty: Platform routines (.NET Standard)",
   "description": "DotNetty Platform routines",
@@ -21,7 +21,10 @@
     "keyFile": "../../DotNetty.snk"
   },
   "dependencies": {
-    "Microsoft.Extensions.Logging": "1.0.0" 
+    "Microsoft.Extensions.Logging": "1.0.0",
+    "DotNetty.Common": {
+      "target": "project"
+    }
   },
   "frameworks": {
     "netstandard1.3": {

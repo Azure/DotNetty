@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DotNetty.Platform.UWP</RootNamespace>
-    <AssemblyName>DotNetty.Platform</AssemblyName>
+    <AssemblyName>DotNetty.Platform.UWP</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion>10.0.14393.0</TargetPlatformVersion>
@@ -110,6 +110,11 @@
     <Compile Include="PlatformRoutines.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\DotNetty.Platform.UWP.rd.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="DotNetty.Common">
+      <HintPath>..\DotNetty.Common\bin\$(Configuration)\netstandard1.3\DotNetty.Common.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
