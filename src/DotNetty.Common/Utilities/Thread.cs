@@ -22,7 +22,8 @@ namespace DotNetty.Common.Platform
         private EventWaitHandle completed = new EventWaitHandle(false, EventResetMode.AutoReset);
         private EventWaitHandle readyToStart = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-        private static ThreadLocal<XThread> tlocal = new ThreadLocal<XThread>(() => new XThread());
+        [ThreadStatic]
+        private static XThread tls_this_thread;
 
         private int GetNewThreadId()
         {
@@ -45,14 +46,13 @@ namespace DotNetty.Common.Platform
                     // We start the task running, then unleash it by signaling the readyToStart event.
                     // This is needed to avoid thread reuse for tasks (see below)
                     readyToStart.WaitOne();
-                    // This is the first time we're using this thread, therefore it cannot have XThread created
-                    //Debug.Assert(!tlocal.IsValueCreated);
-                    if (tlocal.IsValueCreated)
+                    // This is the first time we're using this thread, therefore the TLS slot must be empty
+                    if (tls_this_thread != null)
                     {
-                        System.Diagnostics.Debug.WriteLine("warning: tlocal already created; OS thread reused");
+                        System.Diagnostics.Debug.WriteLine("warning: tls_this_thread already created; OS thread reused");
                         Debug.Assert(false);
                     }
-                    tlocal.Value = this;
+                    tls_this_thread = this;
                     threadStartFunc(this.startupParameter);
                     this.completed.Set();
                 },
@@ -110,7 +110,8 @@ namespace DotNetty.Common.Platform
         {
             get
             {
-                return tlocal.Value;
+                if (tls_this_thread == null) tls_this_thread = new XThread();
+                return tls_this_thread;
             }
         }
 
