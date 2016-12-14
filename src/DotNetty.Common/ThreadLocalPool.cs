@@ -7,6 +7,8 @@ namespace DotNetty.Common
     using System.Diagnostics.Contracts;
     using System.Runtime.CompilerServices;
     using System.Threading;
+    using DotNetty.Common.Platform;
+    using Thread = DotNetty.Common.Platform.XThread;
 
     public class ThreadLocalPool
     {

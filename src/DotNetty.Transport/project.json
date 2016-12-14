@@ -21,9 +21,6 @@
     "keyFile": "../../DotNetty.snk"
   },
   "dependencies": {
-    "DotNetty.Platform.Abstract": {
-      "target": "project"
-    },
     "DotNetty.Common": {
       "target": "project"
     },

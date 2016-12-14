@@ -15,7 +15,9 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Common.Platform;
     using DotNetty.Common.Utilities;
+    using Thread = DotNetty.Common.Platform.XThread;
 
     public class DefaultChannelPipeline : IChannelPipeline
     {
@@ -730,7 +732,7 @@ namespace DotNetty.Transport.Channels
                 }
 
                 IEventExecutor executor = ctx.Executor;
-                if (!inEventLoop && !executor.IsInEventLoop(currentThread))
+                if (!inEventLoop && !executor.IsInEventLoop(Thread.CurrentThread))
                 {
                     executor.Execute((self, c) => ((DefaultChannelPipeline)self).DestroyUp((AbstractChannelHandlerContext)c, true), this, ctx);
                     break;
@@ -753,7 +755,7 @@ namespace DotNetty.Transport.Channels
                 }
 
                 IEventExecutor executor = ctx.Executor;
-                if (inEventLoop || executor.IsInEventLoop(currentThread))
+                if (inEventLoop || executor.IsInEventLoop(Thread.CurrentThread))
                 {
                     lock (this)
                     {

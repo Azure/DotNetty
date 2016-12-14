@@ -4,12 +4,13 @@
 namespace DotNetty.Common.Platform
 {
     using System;
-    using System.Reflection;
 
     public static class Platform
     {
         private readonly static Lazy<IPlatform> Instance = new Lazy<IPlatform>(() => PlatformResolver.GetPlatform());
 
         public static int GetCurrentProcessId() => Instance.Value.GetCurrentProcessId();
+
+        public static byte[] GetDefaultDeviceID() => Instance.Value.GetDefaultDeviceID();
     }
 }

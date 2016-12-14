@@ -6,6 +6,8 @@ namespace DotNetty.Common.Concurrency
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Platform;
+    using Thread = DotNetty.Common.Platform.XThread;
 
     public interface IEventExecutor
     {

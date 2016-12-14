@@ -7,5 +7,7 @@ namespace DotNetty.Common.Platform
     public interface IPlatform
     {
         int GetCurrentProcessId();
+
+        byte[] GetDefaultDeviceID();
     }
 }

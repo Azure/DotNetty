@@ -7,6 +7,9 @@
     "DotNetty.Common": {
       "target": "project"
     },
+    "DotNetty.Platform.NetStandard": {
+      "target": "project"
+    },
     "DotNetty.Tests.Common": {
       "target": "project"
     }

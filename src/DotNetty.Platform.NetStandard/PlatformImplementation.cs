@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DotNetty.Common.Internal;
+using DotNetty.Common.Platform;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -6,11 +8,16 @@ using System.Text;
 // .NET Standard assembly
 namespace DotNetty.Platform
 {
-    public class PlatformImplementation : DotNetty.Common.Platform.IPlatform
+    public class PlatformImplementation : IPlatform
     {
-        public int GetCurrentProcessId()
+        int IPlatform.GetCurrentProcessId()
         {
             return Process.GetCurrentProcess().Id;
+        }
+
+        byte[] IPlatform.GetDefaultDeviceID()
+        {
+            return MacAddressUtil.GetBestAvailableMac();
         }
     }
 }

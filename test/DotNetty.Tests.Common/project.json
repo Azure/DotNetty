@@ -10,6 +10,9 @@
     "DotNetty.Common": {
       "target": "project"
     },
+    "DotNetty.Platform.NetStandard": {
+      "target": "project"
+    },
     "DotNetty.Transport": {
       "target": "project"
     },

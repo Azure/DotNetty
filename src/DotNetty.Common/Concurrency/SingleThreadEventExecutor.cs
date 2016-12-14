@@ -9,6 +9,8 @@ namespace DotNetty.Common.Concurrency
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Common.Platform;
+    using Thread = DotNetty.Common.Platform.XThread;
 
     public class SingleThreadEventExecutor : AbstractScheduledEventExecutor
     {
@@ -49,6 +51,7 @@ namespace DotNetty.Common.Concurrency
             this.taskQueue = taskQueue;
             this.preciseBreakoutInterval = PreciseTimeSpan.FromTimeSpan(breakoutInterval);
             this.scheduler = new ExecutorTaskScheduler(this);
+
             this.thread = new Thread(this.Loop)
             {
                 IsBackground = true
@@ -62,6 +65,7 @@ namespace DotNetty.Common.Concurrency
                 this.thread.Name = threadName;
             }
             this.thread.Start();
+
         }
 
         /// <summary>
@@ -220,7 +224,8 @@ namespace DotNetty.Common.Concurrency
                 // TODO: Change the behavior of takeTask() so that it returns on timeout.
                 // todo: ???
                 this.WakeUp(true);
-                Thread.Sleep(100);
+                //Thread.Sleep(100);
+                Task.Delay(100).Wait();
 
                 return false;
             }

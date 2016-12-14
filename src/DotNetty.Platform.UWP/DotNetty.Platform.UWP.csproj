@@ -107,7 +107,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PlatformRoutines.cs" />
+    <Compile Include="PlatformImplementation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\DotNetty.Platform.UWP.rd.xml" />
   </ItemGroup>

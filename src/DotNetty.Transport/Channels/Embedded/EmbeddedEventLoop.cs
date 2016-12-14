@@ -9,6 +9,8 @@ namespace DotNetty.Transport.Channels.Embedded
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Platform;
+    using Thread = DotNetty.Common.Platform.XThread;
 
     sealed class EmbeddedEventLoop : AbstractScheduledEventExecutor, IEventLoop
     {
