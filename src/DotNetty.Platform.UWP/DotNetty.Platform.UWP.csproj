@@ -115,6 +115,18 @@
     <Reference Include="DotNetty.Common">
       <HintPath>..\DotNetty.Common\bin\$(Configuration)\netstandard1.3\DotNetty.Common.dll</HintPath>
     </Reference>
+    <Reference Include="DotNetty.Buffers">
+      <HintPath>..\DotNetty.Buffers\bin\$(Configuration)\netstandard1.3\DotNetty.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="DotNetty.Codecs">
+      <HintPath>..\DotNetty.Codecs\bin\$(Configuration)\netstandard1.3\DotNetty.Codecs.dll</HintPath>
+    </Reference>
+    <Reference Include="DotNetty.Transport">
+      <HintPath>..\DotNetty.Transport\bin\$(Configuration)\netstandard1.3\DotNetty.Transport.dll</HintPath>
+    </Reference>
+    <Reference Include="DotNetty.Handlers">
+      <HintPath>..\DotNetty.Handlers\bin\$(Configuration)\netstandard1.3\DotNetty.Handlers.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
