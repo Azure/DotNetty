@@ -51,7 +51,6 @@ namespace DotNetty.Common.Concurrency
             this.taskQueue = taskQueue;
             this.preciseBreakoutInterval = PreciseTimeSpan.FromTimeSpan(breakoutInterval);
             this.scheduler = new ExecutorTaskScheduler(this);
-
             this.thread = new Thread(this.Loop)
             {
                 IsBackground = true
@@ -65,7 +64,6 @@ namespace DotNetty.Common.Concurrency
                 this.thread.Name = threadName;
             }
             this.thread.Start();
-
         }
 
         /// <summary>
@@ -224,8 +222,7 @@ namespace DotNetty.Common.Concurrency
                 // TODO: Change the behavior of takeTask() so that it returns on timeout.
                 // todo: ???
                 this.WakeUp(true);
-                //Thread.Sleep(100);
-                Task.Delay(100).Wait();
+                Thread.Sleep(100);
 
                 return false;
             }

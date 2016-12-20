@@ -732,7 +732,7 @@ namespace DotNetty.Transport.Channels
                 }
 
                 IEventExecutor executor = ctx.Executor;
-                if (!inEventLoop && !executor.IsInEventLoop(Thread.CurrentThread))
+                if (!inEventLoop && !executor.IsInEventLoop(currentThread))
                 {
                     executor.Execute((self, c) => ((DefaultChannelPipeline)self).DestroyUp((AbstractChannelHandlerContext)c, true), this, ctx);
                     break;
@@ -755,7 +755,7 @@ namespace DotNetty.Transport.Channels
                 }
 
                 IEventExecutor executor = ctx.Executor;
-                if (inEventLoop || executor.IsInEventLoop(Thread.CurrentThread))
+                if (inEventLoop || executor.IsInEventLoop(currentThread))
                 {
                     lock (this)
                     {
