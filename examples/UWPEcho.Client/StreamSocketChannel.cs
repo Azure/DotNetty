@@ -133,11 +133,7 @@ namespace DotNettyTestApp
                     byte[] data = new byte[byteBuffer.Capacity];
                     var buffer = data.AsBuffer();
 
-                    // Apparently DefaultChannelPipeline assumes all reads are synchronous. Because the function is void, without blocking the 
-                    // thread here, DotNetty tears down its worker threads and never receives data. 
-                    // Blocking is not a problem as long as it isn't happening on the main thread of the UWP app.
-
-                    var completion = this.streamSocket.InputStream.ReadAsync(buffer, (uint)byteBuffer.WritableBytes, InputStreamOptions.Partial).AsTask().Result;
+                    var completion = await this.streamSocket.InputStream.ReadAsync(buffer, (uint)byteBuffer.WritableBytes, InputStreamOptions.Partial);
 
                     byteBuffer.WriteBytes(data, 0, (int)completion.Length);
                     allocHandle.LastBytesRead = (int)completion.Length;

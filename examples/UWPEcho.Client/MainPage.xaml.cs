@@ -21,6 +21,8 @@ using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNettyTestApp;
 using Windows.Networking;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -31,10 +33,40 @@ namespace UWPEcho.Client
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        Runner runner = new Runner();
+
         public MainPage()
         {
             this.InitializeComponent();
-            Runner.RunClientAsync();
+        }
+
+        int counter = 0;
+        public void AddElement(object element)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () =>
+                {
+                    listView.Items.Add(string.Format("[{0}] {1}", counter++, element));
+
+                    var selectedIndex = listView.Items.Count - 1;
+                    if (selectedIndex < 0)
+                        return;
+
+                    listView.SelectedIndex = selectedIndex;
+                    listView.UpdateLayout();
+
+                    listView.ScrollIntoView(listView.SelectedItem);
+                });
+        }
+
+        private void startButton_Click(object sender, RoutedEventArgs e)
+        {
+            runner.StartAsync(AddElement);
+        }
+
+        private void stopButton_Click(object sender, RoutedEventArgs e)
+        {
+            runner.ShutdownAsync();
         }
     }
 
@@ -58,48 +90,50 @@ namespace UWPEcho.Client
             public static int Size => int.Parse("256");
         }
 
-        public static async Task RunClientAsync()
+        MultithreadEventLoopGroup eventLoopGroup;
+
+        public Runner() {}
+
+        public async Task StartAsync(Action<object> logger)
         {
-            var group = new MultithreadEventLoopGroup();
+            this.eventLoopGroup = new MultithreadEventLoopGroup();
 
             string pfxDir = "dotnetty.com.pfx";
             X509Certificate2 cert = new X509Certificate2(pfxDir, "password");
             string targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
 
-            try
+            Func<IChannel> channelFactory = () =>
             {
-                Func<IChannel> channelFactory = () =>
+                var channel = new StreamSocketChannel(
+                                new HostName(ClientSettings.Host.ToString()),
+                                ClientSettings.Port.ToString(),
+                                new HostName(targetHost));
+                return channel;
+            };
+
+            var bootstrap = new Bootstrap();
+
+            bootstrap
+                .Group(eventLoopGroup)
+                .RemoteAddress(ClientSettings.Host, ClientSettings.Port)
+                .ChannelFactory(channelFactory)
+                .Option(ChannelOption.TcpNodelay, true)
+                .Handler(new ActionChannelInitializer<IChannel>(channel =>
                 {
-                    var channel = new StreamSocketChannel(
-                                    new HostName(ClientSettings.Host.ToString()),
-                                    ClientSettings.Port.ToString(),
-                                    new HostName(targetHost));
-                    return channel;
-                };
+                    IChannelPipeline pipeline = channel.Pipeline;
+                    pipeline.AddLast("streamsocket", new StreamSocketDecoder());
+                    pipeline.AddLast(new LoggingHandler());
+                    pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
+                    pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
+                    pipeline.AddLast("echo", new EchoClientHandler(logger));
+                }));
 
-                var bootstrap = new Bootstrap();
+            IChannel clientChannel = await bootstrap.ConnectAsync();
+        }
 
-                bootstrap
-                    .Group(group)
-                    .RemoteAddress(ClientSettings.Host, ClientSettings.Port)
-                    .ChannelFactory(channelFactory)
-                    .Option(ChannelOption.TcpNodelay, true)
-                    .Handler(new ActionChannelInitializer<IChannel>(channel =>
-                    {
-                        IChannelPipeline pipeline = channel.Pipeline;
-                        pipeline.AddLast("streamsocket", new StreamSocketDecoder());
-                        pipeline.AddLast(new LoggingHandler());
-                        pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
-                        pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
-                        pipeline.AddLast("echo", new EchoClientHandler());
-                    }));
-
-                IChannel clientChannel = await bootstrap.ConnectAsync();
-            }
-            finally
-            {
-                await group.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
-            }
+        public Task ShutdownAsync()
+        {
+            return eventLoopGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
         }
     }
 }

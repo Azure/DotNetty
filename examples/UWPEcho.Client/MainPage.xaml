@@ -7,7 +7,18 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="10" >
 
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="48" />
+        </Grid.RowDefinitions>
+        <ListBox x:Name="listView" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Height="Auto" Margin="0" VerticalAlignment="Top" BorderThickness="0" Grid.ColumnSpan="2"/>
+        <Button x:Name="startButton" Grid.Row="1" Grid.Column="0" Width="120" Content="Start" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="startButton_Click"/>
+        <Button x:Name="stopButton" Grid.Row="1" Grid.Column="1" Width="120" Content="Stop" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click ="stopButton_Click"/>
     </Grid>
 </Page>

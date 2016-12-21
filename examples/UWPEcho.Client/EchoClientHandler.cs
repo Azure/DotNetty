@@ -19,9 +19,11 @@
     public class EchoClientHandler : ChannelHandlerAdapter
     {
         readonly IByteBuffer initialMessage;
+        readonly Action<object> logger;
 
-        public EchoClientHandler()
+        public EchoClientHandler(Action<object> logger)
         {
+            this.logger = logger;
             this.initialMessage = Unpooled.Buffer(256);
             byte[] messageBytes = Encoding.UTF8.GetBytes("Hello from UWP!");
             this.initialMessage.WriteBytes(messageBytes);
@@ -34,7 +36,11 @@
             var byteBuffer = message as IByteBuffer;
             if (byteBuffer != null)
             {
-                System.Diagnostics.Debug.WriteLine("Received from server: " + byteBuffer.ToString(Encoding.UTF8));
+                var str = byteBuffer.ToString(Encoding.UTF8);
+                System.Diagnostics.Debug.WriteLine("Received from server: " + str);
+                this.logger(str);
+                // Throttle the client:
+                Task.Delay(100).Wait();
             }
             context.WriteAsync(message);
         }
