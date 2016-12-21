@@ -15,9 +15,8 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
-    using DotNetty.Common.Platform;
     using DotNetty.Common.Utilities;
-    using Thread = DotNetty.Common.Platform.XThread;
+    using Thread = DotNetty.Common.Utilities.XThread;
 
     public class DefaultChannelPipeline : IChannelPipeline
     {

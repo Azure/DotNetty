@@ -3,11 +3,10 @@
 
 namespace DotNetty.Common.Utilities
 {
-    using DotNetty.Common.Platform;
     using System;
     using System.Diagnostics.Contracts;
     using System.Threading;
-    using Thread = DotNetty.Common.Platform.XThread;
+    using Thread = DotNetty.Common.Utilities.XThread;
 
     public static class ThreadExtensions
     {

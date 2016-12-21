@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace DotNetty.Common.Platform
+namespace DotNetty.Common.Utilities
 {
     using System;
     using System.Diagnostics;
@@ -90,8 +90,7 @@ namespace DotNetty.Common.Platform
         public void Start(object parameter)
         {
             this.startupParameter = parameter;
-            readyToStart.Set();
-            this.IsAlive = true;
+            this.Start();
         }
 
         public static void Sleep(int millisecondsTimeout)

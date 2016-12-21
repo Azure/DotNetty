@@ -12,7 +12,7 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Buffers;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using DotNetty.Common.Platform;
+    using DotNetty.Common;
 
     sealed class DefaultChannelId : IChannelId
     {
