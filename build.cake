@@ -65,27 +65,10 @@ Task("Compile")
   .IsDependentOn("Restore-NuGet-Packages")
   .Does(() =>
 {
-  DotNetCoreBuild("./**/project.json", new DotNetCoreBuildSettings {
-      Configuration = configuration,
-      Verbose = false
-    });
 
-  //var projects = GetFiles("./**/*.xproj");
+  MSBuild("DotNetty.sln", new MSBuildSettings{ Configuration = "Debug" });
+  MSBuild("DotNetty.sln", new MSBuildSettings{ Configuration = "Release" });
 
-  // if (IsRunningOnUnix())
-  // {
-  //   projects = projects
-  //             - GetFiles("./**/Nancy.Encryption.MachineKey.xproj");
-  // }
-
-  // foreach(var project in projects)
-  // {
-  //   DotNetCoreBuild(project.GetDirectory().FullPath, new DotNetCoreBuildSettings {
-  //     Configuration = configuration,
-  //     Verbose = false,
-  //     //Runtime = IsRunningOnWindows() ? null : "unix-x64"
-  //   });
-  // }
 });
 
 Task("Test")
@@ -143,6 +126,7 @@ Task("Package-NuGet")
   .Does(() =>
 {
   var projects = GetFiles("./src/**/*.xproj");
+
   foreach(var project in projects)
   {
     var settings = new DotNetCorePackSettings {
@@ -152,6 +136,13 @@ Task("Package-NuGet")
 
     DotNetCorePack(project.GetDirectory().FullPath, settings);
   }
+
+  NuGetPack("./src/DotNetty.Platform.UWP/DotNetty.Platform.UWP.csproj", new NuGetPackSettings{
+      Version = releaseNote.Version.ToString(),
+      Symbols = true,
+      OutputDirectory = outputNuGet
+    });
+
 });
 
 Task("Publish-NuGet")
