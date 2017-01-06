@@ -31,9 +31,9 @@ namespace DotNetty.Common
         {
             if (PlatformSupportLevel.Value == DotNetPlatform.DotNetStandard13)
             {
-                return "DotNetty.Platform.NETStandard";
+                return "DotNetty.Common";   // The calling assembly
             }
-            return "DotNetty.Platform.UWP";
+            return "DotNetty.Platform.UWP"; // The satellite assembly containing UWP support
         }
 
         public static IPlatform GetPlatform()
