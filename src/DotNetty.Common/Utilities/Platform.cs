@@ -7,7 +7,7 @@ namespace DotNetty.Common
 
     public static class Platform
     {
-        private readonly static Lazy<IPlatform> Instance = new Lazy<IPlatform>(() => PlatformResolver.GetPlatform());
+        readonly static Lazy<IPlatform> Instance = new Lazy<IPlatform>(() => PlatformResolver.GetPlatform());
 
         public static int GetCurrentProcessId() => Instance.Value.GetCurrentProcessId();
 

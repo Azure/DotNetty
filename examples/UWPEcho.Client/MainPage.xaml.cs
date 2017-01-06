@@ -92,24 +92,20 @@ namespace UWPEcho.Client
 
         MultithreadEventLoopGroup eventLoopGroup;
 
-        public Runner() {}
-
         public async Task StartAsync(Action<object> logger)
         {
+            DotNetty.Common.PlatformSupportLevel.Value = DotNetty.Common.DotNetPlatform.UWP;
+
             this.eventLoopGroup = new MultithreadEventLoopGroup();
 
             string pfxDir = "dotnetty.com.pfx";
             X509Certificate2 cert = new X509Certificate2(pfxDir, "password");
             string targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
 
-            Func<IChannel> channelFactory = () =>
-            {
-                var channel = new StreamSocketChannel(
+            Func<IChannel> channelFactory = () => new StreamSocketChannel(
                                 new HostName(ClientSettings.Host.ToString()),
                                 ClientSettings.Port.ToString(),
                                 new HostName(targetHost));
-                return channel;
-            };
 
             var bootstrap = new Bootstrap();
 

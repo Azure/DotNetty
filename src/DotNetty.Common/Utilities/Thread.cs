@@ -11,34 +11,34 @@ namespace DotNetty.Common.Utilities
     public delegate void XParameterizedThreadStart(object obj);
 
     [DebuggerDisplay("ID={threadID}, Name={Name}, IsExplicit={isExplicit}")]
-    public class XThread
+    public sealed class XThread
     {
-        private static int maxThreadID = 0;
-        private int threadID;
+        static int maxThreadID = 0;
+        int threadID;
 #pragma warning disable CS0414
-        private bool isExplicit; // For debugging only
+        bool isExplicit; // For debugging only
 #pragma warning restore CS0414
-        private Task task;
-        private EventWaitHandle completed = new EventWaitHandle(false, EventResetMode.AutoReset);
-        private EventWaitHandle readyToStart = new EventWaitHandle(false, EventResetMode.AutoReset);
+        Task task;
+        EventWaitHandle completed = new EventWaitHandle(false, EventResetMode.AutoReset);
+        EventWaitHandle readyToStart = new EventWaitHandle(false, EventResetMode.AutoReset);
 
         [ThreadStatic]
-        private static XThread tls_this_thread;
+        static XThread tls_this_thread;
 
-        private int GetNewThreadId()
+        int GetNewThreadId()
         {
             maxThreadID = Interlocked.Increment(ref maxThreadID);
             return maxThreadID;
         }
 
-        private XThread()
+        XThread()
         {
             threadID = GetNewThreadId();
             this.isExplicit = false;
             this.IsAlive = false;
         }
 
-        private void CreateLongRunningTask(XParameterizedThreadStart threadStartFunc)
+        void CreateLongRunningTask(XParameterizedThreadStart threadStartFunc)
         {
             this.task = Task.Factory.StartNew(
                 () =>
@@ -98,7 +98,7 @@ namespace DotNetty.Common.Utilities
             Task.Delay(millisecondsTimeout).Wait();
         }
 
-        public string Name;
+        public string Name { get; set; }
 
         // NYI
         public bool IsBackground;

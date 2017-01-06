@@ -8,7 +8,7 @@ using System.Text;
 // .NET Standard assembly
 namespace DotNetty.Platform
 {
-    public class PlatformImplementation : IPlatform
+    class PlatformImplementation : IPlatform
     {
         int IPlatform.GetCurrentProcessId()
         {
