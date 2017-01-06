@@ -16,9 +16,11 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="48" />
+            <RowDefinition Height="48" />
         </Grid.RowDefinitions>
         <ListBox x:Name="listView" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Height="Auto" Margin="0" VerticalAlignment="Top" BorderThickness="0" Grid.ColumnSpan="2"/>
-        <Button x:Name="startButton" Grid.Row="1" Grid.Column="0" Width="120" Content="Start" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="startButton_Click"/>
-        <Button x:Name="stopButton" Grid.Row="1" Grid.Column="1" Width="120" Content="Stop" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click ="stopButton_Click"/>
+        <TextBlock x:Name="statusTextBlock" Grid.Row="1" Grid.Column="0" Width="auto"  HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
+        <Button x:Name="startButton" Grid.Row="2" Grid.Column="0" Width="120" Content="Start" HorizontalAlignment="Left" VerticalAlignment="Bottom" Click="startButton_Click"/>
+        <Button x:Name="stopButton" Grid.Row="2" Grid.Column="1" Width="120" Content="Stop" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click ="stopButton_Click"/>
     </Grid>
 </Page>

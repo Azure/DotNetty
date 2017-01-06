@@ -43,6 +43,7 @@ namespace UWPEcho.Client
         int counter = 0;
         public void AddElement(object element)
         {
+#pragma warning disable 4014
             CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
                 () =>
                 {
@@ -57,16 +58,32 @@ namespace UWPEcho.Client
 
                     listView.ScrollIntoView(listView.SelectedItem);
                 });
+#pragma warning restore 4014
         }
 
-        private void startButton_Click(object sender, RoutedEventArgs e)
+        private void CheckStatus(Task operation)
         {
-            runner.StartAsync(AddElement);
+            operation.ContinueWith(result =>
+            {
+#pragma warning disable 4014
+                CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                    () =>
+                    {
+                        statusTextBlock.Text = string.Format("Error: '{0}'", result.Exception.Message);
+                    });
+#pragma warning restore 4014
+            },
+            TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        private void stopButton_Click(object sender, RoutedEventArgs e)
+        void startButton_Click(object sender, RoutedEventArgs e)
         {
-            runner.ShutdownAsync();
+            CheckStatus(runner.StartAsync(AddElement));
+        }
+
+        void stopButton_Click(object sender, RoutedEventArgs e)
+        {
+            CheckStatus(runner.ShutdownAsync());
         }
     }
 
@@ -129,7 +146,11 @@ namespace UWPEcho.Client
 
         public Task ShutdownAsync()
         {
-            return eventLoopGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
+            if (eventLoopGroup != null)
+            {
+                return eventLoopGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
+            }
+            return Task.CompletedTask;
         }
     }
 }

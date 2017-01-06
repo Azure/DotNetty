@@ -51,7 +51,11 @@ namespace DotNettyTestApp
             this.validationHostName = validationHostName;
 
             this.streamSocket = new StreamSocket();
+
+            // Fire-and-forget is by design here: when connection completes (successfully or not), ConnectAsync sets connected event.
+#pragma warning disable 4014
             this.ConnectAsync();
+#pragma warning restore 4014
 
             this.active = true;
             this.open = true;
