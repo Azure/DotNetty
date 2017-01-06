@@ -100,9 +100,6 @@ namespace DotNetty.Common.Utilities
 
         public string Name { get; set; }
 
-        // NYI
-        public bool IsBackground;
-
         public bool IsAlive { get; private set; }
 
         public static XThread CurrentThread
