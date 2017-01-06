@@ -14,20 +14,26 @@ namespace DotNetty.Common
         }
     }
 
-    public static class PlatformResolver
+    public enum DotNetPlatform
     {
-        private static string GetPlatformSpecificAssemblyName()
+        DotNetStandard13,
+        UWP
+    }
+
+    public static class PlatformSupportLevel
+    {
+        public static DotNetPlatform Value { get; set; } = DotNetPlatform.DotNetStandard13; // DotNetStandard is the default, UWP must set explicitly
+    }
+
+    static class PlatformResolver
+    {
+        static string GetPlatformSpecificAssemblyName()
         {
-            try
+            if (PlatformSupportLevel.Value == DotNetPlatform.DotNetStandard13)
             {
-                Assembly.Load(new AssemblyName("System.Threading.Thread"));
+                return "DotNetty.Platform.NETStandard";
             }
-            catch (System.IO.FileNotFoundException)
-            {
-                // This platform does not have System.Threading.Thread, it must be UWP
-                return "DotNetty.Platform.UWP";
-            }
-            return "DotNetty.Platform.NETStandard";
+            return "DotNetty.Platform.UWP";
         }
 
         public static IPlatform GetPlatform()
