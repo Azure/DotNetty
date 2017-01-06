@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Windows.System.Diagnostics;
+using Windows.System.Profile;
+using Windows.Storage.Streams;
 
 // UWP assembly
 namespace DotNetty.Platform
 {
-    public class PlatformImplementation : IPlatform
+    class PlatformImplementation : IPlatform
     {
         int IPlatform.GetCurrentProcessId()
         {
@@ -18,11 +20,11 @@ namespace DotNetty.Platform
         {
             byte[] signature = new byte[8];
             int index = 0;
-            Windows.System.Profile.HardwareToken hardwareToken = Windows.System.Profile.HardwareIdentification.GetPackageSpecificToken(null);
-            using (Windows.Storage.Streams.DataReader dataReader = Windows.Storage.Streams.DataReader.FromBuffer(hardwareToken.Id))
+            var hardwareToken = HardwareIdentification.GetPackageSpecificToken(null);
+            using (var dataReader = DataReader.FromBuffer(hardwareToken.Id))
             {
                 int offset = 0;
-                while (offset < hardwareToken.Id.Length)
+                while (offset < hardwareToken.Id.Length && index < 7)
                 {
                     byte[] hardwareEntry = new byte[4];
                     dataReader.ReadBytes(hardwareEntry);
