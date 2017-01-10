@@ -23,6 +23,8 @@ using DotNettyTestApp;
 using Windows.Networking;
 using Windows.ApplicationModel.Core;
 using Windows.UI.Core;
+using Windows.Networking.Sockets;
+using Windows.Security.Cryptography.Certificates;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -119,29 +121,19 @@ namespace UWPEcho.Client
             X509Certificate2 cert = new X509Certificate2(pfxDir, "password");
             string targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
 
-            Func<IChannel> channelFactory = () => new StreamSocketChannel(
-                                new HostName(ClientSettings.Host.ToString()),
-                                ClientSettings.Port.ToString(),
-                                new HostName(targetHost));
+            var streamSocket = new StreamSocket();
+            await streamSocket.ConnectAsync(new HostName(ClientSettings.Host.ToString()), ClientSettings.Port.ToString(), SocketProtectionLevel.PlainSocket);
+            streamSocket.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
+            await streamSocket.UpgradeToSslAsync(SocketProtectionLevel.Tls12, new HostName(targetHost));
 
-            var bootstrap = new Bootstrap();
+            var streamSocketChannel = new StreamSocketChannel(streamSocket);
 
-            bootstrap
-                .Group(eventLoopGroup)
-                .RemoteAddress(ClientSettings.Host, ClientSettings.Port)
-                .ChannelFactory(channelFactory)
-                .Option(ChannelOption.TcpNodelay, true)
-                .Handler(new ActionChannelInitializer<IChannel>(channel =>
-                {
-                    IChannelPipeline pipeline = channel.Pipeline;
-                    pipeline.AddLast("streamsocket", new StreamSocketDecoder());
-                    pipeline.AddLast(new LoggingHandler());
-                    pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
-                    pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
-                    pipeline.AddLast("echo", new EchoClientHandler(logger));
-                }));
+            streamSocketChannel.Pipeline.AddLast(new LoggingHandler());
+            streamSocketChannel.Pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
+            streamSocketChannel.Pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
+            streamSocketChannel.Pipeline.AddLast("echo", new EchoClientHandler(logger));
 
-            IChannel clientChannel = await bootstrap.ConnectAsync();
+            await eventLoopGroup.GetNext().RegisterAsync(streamSocketChannel);
         }
 
         public Task ShutdownAsync()

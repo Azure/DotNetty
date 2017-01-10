@@ -18,73 +18,25 @@ namespace DotNettyTestApp
     using DotNetty.Codecs;
     using DotNetty.Handlers.Tls;
 
-    public class StreamSocketDecoder : ByteToMessageDecoder
-    {
-        protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
-        {
-            IByteBuffer buff = input.Slice(input.ReaderIndex, input.ReadableBytes);
-            buff.Retain();
-
-            input.SetReaderIndex(input.ReaderIndex + input.ReadableBytes);
-            output.Add(buff);
-        }
-    }
-
     public class StreamSocketChannel : AbstractChannel
     {
         readonly StreamSocket streamSocket;
-        readonly HostName remoteHostName;
-        readonly string remoteServiceName;
-        readonly HostName validationHostName;
+        readonly static ChannelMetadata metaData = new ChannelMetadata(false, 16);
 
         bool open;
         bool active;
 
-        internal bool ReadPending { get; set; }
+        bool ReadPending { get; set; }
 
-        internal bool WriteInProgress { get; set; }
+        bool WriteInProgress { get; set; }
 
-        public StreamSocketChannel(HostName remoteHostName, string remoteServiceName, HostName validationHostName) : base(null)
+        public StreamSocketChannel(StreamSocket streamSocket) : base(null)
         {
-            this.remoteHostName = remoteHostName;
-            this.remoteServiceName = remoteServiceName;
-            this.validationHostName = validationHostName;
-
-            this.streamSocket = new StreamSocket();
-
-            // Fire-and-forget is by design here: when connection completes (successfully or not), ConnectAsync sets connected event.
-#pragma warning disable 4014
-            this.ConnectAsync();
-#pragma warning restore 4014
+            this.streamSocket = streamSocket;
 
             this.active = true;
             this.open = true;
-            this.Metadata = new ChannelMetadata(false, 16);
             this.Configuration = new DefaultChannelConfiguration(this);
-        }
-
-        private TaskCompletionSource connected = new TaskCompletionSource();
-        public async Task ConnectAsync()
-        {
-            try
-            {
-                await this.StreamSocket.ConnectAsync(remoteHostName, remoteServiceName, SocketProtectionLevel.PlainSocket);
-
-                streamSocket.Control.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
-
-                await streamSocket.UpgradeToSslAsync(SocketProtectionLevel.Tls12, validationHostName);
-
-                connected.Complete();
-            }
-            catch (Exception ex)
-            {
-                connected.SetException(ex);
-            }
-        }
-
-        public Task EnsureConnected()
-        {
-            return connected.Task;
         }
 
         public StreamSocket StreamSocket => this.streamSocket;
@@ -93,7 +45,7 @@ namespace DotNettyTestApp
 
         public override IChannelConfiguration Configuration { get; }
 
-        public override ChannelMetadata Metadata { get; }
+        public override ChannelMetadata Metadata => metaData;
 
         public override bool Open => this.open;
 
@@ -119,8 +71,6 @@ namespace DotNettyTestApp
             IRecvByteBufAllocatorHandle allocHandle = null;
             try
             {
-                await EnsureConnected();
-
                 if (!this.Open || this.ReadPending)
                 {
                     return;
@@ -182,6 +132,7 @@ namespace DotNettyTestApp
         protected override void DoClose()
         {
             this.active = false;
+            this.open = false;
             this.streamSocket.Dispose();
         }
 
@@ -194,8 +145,6 @@ namespace DotNettyTestApp
         {
             try
             {
-                await EnsureConnected();
-
                 //
                 // All data is collected into one array before being written out
                 //
@@ -257,24 +206,8 @@ namespace DotNettyTestApp
 
             public override Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
             {
-                return ((StreamSocketChannel)this.channel).EnsureConnected();
+                throw new NotImplementedException(); // Not supported, should not get here
             }
-
-#if false // This seems unnecessary
-            protected override void Flush0()
-            {
-                // Flush immediately only when there's no pending flush.
-                // If there's a pending flush operation, event loop will call FinishWrite() later,
-                // and thus there's no need to call it now.
-
-                if (((StreamSocketChannel)this.channel).WriteInProgress)
-                {
-                    return;
-                }
-
-                base.Flush0();
-            }
-#endif
         }
     }
 }
