@@ -66,8 +66,7 @@ Task("Compile")
   .Does(() =>
 {
 
-  MSBuild("DotNetty.sln", new MSBuildSettings{ Configuration = "Debug" });
-  MSBuild("DotNetty.sln", new MSBuildSettings{ Configuration = "Release" });
+  MSBuild("DotNetty.sln", new MSBuildSettings{ Configuration = configuration });
 
 });
 
