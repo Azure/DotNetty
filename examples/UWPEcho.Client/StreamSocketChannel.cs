@@ -18,6 +18,15 @@ namespace DotNettyTestApp
     using DotNetty.Codecs;
     using DotNetty.Handlers.Tls;
 
+    /// <summary>
+    /// StreamSocketChannel is a sample implementation of AbstractChannel that is based on WinRT 
+    /// Windows.Networking.Sockets.StreamSocket class. The channel receives a connected StreamSocket
+    /// object that may or may not be upgraded to SSL.
+    /// This a reference implementation only.
+    /// Possible extensions are:
+    /// - Exposing server side certificates and their validation
+    /// - Exposing additional configuration options (such as SSL)
+    /// </summary>
     public class StreamSocketChannel : AbstractChannel
     {
         readonly StreamSocket streamSocket;
