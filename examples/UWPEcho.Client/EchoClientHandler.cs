@@ -31,18 +31,26 @@
 
         public override void ChannelActive(IChannelHandlerContext context) => context.WriteAndFlushAsync(this.initialMessage);
 
-        public override void ChannelRead(IChannelHandlerContext context, object message)
+        public override async void ChannelRead(IChannelHandlerContext context, object message)
         {
-            var byteBuffer = message as IByteBuffer;
-            if (byteBuffer != null)
+            try
             {
-                var str = byteBuffer.ToString(Encoding.UTF8);
-                System.Diagnostics.Debug.WriteLine("Received from server: " + str);
-                this.logger(str);
+                var byteBuffer = message as IByteBuffer;
+                if (byteBuffer != null)
+                {
+                    var str = byteBuffer.ToString(Encoding.UTF8);
+                    System.Diagnostics.Debug.WriteLine("Received from server: " + str);
+                    this.logger(str);
+                }
+                await context.WriteAsync(message);
                 // Throttle the client:
-                Task.Delay(100).Wait();
+                await Task.Delay(100);
             }
-            context.WriteAsync(message);
+            catch(Exception ex)
+            {
+                var str = string.Format("Error reading from channel: {0}", ex.Message);
+                this.logger(str);
+            }
         }
 
         public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
