@@ -101,8 +101,7 @@ namespace UWPEcho.Client
 
         public async Task StartAsync(Action<object> logger)
         {
-            PlatformImplementationDetails.AssemblyName = "UWPEcho.Client";
-            PlatformImplementationDetails.TypeName     = "UWPEcho.Client.PlatformImplementation";
+            PlatformImplementationProvider.Platform = new PlatformImplementation();
 
             this.eventLoopGroup = new MultithreadEventLoopGroup();
 
