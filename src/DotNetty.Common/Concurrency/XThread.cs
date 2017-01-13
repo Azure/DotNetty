@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace DotNetty.Common.Utilities
+namespace DotNetty.Common.Concurrency
 {
     using System;
     using System.Diagnostics;
@@ -10,32 +10,52 @@ namespace DotNetty.Common.Utilities
 
     public delegate void XParameterizedThreadStart(object obj);
 
-    [DebuggerDisplay("ID={threadID}, Name={Name}, IsExplicit={isExplicit}")]
+    [DebuggerDisplay("ID={threadId}, Name={Name}, IsExplicit={isExplicit}")]
     public sealed class XThread
     {
-        static int maxThreadID = 0;
-        int threadID;
-#pragma warning disable CS0414
-        bool isExplicit; // For debugging only
-#pragma warning restore CS0414
-        Task task;
-        EventWaitHandle completed = new EventWaitHandle(false, EventResetMode.AutoReset);
-        EventWaitHandle readyToStart = new EventWaitHandle(false, EventResetMode.AutoReset);
+        static int maxThreadId;
 
         [ThreadStatic]
-        static XThread tls_this_thread;
+        static XThread currentThread;
 
-        int GetNewThreadId()
-        {
-            maxThreadID = Interlocked.Increment(ref maxThreadID);
-            return maxThreadID;
-        }
+        readonly int threadId;
+#pragma warning disable CS0414
+        readonly bool isExplicit; // For debugging only
+#pragma warning restore CS0414
+        Task task;
+        readonly EventWaitHandle completed = new EventWaitHandle(false, EventResetMode.AutoReset);
+        readonly EventWaitHandle readyToStart = new EventWaitHandle(false, EventResetMode.AutoReset);
+        object startupParameter;
+
+        static int GetNewThreadId() => Interlocked.Increment(ref maxThreadId);
 
         XThread()
         {
-            threadID = GetNewThreadId();
+            this.threadId = GetNewThreadId();
             this.isExplicit = false;
             this.IsAlive = false;
+        }
+
+        public XThread(Action action)
+        {
+            this.threadId = GetNewThreadId();
+            this.isExplicit = true;
+            this.IsAlive = false;
+            this.CreateLongRunningTask(x => action());
+        }
+
+        public XThread(XParameterizedThreadStart threadStartFunc)
+        {
+            this.threadId = GetNewThreadId();
+            this.isExplicit = true;
+            this.IsAlive = false;
+            this.CreateLongRunningTask(threadStartFunc);
+        }
+
+        public void Start()
+        {
+            this.readyToStart.Set();
+            this.IsAlive = true;
         }
 
         void CreateLongRunningTask(XParameterizedThreadStart threadStartFunc)
@@ -45,14 +65,14 @@ namespace DotNetty.Common.Utilities
                 {
                     // We start the task running, then unleash it by signaling the readyToStart event.
                     // This is needed to avoid thread reuse for tasks (see below)
-                    readyToStart.WaitOne();
+                    this.readyToStart.WaitOne();
                     // This is the first time we're using this thread, therefore the TLS slot must be empty
-                    if (tls_this_thread != null)
+                    if (currentThread != null)
                     {
-                        System.Diagnostics.Debug.WriteLine("warning: tls_this_thread already created; OS thread reused");
+                        Debug.WriteLine("warning: currentThread already created; OS thread reused");
                         Debug.Assert(false);
                     }
-                    tls_this_thread = this;
+                    currentThread = this;
                     threadStartFunc(this.startupParameter);
                     this.completed.Set();
                 },
@@ -64,61 +84,22 @@ namespace DotNetty.Common.Utilities
                 TaskScheduler.Default);
         }
 
-        public XThread(Action action)
-        {
-            this.threadID = GetNewThreadId();
-            this.isExplicit = true;
-            this.IsAlive = false;
-            CreateLongRunningTask((x) => action());
-        }
-
-        public XThread(XParameterizedThreadStart threadStartFunc)
-        {
-            this.threadID = GetNewThreadId();
-            this.isExplicit = true;
-            this.IsAlive = false;
-            CreateLongRunningTask(threadStartFunc);
-        }
-
-        public void Start()
-        {
-            readyToStart.Set();
-            this.IsAlive = true;
-        }
-
-        object startupParameter;
         public void Start(object parameter)
         {
             this.startupParameter = parameter;
             this.Start();
         }
 
-        public static void Sleep(int millisecondsTimeout)
-        {
-            Task.Delay(millisecondsTimeout).Wait();
-        }
+        public static void Sleep(int millisecondsTimeout) => Task.Delay(millisecondsTimeout).Wait();
 
         public string Name { get; set; }
 
         public bool IsAlive { get; private set; }
 
-        public static XThread CurrentThread
-        {
-            get
-            {
-                if (tls_this_thread == null) tls_this_thread = new XThread();
-                return tls_this_thread;
-            }
-        }
+        public static XThread CurrentThread => currentThread ?? (currentThread = new XThread());
 
-        public bool Join(TimeSpan timeout)
-        {
-            return this.completed.WaitOne(timeout);
-        }
+        public bool Join(TimeSpan timeout) => this.completed.WaitOne(timeout);
 
-        public bool Join(int millisecondsTimeout)
-        {
-            return this.completed.WaitOne(millisecondsTimeout);
-        }
+        public bool Join(int millisecondsTimeout) => this.completed.WaitOne(millisecondsTimeout);
     }
 }

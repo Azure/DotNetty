@@ -144,7 +144,7 @@ namespace DotNetty.Transport.Channels
 
         static byte[] DefaultMachineId()
         {
-            byte[] bestMacAddr = Platform.GetDefaultDeviceID();
+            byte[] bestMacAddr = Platform.GetDefaultDeviceId();
             if (bestMacAddr == null) {
                 bestMacAddr = new byte[MacAddressUtil.MacAddressLength];
                 ThreadLocalRandom.Value.NextBytes(bestMacAddr);

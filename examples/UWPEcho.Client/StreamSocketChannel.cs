@@ -4,19 +4,13 @@
 namespace DotNettyTestApp
 {
     using System;
-    using System.Collections.Generic;
     using System.Net;
-    using System.Threading.Tasks;
-    using DotNetty.Buffers;
-    using DotNetty.Common.Concurrency;
-    using Windows.Networking.Sockets;
-    using DotNetty.Transport.Channels;
     using System.Runtime.InteropServices.WindowsRuntime;
-    using Windows.Networking;
+    using System.Threading.Tasks;
+    using Windows.Networking.Sockets;
     using Windows.Storage.Streams;
-    using Windows.Security.Cryptography.Certificates;
-    using DotNetty.Codecs;
-    using DotNetty.Handlers.Tls;
+    using DotNetty.Buffers;
+    using DotNetty.Transport.Channels;
 
     /// <summary>
     /// StreamSocketChannel is a sample implementation of AbstractChannel that is based on WinRT 
@@ -30,7 +24,7 @@ namespace DotNettyTestApp
     public class StreamSocketChannel : AbstractChannel
     {
         readonly StreamSocket streamSocket;
-        readonly static ChannelMetadata metaData = new ChannelMetadata(false, 16);
+        static readonly ChannelMetadata metadata = new ChannelMetadata(false, 16);
 
         bool open;
         bool active;
@@ -39,7 +33,8 @@ namespace DotNettyTestApp
 
         bool WriteInProgress { get; set; }
 
-        public StreamSocketChannel(StreamSocket streamSocket) : base(null)
+        public StreamSocketChannel(StreamSocket streamSocket)
+            : base(null)
         {
             this.streamSocket = streamSocket;
 
@@ -54,24 +49,18 @@ namespace DotNettyTestApp
 
         public override IChannelConfiguration Configuration { get; }
 
-        public override ChannelMetadata Metadata => metaData;
+        public override ChannelMetadata Metadata => metadata;
 
         public override bool Open => this.open;
 
         protected override EndPoint LocalAddressInternal
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
+            get { throw new NotImplementedException(); }
         }
 
         protected override EndPoint RemoteAddressInternal
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
+            get { throw new NotImplementedException(); }
         }
 
         protected override async void DoBeginRead()
@@ -93,10 +82,10 @@ namespace DotNettyTestApp
                 {
                     byteBuffer = allocHandle.Allocate(allocator);
 
-                    byte[] data = new byte[byteBuffer.Capacity];
-                    var buffer = data.AsBuffer();
+                    var data = new byte[byteBuffer.Capacity];
+                    IBuffer buffer = data.AsBuffer();
 
-                    var completion = await this.streamSocket.InputStream.ReadAsync(buffer, (uint)byteBuffer.WritableBytes, InputStreamOptions.Partial);
+                    IBuffer completion = await this.streamSocket.InputStream.ReadAsync(buffer, (uint)byteBuffer.WritableBytes, InputStreamOptions.Partial);
 
                     byteBuffer.WriteBytes(data, 0, (int)completion.Length);
                     allocHandle.LastBytesRead = (int)completion.Length;
@@ -145,10 +134,7 @@ namespace DotNettyTestApp
             this.streamSocket.Dispose();
         }
 
-        protected override void DoDisconnect()
-        {
-            this.streamSocket.Dispose();
-        }
+        protected override void DoDisconnect() => this.streamSocket.Dispose();
 
         protected override async void DoWrite(ChannelOutboundBuffer channelOutboundBuffer)
         {
@@ -188,7 +174,7 @@ namespace DotNettyTestApp
                     channelOutboundBuffer.Remove();
                 }
 
-                var result = await this.streamSocket.OutputStream.WriteAsync(allbytes.AsBuffer());
+                uint result = await this.streamSocket.OutputStream.WriteAsync(allbytes.AsBuffer());
 
                 this.WriteInProgress = false;
             }

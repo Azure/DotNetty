@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace DotNetty.Common
+namespace DotNetty.Common.Internal
 {
     using System;
     using System.Reflection;
 
     public class PlatformImplementationNotFound : Exception
     {
-        public PlatformImplementationNotFound(string assemblyName) : 
-            base($"The assembly {assemblyName} containing platform-specific implementation cannot be found. Make sure the assembly is located in the application's current directory/Appx")
+        public PlatformImplementationNotFound(string assemblyName)
+            : base($"The assembly {assemblyName} containing platform-specific implementation cannot be found. Make sure the assembly is located in the application's current directory/Appx")
         {
         }
     }
@@ -29,17 +29,21 @@ namespace DotNetty.Common
     {
         static string GetPlatformSpecificAssemblyName()
         {
-            if (PlatformSupportLevel.Value == DotNetPlatform.DotNetStandard13)
+            switch (PlatformSupportLevel.Value)
             {
-                return "DotNetty.Common";   // The calling assembly
+                case DotNetPlatform.DotNetStandard13:
+                    return "DotNetty.Common"; // The calling assembly
+                case DotNetPlatform.UWP:
+                    return "DotNetty.Platform.UWP"; // The satellite assembly containing UWP support
+                default:
+                    throw new NotSupportedException("Platform " + PlatformSupportLevel.Value.ToString() + " is not supported.");
             }
-            return "DotNetty.Platform.UWP"; // The satellite assembly containing UWP support
         }
 
         public static IPlatform GetPlatform()
         {
             // Load the assembly that contains the implementation of this platform
-            var assemblyName = GetPlatformSpecificAssemblyName();
+            string assemblyName = GetPlatformSpecificAssemblyName();
             Assembly assembly;
             try
             {
@@ -51,7 +55,7 @@ namespace DotNetty.Common
             }
 
             // Get the type from the assembly that implements the platform
-            Type type = assembly.GetType("DotNetty.Platform.PlatformImplementation");
+            Type type = assembly.GetType("DotNetty.Common.Internal.PlatformImplementation");
             object instance = Activator.CreateInstance(type);
             return (IPlatform)instance;
         }
