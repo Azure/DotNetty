@@ -7,7 +7,7 @@
     <ProjectGuid>{6932E4C5-DF77-4DE4-A5C3-B64F86AE1395}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DotNetty.Platform.UWP</RootNamespace>
+    <RootNamespace>DotNetty.Common.Internal</RootNamespace>
     <AssemblyName>DotNetty.Platform.UWP</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>

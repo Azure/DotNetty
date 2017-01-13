@@ -1,32 +1,28 @@
-﻿using DotNetty.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Windows.System.Diagnostics;
-using Windows.System.Profile;
-using Windows.Storage.Streams;
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-// UWP assembly
-namespace DotNetty.Platform
+namespace DotNetty.Common.Internal
 {
+    using Windows.Storage.Streams;
+    using Windows.System.Diagnostics;
+    using Windows.System.Profile;
+    using DotNetty.Common.Internal;
+
     class PlatformImplementation : IPlatform
     {
-        int IPlatform.GetCurrentProcessId()
-        {
-            return (int)ProcessDiagnosticInfo.GetForCurrentProcess().ProcessId;
-        }
+        int IPlatform.GetCurrentProcessId() => (int)ProcessDiagnosticInfo.GetForCurrentProcess().ProcessId;
 
-        byte[] IPlatform.GetDefaultDeviceID()
+        byte[] IPlatform.GetDefaultDeviceId()
         {
-            byte[] signature = new byte[8];
+            var signature = new byte[8];
             int index = 0;
-            var hardwareToken = HardwareIdentification.GetPackageSpecificToken(null);
-            using (var dataReader = DataReader.FromBuffer(hardwareToken.Id))
+            HardwareToken hardwareToken = HardwareIdentification.GetPackageSpecificToken(null);
+            using (DataReader dataReader = DataReader.FromBuffer(hardwareToken.Id))
             {
                 int offset = 0;
                 while (offset < hardwareToken.Id.Length && index < 7)
                 {
-                    byte[] hardwareEntry = new byte[4];
+                    var hardwareEntry = new byte[4];
                     dataReader.ReadBytes(hardwareEntry);
                     byte componentID = hardwareEntry[0];
                     byte componentIDReserved = hardwareEntry[1];

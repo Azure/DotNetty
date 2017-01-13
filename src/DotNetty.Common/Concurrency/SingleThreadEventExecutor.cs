@@ -9,7 +9,7 @@ namespace DotNetty.Common.Concurrency
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using Thread = DotNetty.Common.Utilities.XThread;
+    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public class SingleThreadEventExecutor : AbstractScheduledEventExecutor
     {
