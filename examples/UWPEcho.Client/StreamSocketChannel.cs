@@ -4,6 +4,7 @@
 namespace DotNettyTestApp
 {
     using System;
+    using System.Diagnostics;
     using System.Net;
     using System.Runtime.InteropServices.WindowsRuntime;
     using System.Threading.Tasks;
@@ -156,7 +157,9 @@ namespace DotNettyTestApp
 
                     var byteBuffer = currentMessage as IByteBuffer;
 
-                    if (byteBuffer.ReadableBytes > 0)
+                    Debug.Assert(byteBuffer != null);
+
+                    if (byteBuffer.IsReadable())
                     {
                         if (allbytes == null)
                         {

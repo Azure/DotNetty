@@ -136,12 +136,6 @@ Task("Package-NuGet")
     DotNetCorePack(project.GetDirectory().FullPath, settings);
   }
 
-  NuGetPack("./src/DotNetty.Platform.UWP/DotNetty.Platform.UWP.nuspec", new NuGetPackSettings{
-      Version = releaseNote.Version.ToString(),
-      Symbols = true,
-      OutputDirectory = outputNuGet
-    });
-
 });
 
 Task("Publish-NuGet")

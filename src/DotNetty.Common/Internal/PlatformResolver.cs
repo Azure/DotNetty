@@ -14,36 +14,18 @@ namespace DotNetty.Common.Internal
         }
     }
 
-    public enum DotNetPlatform
+    public static class PlatformImplementationDetails
     {
-        DotNetStandard13,
-        UWP
-    }
-
-    public static class PlatformSupportLevel
-    {
-        public static DotNetPlatform Value { get; set; } = DotNetPlatform.DotNetStandard13; // DotNetStandard is the default, UWP must set explicitly
+        public static string AssemblyName { get; set; } = "DotNetty.Common"; // This assembly
+        public static string TypeName { get; set; }     = "DotNetty.Common.Internal.PlatformImplementation";
     }
 
     static class PlatformResolver
     {
-        static string GetPlatformSpecificAssemblyName()
-        {
-            switch (PlatformSupportLevel.Value)
-            {
-                case DotNetPlatform.DotNetStandard13:
-                    return "DotNetty.Common"; // The calling assembly
-                case DotNetPlatform.UWP:
-                    return "DotNetty.Platform.UWP"; // The satellite assembly containing UWP support
-                default:
-                    throw new NotSupportedException("Platform " + PlatformSupportLevel.Value.ToString() + " is not supported.");
-            }
-        }
-
         public static IPlatform GetPlatform()
         {
             // Load the assembly that contains the implementation of this platform
-            string assemblyName = GetPlatformSpecificAssemblyName();
+            string assemblyName = PlatformImplementationDetails.AssemblyName;
             Assembly assembly;
             try
             {
@@ -55,7 +37,7 @@ namespace DotNetty.Common.Internal
             }
 
             // Get the type from the assembly that implements the platform
-            Type type = assembly.GetType("DotNetty.Common.Internal.PlatformImplementation");
+            Type type = assembly.GetType(PlatformImplementationDetails.TypeName);
             object instance = Activator.CreateInstance(type);
             return (IPlatform)instance;
         }
