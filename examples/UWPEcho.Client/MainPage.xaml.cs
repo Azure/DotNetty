@@ -101,7 +101,7 @@ namespace UWPEcho.Client
 
         public async Task StartAsync(Action<object> logger)
         {
-            PlatformImplementationProvider.Platform = new PlatformImplementation();
+            PlatformImplementationProvider.Platform = new UWPPlatformImplementation();
 
             this.eventLoopGroup = new MultithreadEventLoopGroup();
 

@@ -19,7 +19,7 @@ namespace DotNetty.Common.Internal
                 {
                     if (platform == null)
                     {
-                        platform = new DotNetty.Common.Internal.PlatformImplementation();
+                        platform = new DotNetty.Common.Internal.DefaultPlatformImplementation();
                     }
                     return platform;
                 }

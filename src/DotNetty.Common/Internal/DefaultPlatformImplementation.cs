@@ -5,7 +5,7 @@ namespace DotNetty.Common.Internal
 {
     using System.Diagnostics;
 
-    class PlatformImplementation : IPlatform
+    class DefaultPlatformImplementation : IPlatform
     {
         int IPlatform.GetCurrentProcessId() => Process.GetCurrentProcess().Id;
 
