@@ -18,7 +18,8 @@
     }
   },
   "buildOptions": {
-    "keyFile": "../../DotNetty.snk"
+    "keyFile": "../../DotNetty.snk",
+    "xmlDoc": true
   },
   "dependencies": {
     "DotNetty.Common": {
