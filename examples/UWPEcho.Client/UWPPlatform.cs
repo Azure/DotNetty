@@ -8,7 +8,7 @@ namespace UWPEcho.Client
     using Windows.System.Profile;
     using DotNetty.Common.Internal;
 
-    class UWPPlatformImplementation : IPlatform
+    class UWPPlatform : IPlatform
     {
         int IPlatform.GetCurrentProcessId() => (int)ProcessDiagnosticInfo.GetForCurrentProcess().ProcessId;
 

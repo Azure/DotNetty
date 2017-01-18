@@ -8,8 +8,8 @@ namespace DotNetty.Common
 
     public static class Platform
     {
-        public static int GetCurrentProcessId() => PlatformImplementationProvider.Platform.GetCurrentProcessId();
+        public static int GetCurrentProcessId() => PlatformProvider.Platform.GetCurrentProcessId();
 
-        public static byte[] GetDefaultDeviceId() => PlatformImplementationProvider.Platform.GetDefaultDeviceId();
+        public static byte[] GetDefaultDeviceId() => PlatformProvider.Platform.GetDefaultDeviceId();
     }
 }

@@ -6,7 +6,7 @@ namespace DotNetty.Common.Internal
     using System;
     using System.Reflection;
 
-    public static class PlatformImplementationProvider
+    public static class PlatformProvider
     {
         static IPlatform platform;
         static object syncRoot = new Object();
@@ -19,7 +19,7 @@ namespace DotNetty.Common.Internal
                 {
                     if (platform == null)
                     {
-                        platform = new DotNetty.Common.Internal.DefaultPlatformImplementation();
+                        platform = new DotNetty.Common.Internal.DefaultPlatform();
                     }
                     return platform;
                 }
