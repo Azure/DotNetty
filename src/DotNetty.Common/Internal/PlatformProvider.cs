@@ -4,33 +4,34 @@
 namespace DotNetty.Common.Internal
 {
     using System;
-    using System.Reflection;
+    using System.Diagnostics.Contracts;
+    using System.Threading;
 
     public static class PlatformProvider
     {
-        static IPlatform platform;
-        static object syncRoot = new Object();
+        static IPlatform defaultPlatform;
 
         public static IPlatform Platform
         {
             get
             {
-                lock (syncRoot)
+                IPlatform platform = Volatile.Read(ref defaultPlatform);
+                if(platform == null)
                 {
-                    if (platform == null)
+                    platform = new DefaultPlatform();
+                    IPlatform current = Interlocked.CompareExchange(ref defaultPlatform, platform, null);
+                    if (current != null)
                     {
-                        platform = new DotNetty.Common.Internal.DefaultPlatform();
+                        return current;
                     }
-                    return platform;
                 }
+                return platform;
             }
 
             set
             {
-                lock (syncRoot)
-                {
-                    platform = value;
-                }
+                Contract.Requires(value != null);
+                Volatile.Write(ref defaultPlatform, value);
             }
         }
     }
