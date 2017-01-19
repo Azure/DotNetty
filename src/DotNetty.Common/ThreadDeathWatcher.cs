@@ -10,7 +10,7 @@ namespace DotNetty.Common
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using DotNetty.Common.Utilities;
+    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public static class ThreadDeathWatcher
     {

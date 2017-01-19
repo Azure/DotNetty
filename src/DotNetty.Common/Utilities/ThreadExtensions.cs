@@ -6,6 +6,7 @@ namespace DotNetty.Common.Utilities
     using System;
     using System.Diagnostics.Contracts;
     using System.Threading;
+    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public static class ThreadExtensions
     {

@@ -12,6 +12,7 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Buffers;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Common;
 
     sealed class DefaultChannelId : IChannelId
     {
@@ -125,7 +126,7 @@ namespace DotNetty.Transport.Channels
 
         static int DefaultProcessId()
         {
-            int pId = Process.GetCurrentProcess().Id;
+            int pId = Platform.GetCurrentProcessId();
 
             if (pId <= 0)
             {
@@ -143,7 +144,7 @@ namespace DotNetty.Transport.Channels
 
         static byte[] DefaultMachineId()
         {
-            byte[] bestMacAddr = MacAddressUtil.GetBestAvailableMac();
+            byte[] bestMacAddr = Platform.GetDefaultDeviceId();
             if (bestMacAddr == null) {
                 bestMacAddr = new byte[MacAddressUtil.MacAddressLength];
                 ThreadLocalRandom.Value.NextBytes(bestMacAddr);

@@ -9,6 +9,7 @@ namespace DotNetty.Common.Concurrency
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
+    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public class SingleThreadEventExecutor : AbstractScheduledEventExecutor
     {
@@ -49,10 +50,7 @@ namespace DotNetty.Common.Concurrency
             this.taskQueue = taskQueue;
             this.preciseBreakoutInterval = PreciseTimeSpan.FromTimeSpan(breakoutInterval);
             this.scheduler = new ExecutorTaskScheduler(this);
-            this.thread = new Thread(this.Loop)
-            {
-                IsBackground = true
-            };
+            this.thread = new Thread(this.Loop);
             if (string.IsNullOrEmpty(threadName))
             {
                 this.thread.Name = DefaultWorkerThreadName;

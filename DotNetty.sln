@@ -110,6 +110,8 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "QuoteOfTheMoment.Server", "
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "QuoteOfTheMoment.Client", "examples\QuoteOfTheMoment.Client\QuoteOfTheMoment.Client.xproj", "{81AA23B3-E975-403C-8C90-0AA0E572B539}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UWPEcho.Client", "examples\UWPEcho.Client\UWPEcho.Client.csproj", "{583CE23F-152A-43C5-9772-D8D4C309BBA0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -260,6 +262,10 @@ Global
 		{81AA23B3-E975-403C-8C90-0AA0E572B539}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81AA23B3-E975-403C-8C90-0AA0E572B539}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81AA23B3-E975-403C-8C90-0AA0E572B539}.Release|Any CPU.Build.0 = Release|Any CPU
+		{583CE23F-152A-43C5-9772-D8D4C309BBA0}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{583CE23F-152A-43C5-9772-D8D4C309BBA0}.Debug|Any CPU.Build.0 = Debug|x86
+		{583CE23F-152A-43C5-9772-D8D4C309BBA0}.Debug|Any CPU.Deploy.0 = Debug|x86
+		{583CE23F-152A-43C5-9772-D8D4C309BBA0}.Release|Any CPU.ActiveCfg = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -307,5 +313,6 @@ Global
 		{7151B6B9-67C1-4899-9DD5-6E05AF16B743} = {2B766264-D269-415C-8F2A-5AFC44409C01}
 		{5E6F211F-A215-409C-8A6D-5AC0251F66B5} = {7151B6B9-67C1-4899-9DD5-6E05AF16B743}
 		{81AA23B3-E975-403C-8C90-0AA0E572B539} = {7151B6B9-67C1-4899-9DD5-6E05AF16B743}
+		{583CE23F-152A-43C5-9772-D8D4C309BBA0} = {2B766264-D269-415C-8F2A-5AFC44409C01}
 	EndGlobalSection
 EndGlobal
