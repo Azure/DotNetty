@@ -1,6 +1,6 @@
 ﻿{
   "name": "DotNetty.Handlers",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "title": "DotNetty: handlers",
   "description": "Application handlers for DotNetty",
   "language": "en-US",

@@ -1,6 +1,6 @@
 ﻿{
   "name": "DotNetty.Codecs.ProtocolBuffers",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "title": "DotNetty: ProtocolBuffers Proto2 codec",
   "description": "ProtocolBuffers Proto2 codec for DotNetty",
   "language": "en-US",

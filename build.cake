@@ -298,6 +298,7 @@ Task("Mono")
   .IsDependentOn("Test");
 
 Task("PR")
+  .IsDependentOn("Update-Version")
   .IsDependentOn("Test")
   .IsDependentOn("Benchmark")
   .IsDependentOn("Package-NuGet");

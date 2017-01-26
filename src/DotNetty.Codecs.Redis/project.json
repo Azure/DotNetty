@@ -1,6 +1,6 @@
 ﻿{
   "name": "DotNetty.Codecs.Redis",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "title": "DotNetty: Redis codec",
   "description": "Redis codec for DotNetty",
   "language": "en-US",
