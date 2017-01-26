@@ -1,6 +1,6 @@
 ﻿{
   "name": "DotNetty.Transport",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "title": "DotNetty: transport model",
   "description": "Transport model in DotNetty",
   "language": "en-US",
@@ -9,7 +9,7 @@
   ],
   "copyright": "Copyright © Microsoft Corporation",
   "packOptions": {
-    "tags": [ "socket", "tcp", "protocol", "netty", "dotnetty", "network" ],
+    "tags": [ "socket", "tcp", "udp", "protocol", "netty", "dotnetty", "network" ],
     "projectUrl": "https://github.com/Azure/DotNetty/",
     "licenseUrl": "https://github.com/Azure/DotNetty/blob/master/LICENSE.txt",
     "repository": {

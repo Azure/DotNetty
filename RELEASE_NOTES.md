@@ -1,3 +1,7 @@
+#### 0.4.1 January 26 2017
+- Introduced Platform allowing for alternative implementations of platform-specific concepts.
+- STEE and others use Task-based "thread" abstraction.
+
 #### 0.4.0 November 25 2016
 - .NET Standard 1.3 support.
 - Libraries are strong-named by default.
