@@ -39,7 +39,6 @@
         "System.Net.Primitives": "4.0.11",
         "System.Diagnostics.StackTrace": "4.0.1",
         "System.Net.NameResolution": "4.0.0",
-        "System.Diagnostics.Process": "4.1.0"
       }
     },
     "net451": { }
