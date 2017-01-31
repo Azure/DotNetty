@@ -44,6 +44,11 @@ namespace DotNetty.Common.Concurrency
         bool IsTerminated { get; }
 
         /// <summary>
+        /// Parent <see cref="IEventExecutorGroup"/>.
+        /// </summary>
+        IEventExecutorGroup Parent { get; }
+
+        /// <summary>
         ///     Returns <c>true</c> if the given <see cref="Thread" /> belongs to this event loop,
         ///     <c>false></c> otherwise.
         /// </summary>
