@@ -54,6 +54,10 @@ namespace DotNetty.Common.Concurrency
         {
         }
 
+        protected SingleThreadEventExecutor(string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
+            : this(null, threadName, breakoutInterval, taskQueue)
+        { }
+
         protected SingleThreadEventExecutor(IEventExecutorGroup parent, string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
             : base(parent)
         {

@@ -20,7 +20,8 @@
   "buildOptions": {
     "allowUnsafe": true,
     "keyFile": "../../DotNetty.snk",
-    "xmlDoc": true
+    "xmlDoc": true,
+    "nowarn": [ "CS1591" ]
   },
   "dependencies": {
     "DotNetty.Common": {

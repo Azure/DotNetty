@@ -19,7 +19,8 @@
   },
   "buildOptions": {
     "keyFile": "../../DotNetty.snk",
-    "xmlDoc": true
+    "xmlDoc": true,
+    "nowarn": [ "CS1591" ]
   },
   "dependencies": {
     "Microsoft.Extensions.Logging": "1.0.0" 
