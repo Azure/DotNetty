@@ -2,7 +2,9 @@
   "name": "DotNetty.Rpc",
   "description": "DotNetty Rpc",
   "buildOptions": {
-    "emitEntryPoint": true
+    "keyFile": "../../DotNetty.snk",
+    "xmlDoc": true,
+    "nowarn": [ "CS1591" ]
   },
   "dependencies": {
     "DotNetty.Common": {
@@ -23,15 +25,6 @@
     "NewtonSoft.Json": "9.0.1"
   },
   "frameworks": {
-    "netcoreapp1.0": {
-      "dependencies": {
-        "Microsoft.NETCore.App": {
-          "version": "1.0.0-*",
-          "type": "platform"
-        }
-      },
-      "imports": "dnxcore50"
-    },
     "net451": {}
   }
 }
