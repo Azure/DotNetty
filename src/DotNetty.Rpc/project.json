@@ -20,9 +20,7 @@
     "DotNetty.Codecs": {
       "target": "project"
     },
-    "Examples.Common": {
-      "target": "project"
-    }
+    "NewtonSoft.Json": "9.0.1"
   },
   "frameworks": {
     "netcoreapp1.0": {
