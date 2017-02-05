@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 namespace Rpc.Client
 {
+    using System.Diagnostics;
+    using System.Threading;
     using DotNetty.Rpc.Client;
     using Rpc.Models;
 
@@ -12,7 +14,7 @@ namespace Rpc.Client
         {
             try
             {
-                Test().Wait();
+                Test();
                 Console.ReadKey();
             }
             catch (Exception ex)
@@ -23,16 +25,35 @@ namespace Rpc.Client
         }
 
 
-        public static async Task Test()
+        public static void Test()
         {
             string serverAddress = "127.0.0.1:9008";
-            NettyClient client = await NettyClientFactory.Get(serverAddress);
-            var query = new TestCityQuery
+            NettyClient client = NettyClientFactory.Get(serverAddress).Result;
+
+            var sw = new Stopwatch();
+            sw.Start();
+            int k = 0;
+            int count = 10000;
+            for (int i = 0; i < count; i++)
             {
-                Id = 1
-            };
-            CityInfo result= await client.SendRequest(query);
-            Console.WriteLine(result);
+                var query = new TestCityQuery
+                {
+                    Id = i
+                };
+                Task<CityInfo> task = client.SendRequest(query);
+                task.ContinueWith(n =>
+                {
+                    Interlocked.Increment(ref k);
+                });
+            }
+
+            while (true)
+            {
+                if (k == count)
+                    break;
+            }
+            sw.Stop();
+            Console.WriteLine(sw.ElapsedMilliseconds);
         }
     }
 }
