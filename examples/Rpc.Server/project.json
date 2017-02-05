@@ -1,0 +1,40 @@
+﻿{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+  "dependencies": {
+    "DotNetty.Common": {
+      "target": "project"
+    },
+    "DotNetty.Buffers": {
+      "target": "project"
+    },
+    "DotNetty.Transport": {
+      "target": "project"
+    },
+    "DotNetty.Handlers": {
+      "target": "project"
+    },
+    "DotNetty.Codecs": {
+      "target": "project"
+    },
+    "DotNetty.Rpc": {
+      "target": "project"
+    },
+    "Rpc.Models": {
+      "target": "project"
+    },
+    "NewtonSoft.Json": "9.0.1"
+  },
+  "frameworks": {
+    "netstandard1.3": {
+      "dependencies": {
+        "NETStandard.Library": "1.6.0",
+        "System.Net.Security": "4.0.0",
+        "System.Diagnostics.Contracts": "4.0.1"
+      }
+    },
+    "net451": {}
+  }
+}
