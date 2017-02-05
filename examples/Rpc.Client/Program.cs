@@ -5,7 +5,9 @@ namespace Rpc.Client
 {
     using System.Diagnostics;
     using System.Threading;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Rpc.Client;
+    using Microsoft.Extensions.Logging.Console;
     using Newtonsoft.Json;
     using Rpc.Models;
 
@@ -13,6 +15,7 @@ namespace Rpc.Client
     {
         public static void Main(string[] args)
         {
+            InternalLoggerFactory.DefaultFactory.AddProvider(new ConsoleLoggerProvider((s, level) => true, false));
             try
             {
                 while (true)

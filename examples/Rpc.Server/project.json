@@ -13,7 +13,8 @@
     "Rpc.Services": {
       "target": "project"
     },
-    "NewtonSoft.Json": "9.0.1"
+    "NewtonSoft.Json": "9.0.1",
+    "Microsoft.Extensions.Logging.Console": "1.0.0"
   },
   "frameworks": {
     "net451": {}
