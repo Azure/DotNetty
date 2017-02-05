@@ -80,14 +80,14 @@ namespace DotNetty.Rpc.Client
             {
                 if (n.IsFaulted || n.IsCanceled)
                 {
-                    Logger.Info("connected to {} failed", socketAddress);
+                    Logger.Info("NettyClient connected to {} failed", socketAddress);
                     IChannel channel0 = this.clientRpcHandler.GetChannel();
                     channel0.EventLoop.Schedule(_ => this.DoConnect((EndPoint)_), socketAddress, TimeSpan.FromMilliseconds(1000));
                 }
                 else
                 {
                     this.emptyEvent.Set();
-                    Logger.Info("connected to {}", socketAddress);
+                    Logger.Info("NettyClient connected to {}", socketAddress);
                     this.channel = n.Result;
                 }
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
