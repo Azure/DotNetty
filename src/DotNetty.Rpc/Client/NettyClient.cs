@@ -19,10 +19,9 @@ namespace DotNetty.Rpc.Client
         static readonly IEventLoopGroup WorkerGroup = new MultithreadEventLoopGroup(Environment.ProcessorCount / 2);
 
         private readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
-        private readonly RpcClientHandler clientRpcHandler = new RpcClientHandler();
         private Bootstrap bootstrap;
         private IChannel channel;
-
+        private RpcClientHandler clientRpcHandler;
 
         private volatile bool closed = false;
 
@@ -43,8 +42,9 @@ namespace DotNetty.Rpc.Client
 
                     pipeline.AddLast(new ReconnectHandler(this.DoConnect, socketAddress));
 
-                    pipeline.AddLast(this.clientRpcHandler);
+                    pipeline.AddLast(new RpcClientHandler());
                 }));
+
             return this.DoConnect(socketAddress);
         }
 
@@ -76,7 +76,7 @@ namespace DotNetty.Rpc.Client
 
             if (this.closed)
                 throw new Exception("NettyClient closed");
-
+;
             Task<IChannel> task = this.bootstrap.ConnectAsync(socketAddress);
             return task.ContinueWith(n =>
             {
@@ -84,13 +84,14 @@ namespace DotNetty.Rpc.Client
                 {
                     Logger.Info("NettyClient connected to {} failed", socketAddress);
                     IChannel channel0 = this.clientRpcHandler.GetChannel();
-                    channel0.EventLoop.Schedule(_ => this.DoConnect((EndPoint)_), socketAddress, TimeSpan.FromMilliseconds(1000));
+                    channel0.EventLoop.Schedule(_ => this.Connect((EndPoint)_), socketAddress, TimeSpan.FromMilliseconds(1000));
                 }
                 else
                 {
                     this.emptyEvent.Set();
                     Logger.Info("NettyClient connected to {}", socketAddress);
                     this.channel = n.Result;
+                    this.clientRpcHandler = this.channel.Pipeline.Get<RpcClientHandler>();
                 }
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
