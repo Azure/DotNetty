@@ -6,6 +6,7 @@ namespace Rpc.Client
     using System.Diagnostics;
     using System.Threading;
     using DotNetty.Rpc.Client;
+    using Newtonsoft.Json;
     using Rpc.Models;
 
     public class Program
@@ -43,6 +44,7 @@ namespace Rpc.Client
                 Task<CityInfo> task = client.SendRequest(query);
                 task.ContinueWith(n =>
                 {
+                    //Console.WriteLine(JsonConvert.SerializeObject(n.Result));
                     Interlocked.Increment(ref k);
                 });
             }
