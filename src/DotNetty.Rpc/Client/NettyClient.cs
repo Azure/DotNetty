@@ -15,8 +15,8 @@ namespace DotNetty.Rpc.Client
     public class NettyClient: IClient
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance("NettyClient");
-        static readonly Task CompletedTask = Task.FromResult(0);
         static readonly IEventLoopGroup WorkerGroup = new MultithreadEventLoopGroup(Environment.ProcessorCount / 2);
+
         private readonly RpcClientHandler clientRpcHandler = new RpcClientHandler();
         private Bootstrap bootstrap;
         private IChannel channel;
@@ -45,6 +45,21 @@ namespace DotNetty.Rpc.Client
             return this.DoConnect(socketAddress);
         }
 
+        public async Task SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
+        {
+            var rpcRequest = new RpcRequest
+            {
+                RequestId = Guid.NewGuid().ToString(),
+                Message = request
+            };
+            RpcResponse rpcReponse = await this.clientRpcHandler.SendRequest(rpcRequest, timeout);
+            if (rpcReponse.Error != null)
+            {
+                throw new Exception(rpcReponse.Error);
+            }
+            request.ReturnValue = (T)rpcReponse.Result;
+        }
+
         private Task DoConnect(EndPoint socketAddress)
         {
             if (this.closed)
@@ -68,8 +83,6 @@ namespace DotNetty.Rpc.Client
                 }
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
-
-        public Task<RpcResponse> SendRequest(RpcRequest request, int timeout = 10000) => this.clientRpcHandler.SendRequest(request, timeout);
 
         public async Task Close()
         {

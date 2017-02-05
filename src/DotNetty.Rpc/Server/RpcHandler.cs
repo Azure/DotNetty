@@ -8,9 +8,9 @@
 
     public class RpcHandler: ChannelHandlerAdapter
     {
-        readonly Func<object, Task<object>> handler;
+        readonly Func<IMessage, Task<IResult>> handler;
 
-        public RpcHandler(Func<object, Task<object>> func)
+        public RpcHandler(Func<IMessage, Task<IResult>> func)
         {
             this.handler = func;
         }
@@ -28,8 +28,13 @@
                     };
                     try
                     {
-                        object result = await this.handler(state.Item2.Message);
-                        rpcResponse.Result = result;
+                        var message0 = state.Item2.Message as IMessage;
+                        if (message0 != null)
+                        {
+                            IResult result = await this.handler(message0);
+                            rpcResponse.Result = result;                           
+                        }
+                        throw new Exception("RpcRequest Message Not Imp IMessage");
                     }
                     catch (Exception ex)
                     {

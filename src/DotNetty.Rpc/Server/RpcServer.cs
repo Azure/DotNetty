@@ -12,9 +12,9 @@
     {
         static readonly int Paralle = Environment.ProcessorCount / 2;
         readonly string ipAndPort;
-        readonly Func<object, Task<object>> handler;
+        readonly Func<IMessage, Task<IResult>> handler;
 
-        public RpcServer(string ipAndPort, Func<object, Task<object>> func)
+        public RpcServer(string ipAndPort, Func<IMessage, Task<IResult>> func)
         {
             this.ipAndPort = ipAndPort;
             this.handler = func;

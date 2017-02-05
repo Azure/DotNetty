@@ -6,6 +6,7 @@
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Rpc.Exceptions;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Transport.Channels;
 
@@ -75,7 +76,7 @@
             if (requestContext != null)
             {
                 this.pendingRpc.TryRemove(requestId, out requestContext);
-                requestContext.TaskCompletionSource.SetException(new Exception("Time Out"));
+                requestContext.TaskCompletionSource.SetException(new TimeOutException("Time Out"));
             }
         }
 

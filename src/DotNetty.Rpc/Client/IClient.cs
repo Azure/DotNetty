@@ -9,7 +9,7 @@ namespace DotNetty.Rpc.Client
     {
         Task Connect(EndPoint socketAddress);
 
-        Task<RpcResponse> SendRequest(RpcRequest request, int timeout = 10000);
+        Task SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult;
 
         Task Close();
     }
