@@ -4,6 +4,7 @@
     using System.Threading.Tasks;
     using DotNetty.Codecs;
     using DotNetty.Rpc.Protocol;
+    using DotNetty.Rpc.Service;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
@@ -14,14 +15,16 @@
         readonly string ipAndPort;
         readonly Func<IMessage, Task<IResult>> handler;
 
-        public RpcServer(string ipAndPort, Func<IMessage, Task<IResult>> func)
+        public RpcServer(string ipAndPort)
         {
             this.ipAndPort = ipAndPort;
-            this.handler = func;
+            this.handler = ServiceCaller.Handle;
         }
 
         public async Task StartAsync()
         {
+            ModuleRegistration();
+
             var bossGroup = new MultithreadEventLoopGroup();
             var workerGroup = new MultithreadEventLoopGroup(Paralle);
 
@@ -55,6 +58,15 @@
             finally
             {
                 Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
+            }
+        }
+
+        static void ModuleRegistration()
+        {
+            IModule[] modules = ModuleRegistrations.FindModules();
+            foreach (IModule module in modules)
+            {
+                module.Initialize();
             }
         }
     }

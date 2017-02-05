@@ -10,7 +10,15 @@ namespace Rpc.Client
     {
         public static void Main(string[] args)
         {
-            Test().Wait();
+            try
+            {
+                Test().Wait();
+                Console.ReadKey();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
             Console.ReadKey();
         }
 

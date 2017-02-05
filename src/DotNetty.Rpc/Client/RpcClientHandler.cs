@@ -76,7 +76,7 @@
             if (requestContext != null)
             {
                 this.pendingRpc.TryRemove(requestId, out requestContext);
-                requestContext.TaskCompletionSource.SetException(new TimeOutException("Time Out"));
+                requestContext.TaskCompletionSource.SetException(new TimeOutException("Get RpcResponse TimeOut"));
             }
         }
 

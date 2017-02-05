@@ -120,6 +120,8 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Rpc.Client", "examples\Rpc.
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Rpc.Server", "examples\Rpc.Server\Rpc.Server.xproj", "{EC682D67-A394-4BF2-B40C-51E6D47EC9F3}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Rpc.Services", "examples\Rpc.Services\Rpc.Services.xproj", "{5BBDB603-2E98-41D6-9DE2-D49073C94971}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -286,6 +288,10 @@ Global
 		{EC682D67-A394-4BF2-B40C-51E6D47EC9F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC682D67-A394-4BF2-B40C-51E6D47EC9F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC682D67-A394-4BF2-B40C-51E6D47EC9F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BBDB603-2E98-41D6-9DE2-D49073C94971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BBDB603-2E98-41D6-9DE2-D49073C94971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BBDB603-2E98-41D6-9DE2-D49073C94971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BBDB603-2E98-41D6-9DE2-D49073C94971}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -338,5 +344,6 @@ Global
 		{B0B16F36-5F2C-4A8C-A489-A5CAE03F0E52} = {1138C289-C8F0-4C07-BA80-CF81D6B18CFA}
 		{18CD93ED-AEAF-4FF8-8E20-BF0DC8367F35} = {1138C289-C8F0-4C07-BA80-CF81D6B18CFA}
 		{EC682D67-A394-4BF2-B40C-51E6D47EC9F3} = {1138C289-C8F0-4C07-BA80-CF81D6B18CFA}
+		{5BBDB603-2E98-41D6-9DE2-D49073C94971} = {1138C289-C8F0-4C07-BA80-CF81D6B18CFA}
 	EndGlobalSection
 EndGlobal

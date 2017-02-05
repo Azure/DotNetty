@@ -1,6 +1,6 @@
 ﻿namespace Rpc.Models
 {
-    using DotNetty.Rpc.Protocol;
+    using DotNetty.Rpc.Service;
 
     public class TestCityQuery : AbsMessage<CityInfo>
     {

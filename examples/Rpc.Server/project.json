@@ -4,25 +4,13 @@
     "emitEntryPoint": true
   },
   "dependencies": {
-    "DotNetty.Common": {
-      "target": "project"
-    },
-    "DotNetty.Buffers": {
-      "target": "project"
-    },
-    "DotNetty.Transport": {
-      "target": "project"
-    },
-    "DotNetty.Handlers": {
-      "target": "project"
-    },
-    "DotNetty.Codecs": {
-      "target": "project"
-    },
     "DotNetty.Rpc": {
       "target": "project"
     },
     "Rpc.Models": {
+      "target": "project"
+    },
+    "Rpc.Services": {
       "target": "project"
     },
     "NewtonSoft.Json": "9.0.1"

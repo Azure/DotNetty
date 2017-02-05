@@ -4,6 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Rpc.Protocol;
+    using DotNetty.Rpc.Service;
     using DotNetty.Transport.Channels;
 
     public class RpcHandler: ChannelHandlerAdapter

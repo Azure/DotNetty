@@ -8,6 +8,7 @@ namespace DotNetty.Rpc.Client
     using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Rpc.Protocol;
+    using DotNetty.Rpc.Service;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
@@ -17,9 +18,11 @@ namespace DotNetty.Rpc.Client
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance("NettyClient");
         static readonly IEventLoopGroup WorkerGroup = new MultithreadEventLoopGroup(Environment.ProcessorCount / 2);
 
+        private readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
         private readonly RpcClientHandler clientRpcHandler = new RpcClientHandler();
         private Bootstrap bootstrap;
         private IChannel channel;
+
 
         private volatile bool closed = false;
 
@@ -47,6 +50,13 @@ namespace DotNetty.Rpc.Client
 
         public async Task<T> SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
         {
+            if (!this.channel.Active)
+            {
+                if (!this.emptyEvent.Wait(2000))
+                {
+                    throw new TimeoutException("Channel Connect TimeOut");
+                }
+            }
             var rpcRequest = new RpcRequest
             {
                 RequestId = Guid.NewGuid().ToString(),
@@ -57,16 +67,13 @@ namespace DotNetty.Rpc.Client
             {
                 throw new Exception(rpcReponse.Error);
             }
-            request.ReturnValue = (T)rpcReponse.Result;
-            return request.ReturnValue;
+            return (T)rpcReponse.Result;
         }
 
         private Task DoConnect(EndPoint socketAddress)
         {
             if (this.closed)
-            {
                 throw new Exception("NettyClient closed");
-            }
 
             Task<IChannel> task = this.bootstrap.ConnectAsync(socketAddress);
             return task.ContinueWith(n =>
@@ -79,6 +86,7 @@ namespace DotNetty.Rpc.Client
                 }
                 else
                 {
+                    this.emptyEvent.Set();
                     Logger.Info("connected to {}", socketAddress);
                     this.channel = n.Result;
                 }
