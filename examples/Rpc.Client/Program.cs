@@ -15,8 +15,11 @@ namespace Rpc.Client
         {
             try
             {
-                Test();
-                Console.ReadKey();
+                while (true)
+                {
+                    Test();
+                    Console.ReadKey();
+                }
             }
             catch (Exception ex)
             {
