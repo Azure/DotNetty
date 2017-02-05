@@ -72,6 +72,8 @@ namespace DotNetty.Rpc.Client
 
         private Task DoConnect(EndPoint socketAddress)
         {
+            this.emptyEvent.Reset();
+
             if (this.closed)
                 throw new Exception("NettyClient closed");
 
@@ -92,16 +94,5 @@ namespace DotNetty.Rpc.Client
                 }
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
-
-        internal async Task Close()
-        {
-            await this.channel.CloseAsync();
-            this.closed = true;
-            this.channel = null;
-        }
-
-        public bool IsClosed() => this.closed;
-
-
     }
 }

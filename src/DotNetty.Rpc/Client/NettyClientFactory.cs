@@ -14,7 +14,7 @@ namespace DotNetty.Rpc.Client
         {
             NettyClient client;
             ServiceClientMap.TryGetValue(serverAddress, out client);
-            if (client != null && !client.IsClosed())
+            if (client != null)
                 return client;
 
             var newClient = new NettyClient();

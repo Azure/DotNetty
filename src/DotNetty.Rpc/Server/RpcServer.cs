@@ -3,6 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using DotNetty.Codecs;
+    using DotNetty.Handlers.Timeout;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Rpc.Service;
     using DotNetty.Transport.Bootstrapping;
@@ -41,6 +42,7 @@
                         pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 0));
                         pipeline.AddLast(new RpcDecoder<RpcRequest>());
                         pipeline.AddLast(new RpcEncoder<RpcResponse>());
+                        pipeline.AddLast(new IdleStateHandler(0, 0, 60 * 60)); 
                         pipeline.AddLast(new RpcHandler());
                     }));
 
