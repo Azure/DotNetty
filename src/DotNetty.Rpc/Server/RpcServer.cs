@@ -13,12 +13,10 @@
     {
         static readonly int Paralle = Environment.ProcessorCount / 2;
         readonly string ipAndPort;
-        readonly Func<IMessage, Task<IResult>> handler;
 
         public RpcServer(string ipAndPort)
         {
             this.ipAndPort = ipAndPort;
-            this.handler = ServiceCaller.Handle;
         }
 
         public async Task StartAsync()
@@ -43,7 +41,7 @@
                         pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 0));
                         pipeline.AddLast(new RpcDecoder<RpcRequest>());
                         pipeline.AddLast(new RpcEncoder<RpcResponse>());
-                        pipeline.AddLast(new RpcHandler(this.handler));
+                        pipeline.AddLast(new RpcHandler());
                     }));
 
                 string[] parts = this.ipAndPort.Split(':');

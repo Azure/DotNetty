@@ -9,12 +9,6 @@
 
     public class RpcHandler: ChannelHandlerAdapter
     {
-        readonly Func<IMessage, Task<IResult>> handler;
-
-        public RpcHandler(Func<IMessage, Task<IResult>> func)
-        {
-            this.handler = func;
-        }
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
@@ -29,13 +23,7 @@
                     };
                     try
                     {
-                        var message0 = state.Item2.Message as IMessage;
-                        if (message0 != null)
-                        {
-                            IResult result = await this.handler(message0);
-                            rpcResponse.Result = result;                           
-                        }
-                        throw new Exception("RpcRequest Message Not Imp IMessage");
+                        rpcResponse.Result = await ServiceBus.Instance.Publish(state.Item2.Message);
                     }
                     catch (Exception ex)
                     {
