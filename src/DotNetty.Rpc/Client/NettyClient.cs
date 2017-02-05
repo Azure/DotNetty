@@ -12,7 +12,7 @@ namespace DotNetty.Rpc.Client
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
 
-    public class NettyClient: IClient
+    public class NettyClient
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance("NettyClient");
         static readonly IEventLoopGroup WorkerGroup = new MultithreadEventLoopGroup(Environment.ProcessorCount / 2);
@@ -23,7 +23,7 @@ namespace DotNetty.Rpc.Client
 
         private volatile bool closed = false;
 
-        public Task Connect(EndPoint socketAddress)
+        internal Task Connect(EndPoint socketAddress)
         {
             this.bootstrap = new Bootstrap();
             this.bootstrap.Group(WorkerGroup)
@@ -84,7 +84,7 @@ namespace DotNetty.Rpc.Client
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
-        public async Task Close()
+        internal async Task Close()
         {
             await this.channel.CloseAsync();
             this.closed = true;
