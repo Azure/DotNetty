@@ -45,7 +45,7 @@ namespace DotNetty.Rpc.Client
             return this.DoConnect(socketAddress);
         }
 
-        public async Task SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
+        public async Task<T> SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
         {
             var rpcRequest = new RpcRequest
             {
@@ -58,6 +58,7 @@ namespace DotNetty.Rpc.Client
                 throw new Exception(rpcReponse.Error);
             }
             request.ReturnValue = (T)rpcReponse.Result;
+            return request.ReturnValue;
         }
 
         private Task DoConnect(EndPoint socketAddress)
