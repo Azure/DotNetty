@@ -3,12 +3,14 @@
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Rpc.Service;
     using DotNetty.Transport.Channels;
 
     public class RpcHandler: ChannelHandlerAdapter
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance("RpcHandler");
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
@@ -37,6 +39,11 @@
                 TaskScheduler.Default);
         }
 
-        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => context.CloseAsync();
+        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+        {
+            base.ExceptionCaught(context, exception);
+            context.CloseAsync();
+            Logger.Error(exception);
+        }
     }
 }
