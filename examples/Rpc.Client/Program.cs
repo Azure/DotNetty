@@ -16,6 +16,7 @@ namespace Rpc.Client
         public static void Main(string[] args)
         {
             InternalLoggerFactory.DefaultFactory.AddProvider(new ConsoleLoggerProvider((s, level) => true, false));
+
             try
             {
                 while (true)
