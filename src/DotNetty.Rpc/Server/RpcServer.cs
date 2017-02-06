@@ -12,7 +12,7 @@
 
     public class RpcServer
     {
-        static readonly int Paralle = Environment.ProcessorCount / 2;
+        static readonly int Paralle = Math.Max(Environment.ProcessorCount / 2, 2);
         readonly string ipAndPort;
 
         public RpcServer(string ipAndPort)

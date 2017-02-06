@@ -15,8 +15,9 @@ namespace DotNetty.Rpc.Client
 
     public class NettyClient
     {
+        static readonly int Paralle = Math.Max(Environment.ProcessorCount / 2, 2);
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance("NettyClient");
-        static readonly IEventLoopGroup WorkerGroup = new MultithreadEventLoopGroup(Environment.ProcessorCount / 2);
+        static readonly IEventLoopGroup WorkerGroup = new MultithreadEventLoopGroup(Paralle);
 
         private readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
         private Bootstrap bootstrap;
