@@ -4,6 +4,7 @@
     using DotNetty.Rpc.Service;
     using Rpc.Models;
     using System.Threading.Tasks;
+    using Rpc.Models.Test;
 
     public class TestEventHandler: EventHandlerImpl
     {

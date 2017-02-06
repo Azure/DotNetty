@@ -1,4 +1,4 @@
-﻿namespace Rpc.Models
+﻿namespace Rpc.Models.Test
 {
     using DotNetty.Rpc.Service;
 

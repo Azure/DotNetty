@@ -10,6 +10,7 @@ namespace Rpc.Client
     using Microsoft.Extensions.Logging.Console;
     using Newtonsoft.Json;
     using Rpc.Models;
+    using Rpc.Models.Test;
 
     public class Program
     {
