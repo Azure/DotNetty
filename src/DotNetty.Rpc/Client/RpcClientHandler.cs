@@ -4,6 +4,7 @@
     using System.Collections.Concurrent;
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Codecs;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Rpc.Exceptions;
@@ -83,17 +84,22 @@
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
             base.ExceptionCaught(context, exception);
-            var deserializeException = exception as DeserializeException;
-            if (deserializeException != null)
+            var decoderException = exception as DecoderException;
+            if (decoderException != null)
             {
-                string requestId = deserializeException.RequestId;
-                RequestContext requestContext;
-                this.pendingRpc.TryGetValue(requestId, out requestContext);
-                if (requestContext != null)
+                Exception ex = decoderException.GetBaseException();
+                var deserializeException = ex as DeserializeException;
+                if (deserializeException != null)
                 {
-                    this.pendingRpc.TryRemove(requestId, out requestContext);
-                    requestContext.TaskCompletionSource.SetException(deserializeException);
-                    requestContext.TimeOutTimer.Cancel();
+                    string requestId = deserializeException.RequestId;
+                    RequestContext requestContext;
+                    this.pendingRpc.TryGetValue(requestId, out requestContext);
+                    if (requestContext != null)
+                    {
+                        this.pendingRpc.TryRemove(requestId, out requestContext);
+                        requestContext.TaskCompletionSource.SetException(deserializeException);
+                        requestContext.TimeOutTimer.Cancel();
+                    }
                 }
             }
             Logger.Error(exception);

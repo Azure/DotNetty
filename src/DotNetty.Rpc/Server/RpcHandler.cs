@@ -3,6 +3,7 @@
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Rpc.Exceptions;
     using DotNetty.Rpc.Protocol;
@@ -42,19 +43,29 @@
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
-            base.ExceptionCaught(context, exception);
-            var deserializeException = exception as DeserializeException;
-            if (deserializeException != null)
+            var decoderException = exception as DecoderException;
+            if (decoderException != null)
             {
-                var rpcResponse = new RpcResponse
+                Exception ex = decoderException.GetBaseException();
+                var deserializeException = ex as DeserializeException;
+                if (deserializeException != null)
                 {
-                    RequestId = deserializeException.RequestId,
-                    Error = string.Format("DeserializeException,RpcMessage:{0}", deserializeException.RpcMessage)
-                };
-                context.WriteAndFlushAsync(rpcResponse);
+                    var rpcResponse = new RpcResponse
+                    {
+                        RequestId = deserializeException.RequestId,
+                        Error = string.Format("DeserializeException,RpcMessage:{0}", deserializeException.RpcMessage)
+                    };
+                    context.WriteAndFlushAsync(rpcResponse);
+                }
+                else
+                {
+                    base.ExceptionCaught(context, exception);
+                    context.CloseAsync();
+                }
             }
             else
             {
+                base.ExceptionCaught(context, exception);
                 context.CloseAsync();
             }
             Logger.Error(exception);

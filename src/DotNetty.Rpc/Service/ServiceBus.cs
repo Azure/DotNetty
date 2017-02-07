@@ -44,7 +44,7 @@ namespace DotNetty.Rpc.Service
                 await handler(eventArgs);
                 return ((IMessage)eventArgs).ReturnValue;
             }
-            throw new NotImplementedException(type.Name);
+            throw new NotImplementedException(string.Format("NotImplementedException:{0}", type.Name));
         }
     }
 }
