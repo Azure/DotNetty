@@ -4,6 +4,7 @@
     using System.IO;
     using System.Text;
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     public class SerializationUtil
     {
@@ -29,6 +30,12 @@
         {
             string s = Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<T>(s, DefaultJsonSerializerSetting);
+        }
+
+        public static JObject Deserialize(byte[] data)
+        {
+            string s = Encoding.UTF8.GetString(data);
+            return (JObject)JsonConvert.DeserializeObject(s, DefaultJsonSerializerSetting);
         }
     }
 }

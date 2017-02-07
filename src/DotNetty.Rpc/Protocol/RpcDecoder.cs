@@ -1,9 +1,12 @@
 ﻿namespace DotNetty.Rpc.Protocol
 {
+    using System;
     using System.Collections.Generic;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
+    using DotNetty.Rpc.Exceptions;
     using DotNetty.Transport.Channels;
+    using Newtonsoft.Json.Linq;
 
     public class RpcDecoder<T> : ByteToMessageDecoder
     {
@@ -27,9 +30,19 @@
 
             input.ReadBytes(data);
 
-            var obj = SerializationUtil.Deserialize<T>(data);
-
-            output.Add(obj);
+            try
+            {
+                var obj = SerializationUtil.Deserialize<T>(data);
+                output.Add(obj);
+            }
+            catch (Exception)
+            {
+                JObject rpcRequest = SerializationUtil.Deserialize(data);
+                string requestId = Convert.ToString(rpcRequest["RequestId"]);
+                if (string.IsNullOrEmpty(requestId))
+                    throw;
+                throw new DeserializeException(requestId);
+            }       
         }
     }
 }
