@@ -83,7 +83,6 @@
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
-            base.ExceptionCaught(context, exception);
             var decoderException = exception as DecoderException;
             if (decoderException != null)
             {
@@ -100,6 +99,10 @@
                         requestContext.TaskCompletionSource.SetException(deserializeException);
                         requestContext.TimeOutTimer.Cancel();
                     }
+                }
+                else
+                {
+                    base.ExceptionCaught(context, exception);
                 }
             }
             Logger.Error(exception);
