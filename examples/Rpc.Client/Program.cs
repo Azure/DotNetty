@@ -45,11 +45,11 @@ namespace Rpc.Client
             int count = 10000;
             for (int i = 0; i < count; i++)
             {
-                var query = new TestCustomerPointQuery
+                var query = new TestCustomerQuery
                 {
                     Id = i
                 };
-                Task<CustomerPointInfo> task = client.SendRequest(query);
+                Task<CustomerInfo> task = client.SendRequest(query);
                 task.ContinueWith(n =>
                 {
                     //Console.WriteLine(JsonConvert.SerializeObject(n.Result));

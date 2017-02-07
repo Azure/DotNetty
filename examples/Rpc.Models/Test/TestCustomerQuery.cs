@@ -2,12 +2,12 @@
 {
     using DotNetty.Rpc.Service;
 
-    public class TestCustomerPointQuery : AbsMessage<CustomerPointInfo>
+    public class TestCustomerQuery : AbsMessage<CustomerInfo>
     {
         public int Id { get; set; }
     }
 
-    public class CustomerPointInfo : IResult
+    public class CustomerInfo : IResult
     {
         public int Id { get; set; }
 

@@ -61,14 +61,15 @@
                 {
                     base.ExceptionCaught(context, exception);
                     context.CloseAsync();
+                    Logger.Error(exception);
                 }
             }
             else
             {
                 base.ExceptionCaught(context, exception);
                 context.CloseAsync();
+                Logger.Error(exception);
             }
-            Logger.Error(exception);
         }
     }
 }
