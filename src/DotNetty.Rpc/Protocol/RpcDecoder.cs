@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
     using DotNetty.Rpc.Exceptions;
@@ -37,11 +38,11 @@
             }
             catch (Exception)
             {
-                JObject rpcRequest = SerializationUtil.Deserialize(data);
+                JObject rpcRequest = SerializationUtil.SafeDeserialize(data);
                 string requestId = Convert.ToString(rpcRequest["RequestId"]);
                 if (string.IsNullOrEmpty(requestId))
                     throw;
-                throw new DeserializeException(requestId);
+                throw new DeserializeException(requestId, rpcRequest.ToString());
             }       
         }
     }

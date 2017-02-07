@@ -32,10 +32,10 @@
             return JsonConvert.DeserializeObject<T>(s, DefaultJsonSerializerSetting);
         }
 
-        public static JObject Deserialize(byte[] data)
+        public static JObject SafeDeserialize(byte[] data)
         {
             string s = Encoding.UTF8.GetString(data);
-            return (JObject)JsonConvert.DeserializeObject(s, DefaultJsonSerializerSetting);
+            return (JObject)JsonConvert.DeserializeObject(s);
         }
     }
 }

@@ -83,6 +83,19 @@
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
             base.ExceptionCaught(context, exception);
+            var deserializeException = exception as DeserializeException;
+            if (deserializeException != null)
+            {
+                string requestId = deserializeException.RequestId;
+                RequestContext requestContext;
+                this.pendingRpc.TryGetValue(requestId, out requestContext);
+                if (requestContext != null)
+                {
+                    this.pendingRpc.TryRemove(requestId, out requestContext);
+                    requestContext.TaskCompletionSource.SetException(deserializeException);
+                    requestContext.TimeOutTimer.Cancel();
+                }
+            }
             Logger.Error(exception);
         }
     }

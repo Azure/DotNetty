@@ -6,9 +6,12 @@
     {
         public string RequestId { get; private set; }
 
-        public DeserializeException(string requestId)
+        public string RpcMessage { get; private set; }
+
+        public DeserializeException(string requestId,string rpcMessage)
         {
             this.RequestId = requestId;
+            this.RpcMessage = rpcMessage;
         }
     }
 }
