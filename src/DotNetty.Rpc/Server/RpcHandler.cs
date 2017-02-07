@@ -49,7 +49,7 @@
                 var rpcResponse = new RpcResponse
                 {
                     RequestId = deserializeException.RequestId,
-                    Error = "DeserializeException"
+                    Error = string.Format("DeserializeException,RpcMessage:{0}", deserializeException.RpcMessage)
                 };
                 context.WriteAndFlushAsync(rpcResponse);
             }
