@@ -22,6 +22,10 @@ namespace DotNetty.Rpc.Client
             SemaphoreSlim slim = ServiceClientAsyncLockMap.GetOrAdd(serverAddress, new SemaphoreSlim(1, 1));
             await slim.WaitAsync();
 
+            ServiceClientMap.TryGetValue(serverAddress, out client);
+            if (client != null)
+                return client;
+
             NettyClient newClient;
             try
             {
