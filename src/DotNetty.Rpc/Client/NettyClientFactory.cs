@@ -26,26 +26,25 @@ namespace DotNetty.Rpc.Client
             if (client != null)
                 return client;
 
-            NettyClient newClient;
             try
             {
-                newClient = new NettyClient();
+                client = new NettyClient();
                 string[] array = serverAddress.Split(':');
                 string host = array[0];
                 int port = Convert.ToInt32(array[1]);
                 EndPoint remotePeer = new IPEndPoint(IPAddress.Parse(host).MapToIPv6(), port);
-                await newClient.Connect(remotePeer);
+                await client.Connect(remotePeer);
             }
             finally
             {
                 slim.Release();
             }
 
-            if (newClient == null)
+            if (client == null)
                 throw new NullReferenceException();
 
-            ServiceClientMap.TryAdd(serverAddress, newClient);
-            return newClient;
+            ServiceClientMap.TryAdd(serverAddress, client);
+            return client;
         }
 
     }
