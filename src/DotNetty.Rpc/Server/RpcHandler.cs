@@ -43,7 +43,6 @@
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
             base.ExceptionCaught(context, exception);
-
             var deserializeException = exception as DeserializeException;
             if (deserializeException != null)
             {

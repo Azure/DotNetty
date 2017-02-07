@@ -31,10 +31,10 @@
 
             input.ReadBytes(data);
 
+            T obj;
             try
             {
-                var obj = SerializationUtil.Deserialize<T>(data);
-                output.Add(obj);
+                obj = SerializationUtil.Deserialize<T>(data);
             }
             catch (Exception)
             {
@@ -43,7 +43,8 @@
                 if (string.IsNullOrEmpty(requestId))
                     throw;
                 throw new DeserializeException(requestId, rpcRequest.ToString());
-            }       
+            }
+            output.Add(obj);
         }
     }
 }
