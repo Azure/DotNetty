@@ -35,3 +35,4 @@ nuget.exe
 /build/
 .dotnet/
 DotNetty.*.nuget.targets
+*.exe

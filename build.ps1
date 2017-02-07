@@ -1,4 +1,4 @@
-$CakeVersion = "0.16.2"
+$CakeVersion = "0.17.0"
 $DotNetVersion = "1.0.0-rc3-004530";
 $DotNetInstallerUri = "https://go.microsoft.com/fwlink/?linkid=839640";
 

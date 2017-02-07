@@ -50,13 +50,13 @@ Task("Restore-NuGet-Packages")
   .Description("Restores dependencies")
   .Does(() =>
 {
-  var settings = new DotNetCoreRestoreSettings
+  DotNetCoreRestore();
+  
+  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "restore -r win7-x64" } );
+  if (result != 0)
   {
-    Verbose = false,
-    Verbosity = DotNetCoreRestoreVerbosity.Warning
-  };
-
-  DotNetCoreRestore("./", settings);
+    throw new CakeException($"Restore failed.");
+  }
 });
 
 Task("Compile")
@@ -66,8 +66,11 @@ Task("Compile")
   .Does(() =>
 {
 
-  MSBuild("DotNetty.sln", new MSBuildSettings{ Configuration = configuration });
-
+  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "msbuild dotnetty.sln /p:Configuration=" + configuration } );
+  if (result != 0)
+  {
+    throw new CakeException($"Compilation failed.");
+  }
 });
 
 Task("Test")
@@ -76,15 +79,15 @@ Task("Test")
   .IsDependentOn("Compile")
   .Does(() =>
 {
-  var projects = GetFiles("./test/**/*.xproj")
-    - GetFiles("./test/**/*.Performance.xproj");
+  var projects = GetFiles("./test/**/*.csproj")
+    - GetFiles("./test/**/*.Performance.csproj");
 
   foreach(var project in projects)
   {
-      DotNetCoreTest(project.GetDirectory().FullPath, new DotNetCoreTestSettings
+      DotNetCoreTest(project.FullPath, new DotNetCoreTestSettings
         {
-          Configuration = configuration,
-          Verbose = false
+          Configuration = configuration//,
+          //Verbose = false
         });
       
     // if (IsRunningOnWindows())
@@ -124,7 +127,7 @@ Task("Package-NuGet")
   .Description("Generates NuGet packages for each project that contains a nuspec")
   .Does(() =>
 {
-  var projects = GetFiles("./src/**/*.xproj");
+  var projects = GetFiles("./src/**/*.csproj");
 
   foreach(var project in projects)
   {
