@@ -24,8 +24,6 @@ namespace DotNetty.Rpc.Client
         private IChannel channel;
         private RpcClientHandler clientRpcHandler;
 
-        private volatile bool closed = false;
-
         internal Task Connect(EndPoint socketAddress)
         {
             this.bootstrap = new Bootstrap();
@@ -74,9 +72,6 @@ namespace DotNetty.Rpc.Client
         private Task DoConnect(EndPoint socketAddress)
         {
             this.emptyEvent.Reset();
-
-            if (this.closed)
-                throw new Exception("NettyClient closed");
 ;
             Task<IChannel> task = this.bootstrap.ConnectAsync(socketAddress);
             return task.ContinueWith(n =>
