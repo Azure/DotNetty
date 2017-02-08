@@ -148,10 +148,6 @@
     <Reference Include="DotNetty.Handlers">
       <HintPath>..\..\src\DotNetty.Handlers\bin\$(Configuration)\netstandard1.3\DotNetty.Handlers.dll</HintPath>
     </Reference>
-    <Reference Include="DotNetty.Platform.UWP, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\src\DotNetty.Platform.UWP\bin\Debug\DotNetty.Platform.UWP.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
