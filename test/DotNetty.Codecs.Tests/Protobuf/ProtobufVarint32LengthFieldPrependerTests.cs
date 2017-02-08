@@ -158,10 +158,22 @@ namespace DotNetty.Codecs.Tests.Protobuf
             };
         }
 
-        [Theory]
-        [MemberData(nameof(GetVarint32Data))]
-        public void EncodeVarint32Size(int size, byte[] data)
+        // aliasing actual test cases as indexes to mitigate xunit discovery issues
+
+        static readonly object[][] EncodeVarint32SizeCases = GetVarint32Data().ToArray();
+
+        static IEnumerable<object[]> GetVarint32DataAliases()
         {
+            return Enumerable.Range(0, EncodeVarint32SizeCases.Length).Select(i => new object[] { i });
+        }
+
+        [Theory]
+        //[MemberData(nameof(GetVarint32Data))]
+        [MemberData(nameof(GetVarint32DataAliases))]
+        public void EncodeVarint32Size(int index) // int size, byte[] data)
+        {
+            int size = (int)EncodeVarint32SizeCases[index][0];
+            byte[] data = (byte[])EncodeVarint32SizeCases[index][1];
             IByteBuffer written = null;
             try
             {
