@@ -27,7 +27,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
         mkdir -Force $InstallPath | Out-Null;
     }
     (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "dotnet-install.exe");
-    Start-Process dotnet-install.exe -ArgumentList "/install","/quiet" -Wait
+    & .\dotnet-install.exe /install /quiet
 
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
     $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -40,8 +40,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
 ###########################################################################
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-Function Unzip
-{
+Function Unzip {
     param([string]$zipfile, [string]$outpath)
 
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
@@ -52,9 +51,9 @@ Function Unzip
 $CakePath = Join-Path $ToolPath "Cake.CoreCLR.$CakeVersion/Cake.dll"
 if (!(Test-Path $CakePath)) {
     Write-Host "Installing Cake..."
-     (New-Object System.Net.WebClient).DownloadFile("https://www.nuget.org/api/v2/package/Cake.CoreCLR/$CakeVersion", "$ToolPath\Cake.CoreCLR.zip")
-     Unzip "$ToolPath\Cake.CoreCLR.zip" "$ToolPath/Cake.CoreCLR.$CakeVersion"
-     Remove-Item "$ToolPath\Cake.CoreCLR.zip"
+    (New-Object System.Net.WebClient).DownloadFile("https://www.nuget.org/api/v2/package/Cake.CoreCLR/$CakeVersion", "$ToolPath\Cake.CoreCLR.zip")
+    Unzip "$ToolPath\Cake.CoreCLR.zip" "$ToolPath/Cake.CoreCLR.$CakeVersion"
+    Remove-Item "$ToolPath\Cake.CoreCLR.zip"
 }
 
 ###########################################################################

@@ -161,7 +161,7 @@ namespace DotNetty.Codecs.ProtocolBuffers.Tests
         [InlineData(Person.Types.PhoneType.HOME, "", true)]
         [InlineData(Person.Types.PhoneType.WORK, "+123-456+789", false)]
         [InlineData(Person.Types.PhoneType.WORK, "+123-456+789", true)]
-        public void Run(Person.Types.PhoneType phoneType, string number, bool isCompositeBuffer)
+        public void RunComplete(Person.Types.PhoneType phoneType, string number, bool isCompositeBuffer)
         {
             var builder = new Person.Types.PhoneNumber.Builder();
             builder.SetType(phoneType);

@@ -52,7 +52,7 @@ Task("Restore-NuGet-Packages")
 {
   DotNetCoreRestore();
   
-  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "restore -r win7-x64" } );
+  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "restore -r win-x64" } );
   if (result != 0)
   {
     throw new CakeException($"Restore failed.");
