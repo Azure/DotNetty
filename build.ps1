@@ -27,7 +27,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
         mkdir -Force $InstallPath | Out-Null;
     }
     (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "dotnet-install.exe");
-    & .\dotnet-install.exe /install /quiet
+    & .\dotnet-install.exe /install
 
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
     $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
