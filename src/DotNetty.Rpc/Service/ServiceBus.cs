@@ -42,9 +42,11 @@ namespace DotNetty.Rpc.Service
             if (this.DynamicMethods.TryGetValue(type, out handler))
             {
                 await handler(eventArgs);
-                return ((IMessage)eventArgs).ReturnValue;
+                return GetReturnValue(eventArgs);
             }
             throw new NotImplementedException(string.Format("NotImplementedException:{0}", type.Name));
         }
+
+        static object GetReturnValue(dynamic eventArgs) => eventArgs.ReturnValue;
     }
 }

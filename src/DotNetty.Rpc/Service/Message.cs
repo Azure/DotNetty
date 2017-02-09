@@ -4,18 +4,18 @@
     public abstract class AbsMessage<T> : IMessage<T>
         where T : IResult
     {
-        public object ReturnValue { get; set; }
+        public T ReturnValue { get; set; }
     }
 
     public interface IMessage<T>: IMessage
         where T : IResult
     {
-   
+        T ReturnValue { get; set; }
     }
 
     public interface IMessage
     {
-        object ReturnValue { get; set; }
+      
     }
 
     public interface IResult
