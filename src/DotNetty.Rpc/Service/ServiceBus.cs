@@ -40,13 +40,26 @@ namespace DotNetty.Rpc.Service
             Func<object, Task> handler;
             Type type = eventArgs.GetType();
             if (this.DynamicMethods.TryGetValue(type, out handler))
-            {
+            {          
                 await handler(eventArgs);
-                return GetReturnValue(eventArgs);
+                return this.ReturnValue(eventArgs, type);
             }
             throw new NotImplementedException(string.Format("NotImplementedException:{0}", type.Name));
         }
 
-        static object GetReturnValue(dynamic eventArgs) => eventArgs.ReturnValue;
+
+        private ConcurrentDictionary<Type, Func<object, object>> DynamicReturnValueMethods { get; set; } = new ConcurrentDictionary<Type, Func<object, object>>();
+
+        private object ReturnValue(object eventArgs, Type eventType)
+        {
+            Func<object, object> @delegate = this.DynamicReturnValueMethods.GetOrAdd(eventType, (t) =>
+            {
+                ParameterExpression r = Expression.Parameter(typeof(object));
+                Expression p = Expression.Convert(r, t);
+                MemberExpression cm = Expression.Property(p, "ReturnValue");
+                return Expression.Lambda<Func<object, object>>(cm, r).Compile();
+            });
+            return @delegate(eventArgs);
+        }
     }
 }
