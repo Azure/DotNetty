@@ -1,6 +1,6 @@
 $CakeVersion = "0.17.0"
-$DotNetVersion = "1.0.0-rc3-004530";
-$DotNetInstallerUri = "https://go.microsoft.com/fwlink/?linkid=839640";
+$DotNetVersion = "1.0.0-rc4-004771";
+$DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.ps1";
 
 # Make sure tools folder exists
 $PSScriptRoot = $pwd
@@ -26,9 +26,11 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
     if (!(Test-Path $InstallPath)) {
         mkdir -Force $InstallPath | Out-Null;
     }
-    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "dotnet-install.exe");
-    & .\dotnet-install.exe /install
+    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
+    & $InstallPath\dotnet-install.ps1 -Channel preview -Version $DotNetVersion -InstallDir $InstallPath;
 
+    Remove-PathVariable "$InstallPath"
+    $env:PATH = "$InstallPath;$env:PATH"
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
     $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
 
