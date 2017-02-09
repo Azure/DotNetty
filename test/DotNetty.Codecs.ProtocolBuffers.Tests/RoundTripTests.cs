@@ -96,7 +96,7 @@ namespace DotNetty.Codecs.ProtocolBuffers.Tests
 
         [Theory]
         [MemberData(nameof(GetAddressBookCases))]
-        public void Run(AddressBook addressBook, bool isCompositeBuffer)
+        public void Run1(AddressBook addressBook, bool isCompositeBuffer)
         {
             AddressBook.Builder builder = AddressBook.CreateBuilder();
             IMessageLite protoType = builder.DefaultInstanceForType;
@@ -161,7 +161,7 @@ namespace DotNetty.Codecs.ProtocolBuffers.Tests
         [InlineData(Person.Types.PhoneType.HOME, "", true)]
         [InlineData(Person.Types.PhoneType.WORK, "+123-456+789", false)]
         [InlineData(Person.Types.PhoneType.WORK, "+123-456+789", true)]
-        public void Run(Person.Types.PhoneType phoneType, string number, bool isCompositeBuffer)
+        public void Run2(Person.Types.PhoneType phoneType, string number, bool isCompositeBuffer)
         {
             var builder = new Person.Types.PhoneNumber.Builder();
             builder.SetType(phoneType);

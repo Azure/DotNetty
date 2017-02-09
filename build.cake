@@ -16,7 +16,7 @@ var nogit = Argument<bool>("nogit", false);
 
 // Variables
 var configuration = IsRunningOnWindows() ? "Release" : "MonoRelease";
-var projectJsonFiles = GetFiles("./src/**/project.json");
+var csProjectFiles = GetFiles("./src/**/*.csproj");
 
 // Directories
 var nuget = Directory(".nuget");
@@ -50,13 +50,13 @@ Task("Restore-NuGet-Packages")
   .Description("Restores dependencies")
   .Does(() =>
 {
-  var settings = new DotNetCoreRestoreSettings
+  DotNetCoreRestore();
+  
+  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "restore -r win-x64" } );
+  if (result != 0)
   {
-    Verbose = false,
-    Verbosity = DotNetCoreRestoreVerbosity.Warning
-  };
-
-  DotNetCoreRestore("./", settings);
+    throw new CakeException($"Restore failed.");
+  }
 });
 
 Task("Compile")
@@ -66,8 +66,11 @@ Task("Compile")
   .Does(() =>
 {
 
-  MSBuild("DotNetty.sln", new MSBuildSettings{ Configuration = configuration });
-
+  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "msbuild dotnetty.sln /p:Configuration=" + configuration } );
+  if (result != 0)
+  {
+    throw new CakeException($"Compilation failed.");
+  }
 });
 
 Task("Test")
@@ -76,15 +79,15 @@ Task("Test")
   .IsDependentOn("Compile")
   .Does(() =>
 {
-  var projects = GetFiles("./test/**/*.xproj")
-    - GetFiles("./test/**/*.Performance.xproj");
+  var projects = GetFiles("./test/**/*.csproj")
+    - GetFiles("./test/**/*.Performance.csproj");
 
   foreach(var project in projects)
   {
-      DotNetCoreTest(project.GetDirectory().FullPath, new DotNetCoreTestSettings
+      DotNetCoreTest(project.FullPath, new DotNetCoreTestSettings
         {
-          Configuration = configuration,
-          Verbose = false
+          Configuration = configuration//,
+          //Verbose = false
         });
       
     // if (IsRunningOnWindows())
@@ -124,15 +127,14 @@ Task("Package-NuGet")
   .Description("Generates NuGet packages for each project that contains a nuspec")
   .Does(() =>
 {
-  var projects = GetFiles("./src/**/*.xproj");
+  var settings = new DotNetCorePackSettings {
+    Configuration = configuration,
+    OutputDirectory = outputNuGet,
+    ArgumentCustomization = args => args.Append("--include-symbols").Append("-s").Append("--no-build")
+  };
 
-  foreach(var project in projects)
+  foreach(var project in csProjectFiles)
   {
-    var settings = new DotNetCorePackSettings {
-      Configuration = configuration,
-      OutputDirectory = outputNuGet
-    };
-
     DotNetCorePack(project.GetDirectory().FullPath, settings);
   }
 
@@ -165,26 +167,26 @@ Task("Benchmark")
   .IsDependentOn("Compile")
   .Does(() =>
 {
-  StartProcess(nuget.ToString() + "/nuget.exe", "install NBench.Runner -OutputDirectory packages -ExcludeVersion -Version 0.3.1");
+  StartProcess(nuget.ToString() + "/nuget.exe", "install NBench.Runner -OutputDirectory tools -ExcludeVersion -Version 0.3.4");
 
   var libraries = GetFiles("./test/**/bin/" + configuration + "/net451/*.Performance.dll");
   CreateDirectory(outputPerfResults);
 
-  var nbenchTestPath = GetFiles("./packages/NBench.Runner*/**/NBench.Runner.exe").First();
-  
   foreach (var lib in libraries)
   {
     Information("Using NBench.Runner: {0}", lib);
 
+    CopyFiles("./tools/NBench.Runner*/**/NBench.Runner.exe", lib.GetDirectory(), false);
+    
     var nbenchArgs = new StringBuilder()
       .Append(" " + lib)
       .Append($" output-directory=\"{outputPerfResults}\"")
       .Append(" concurrent=\"true\"");
     
-    int result = StartProcess(nbenchTestPath, new ProcessSettings { Arguments = nbenchArgs.ToString(), WorkingDirectory = lib.GetDirectory() } );
+    int result = StartProcess(lib.GetDirectory().FullPath + "\\NBench.Runner.exe", new ProcessSettings { Arguments = nbenchArgs.ToString(), WorkingDirectory = lib.GetDirectory() });
     if (result != 0)
     {
-      throw new CakeException($"NBench.Runner failed. {nbenchTestPath} {nbenchArgs}");
+      throw new CakeException($"NBench.Runner failed. {nbenchArgs}");
     }
   }
 });
@@ -204,10 +206,10 @@ Task("Prepare-Release")
   .Does(() =>
 {
   // Update version.
-  UpdateProjectJsonVersion(version, projectJsonFiles);
+  UpdateCsProjectVersion(version, csProjectFiles);
 
     // Add
-    foreach (var file in projectJsonFiles)
+    foreach (var file in csProjectFiles)
     {
       if (nogit)
       {
@@ -270,21 +272,17 @@ Task("Update-Version")
     throw new CakeException("No version specified!");
   }
 
-  UpdateProjectJsonVersion(version, projectJsonFiles);
+  UpdateCsProjectVersion(version, csProjectFiles);
 });
 
 ///////////////////////////////////////////////////////////////
 
-public void UpdateProjectJsonVersion(string version, FilePathCollection filePaths)
+public void UpdateCsProjectVersion(string version, FilePathCollection filePaths)
 {
   Verbose(logAction => logAction("Setting version to {0}", version));
   foreach (var file in filePaths)
   {
-    var project = System.IO.File.ReadAllText(file.FullPath, Encoding.UTF8);
-
-    project = System.Text.RegularExpressions.Regex.Replace(project, "(\"version\":\\s*)\".+\"", "$1\"" + version + "\"");
-
-    System.IO.File.WriteAllText(file.FullPath, project, Encoding.UTF8);
+    XmlPoke(file, "//PropertyGroup/VersionPrefix", version);
   }
 }
 
