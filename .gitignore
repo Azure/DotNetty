@@ -32,6 +32,7 @@ nuget.exe
 *.db
 .vs/
 [Tt]ools/Cake.*
+[Tt]ools/NBench.*
 /build/
 .dotnet/
 DotNetty.*.nuget.targets
