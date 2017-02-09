@@ -1,6 +1,6 @@
-$CakeVersion = "0.16.2"
-$DotNetVersion = "1.0.0-preview2-003131";
-$DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.ps1";
+$CakeVersion = "0.17.0"
+$DotNetVersion = "1.0.0-rc3-004530";
+$DotNetInstallerUri = "https://go.microsoft.com/fwlink/?linkid=839640";
 
 # Make sure tools folder exists
 $PSScriptRoot = $pwd
@@ -15,23 +15,6 @@ if (!(Test-Path $ToolPath)) {
 # INSTALL .NET CORE CLI
 ###########################################################################
 
-Function Remove-PathVariable([string]$VariableToRemove)
-{
-    $path = [Environment]::GetEnvironmentVariable("PATH", "User")
-    if ($path -ne $null)
-    {
-        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
-        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
-    }
-
-    $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
-    if ($path -ne $null)
-    {
-        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
-        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
-    }
-}
-
 # Get .NET Core CLI path if installed.
 $FoundDotNetCliVersion = $null;
 if (Get-Command dotnet -ErrorAction SilentlyContinue) {
@@ -43,11 +26,9 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
     if (!(Test-Path $InstallPath)) {
         mkdir -Force $InstallPath | Out-Null;
     }
-    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
-    & $InstallPath\dotnet-install.ps1 -Channel preview -Version $DotNetVersion -InstallDir $InstallPath;
+    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "dotnet-install.exe");
+    & .\dotnet-install.exe /install /quiet
 
-    Remove-PathVariable "$InstallPath"
-    $env:PATH = "$InstallPath;$env:PATH"
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
     $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
 
@@ -59,8 +40,7 @@ if($FoundDotNetCliVersion -ne $DotNetVersion) {
 ###########################################################################
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-Function Unzip
-{
+Function Unzip {
     param([string]$zipfile, [string]$outpath)
 
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
@@ -71,9 +51,9 @@ Function Unzip
 $CakePath = Join-Path $ToolPath "Cake.CoreCLR.$CakeVersion/Cake.dll"
 if (!(Test-Path $CakePath)) {
     Write-Host "Installing Cake..."
-     (New-Object System.Net.WebClient).DownloadFile("https://www.nuget.org/api/v2/package/Cake.CoreCLR/$CakeVersion", "$ToolPath\Cake.CoreCLR.zip")
-     Unzip "$ToolPath\Cake.CoreCLR.zip" "$ToolPath/Cake.CoreCLR.$CakeVersion"
-     Remove-Item "$ToolPath\Cake.CoreCLR.zip"
+    (New-Object System.Net.WebClient).DownloadFile("https://www.nuget.org/api/v2/package/Cake.CoreCLR/$CakeVersion", "$ToolPath\Cake.CoreCLR.zip")
+    Unzip "$ToolPath\Cake.CoreCLR.zip" "$ToolPath/Cake.CoreCLR.$CakeVersion"
+    Remove-Item "$ToolPath\Cake.CoreCLR.zip"
 }
 
 ###########################################################################
