@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="NuGet">
-    <TargetFrameworks>netstandard1.3;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <PackageId>DotNetty.Common</PackageId>
     <Description>DotNetty common routines</Description>
@@ -31,7 +31,7 @@
     <PackageReference Include="System.Diagnostics.Contracts" Version="4.3.0" />
     <PackageReference Include="System.Net.NetworkInformation" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System.Runtime" />
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />

@@ -2,23 +2,23 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <TargetFrameworks>netcoreapp1.1;net451</TargetFrameworks>
+    <TargetFrameworks>netcoreapp1.1;net45</TargetFrameworks>
     <AssemblyOriginatorKeyFile>../../DotNetty.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\shared\dotnetty.com.pfx" />
   </ItemGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net451' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
     <PackageReference Include="Microsoft.Extensions.Logging" Version="1.1.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0-preview-20170106-08" />
-    <PackageReference Include="xunit" Version="2.2.0-beta5-build3474" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0-beta5-build1225" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0-preview-20170210-02" />
+    <PackageReference Include="xunit" Version="2.2.0-rc3-build3528" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0-rc3-build1252" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <PackageReference Include="Microsoft.Extensions.Logging" Version="1.1.0" />
     <PackageReference Include="xunit" Version="2.1.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.1.0" />
