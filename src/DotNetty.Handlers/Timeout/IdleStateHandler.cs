@@ -142,14 +142,17 @@ namespace DotNetty.Handlers.Timeout
         /// <param name="allIdleTime">All idle time.</param>
         public IdleStateHandler(TimeSpan readerIdleTime, TimeSpan writerIdleTime, TimeSpan allIdleTime)
         {
-            this.readerIdleTime = 
-                TimeUtil.Max(readerIdleTime, IdleStateHandler.MinTimeout);
+            this.readerIdleTime = readerIdleTime != TimeSpan.Zero
+                ? TimeUtil.Max(readerIdleTime, IdleStateHandler.MinTimeout)
+                : TimeSpan.Zero;
 
-            this.writerIdleTime = 
-                TimeUtil.Max(writerIdleTime, IdleStateHandler.MinTimeout);
+            this.writerIdleTime = writerIdleTime != TimeSpan.Zero
+                ? TimeUtil.Max(writerIdleTime, IdleStateHandler.MinTimeout)
+                : TimeSpan.Zero;
 
-            this.allIdleTime = 
-                TimeUtil.Max(allIdleTime, IdleStateHandler.MinTimeout);
+            this.allIdleTime = allIdleTime != TimeSpan.Zero
+                ? TimeUtil.Max(allIdleTime, IdleStateHandler.MinTimeout)
+                : TimeSpan.Zero;
 
             this.writeListener = new Action<Task>(antecedent =>
                 {
