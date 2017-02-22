@@ -22,7 +22,7 @@ var csProjectFiles = GetFiles("./src/**/*.csproj");
 var nuget = Directory(".nuget");
 var output = Directory("build");
 var outputBinaries = output + Directory("binaries");
-var outputBinariesNet451 = outputBinaries + Directory("net451");
+var outputBinariesNet45 = outputBinaries + Directory("net45");
 var outputBinariesNetstandard = outputBinaries + Directory("netstandard1.3");
 var outputPackages = output + Directory("packages");
 var outputNuGet = output + Directory("nuget");
@@ -36,7 +36,7 @@ Task("Clean")
   // Clean artifact directories.
   CleanDirectories(new DirectoryPath[] {
     output, outputBinaries, outputPackages, outputNuGet,
-    outputBinariesNet451, outputBinariesNetstandard
+    outputBinariesNet45, outputBinariesNetstandard
   });
 
   if(!skipClean) {
@@ -169,7 +169,7 @@ Task("Benchmark")
 {
   StartProcess(nuget.ToString() + "/nuget.exe", "install NBench.Runner -OutputDirectory tools -ExcludeVersion -Version 0.3.4");
 
-  var libraries = GetFiles("./test/**/bin/" + configuration + "/net451/*.Performance.dll");
+  var libraries = GetFiles("./test/**/bin/" + configuration + "/net45/*.Performance.dll");
   CreateDirectory(outputPerfResults);
 
   foreach (var lib in libraries)
