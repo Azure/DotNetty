@@ -15,6 +15,7 @@ namespace DotNetty.Rpc.Client
 
     public class NettyClient
     {
+        const int ConnectTimeout = 10000;
         static readonly int Paralle = Math.Max(Environment.ProcessorCount / 2, 2);
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance("NettyClient");
         static readonly IEventLoopGroup WorkerGroup = new MultithreadEventLoopGroup(Paralle);
@@ -50,10 +51,15 @@ namespace DotNetty.Rpc.Client
         {
             if (this.clientRpcHandler == null || !this.clientRpcHandler.GetChannel().Active)
             {
-                if (!this.emptyEvent.Wait(2000))
+                if (!this.emptyEvent.Wait(ConnectTimeout))
                 {
                     throw new TimeoutException("Channel Connect TimeOut");
                 }
+            }
+
+            if (this.clientRpcHandler == null)
+            {
+                throw new Exception("ClientRpcHandler Null");
             }
             var rpcRequest = new RpcRequest
             {
