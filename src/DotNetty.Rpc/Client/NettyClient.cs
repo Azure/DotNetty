@@ -39,7 +39,7 @@ namespace DotNetty.Rpc.Client
                     pipeline.AddLast(new RpcDecoder<RpcResponse>());
                     pipeline.AddLast(new RpcEncoder<RpcRequest>());
 
-                    pipeline.AddLast(new ReconnectHandler(this.DoConnect, socketAddress));
+                    pipeline.AddLast(new ReconnectHandler(this.DoConnect));
 
                     pipeline.AddLast(new RpcClientHandler());
                 }));
@@ -80,7 +80,7 @@ namespace DotNetty.Rpc.Client
                 {
                     Logger.Info("NettyClient connected to {} failed", socketAddress);
                     IChannel channel0 = this.clientRpcHandler.GetChannel();
-                    channel0.EventLoop.Schedule(_ => this.Connect((EndPoint)_), socketAddress, TimeSpan.FromMilliseconds(1000));
+                    channel0.EventLoop.Schedule(_ => this.DoConnect((EndPoint)_), socketAddress, TimeSpan.FromMilliseconds(1000));
                 }
                 else
                 {
