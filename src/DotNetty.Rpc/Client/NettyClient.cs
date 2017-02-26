@@ -21,7 +21,6 @@ namespace DotNetty.Rpc.Client
 
         private readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
         private Bootstrap bootstrap;
-        private IChannel channel;
         private RpcClientHandler clientRpcHandler;
 
         internal Task Connect(EndPoint socketAddress)
@@ -49,7 +48,7 @@ namespace DotNetty.Rpc.Client
 
         public async Task<T> SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
         {
-            if (!this.channel.Active)
+            if (this.clientRpcHandler == null || !this.clientRpcHandler.GetChannel().Active)
             {
                 if (!this.emptyEvent.Wait(2000))
                 {
@@ -86,8 +85,7 @@ namespace DotNetty.Rpc.Client
                 {
                     this.emptyEvent.Set();
                     Logger.Info("NettyClient connected to {}", socketAddress);
-                    this.channel = n.Result;
-                    this.clientRpcHandler = this.channel.Pipeline.Get<RpcClientHandler>();
+                    this.clientRpcHandler = n.Result.Pipeline.Get<RpcClientHandler>();
                 }
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
