@@ -18,7 +18,7 @@ namespace DotNetty.Rpc.Client
             if (client != null && !client.IsClosed)
                 return client;
 
-            object locker = ServiceClientLockMap.GetOrAdd(serverAddress, new SemaphoreSlim(1, 1));
+            object locker = ServiceClientLockMap.GetOrAdd(serverAddress, new object());
             lock (locker)
             {
                 ServiceClientMap.TryGetValue(serverAddress, out client);
