@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace DotNetty.Rpc.Client
 {
@@ -10,38 +9,34 @@ namespace DotNetty.Rpc.Client
     public class NettyClientFactory
     {
         private static readonly ConcurrentDictionary<string, NettyClient> ServiceClientMap = new ConcurrentDictionary<string, NettyClient>();
-        private static readonly ConcurrentDictionary<string, SemaphoreSlim> ServiceClientAsyncLockMap = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private static readonly ConcurrentDictionary<string, object> ServiceClientLockMap = new ConcurrentDictionary<string, object>();
 
-        public static async Task<NettyClient> Get(string serverAddress)
+        public static NettyClient Get(string serverAddress)
         {
             NettyClient client;
             ServiceClientMap.TryGetValue(serverAddress, out client);
-            if (client != null)
+            if (client != null && !client.IsClosed)
                 return client;
 
-            SemaphoreSlim slim = ServiceClientAsyncLockMap.GetOrAdd(serverAddress, new SemaphoreSlim(1, 1));
-            await slim.WaitAsync();
-
-            ServiceClientMap.TryGetValue(serverAddress, out client);
-            if (client != null)
-                return client;
-
-            try
+            object locker = ServiceClientLockMap.GetOrAdd(serverAddress, new SemaphoreSlim(1, 1));
+            lock (locker)
             {
+                ServiceClientMap.TryGetValue(serverAddress, out client);
+                if (client != null && !client.IsClosed)
+                    return client;
+
                 client = new NettyClient();
                 string[] array = serverAddress.Split(':');
                 string host = array[0];
                 int port = Convert.ToInt32(array[1]);
                 EndPoint remotePeer = new IPEndPoint(IPAddress.Parse(host).MapToIPv6(), port);
-                await client.Connect(remotePeer);
+                client.Connect(remotePeer);
+
                 ServiceClientMap.TryAdd(serverAddress, client);
                 return client;
             }
-            finally
-            {
-                slim.Release();
-            }
         }
 
+        public bool Exist(string serverAddress) => ServiceClientMap.ContainsKey(serverAddress);
     }
 }

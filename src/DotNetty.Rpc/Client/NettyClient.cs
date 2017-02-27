@@ -23,8 +23,9 @@ namespace DotNetty.Rpc.Client
         private readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
         private Bootstrap bootstrap;
         private RpcClientHandler clientRpcHandler;
+        private volatile bool closed = false;
 
-        internal Task Connect(EndPoint socketAddress)
+        internal void Connect(EndPoint socketAddress)
         {
             this.bootstrap = new Bootstrap();
             this.bootstrap.Group(WorkerGroup)
@@ -44,7 +45,7 @@ namespace DotNetty.Rpc.Client
                     pipeline.AddLast(new RpcClientHandler());
                 }));
 
-            return this.DoConnect(socketAddress);
+            this.DoConnect(socketAddress);
         }
 
         public async Task<T> SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
@@ -56,11 +57,11 @@ namespace DotNetty.Rpc.Client
                     throw new TimeoutException("Channel Connect TimeOut");
                 }
             }
-
             if (this.clientRpcHandler == null)
             {
                 throw new Exception("ClientRpcHandler Null");
             }
+
             var rpcRequest = new RpcRequest
             {
                 RequestId = Guid.NewGuid().ToString(),
@@ -101,6 +102,23 @@ namespace DotNetty.Rpc.Client
                     this.clientRpcHandler = n.Result.Pipeline.Get<RpcClientHandler>();
                 }
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
+        public bool IsClosed => this.closed;
+
+        public void Close()
+        {
+            this.emptyEvent.Wait();
+            if (this.clientRpcHandler == null)
+            {
+                Logger.Error("ClientRpcHandler Null");
+            }
+            else
+            {
+                this.closed = true;
+                IChannel channel0 = this.clientRpcHandler.GetChannel();
+                channel0.CloseAsync();
+            }
         }
     }
 }

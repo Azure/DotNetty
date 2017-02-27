@@ -37,7 +37,7 @@ namespace Rpc.Client
         public static void Test()
         {
             string serverAddress = "127.0.0.1:9008";
-            NettyClient client = NettyClientFactory.Get(serverAddress).Result;
+            NettyClient client = NettyClientFactory.Get(serverAddress);
 
             var sw = new Stopwatch();
             sw.Start();
