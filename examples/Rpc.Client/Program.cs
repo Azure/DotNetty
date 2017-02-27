@@ -37,14 +37,13 @@ namespace Rpc.Client
         public static void Test()
         {
             string serverAddress = "127.0.0.1:9008";
-            NettyClient client = NettyClientFactory.Get(serverAddress);
-
             var sw = new Stopwatch();
             sw.Start();
             int k = 0;
             int count = 10000;
             for (int i = 0; i < count; i++)
             {
+                NettyClient client = NettyClientFactory.Get(serverAddress);
                 var query = new TestCityQuery
                 {
                     Id = i
