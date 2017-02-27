@@ -34,17 +34,13 @@ namespace DotNetty.Rpc.Client
                 int port = Convert.ToInt32(array[1]);
                 EndPoint remotePeer = new IPEndPoint(IPAddress.Parse(host).MapToIPv6(), port);
                 await client.Connect(remotePeer);
+                ServiceClientMap.TryAdd(serverAddress, client);
+                return client;
             }
             finally
             {
                 slim.Release();
             }
-
-            if (client == null)
-                throw new NullReferenceException();
-
-            ServiceClientMap.TryAdd(serverAddress, client);
-            return client;
         }
 
     }
