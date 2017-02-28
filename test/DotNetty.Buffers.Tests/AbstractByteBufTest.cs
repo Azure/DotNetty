@@ -1671,7 +1671,7 @@ namespace DotNetty.Buffers.Tests
             {
                 value[0] ++;
             }
-            else if (value[0] == -1)
+            else if (value[0] == 0xFF)
             {
                 value[0] --;
             }
