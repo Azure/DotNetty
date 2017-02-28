@@ -37,6 +37,6 @@ namespace DotNetty.Rpc.Client
             }
         }
 
-        public bool Exist(string serverAddress) => ServiceClientMap.ContainsKey(serverAddress);
+        public static bool Exist(string serverAddress) => ServiceClientMap.ContainsKey(serverAddress);
     }
 }
