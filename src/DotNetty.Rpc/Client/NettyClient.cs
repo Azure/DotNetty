@@ -97,9 +97,9 @@ namespace DotNetty.Rpc.Client
                 }
                 else
                 {
-                    this.emptyEvent.Set();
                     Logger.Info("NettyClient connected to {}", socketAddress);
                     this.clientRpcHandler = n.Result.Pipeline.Get<RpcClientHandler>();
+					this.emptyEvent.Set();
                 }
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
