@@ -11,6 +11,7 @@ namespace DotNetty.Buffers
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     ///     Wrapper which swaps the <see cref="ByteOrder" /> of a <see cref="IByteBuffer" />.
@@ -192,6 +193,12 @@ namespace DotNetty.Buffers
 
         public char GetChar(int index) => (char)this.GetShort(index);
 
+        public float GetFloat(int index)
+        {
+            int raw = this.GetInt(index);
+            return Unsafe.As<int, float>(ref raw);
+        }
+
         public double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
 
         public IByteBuffer GetBytes(int index, IByteBuffer destination)
@@ -295,6 +302,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer SetFloat(int index, float value)
+        {
+            this.SetInt(index, Unsafe.As<float, int>(ref value));
+            return this;
+        }
+
         public IByteBuffer SetDouble(int index, double value)
         {
             this.SetLong(index, BitConverter.DoubleToInt64Bits(value));
@@ -364,6 +377,12 @@ namespace DotNetty.Buffers
         public int ReadUnsignedMedium() => this.ReadMedium().ToUnsignedMediumInt();
 
         public char ReadChar() => (char)this.ReadShort();
+
+        public float ReadFloat()
+        {
+            int raw = this.ReadInt();
+            return Unsafe.As<int, float>(ref raw);
+        }
 
         public double ReadDouble() => BitConverter.Int64BitsToDouble(this.ReadLong());
 
@@ -477,6 +496,12 @@ namespace DotNetty.Buffers
         public IByteBuffer WriteChar(char value)
         {
             this.WriteShort(value);
+            return this;
+        }
+
+        public IByteBuffer WriteFloat(float value)
+        {
+            this.WriteInt(Unsafe.As<float, int>(ref value));
             return this;
         }
 

@@ -517,6 +517,23 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
+        public void TestRandomFloatAccess()
+        {
+            for (int i = 0; i < this.buffer.Capacity - 3; i += 4)
+            {
+                float value = (float)this.random.NextDouble();
+                this.buffer.SetFloat(i, value);
+            }
+
+            this.random = new Random(this.seed);
+            for (int i = 0; i < this.buffer.Capacity - 3; i += 4)
+            {
+                float value = (float)this.random.NextDouble();
+                Assert.Equal(value, this.buffer.GetFloat(i), 2);
+            }
+        }
+
+        [Fact]
         public void TestSequentialByteAccess()
         {
             this.buffer.SetWriterIndex(0);

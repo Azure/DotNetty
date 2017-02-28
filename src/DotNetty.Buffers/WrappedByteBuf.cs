@@ -143,11 +143,7 @@ namespace DotNetty.Buffers
 
         public virtual char GetChar(int index) => this.Buf.GetChar(index);
 
-        // todo: port: complete
-        //public virtual float GetFloat(int index)
-        //{
-        //    return this.buf.GetFloat(index);
-        //}
+        public virtual float GetFloat(int index) => this.Buf.GetFloat(index);
 
         public virtual double GetDouble(int index) => this.Buf.GetDouble(index);
 
@@ -233,12 +229,11 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        // todo: port: complete
-        //public virtual IByteBuffer SetFloat(int index, float value)
-        //{
-        //    buf.SetFloat(index, value);
-        //    return this;
-        //}
+        public virtual IByteBuffer SetFloat(int index, float value)
+        {
+            this.Buf.SetFloat(index, value);
+            return this;
+        }
 
         public virtual IByteBuffer SetDouble(int index, double value)
         {
@@ -305,11 +300,7 @@ namespace DotNetty.Buffers
 
         public virtual char ReadChar() => this.Buf.ReadChar();
 
-        // todo: port: complete
-        //public virtual float ReadFloat()
-        //{
-        //    return buf.ReadFloat();
-        //}
+        public virtual float ReadFloat() => this.Buf.ReadFloat();
 
         public virtual double ReadDouble() => this.Buf.ReadDouble();
 
@@ -409,12 +400,11 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        // todo: port: complete
-        //public virtual IByteBuffer WriteFloat(float value)
-        //{
-        //    buf.WriteFloat(value);
-        //    return this;
-        //}
+        public virtual IByteBuffer WriteFloat(float value)
+        {
+            this.Buf.WriteFloat(value);
+            return this;
+        }
 
         public virtual IByteBuffer WriteDouble(double value)
         {

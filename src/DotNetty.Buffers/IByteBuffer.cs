@@ -293,6 +293,17 @@ namespace DotNetty.Buffers
         char GetChar(int index);
 
         /// <summary>
+        ///     Gets a float at the specified absolute <paramref name="index"/> in this buffer.
+        ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
+        ///     of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index"/> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        float GetFloat(int index);
+
+        /// <summary>
         ///     Gets a double at the specified absolute <see cref="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
@@ -473,6 +484,16 @@ namespace DotNetty.Buffers
         IByteBuffer SetDouble(int index, double value);
 
         /// <summary>
+        ///     Sets the specified float at the specified absolute <see cref="index" /> in this buffer.
+        ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetFloat(int index, float value);
+
+        /// <summary>
         ///     Transfers the <see cref="src" /> byte buffer's contents starting at the specified absolute <see cref="index" />.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
@@ -614,6 +635,14 @@ namespace DotNetty.Buffers
         double ReadDouble();
 
         /// <summary>
+        ///     Gets an 4-byte Decimaling integer at the current <see cref="ReaderIndex" /> and increases the
+        ///     <see cref="ReaderIndex" />
+        ///     by <c>4</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>8</c></exception>
+        float ReadFloat();
+
+        /// <summary>
         ///     Reads <see cref="length" /> bytes from this buffer into a new destination buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
@@ -665,6 +694,8 @@ namespace DotNetty.Buffers
         IByteBuffer WriteChar(char value);
 
         IByteBuffer WriteDouble(double value);
+
+        IByteBuffer WriteFloat(float value);
 
         IByteBuffer WriteUnsignedMedium(int value);
 

@@ -11,6 +11,7 @@ namespace DotNetty.Buffers
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     ///     Abstract base class implementation of a <see cref="IByteBuffer" />
@@ -316,6 +317,12 @@ namespace DotNetty.Buffers
 
         public virtual char GetChar(int index) => Convert.ToChar(this.GetShort(index));
 
+        public virtual float GetFloat(int index)
+        {
+            int raw = this.GetInt(index);
+            return Unsafe.As<int, float>(ref raw);
+        }
+
         public virtual double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
 
         public virtual IByteBuffer GetBytes(int index, IByteBuffer destination)
@@ -412,6 +419,12 @@ namespace DotNetty.Buffers
         public virtual IByteBuffer SetChar(int index, char value)
         {
             this.SetShort(index, value);
+            return this;
+        }
+
+        public virtual IByteBuffer SetFloat(int index, float value)
+        {
+            this.SetInt(index, Unsafe.As<float, int>(ref value));
             return this;
         }
 
@@ -518,6 +531,12 @@ namespace DotNetty.Buffers
         }
 
         public virtual char ReadChar() => (char)this.ReadShort();
+
+        public virtual float ReadFloat()
+        {
+            int raw = this.ReadInt();
+            return Unsafe.As<int, float>(ref raw);
+        }
 
         public virtual double ReadDouble() => BitConverter.Int64BitsToDouble(this.ReadLong());
 
@@ -667,6 +686,12 @@ namespace DotNetty.Buffers
         public virtual IByteBuffer WriteChar(char value)
         {
             this.WriteShort(value);
+            return this;
+        }
+
+        public virtual IByteBuffer WriteFloat(float value)
+        {
+            this.WriteInt(Unsafe.As<float, int>(ref value));
             return this;
         }
 

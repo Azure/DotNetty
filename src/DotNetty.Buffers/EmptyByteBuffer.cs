@@ -153,6 +153,11 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
+        public float GetFloat(int index)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
         public double GetDouble(int index)
         {
             throw new IndexOutOfRangeException();
@@ -222,6 +227,11 @@ namespace DotNetty.Buffers
         }
 
         public IByteBuffer SetChar(int index, char value)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public IByteBuffer SetFloat(int index, float value)
         {
             throw new IndexOutOfRangeException();
         }
@@ -300,6 +310,11 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
+        public float ReadFloat()
+        {
+            throw new IndexOutOfRangeException();
+        }
+
         public double ReadDouble()
         {
             throw new IndexOutOfRangeException();
@@ -367,6 +382,11 @@ namespace DotNetty.Buffers
         }
 
         public IByteBuffer WriteChar(char value)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public IByteBuffer WriteFloat(float value)
         {
             throw new IndexOutOfRangeException();
         }

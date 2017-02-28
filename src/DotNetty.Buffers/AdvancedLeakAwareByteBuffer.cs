@@ -165,12 +165,11 @@ namespace DotNetty.Buffers
             return base.GetChar(index);
         }
 
-        // todo: port: complete
-        //    public override float GetFloat(int index)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.GetFloat(index);
-        //}
+        public override float GetFloat(int index)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.GetFloat(index);
+        }
 
         public override double GetDouble(int index)
         {
@@ -256,12 +255,11 @@ namespace DotNetty.Buffers
             return base.SetChar(index, value);
         }
 
-        // todo: port: complete
-        //    public override IByteBuffer SetFloat(int index, float value)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.SetFloat(index, value);
-        //}
+        public override IByteBuffer SetFloat(int index, float value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.SetFloat(index, value);
+        }
 
         public override IByteBuffer SetDouble(int index, double value)
         {
@@ -372,12 +370,11 @@ namespace DotNetty.Buffers
             return base.ReadChar();
         }
 
-        // todo: port: complete
-        //    public override float ReadFloat()
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.ReadFloat();
-        //}
+        public override float ReadFloat()
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.ReadFloat();
+        }
 
         public override double ReadDouble()
         {
@@ -475,12 +472,11 @@ namespace DotNetty.Buffers
             return base.WriteChar(value);
         }
 
-        // todo: port: complete
-        //        public override IByteBuffer WriteFloat(float value)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.WriteFloat(value);
-        //}
+        public override IByteBuffer WriteFloat(float value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.WriteFloat(value);
+        }
 
         public override IByteBuffer WriteDouble(double value)
         {
