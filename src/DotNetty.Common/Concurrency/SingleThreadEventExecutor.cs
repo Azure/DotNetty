@@ -9,8 +9,11 @@ namespace DotNetty.Common.Concurrency
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using Thread = DotNetty.Common.Concurrency.XThread;
+    using Thread = XThread;
 
+    /// <summary>
+    /// <see cref="IEventExecutor"/> backed by a single thread.
+    /// </summary>
     public class SingleThreadEventExecutor : AbstractScheduledEventExecutor
     {
 #pragma warning disable 420 // referencing volatile fields is fine in Interlocked methods
@@ -39,12 +42,24 @@ namespace DotNetty.Common.Concurrency
         PreciseTimeSpan gracefulShutdownQuietPeriod;
         PreciseTimeSpan gracefulShutdownTimeout;
 
+        /// <summary>Creates a new instance of <see cref="SingleThreadEventExecutor"/>.</summary>
         public SingleThreadEventExecutor(string threadName, TimeSpan breakoutInterval)
-            : this(threadName, breakoutInterval, new CompatibleConcurrentQueue<IRunnable>())
+            : this(null, threadName, breakoutInterval, new CompatibleConcurrentQueue<IRunnable>())
+        {
+        }
+
+        /// <summary>Creates a new instance of <see cref="SingleThreadEventExecutor"/>.</summary>
+        public SingleThreadEventExecutor(IEventExecutorGroup parent, string threadName, TimeSpan breakoutInterval)
+            : this(parent, threadName, breakoutInterval, new CompatibleConcurrentQueue<IRunnable>())
         {
         }
 
         protected SingleThreadEventExecutor(string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
+            : this(null, threadName, breakoutInterval, taskQueue)
+        { }
+
+        protected SingleThreadEventExecutor(IEventExecutorGroup parent, string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
+            : base(parent)
         {
             this.terminationCompletionSource = new TaskCompletionSource();
             this.taskQueue = taskQueue;
@@ -86,16 +101,22 @@ namespace DotNetty.Common.Concurrency
                 this.scheduler);
         }
 
+        /// <inheritdoc cref="IEventExecutor"/>
         public override bool IsShuttingDown => this.executionState >= ST_SHUTTING_DOWN;
 
+        /// <inheritdoc cref="IEventExecutor"/>
         public override Task TerminationCompletion => this.terminationCompletionSource.Task;
 
+        /// <inheritdoc cref="IEventExecutor"/>
         public override bool IsShutdown => this.executionState >= ST_SHUTDOWN;
 
+        /// <inheritdoc cref="IEventExecutor"/>
         public override bool IsTerminated => this.executionState == ST_TERMINATED;
 
+        /// <inheritdoc cref="IEventExecutor"/>
         public override bool IsInEventLoop(Thread t) => this.thread == t;
 
+        /// <inheritdoc cref="IEventExecutor"/>
         public override void Execute(IRunnable task)
         {
             this.taskQueue.TryEnqueue(task);
@@ -114,6 +135,7 @@ namespace DotNetty.Common.Concurrency
             }
         }
 
+        /// <inheritdoc cref="IEventExecutor"/>
         public override Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
         {
             Contract.Requires(quietPeriod >= TimeSpan.Zero);

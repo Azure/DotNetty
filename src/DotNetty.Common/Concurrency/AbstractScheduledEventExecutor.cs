@@ -17,7 +17,14 @@ namespace DotNetty.Common.Concurrency
     {
         protected readonly PriorityQueue<IScheduledRunnable> ScheduledTaskQueue = new PriorityQueue<IScheduledRunnable>();
 
-        // TODO: support for EventExecutorGroup
+        protected AbstractScheduledEventExecutor()
+        {
+        }
+
+        protected AbstractScheduledEventExecutor(IEventExecutorGroup parent)
+            : base(parent)
+        {
+        }
 
         protected static PreciseTimeSpan GetNanos() => PreciseTimeSpan.FromStart;
 

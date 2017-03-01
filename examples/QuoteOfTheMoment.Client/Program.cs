@@ -28,7 +28,7 @@ namespace QuoteOfTheMoment.Client
                     .Group(group)
                     .Channel<SocketDatagramChannel>()
                     .Option(ChannelOption.SoBroadcast, true)
-                    .Handler(new ActionChannelInitializer<ISocketChannel>(channel =>
+                    .Handler(new ActionChannelInitializer<IChannel>(channel =>
                     {
                         channel.Pipeline.AddLast("Quote", new QuoteOfTheMomentClientHandler());
                     }));

@@ -26,7 +26,7 @@ namespace QuoteOfTheMoment.Server
                     .Channel<SocketDatagramChannel>()
                     .Option(ChannelOption.SoBroadcast, true)
                     .Handler(new LoggingHandler("SRV-LSTN"))
-                    .Handler(new ActionChannelInitializer<ISocketChannel>(channel =>
+                    .Handler(new ActionChannelInitializer<IChannel>(channel =>
                     {
                         channel.Pipeline.AddLast("Quote", new QuoteOfTheMomentServerHandler());
                     }));

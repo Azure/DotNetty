@@ -1,0 +1,15 @@
+version: 0.4.{build}
+image: Visual Studio 2017 RC
+pull_requests:
+  do_not_increment_build_number: true
+build_script:
+- cmd: powershell .\build.ps1 --target=PR
+test: off
+deploy: off
+notifications:
+- provider: GitHubPullRequest
+  auth_token:
+    secure: SYDAZL544to3SpNef6qb6HMYCgIr07XkNIRnS/BUem8ahAXIebAzd6LnAlZg1YSA
+  on_build_success: true
+  on_build_failure: true
+  on_build_status_changed: true
