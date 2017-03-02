@@ -41,7 +41,7 @@ namespace Rpc.Client
             sw.Start();
             int k = 0;
             int count = 10000;
-            for (int i = 0; i < count; i++)
+            Parallel.For(0, count, (i) =>
             {
                 NettyClient client = NettyClientFactory.Get(serverAddress);
                 var query = new TestCityQuery
@@ -54,7 +54,7 @@ namespace Rpc.Client
                     //Console.WriteLine(JsonConvert.SerializeObject(n.Result));
                     Interlocked.Increment(ref k);
                 });
-            }
+            });
 
             while (true)
             {
