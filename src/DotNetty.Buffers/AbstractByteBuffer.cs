@@ -875,6 +875,15 @@ namespace DotNetty.Buffers
             }
         }
 
+        protected void CheckNewCapacity(int newCapacity)
+        {
+            this.EnsureAccessible();
+            if (newCapacity < 0 || newCapacity > this.MaxCapacity)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newCapacity), $"newCapacity: {newCapacity} (expected: 0-{this.MaxCapacity})");
+            }
+        }
+
         protected void EnsureAccessible()
         {
             if (this.ReferenceCount == 0)

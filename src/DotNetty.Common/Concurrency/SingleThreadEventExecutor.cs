@@ -89,12 +89,19 @@ namespace DotNetty.Common.Concurrency
             Task.Factory.StartNew(
                 () =>
                 {
-                    Interlocked.CompareExchange(ref this.executionState, ST_STARTED, ST_NOT_STARTED);
-                    while (!this.ConfirmShutdown())
+                    try
                     {
-                        this.RunAllTasks(this.preciseBreakoutInterval);
+                        Interlocked.CompareExchange(ref this.executionState, ST_STARTED, ST_NOT_STARTED);
+                        while (!this.ConfirmShutdown())
+                        {
+                            this.RunAllTasks(this.preciseBreakoutInterval);
+                        }
+                        this.CleanupAndTerminate(true);
                     }
-                    this.CleanupAndTerminate(true);
+                    catch (Exception ex)
+                    {
+                        Logger.Error("{}: execution loop failed", this.thread.Name, ex);
+                    }
                 },
                 CancellationToken.None,
                 TaskCreationOptions.None,
