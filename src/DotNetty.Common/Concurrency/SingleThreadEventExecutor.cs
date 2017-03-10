@@ -101,6 +101,8 @@ namespace DotNetty.Common.Concurrency
                     catch (Exception ex)
                     {
                         Logger.Error("{}: execution loop failed", this.thread.Name, ex);
+                        this.executionState = ST_TERMINATED;
+                        this.terminationCompletionSource.TrySetException(ex);
                     }
                 },
                 CancellationToken.None,
