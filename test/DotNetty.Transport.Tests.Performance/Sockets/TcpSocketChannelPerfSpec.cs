@@ -73,8 +73,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.ServerGroup = new MultithreadEventLoopGroup(1);
             this.WorkerGroup = new MultithreadEventLoopGroup();
 
-            Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-            this.message = iso.GetBytes("ABC");
+            this.message = Encoding.UTF8.GetBytes("ABC");
 
             this.inboundThroughputCounter = context.GetCounter(InboundThroughputCounterName);
             this.outboundThroughputCounter = context.GetCounter(OutboundThroughputCounterName);
@@ -107,7 +106,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                         .AddLast(this.GetEncoder())
                         .AddLast(this.GetDecoder())
                         .AddLast(counterHandler)
-                        .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter))
                         .AddLast(new ReadFinishedHandler(this.signal, WriteCount));
                 }));
 
@@ -122,7 +120,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                             //.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true))
                             .AddLast(this.GetEncoder())
                             .AddLast(this.GetDecoder())
-                            .AddLast(counterHandler)
                             .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter));
                     }));
 

@@ -555,8 +555,7 @@ namespace DotNetty.Buffers
 
         public override IByteBuffer AdjustCapacity(int newCapacity)
         {
-            this.EnsureAccessible();
-            Contract.Requires(newCapacity >= 0 && newCapacity <= this.MaxCapacity);
+            this.CheckNewCapacity(newCapacity);
 
             int oldCapacity = this.Capacity;
             if (newCapacity > oldCapacity)
