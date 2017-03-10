@@ -25,6 +25,7 @@ namespace DotNetty.Buffers
         internal readonly PooledByteBufferAllocator Parent;
 
         readonly int maxOrder;
+        readonly int maxChunkCount;
         internal readonly int PageSize;
         internal readonly int PageShifts;
         internal readonly int ChunkSize;
@@ -41,6 +42,8 @@ namespace DotNetty.Buffers
         readonly PoolChunkList<T> q100;
 
         readonly List<IPoolChunkListMetric> chunkListMetrics;
+
+        int chunkCount;
 
         // Metrics for allocations and deallocations
         long allocationsTiny;
@@ -62,13 +65,14 @@ namespace DotNetty.Buffers
         // TODO: Test if adding padding helps under contention
         //private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
 
-        protected PoolArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize)
+        protected PoolArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize, int maxChunkCount)
         {
             this.Parent = parent;
             this.PageSize = pageSize;
             this.maxOrder = maxOrder;
             this.PageShifts = pageShifts;
             this.ChunkSize = chunkSize;
+            this.maxChunkCount = maxChunkCount;
             this.SubpageOverflowMask = ~(pageSize - 1);
             this.tinySubpagePools = this.NewSubpagePoolArray(NumTinySubpagePools);
             for (int i = 0; i < this.tinySubpagePools.Length; i++)
@@ -239,19 +243,28 @@ namespace DotNetty.Buffers
                     return;
                 }
 
-                // Add a new chunk.
-                PoolChunk<T> c = this.NewChunk(this.PageSize, this.maxOrder, this.PageShifts, this.ChunkSize);
-                long handle = c.Allocate(normCapacity);
-                ++this.allocationsNormal;
-                Contract.Assert(handle > 0);
-                c.InitBuf(buf, handle, reqCapacity);
-                this.qInit.Add(c);
+                if (this.chunkCount < this.maxChunkCount)
+                {
+                    // Add a new chunk.
+                    PoolChunk<T> c = this.NewChunk(this.PageSize, this.maxOrder, this.PageShifts, this.ChunkSize);
+                    this.chunkCount++;
+                    long handle = c.Allocate(normCapacity);
+                    ++this.allocationsNormal;
+                    Contract.Assert(handle > 0);
+                    c.InitBuf(buf, handle, reqCapacity);
+                    this.qInit.Add(c);
+                    return;
+                }
             }
+
+            PoolChunk<T> chunk = this.NewUnpooledChunk(reqCapacity, false);
+            buf.InitUnpooled(chunk, reqCapacity);
+            Interlocked.Increment(ref this.allocationsNormal);
         }
 
         void AllocateHuge(PooledByteBuffer<T> buf, int reqCapacity)
         {
-            PoolChunk<T> chunk = this.NewUnpooledChunk(reqCapacity);
+            PoolChunk<T> chunk = this.NewUnpooledChunk(reqCapacity, true);
             Interlocked.Add(ref this.activeBytesHuge, chunk.ChunkSize);
             buf.InitUnpooled(chunk, reqCapacity);
             Interlocked.Increment(ref this.allocationsHuge);
@@ -263,8 +276,18 @@ namespace DotNetty.Buffers
             {
                 int size = chunk.ChunkSize;
                 this.DestroyChunk(chunk);
-                Interlocked.Add(ref this.activeBytesHuge, -size);
-                Interlocked.Decrement(ref this.deallocationsHuge);
+                switch (chunk.Origin)
+                {
+                    case PoolChunk<T>.PoolChunkOrigin.UnpooledNormal:
+                        Interlocked.Decrement(ref this.deallocationsNormal);
+                        break;
+                    case PoolChunk<T>.PoolChunkOrigin.UnpooledHuge:
+                        Interlocked.Add(ref this.activeBytesHuge, -size);
+                        Interlocked.Decrement(ref this.deallocationsHuge);
+                        break;
+                    default:
+                        throw new InvalidOperationException("Unsupported PoolChunk.Origin: " + chunk.Origin);
+                }
             }
             else
             {
@@ -476,7 +499,7 @@ namespace DotNetty.Buffers
 
         public long NumNormalAllocations => this.allocationsNormal;
 
-        public long NumDeallocations => this.deallocationsTiny + this.deallocationsSmall + this.allocationsNormal + this.NumHugeDeallocations;
+        public long NumDeallocations => this.deallocationsTiny + this.deallocationsSmall + this.deallocationsNormal + this.NumHugeDeallocations;
 
         public long NumTinyDeallocations => this.deallocationsTiny;
 
@@ -530,7 +553,7 @@ namespace DotNetty.Buffers
 
         protected abstract PoolChunk<T> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize);
 
-        protected abstract PoolChunk<T> NewUnpooledChunk(int capacity);
+        protected abstract PoolChunk<T> NewUnpooledChunk(int capacity, bool huge);
 
         protected abstract PooledByteBuffer<T> NewByteBuf(int maxCapacity);
 
@@ -623,14 +646,14 @@ namespace DotNetty.Buffers
 
     sealed class HeapArena : PoolArena<byte[]>
     {
-        public HeapArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize)
-            : base(parent, pageSize, maxOrder, pageShifts, chunkSize)
+        public HeapArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize, int maxChunkCount)
+            : base(parent, pageSize, maxOrder, pageShifts, chunkSize, maxChunkCount)
         {
         }
 
         protected override PoolChunk<byte[]> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize) => new PoolChunk<byte[]>(this, new byte[chunkSize], pageSize, maxOrder, pageShifts, chunkSize);
 
-        protected override PoolChunk<byte[]> NewUnpooledChunk(int capacity) => new PoolChunk<byte[]>(this, new byte[capacity], capacity);
+        protected override PoolChunk<byte[]> NewUnpooledChunk(int capacity, bool huge) => new PoolChunk<byte[]>(this, new byte[capacity], capacity, huge);
 
         protected override void DestroyChunk(PoolChunk<byte[]> chunk)
         {

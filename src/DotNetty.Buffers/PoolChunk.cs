@@ -77,9 +77,16 @@ namespace DotNetty.Buffers
     /// </summary>
     sealed class PoolChunk<T> : IPoolChunkMetric
     {
+        internal enum PoolChunkOrigin
+        {
+            Pooled,
+            UnpooledHuge,
+            UnpooledNormal
+        }
+
         internal readonly PoolArena<T> Arena;
         internal readonly T Memory;
-        internal readonly bool Unpooled;
+        internal readonly PoolChunkOrigin Origin;
 
         readonly sbyte[] memoryMap;
         readonly sbyte[] depthMap;
@@ -108,7 +115,7 @@ namespace DotNetty.Buffers
         {
             Contract.Requires(maxOrder < 30, "maxOrder should be < 30, but is: " + maxOrder);
 
-            this.Unpooled = false;
+            this.Origin = PoolChunkOrigin.Pooled;
             this.Arena = arena;
             this.Memory = memory;
             this.pageSize = pageSize;
@@ -145,9 +152,9 @@ namespace DotNetty.Buffers
 
         /** Creates a special chunk that is not pooled. */
 
-        internal PoolChunk(PoolArena<T> arena, T memory, int size)
+        internal PoolChunk(PoolArena<T> arena, T memory, int size, bool huge)
         {
-            this.Unpooled = true;
+            this.Origin = huge ? PoolChunkOrigin.UnpooledHuge : PoolChunkOrigin.UnpooledNormal;
             this.Arena = arena;
             this.Memory = memory;
             this.memoryMap = null;
@@ -164,6 +171,8 @@ namespace DotNetty.Buffers
         }
 
         PoolSubpage<T>[] NewSubpageArray(int size) => new PoolSubpage<T>[size];
+
+        internal bool Unpooled => this.Origin != PoolChunkOrigin.Pooled;
 
         public int Usage
         {
