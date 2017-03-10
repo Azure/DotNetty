@@ -28,7 +28,7 @@ namespace Telnet.Client
             string targetHost = null;
             if (ClientSettings.IsSsl)
             {
-                cert = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
+                cert = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "dotnetty.com.pfx"), "password");
                 targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
             }
             try

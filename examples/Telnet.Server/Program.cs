@@ -31,7 +31,7 @@ namespace Telnet.Server
             X509Certificate2 tlsCertificate = null;
             if (ServerSettings.IsSsl)
             {
-                tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "shared\\dotnetty.com.pfx"), "password");
+                tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "dotnetty.com.pfx"), "password");
             }
             try
             {
