@@ -137,10 +137,10 @@ namespace DotNetty.Buffers
         {
         }
 
-        public PooledByteBufferAllocator(int maxArenaSize)
+        public PooledByteBufferAllocator(long maxMemory)
             : this(DEFAULT_NUM_HEAP_ARENA, DEFAULT_PAGE_SIZE, DEFAULT_MAX_ORDER, DEFAULT_TINY_CACHE_SIZE,
                   DEFAULT_SMALL_CACHE_SIZE, DEFAULT_NORMAL_CACHE_SIZE,
-                  Math.Max(1, maxArenaSize / (DEFAULT_PAGE_SIZE << DEFAULT_MAX_ORDER)))
+                  Math.Max(1, (int)Math.Min(maxMemory / DEFAULT_NUM_HEAP_ARENA / (DEFAULT_PAGE_SIZE << DEFAULT_MAX_ORDER), int.MaxValue)))
         {
         }
 
