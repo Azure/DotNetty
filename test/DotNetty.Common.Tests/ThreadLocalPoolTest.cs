@@ -5,7 +5,6 @@ namespace DotNetty.Common.Tests
 {
     using System;
     using System.Threading.Tasks;
-    using DotNetty.Common;
     using Xunit;
 
     public class ThreadLocalPoolTest
@@ -14,7 +13,7 @@ namespace DotNetty.Common.Tests
         public void MultipleReleaseTest()
         {
             RecyclableObject obj = RecyclableObject.NewInstance();
-            Assert.True(obj.Release());
+            obj.Release();
             var exception = Assert.ThrowsAny<InvalidOperationException>(() => obj.Release());
             Assert.True(exception != null);
         }
@@ -23,10 +22,10 @@ namespace DotNetty.Common.Tests
         public void ReleaseTest()
         {
             RecyclableObject obj = RecyclableObject.NewInstance();
-            Assert.True(obj.Release());
+            obj.Release();
             RecyclableObject obj2 = RecyclableObject.NewInstance();
             Assert.Same(obj, obj2);
-            Assert.True(obj2.Release());
+            obj2.Release();
         }
 
         [Fact]
@@ -35,11 +34,11 @@ namespace DotNetty.Common.Tests
             RecyclableObject obj = RecyclableObject.NewInstance();
 
             RecyclableObject prevObject = obj;
-            Task.Run(() => { Assert.True(obj.Release()); }).Wait();
+            Task.Run(() => { obj.Release(); }).Wait();
             obj = RecyclableObject.NewInstance();
 
             Assert.True(obj == prevObject);
-            Assert.True(obj.Release());
+            obj.Release();
         }
 
         class RecyclableObject
@@ -55,15 +54,9 @@ namespace DotNetty.Common.Tests
                 this.handle = handle;
             }
 
-            public static RecyclableObject NewInstance()
-            {
-                return pool.Take();
-            }
+            public static RecyclableObject NewInstance() => pool.Take();
 
-            public bool Release()
-            {
-                return pool.Release(this, this.handle);
-            }
+            public void Release() => handle.Release(this);
         }
 
         class HandledObject
@@ -75,17 +68,14 @@ namespace DotNetty.Common.Tests
                 this.handle = handle;
             }
 
-            public void Release()
-            {
-                this.handle.Release(this);
-            }
+            public void Release() => this.handle.Release(this);
         }
 
         [Fact]
         public void MaxCapacityTest()
         {
             this.MaxCapacityTest(300);
-            Random rand = new Random();
+            var rand = new Random();
             for (int i = 0; i < 50; i++)
             {
                 this.MaxCapacityTest(rand.Next(1000) + 256); // 256 - 1256
@@ -120,7 +110,7 @@ namespace DotNetty.Common.Tests
             // Return the half from the same thread.
             // Return the other half from the different thread.
 
-            HandledObject[] array = new HandledObject[maxCapacity * 3];
+            var array = new HandledObject[maxCapacity * 3];
             for (int i = 0; i < array.Length; i++)
             {
                 array[i] = recycler.Take();

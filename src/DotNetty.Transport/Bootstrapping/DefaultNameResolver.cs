@@ -8,10 +8,7 @@ namespace DotNetty.Transport.Bootstrapping
 
     public class DefaultNameResolver : INameResolver
     {
-        public bool IsResolved(EndPoint address)
-        {
-            return !(address is DnsEndPoint);
-        }
+        public bool IsResolved(EndPoint address) => !(address is DnsEndPoint);
 
         public async Task<EndPoint> ResolveAsync(EndPoint address)
         {

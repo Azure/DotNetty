@@ -6,57 +6,96 @@ namespace DotNetty.Buffers
     using System;
     using System.Diagnostics.Contracts;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
 
-    class PooledByteBuffer : UnpooledHeapByteBuffer
+    abstract class PooledByteBuffer<T> : AbstractReferenceCountedByteBuffer
     {
-        readonly ThreadLocalPool.Handle returnHandle;
-        int length;
-        readonly byte[] pooledArray;
+        readonly ThreadLocalPool.Handle recyclerHandle;
 
-        public PooledByteBuffer(ThreadLocalPool.Handle returnHandle, IByteBufferAllocator allocator, int maxFixedCapacity, int maxCapacity)
-            : this(returnHandle, allocator, new byte[maxFixedCapacity], maxCapacity)
+        protected internal PoolChunk<T> Chunk;
+        protected internal long Handle;
+        protected internal T Memory;
+        protected internal int Offset;
+        protected internal int Length;
+        internal int MaxLength;
+        internal PoolThreadCache<T> Cache;
+        PooledByteBufferAllocator allocator;
+
+        protected PooledByteBuffer(ThreadLocalPool.Handle recyclerHandle, int maxCapacity)
+            : base(maxCapacity)
         {
+            this.recyclerHandle = recyclerHandle;
         }
 
-        PooledByteBuffer(ThreadLocalPool.Handle returnHandle, IByteBufferAllocator allocator, byte[] pooledArray, int maxCapacity)
-            : base(allocator, pooledArray, 0, 0, maxCapacity)
+        internal void Init(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache)
         {
-            this.length = pooledArray.Length;
-            this.returnHandle = returnHandle;
-            this.pooledArray = pooledArray;
-        }
-
-        internal void Init()
-        {
-            this.SetIndex(0, 0);
+            this.Init0(chunk, handle, offset, length, maxLength, cache);
             this.DiscardMarkers();
         }
 
-        public override int Capacity
+        internal void InitUnpooled(PoolChunk<T> chunk, int length) => this.Init0(chunk, 0, 0, length, length, null);
+
+        void Init0(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache)
         {
-            get { return this.length; }
+            Contract.Assert(handle >= 0);
+            Contract.Assert(chunk != null);
+
+            this.Chunk = chunk;
+            this.Memory = chunk.Memory;
+            this.allocator = chunk.Arena.Parent;
+            this.Cache = cache;
+            this.Handle = handle;
+            this.Offset = offset;
+            this.Length = length;
+            this.MaxLength = maxLength;
+            this.SetIndex(0, 0);
         }
 
-        public override IByteBuffer AdjustCapacity(int newCapacity)
-        {
-            this.EnsureAccessible();
-            Contract.Requires(newCapacity >= 0 && newCapacity <= this.MaxCapacity);
+        public override int Capacity => this.Length;
 
-            if (this.Array == this.pooledArray)
+        public sealed override IByteBuffer AdjustCapacity(int newCapacity)
+        {
+            this.CheckNewCapacity(newCapacity);
+
+            // If the request capacity does not require reallocation, just update the length of the memory.
+            if (this.Chunk.Unpooled)
             {
-                if (newCapacity > this.length)
+                if (newCapacity == this.Length)
                 {
-                    if (newCapacity < this.pooledArray.Length)
+                    return this;
+                }
+            }
+            else
+            {
+                if (newCapacity > this.Length)
+                {
+                    if (newCapacity <= this.MaxLength)
                     {
-                        this.length = newCapacity;
+                        this.Length = newCapacity;
                         return this;
                     }
                 }
-                else if (newCapacity < this.length)
+                else if (newCapacity < this.Length)
                 {
-                    this.length = newCapacity;
-                    this.SetIndex(Math.Min(this.ReaderIndex, newCapacity), Math.Min(this.WriterIndex, newCapacity));
-                    return this;
+                    if (newCapacity > this.MaxLength.RightUShift(1))
+                    {
+                        if (this.MaxLength <= 512)
+                        {
+                            if (newCapacity > this.MaxLength - 16)
+                            {
+                                this.Length = newCapacity;
+                                this.SetIndex(Math.Min(this.ReaderIndex, newCapacity), Math.Min(this.WriterIndex, newCapacity));
+                                return this;
+                            }
+                        }
+                        else
+                        {
+                            // > 512 (i.e. >= 1024)
+                            this.Length = newCapacity;
+                            this.SetIndex(Math.Min(this.ReaderIndex, newCapacity), Math.Min(this.WriterIndex, newCapacity));
+                            return this;
+                        }
+                    }
                 }
                 else
                 {
@@ -64,25 +103,33 @@ namespace DotNetty.Buffers
                 }
             }
 
-            // todo: fall through to here means buffer pool is being used inefficiently. consider providing insight on such events
-            base.AdjustCapacity(newCapacity);
-            this.length = newCapacity;
+            // Reallocation required.
+            this.Chunk.Arena.Reallocate(this, newCapacity, true);
             return this;
         }
 
-        public override IByteBuffer Copy(int index, int length)
+        public sealed override IByteBufferAllocator Allocator => this.allocator;
+
+        public sealed override ByteOrder Order => ByteOrder.BigEndian;
+
+        public sealed override IByteBuffer Unwrap() => null;
+
+        protected sealed override void Deallocate()
         {
-            this.CheckIndex(index, length);
-            IByteBuffer copy = this.Allocator.Buffer(length, this.MaxCapacity);
-            copy.WriteBytes(this.Array, this.ArrayOffset + index, length);
-            return copy;
+            if (this.Handle >= 0)
+            {
+                long handle = this.Handle;
+                this.Handle = -1;
+                this.Memory = default(T);
+                this.Chunk.Arena.Free(this.Chunk, handle, this.MaxLength, this.Cache);
+                this.Chunk = null;
+                this.allocator = null;
+                this.Recycle();
+            }
         }
 
-        protected override void Deallocate()
-        {
-            this.SetArray(this.pooledArray); // release byte array that has been allocated in response to capacity adjustment to a value higher than max pooled size
-            this.SetReferenceCount(1); // ensures that next time buffer is pulled from the pool it has "fresh" ref count
-            this.returnHandle.Release(this);
-        }
+        void Recycle() => this.recyclerHandle.Release(this);
+
+        protected int Idx(int index) => this.Offset + index;
     }
 }

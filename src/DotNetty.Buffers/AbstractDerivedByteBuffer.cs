@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using DotNetty.Common;
 
     /// <summary>
@@ -16,10 +17,7 @@ namespace DotNetty.Buffers
         {
         }
 
-        public sealed override int ReferenceCount
-        {
-            get { return this.Unwrap().ReferenceCount; }
-        }
+        public sealed override int ReferenceCount => this.Unwrap().ReferenceCount;
 
         public sealed override IReferenceCounted Retain()
         {
@@ -45,14 +43,10 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public sealed override bool Release()
-        {
-            return this.Unwrap().Release();
-        }
+        public sealed override bool Release() => this.Unwrap().Release();
 
-        public sealed override bool Release(int decrement)
-        {
-            return this.Unwrap().Release(decrement);
-        }
+        public sealed override bool Release(int decrement) => this.Unwrap().Release(decrement);
+
+        public override ArraySegment<byte> GetIoBuffer(int index, int length) => this.Unwrap().GetIoBuffer(index, length);
     }
 }

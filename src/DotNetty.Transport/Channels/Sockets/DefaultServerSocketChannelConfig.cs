@@ -8,7 +8,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Net.Sockets;
 
     /// <summary>
-    /// The default {@link ServerSocketChannelConfig} implementation.
+    ///     The default {@link ServerSocketChannelConfig} implementation.
     /// </summary>
     public class DefaultServerSocketChannelConfig : DefaultChannelConfiguration, IServerSocketChannelConfiguration
     {
@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Channels.Sockets
         volatile int backlog = 200; //todo: NetUtil.SOMAXCONN;
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         public DefaultServerSocketChannelConfig(IServerSocketChannel channel, Socket socket)
             : base(channel)

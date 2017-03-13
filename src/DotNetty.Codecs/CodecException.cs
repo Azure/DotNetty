@@ -8,7 +8,6 @@ namespace DotNetty.Codecs
     /// <summary>
     ///     An <see cref="Exception" /> which is thrown by a codec.
     /// </summary>
-    [Serializable]
     public class CodecException : Exception
     {
         public CodecException()

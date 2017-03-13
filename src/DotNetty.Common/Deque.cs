@@ -1,47 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Nito
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Reflection;
+
     /// <summary>
-    /// A double-ended queue (deque), which provides O(1) indexed access, O(1) removals from the front and back, amortized O(1) insertions to the front and back, and O(N) insertions and removals anywhere else (with the operations getting slower as the index approaches the middle).
+    ///     A double-ended queue (deque), which provides O(1) indexed access, O(1) removals from the front and back, amortized
+    ///     O(1) insertions to the front and back, and O(N) insertions and removals anywhere else (with the operations getting
+    ///     slower as the index approaches the middle).
     /// </summary>
     /// <typeparam name="T">The type of elements contained in the deque.</typeparam>
     [DebuggerDisplay("Count = {Count}, Capacity = {Capacity}")]
     [DebuggerTypeProxy(typeof(Deque<>.DebugView))]
-    internal sealed class Deque<T> : IList<T>, System.Collections.IList
+    sealed class Deque<T> : IList<T>, IList
     {
         /// <summary>
-        /// The default capacity.
+        ///     The default capacity.
         /// </summary>
-        private const int DefaultCapacity = 8;
+        const int DefaultCapacity = 8;
 
         /// <summary>
-        /// The circular buffer that holds the view.
+        ///     The circular buffer that holds the view.
         /// </summary>
-        private T[] buffer;
+        T[] buffer;
 
         /// <summary>
-        /// The offset into <see cref="buffer"/> where the view begins.
+        ///     The offset into <see cref="buffer" /> where the view begins.
         /// </summary>
-        private int offset;
+        int offset;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Deque&lt;T&gt;"/> class with the specified capacity.
+        ///     Initializes a new instance of the <see cref="Deque&lt;T&gt;" /> class with the specified capacity.
         /// </summary>
         /// <param name="capacity">The initial capacity. Must be greater than <c>0</c>.</param>
         public Deque(int capacity)
         {
             if (capacity < 1)
-                throw new ArgumentOutOfRangeException("capacity", "Capacity must be greater than 0.");
-            buffer = new T[capacity];
+                throw new ArgumentOutOfRangeException(nameof(capacity), "Capacity must be greater than 0.");
+            this.buffer = new T[capacity];
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Deque&lt;T&gt;"/> class with the elements from the specified collection.
+        ///     Initializes a new instance of the <see cref="Deque&lt;T&gt;" /> class with the elements from the specified
+        ///     collection.
         /// </summary>
         /// <param name="collection">The collection.</param>
         public Deque(IEnumerable<T> collection)
@@ -49,17 +56,17 @@ namespace Nito
             int count = collection.Count();
             if (count > 0)
             {
-                buffer = new T[count];
-                DoInsertRange(0, collection, count);
+                this.buffer = new T[count];
+                this.DoInsertRange(0, collection, count);
             }
             else
             {
-                buffer = new T[DefaultCapacity];
+                this.buffer = new T[DefaultCapacity];
             }
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Deque&lt;T&gt;"/> class.
+        ///     Initializes a new instance of the <see cref="Deque&lt;T&gt;" /> class.
         /// </summary>
         public Deque()
             : this(DefaultCapacity)
@@ -69,78 +76,75 @@ namespace Nito
         #region GenericListImplementations
 
         /// <summary>
-        /// Gets a value indicating whether this list is read-only. This implementation always returns <c>false</c>.
+        ///     Gets a value indicating whether this list is read-only. This implementation always returns <c>false</c>.
         /// </summary>
         /// <returns>true if this list is read-only; otherwise, false.</returns>
-        bool ICollection<T>.IsReadOnly
-        {
-            get { return false; }
-        }
+        bool ICollection<T>.IsReadOnly => false;
 
         /// <summary>
-        /// Gets or sets the item at the specified index.
+        ///     Gets or sets the item at the specified index.
         /// </summary>
         /// <param name="index">The index of the item to get or set.</param>
-        /// <exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> is not a valid index in this list.</exception>
+        /// <exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index" /> is not a valid index in this list.</exception>
         /// <exception cref="T:System.NotSupportedException">This property is set and the list is read-only.</exception>
         public T this[int index]
         {
             get
             {
                 CheckExistingIndexArgument(this.Count, index);
-                return DoGetItem(index);
+                return this.DoGetItem(index);
             }
 
             set
             {
                 CheckExistingIndexArgument(this.Count, index);
-                DoSetItem(index, value);
+                this.DoSetItem(index, value);
             }
         }
 
         /// <summary>
-        /// Inserts an item to this list at the specified index.
+        ///     Inserts an item to this list at the specified index.
         /// </summary>
-        /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
+        /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
         /// <param name="item">The object to insert into this list.</param>
         /// <exception cref="T:System.ArgumentOutOfRangeException">
-        /// <paramref name="index"/> is not a valid index in this list.
+        ///     <paramref name="index" /> is not a valid index in this list.
         /// </exception>
         /// <exception cref="T:System.NotSupportedException">
-        /// This list is read-only.
+        ///     This list is read-only.
         /// </exception>
         public void Insert(int index, T item)
         {
-            CheckNewIndexArgument(Count, index);
-            DoInsert(index, item);
+            CheckNewIndexArgument(this.Count, index);
+            this.DoInsert(index, item);
         }
 
         /// <summary>
-        /// Removes the item at the specified index.
+        ///     Removes the item at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the item to remove.</param>
         /// <exception cref="T:System.ArgumentOutOfRangeException">
-        /// <paramref name="index"/> is not a valid index in this list.
+        ///     <paramref name="index" /> is not a valid index in this list.
         /// </exception>
         /// <exception cref="T:System.NotSupportedException">
-        /// This list is read-only.
+        ///     This list is read-only.
         /// </exception>
         public void RemoveAt(int index)
         {
-            CheckExistingIndexArgument(Count, index);
-            DoRemoveAt(index);
+            CheckExistingIndexArgument(this.Count, index);
+            this.DoRemoveAt(index);
         }
 
         /// <summary>
-        /// Determines the index of a specific item in this list.
+        ///     Determines the index of a specific item in this list.
         /// </summary>
         /// <param name="item">The object to locate in this list.</param>
-        /// <returns>The index of <paramref name="item"/> if found in this list; otherwise, -1.</returns>
+        /// <returns>The index of <paramref name="item" /> if found in this list; otherwise, -1.</returns>
         public int IndexOf(T item)
         {
-            var comparer = EqualityComparer<T>.Default;
+            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
             int ret = 0;
-            foreach (var sourceItem in this)
+            foreach (T sourceItem in this)
             {
                 if (comparer.Equals(item, sourceItem))
                     return ret;
@@ -151,23 +155,23 @@ namespace Nito
         }
 
         /// <summary>
-        /// Adds an item to the end of this list.
+        ///     Adds an item to the end of this list.
         /// </summary>
         /// <param name="item">The object to add to this list.</param>
         /// <exception cref="T:System.NotSupportedException">
-        /// This list is read-only.
+        ///     This list is read-only.
         /// </exception>
         void ICollection<T>.Add(T item)
         {
-            DoInsert(Count, item);
+            this.DoInsert(this.Count, item);
         }
 
         /// <summary>
-        /// Determines whether this list contains a specific value.
+        ///     Determines whether this list contains a specific value.
         /// </summary>
         /// <param name="item">The object to locate in this list.</param>
         /// <returns>
-        /// true if <paramref name="item"/> is found in this list; otherwise, false.
+        ///     true if <paramref name="item" /> is found in this list; otherwise, false.
         /// </returns>
         bool ICollection<T>.Contains(T item)
         {
@@ -175,25 +179,30 @@ namespace Nito
         }
 
         /// <summary>
-        /// Copies the elements of this list to an <see cref="T:System.Array"/>, starting at a particular <see cref="T:System.Array"/> index.
+        ///     Copies the elements of this list to an <see cref="T:System.Array" />, starting at a particular
+        ///     <see cref="T:System.Array" /> index.
         /// </summary>
-        /// <param name="array">The one-dimensional <see cref="T:System.Array"/> that is the destination of the elements copied from this slice. The <see cref="T:System.Array"/> must have zero-based indexing.</param>
-        /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
+        /// <param name="array">
+        ///     The one-dimensional <see cref="T:System.Array" /> that is the destination of the elements copied
+        ///     from this slice. The <see cref="T:System.Array" /> must have zero-based indexing.
+        /// </param>
+        /// <param name="arrayIndex">The zero-based index in <paramref name="array" /> at which copying begins.</param>
         /// <exception cref="T:System.ArgumentNullException">
-        /// <paramref name="array"/> is null.
+        ///     <paramref name="array" /> is null.
         /// </exception>
         /// <exception cref="T:System.ArgumentOutOfRangeException">
-        /// <paramref name="arrayIndex"/> is less than 0.
+        ///     <paramref name="arrayIndex" /> is less than 0.
         /// </exception>
         /// <exception cref="T:System.ArgumentException">
-        /// <paramref name="arrayIndex"/> is equal to or greater than the length of <paramref name="array"/>.
-        /// -or-
-        /// The number of elements in the source <see cref="T:System.Collections.Generic.ICollection`1"/> is greater than the available space from <paramref name="arrayIndex"/> to the end of the destination <paramref name="array"/>.
+        ///     <paramref name="arrayIndex" /> is equal to or greater than the length of <paramref name="array" />.
+        ///     -or-
+        ///     The number of elements in the source <see cref="T:System.Collections.Generic.ICollection`1" /> is greater than the
+        ///     available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />.
         /// </exception>
         void ICollection<T>.CopyTo(T[] array, int arrayIndex)
         {
             if (array == null)
-                throw new ArgumentNullException("array", "Array is null");
+                throw new ArgumentNullException(nameof(array), "Array is null");
 
             int count = this.Count;
             CheckRangeArguments(array.Length, arrayIndex, count);
@@ -204,60 +213,62 @@ namespace Nito
         }
 
         /// <summary>
-        /// Removes the first occurrence of a specific object from this list.
+        ///     Removes the first occurrence of a specific object from this list.
         /// </summary>
         /// <param name="item">The object to remove from this list.</param>
         /// <returns>
-        /// true if <paramref name="item"/> was successfully removed from this list; otherwise, false. This method also returns false if <paramref name="item"/> is not found in this list.
+        ///     true if <paramref name="item" /> was successfully removed from this list; otherwise, false. This method also
+        ///     returns false if <paramref name="item" /> is not found in this list.
         /// </returns>
         /// <exception cref="T:System.NotSupportedException">
-        /// This list is read-only.
+        ///     This list is read-only.
         /// </exception>
         public bool Remove(T item)
         {
-            int index = IndexOf(item);
+            int index = this.IndexOf(item);
             if (index == -1)
                 return false;
 
-            DoRemoveAt(index);
+            this.DoRemoveAt(index);
             return true;
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through the collection.
+        ///     Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
+        ///     A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the collection.
         /// </returns>
         public IEnumerator<T> GetEnumerator()
         {
             int count = this.Count;
             for (int i = 0; i != count; ++i)
             {
-                yield return DoGetItem(i);
+                yield return this.DoGetItem(i);
             }
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through a collection.
+        ///     Returns an enumerator that iterates through a collection.
         /// </summary>
         /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
+        ///     An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
         /// </returns>
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
         }
 
         #endregion
+
         #region ObjectListImplementations
 
         /// <summary>
-        /// Returns whether or not the type of a given item indicates it is appropriate for storing in this container.
+        ///     Returns whether or not the type of a given item indicates it is appropriate for storing in this container.
         /// </summary>
         /// <param name="item">The item to test.</param>
         /// <returns><c>true</c> if the item is appropriate to store in this container; otherwise, <c>false</c>.</returns>
-        private bool ObjectIsT(object item)
+        bool ObjectIsT(object item)
         {
             if (item is T)
             {
@@ -266,86 +277,77 @@ namespace Nito
 
             if (item == null)
             {
-                var type = typeof(T);
-                if (type.IsClass && !type.IsPointer)
+                TypeInfo typeInfo = typeof(T).GetTypeInfo();
+                if (typeInfo.IsClass && !typeInfo.IsPointer)
                     return true; // classes, arrays, and delegates
-                if (type.IsInterface)
+                if (typeInfo.IsInterface)
                     return true; // interfaces
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                if (typeInfo.IsGenericType && typeInfo.GetGenericTypeDefinition() == typeof(Nullable<>))
                     return true; // nullable value types
             }
 
             return false;
         }
 
-        int System.Collections.IList.Add(object value)
+        int IList.Add(object value)
         {
-            if (!ObjectIsT(value))
-                throw new ArgumentException("Item is not of the correct type.", "value");
-            AddToBack((T)value);
-            return Count - 1;
+            if (!this.ObjectIsT(value))
+                throw new ArgumentException("Item is not of the correct type.", nameof(value));
+            this.AddToBack((T)value);
+            return this.Count - 1;
         }
 
-        bool System.Collections.IList.Contains(object value)
+        bool IList.Contains(object value)
         {
-            if (!ObjectIsT(value))
-                throw new ArgumentException("Item is not of the correct type.", "value");
+            if (!this.ObjectIsT(value))
+                throw new ArgumentException("Item is not of the correct type.", nameof(value));
             return this.Contains((T)value);
         }
 
-        int System.Collections.IList.IndexOf(object value)
+        int IList.IndexOf(object value)
         {
-            if (!ObjectIsT(value))
-                throw new ArgumentException("Item is not of the correct type.", "value");
-            return IndexOf((T)value);
+            if (!this.ObjectIsT(value))
+                throw new ArgumentException("Item is not of the correct type.", nameof(value));
+            return this.IndexOf((T)value);
         }
 
-        void System.Collections.IList.Insert(int index, object value)
+        void IList.Insert(int index, object value)
         {
-            if (!ObjectIsT(value))
-                throw new ArgumentException("Item is not of the correct type.", "value");
-            Insert(index, (T)value);
+            if (!this.ObjectIsT(value))
+                throw new ArgumentException("Item is not of the correct type.", nameof(value));
+            this.Insert(index, (T)value);
         }
 
-        bool System.Collections.IList.IsFixedSize
+        bool IList.IsFixedSize => false;
+
+        bool IList.IsReadOnly => false;
+
+        void IList.Remove(object value)
         {
-            get { return false; }
+            if (!this.ObjectIsT(value))
+                throw new ArgumentException("Item is not of the correct type.", nameof(value));
+            this.Remove((T)value);
         }
 
-        bool System.Collections.IList.IsReadOnly
+        object IList.this[int index]
         {
-            get { return false; }
-        }
-
-        void System.Collections.IList.Remove(object value)
-        {
-            if (!ObjectIsT(value))
-                throw new ArgumentException("Item is not of the correct type.", "value");
-            Remove((T)value);
-        }
-
-        object System.Collections.IList.this[int index]
-        {
-            get
-            {
-                return this[index];
-            }
+            get { return this[index]; }
 
             set
             {
-                if (!ObjectIsT(value))
-                    throw new ArgumentException("Item is not of the correct type.", "value");
+                if (!this.ObjectIsT(value))
+                    throw new ArgumentException("Item is not of the correct type.", nameof(value));
                 this[index] = (T)value;
             }
         }
 
-        void System.Collections.ICollection.CopyTo(Array array, int index)
+        void ICollection.CopyTo(Array array, int index)
         {
             if (array == null)
-                throw new ArgumentNullException("array", "Destination array cannot be null.");
-            CheckRangeArguments(array.Length, index, Count);
+                throw new ArgumentNullException(nameof(array), "Destination array cannot be null.");
+            CheckRangeArguments(array.Length, index, this.Count);
 
-            for (int i = 0; i != Count; ++i)
+            for (int i = 0; i != this.Count; ++i)
             {
                 try
                 {
@@ -358,65 +360,72 @@ namespace Nito
             }
         }
 
-        bool System.Collections.ICollection.IsSynchronized
-        {
-            get { return false; }
-        }
+        bool ICollection.IsSynchronized => false;
 
-        object System.Collections.ICollection.SyncRoot
-        {
-            get { return this; }
-        }
+        object ICollection.SyncRoot => this;
 
         #endregion
+
         #region GenericListHelpers
 
         /// <summary>
-        /// Checks the <paramref name="index"/> argument to see if it refers to a valid insertion point in a source of a given length.
+        ///     Checks the <paramref name="index" /> argument to see if it refers to a valid insertion point in a source of a given
+        ///     length.
         /// </summary>
         /// <param name="sourceLength">The length of the source. This parameter is not checked for validity.</param>
         /// <param name="index">The index into the source.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is not a valid index to an insertion point for the source.</exception>
-        private static void CheckNewIndexArgument(int sourceLength, int index)
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     <paramref name="index" /> is not a valid index to an insertion point for
+        ///     the source.
+        /// </exception>
+        static void CheckNewIndexArgument(int sourceLength, int index)
         {
             if (index < 0 || index > sourceLength)
             {
-                throw new ArgumentOutOfRangeException("index", "Invalid new index " + index + " for source length " + sourceLength);
+                throw new ArgumentOutOfRangeException(nameof(index), "Invalid new index " + index + " for source length " + sourceLength);
             }
         }
 
         /// <summary>
-        /// Checks the <paramref name="index"/> argument to see if it refers to an existing element in a source of a given length.
+        ///     Checks the <paramref name="index" /> argument to see if it refers to an existing element in a source of a given
+        ///     length.
         /// </summary>
         /// <param name="sourceLength">The length of the source. This parameter is not checked for validity.</param>
         /// <param name="index">The index into the source.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is not a valid index to an existing element for the source.</exception>
-        private static void CheckExistingIndexArgument(int sourceLength, int index)
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     <paramref name="index" /> is not a valid index to an existing element for
+        ///     the source.
+        /// </exception>
+        static void CheckExistingIndexArgument(int sourceLength, int index)
         {
             if (index < 0 || index >= sourceLength)
             {
-                throw new ArgumentOutOfRangeException("index", "Invalid existing index " + index + " for source length " + sourceLength);
+                throw new ArgumentOutOfRangeException(nameof(index), "Invalid existing index " + index + " for source length " + sourceLength);
             }
         }
 
         /// <summary>
-        /// Checks the <paramref name="offset"/> and <paramref name="count"/> arguments for validity when applied to a source of a given length. Allows 0-element ranges, including a 0-element range at the end of the source.
+        ///     Checks the <paramref name="offset" /> and <paramref name="count" /> arguments for validity when applied to a source
+        ///     of a given length. Allows 0-element ranges, including a 0-element range at the end of the source.
         /// </summary>
         /// <param name="sourceLength">The length of the source. This parameter is not checked for validity.</param>
         /// <param name="offset">The index into source at which the range begins.</param>
         /// <param name="count">The number of elements in the range.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Either <paramref name="offset"/> or <paramref name="count"/> is less than 0.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Either <paramref name="offset" /> or <paramref name="count" /> is less
+        ///     than 0.
+        /// </exception>
         /// <exception cref="ArgumentException">The range [offset, offset + count) is not within the range [0, sourceLength).</exception>
-        private static void CheckRangeArguments(int sourceLength, int offset, int count)
+        static void CheckRangeArguments(int sourceLength, int offset, int count)
         {
             if (offset < 0)
             {
-                throw new ArgumentOutOfRangeException("offset", "Invalid offset " + offset);
+                throw new ArgumentOutOfRangeException(nameof(offset), "Invalid offset " + offset);
             }
 
             if (count < 0)
             {
-                throw new ArgumentOutOfRangeException("count", "Invalid count " + count);
+                throw new ArgumentOutOfRangeException(nameof(count), "Invalid count " + count);
             }
 
             if (sourceLength - offset < count)
@@ -428,232 +437,228 @@ namespace Nito
         #endregion
 
         /// <summary>
-        /// Gets a value indicating whether this instance is empty.
+        ///     Gets a value indicating whether this instance is empty.
         /// </summary>
-        private bool IsEmpty
-        {
-            get { return Count == 0; }
-        }
+        bool IsEmpty => this.Count == 0;
 
         /// <summary>
-        /// Gets a value indicating whether this instance is at full capacity.
+        ///     Gets a value indicating whether this instance is at full capacity.
         /// </summary>
-        private bool IsFull
-        {
-            get { return Count == Capacity; }
-        }
+        bool IsFull => this.Count == this.Capacity;
 
         /// <summary>
-        /// Gets a value indicating whether the buffer is "split" (meaning the beginning of the view is at a later index in <see cref="buffer"/> than the end).
+        ///     Gets a value indicating whether the buffer is "split" (meaning the beginning of the view is at a later index in
+        ///     <see cref="buffer" /> than the end).
         /// </summary>
-        private bool IsSplit
-        {
-            get
-            {
-                // Overflow-safe version of "(offset + Count) > Capacity"
-                return offset > (Capacity - Count);
-            }
-        }
+        bool IsSplit => this.offset > (this.Capacity - this.Count);
 
         /// <summary>
-        /// Gets or sets the capacity for this deque. This value must always be greater than zero, and this property cannot be set to a value less than <see cref="Count"/>.
+        ///     Gets or sets the capacity for this deque. This value must always be greater than zero, and this property cannot be
+        ///     set to a value less than <see cref="Count" />.
         /// </summary>
-        /// <exception cref="InvalidOperationException"><c>Capacity</c> cannot be set to a value less than <see cref="Count"/>.</exception>
+        /// <exception cref="InvalidOperationException"><c>Capacity</c> cannot be set to a value less than <see cref="Count" />.</exception>
         public int Capacity
         {
-            get
-            {
-                return buffer.Length;
-            }
+            get { return this.buffer.Length; }
 
             set
             {
                 if (value < 1)
-                    throw new ArgumentOutOfRangeException("value", "Capacity must be greater than 0.");
+                    throw new ArgumentOutOfRangeException(nameof(value), "Capacity must be greater than 0.");
 
-                if (value < Count)
+                if (value < this.Count)
                     throw new InvalidOperationException("Capacity cannot be set to a value less than Count");
 
-                if (value == buffer.Length)
+                if (value == this.buffer.Length)
                     return;
 
                 // Create the new buffer and copy our existing range.
-                T[] newBuffer = new T[value];
-                if (IsSplit)
+                var newBuffer = new T[value];
+                if (this.IsSplit)
                 {
                     // The existing buffer is split, so we have to copy it in parts
-                    int length = Capacity - offset;
-                    Array.Copy(buffer, offset, newBuffer, 0, length);
-                    Array.Copy(buffer, 0, newBuffer, length, Count - length);
+                    int length = this.Capacity - this.offset;
+                    Array.Copy(this.buffer, this.offset, newBuffer, 0, length);
+                    Array.Copy(this.buffer, 0, newBuffer, length, this.Count - length);
                 }
                 else
                 {
                     // The existing buffer is whole
-                    Array.Copy(buffer, offset, newBuffer, 0, Count);
+                    Array.Copy(this.buffer, this.offset, newBuffer, 0, this.Count);
                 }
 
                 // Set up to use the new buffer.
-                buffer = newBuffer;
-                offset = 0;
+                this.buffer = newBuffer;
+                this.offset = 0;
             }
         }
 
         /// <summary>
-        /// Gets the number of elements contained in this deque.
+        ///     Gets the number of elements contained in this deque.
         /// </summary>
         /// <returns>The number of elements contained in this deque.</returns>
         public int Count { get; private set; }
-        
+
         /// <summary>
-        /// Applies the offset to <paramref name="index"/>, resulting in a buffer index.
+        ///     Applies the offset to <paramref name="index" />, resulting in a buffer index.
         /// </summary>
         /// <param name="index">The deque index.</param>
         /// <returns>The buffer index.</returns>
-        private int DequeIndexToBufferIndex(int index)
+        int DequeIndexToBufferIndex(int index)
         {
-            return (index + offset) % Capacity;
+            return (index + this.offset) % this.Capacity;
         }
 
         /// <summary>
-        /// Gets an element at the specified view index.
+        ///     Gets an element at the specified view index.
         /// </summary>
         /// <param name="index">The zero-based view index of the element to get. This index is guaranteed to be valid.</param>
         /// <returns>The element at the specified index.</returns>
-        private T DoGetItem(int index)
+        T DoGetItem(int index)
         {
-            return buffer[DequeIndexToBufferIndex(index)];
+            return this.buffer[this.DequeIndexToBufferIndex(index)];
         }
 
         /// <summary>
-        /// Sets an element at the specified view index.
+        ///     Sets an element at the specified view index.
         /// </summary>
         /// <param name="index">The zero-based view index of the element to get. This index is guaranteed to be valid.</param>
         /// <param name="item">The element to store in the list.</param>
-        private void DoSetItem(int index, T item)
+        void DoSetItem(int index, T item)
         {
-            buffer[DequeIndexToBufferIndex(index)] = item;
+            this.buffer[this.DequeIndexToBufferIndex(index)] = item;
         }
 
         /// <summary>
-        /// Inserts an element at the specified view index.
+        ///     Inserts an element at the specified view index.
         /// </summary>
-        /// <param name="index">The zero-based view index at which the element should be inserted. This index is guaranteed to be valid.</param>
+        /// <param name="index">
+        ///     The zero-based view index at which the element should be inserted. This index is guaranteed to be
+        ///     valid.
+        /// </param>
         /// <param name="item">The element to store in the list.</param>
-        private void DoInsert(int index, T item)
+        void DoInsert(int index, T item)
         {
-            EnsureCapacityForOneElement();
+            this.EnsureCapacityForOneElement();
 
             if (index == 0)
             {
-                DoAddToFront(item);
+                this.DoAddToFront(item);
                 return;
             }
-            else if (index == Count)
+            else if (index == this.Count)
             {
-                DoAddToBack(item);
+                this.DoAddToBack(item);
                 return;
             }
 
-            DoInsertRange(index, new[] { item }, 1);
+            this.DoInsertRange(index, new[] { item }, 1);
         }
 
         /// <summary>
-        /// Removes an element at the specified view index.
+        ///     Removes an element at the specified view index.
         /// </summary>
         /// <param name="index">The zero-based view index of the element to remove. This index is guaranteed to be valid.</param>
-        private void DoRemoveAt(int index)
+        void DoRemoveAt(int index)
         {
             if (index == 0)
             {
-                DoRemoveFromFront();
+                this.DoRemoveFromFront();
                 return;
             }
-            else if (index == Count - 1)
+            else if (index == this.Count - 1)
             {
-                DoRemoveFromBack();
+                this.DoRemoveFromBack();
                 return;
             }
 
-            DoRemoveRange(index, 1);
+            this.DoRemoveRange(index, 1);
         }
 
         /// <summary>
-        /// Increments <see cref="offset"/> by <paramref name="value"/> using modulo-<see cref="Capacity"/> arithmetic.
+        ///     Increments <see cref="offset" /> by <paramref name="value" /> using modulo-<see cref="Capacity" /> arithmetic.
         /// </summary>
-        /// <param name="value">The value by which to increase <see cref="offset"/>. May not be negative.</param>
-        /// <returns>The value of <see cref="offset"/> after it was incremented.</returns>
-        private int PostIncrement(int value)
+        /// <param name="value">The value by which to increase <see cref="offset" />. May not be negative.</param>
+        /// <returns>The value of <see cref="offset" /> after it was incremented.</returns>
+        int PostIncrement(int value)
         {
-            int ret = offset;
-            offset += value;
-            offset %= Capacity;
+            int ret = this.offset;
+            this.offset += value;
+            this.offset %= this.Capacity;
             return ret;
         }
 
         /// <summary>
-        /// Decrements <see cref="offset"/> by <paramref name="value"/> using modulo-<see cref="Capacity"/> arithmetic.
+        ///     Decrements <see cref="offset" /> by <paramref name="value" /> using modulo-<see cref="Capacity" /> arithmetic.
         /// </summary>
-        /// <param name="value">The value by which to reduce <see cref="offset"/>. May not be negative or greater than <see cref="Capacity"/>.</param>
-        /// <returns>The value of <see cref="offset"/> before it was decremented.</returns>
-        private int PreDecrement(int value)
+        /// <param name="value">
+        ///     The value by which to reduce <see cref="offset" />. May not be negative or greater than
+        ///     <see cref="Capacity" />.
+        /// </param>
+        /// <returns>The value of <see cref="offset" /> before it was decremented.</returns>
+        int PreDecrement(int value)
         {
-            offset -= value;
-            if (offset < 0)
-                offset += Capacity;
-            return offset;
+            this.offset -= value;
+            if (this.offset < 0)
+                this.offset += this.Capacity;
+            return this.offset;
         }
 
         /// <summary>
-        /// Inserts a single element to the back of the view. <see cref="IsFull"/> must be false when this method is called.
-        /// </summary>
-        /// <param name="value">The element to insert.</param>
-        private void DoAddToBack(T value)
-        {
-            buffer[DequeIndexToBufferIndex(Count)] = value;
-            ++Count;
-        }
-
-        /// <summary>
-        /// Inserts a single element to the front of the view. <see cref="IsFull"/> must be false when this method is called.
+        ///     Inserts a single element to the back of the view. <see cref="IsFull" /> must be false when this method is called.
         /// </summary>
         /// <param name="value">The element to insert.</param>
-        private void DoAddToFront(T value)
+        void DoAddToBack(T value)
         {
-            buffer[PreDecrement(1)] = value;
-            ++Count;
+            this.buffer[this.DequeIndexToBufferIndex(this.Count)] = value;
+            ++this.Count;
         }
 
         /// <summary>
-        /// Removes and returns the last element in the view. <see cref="IsEmpty"/> must be false when this method is called.
+        ///     Inserts a single element to the front of the view. <see cref="IsFull" /> must be false when this method is called.
+        /// </summary>
+        /// <param name="value">The element to insert.</param>
+        void DoAddToFront(T value)
+        {
+            this.buffer[this.PreDecrement(1)] = value;
+            ++this.Count;
+        }
+
+        /// <summary>
+        ///     Removes and returns the last element in the view. <see cref="IsEmpty" /> must be false when this method is called.
         /// </summary>
         /// <returns>The former last element.</returns>
-        private T DoRemoveFromBack()
+        T DoRemoveFromBack()
         {
-            T ret = buffer[DequeIndexToBufferIndex(Count - 1)];
-            --Count;
+            T ret = this.buffer[this.DequeIndexToBufferIndex(this.Count - 1)];
+            --this.Count;
             return ret;
         }
 
         /// <summary>
-        /// Removes and returns the first element in the view. <see cref="IsEmpty"/> must be false when this method is called.
+        ///     Removes and returns the first element in the view. <see cref="IsEmpty" /> must be false when this method is called.
         /// </summary>
         /// <returns>The former first element.</returns>
-        private T DoRemoveFromFront()
+        T DoRemoveFromFront()
         {
-            --Count;
-            return buffer[PostIncrement(1)];
+            --this.Count;
+            return this.buffer[this.PostIncrement(1)];
         }
 
         /// <summary>
-        /// Inserts a range of elements into the view.
+        ///     Inserts a range of elements into the view.
         /// </summary>
         /// <param name="index">The index into the view at which the elements are to be inserted.</param>
         /// <param name="collection">The elements to insert.</param>
-        /// <param name="collectionCount">The number of elements in <paramref name="collection"/>. Must be greater than zero, and the sum of <paramref name="collectionCount"/> and <see cref="Count"/> must be less than or equal to <see cref="Capacity"/>.</param>
-        private void DoInsertRange(int index, IEnumerable<T> collection, int collectionCount)
+        /// <param name="collectionCount">
+        ///     The number of elements in <paramref name="collection" />. Must be greater than zero, and
+        ///     the sum of <paramref name="collectionCount" /> and <see cref="Count" /> must be less than or equal to
+        ///     <see cref="Capacity" />.
+        /// </param>
+        void DoInsertRange(int index, IEnumerable<T> collection, int collectionCount)
         {
             // Make room in the existing list
-            if (index < Count / 2)
+            if (index < this.Count / 2)
             {
                 // Inserting into the first half of the list
 
@@ -661,9 +666,9 @@ namespace Nito
                 // This clears out the low "index" number of items, moving them "collectionCount" places down;
                 //   after rotation, there will be a "collectionCount"-sized hole at "index".
                 int copyCount = index;
-                int writeIndex = Capacity - collectionCount;
+                int writeIndex = this.Capacity - collectionCount;
                 for (int j = 0; j != copyCount; ++j)
-                    buffer[DequeIndexToBufferIndex(writeIndex + j)] = buffer[DequeIndexToBufferIndex(j)];
+                    this.buffer[this.DequeIndexToBufferIndex(writeIndex + j)] = this.buffer[this.DequeIndexToBufferIndex(j)];
 
                 // Rotate to the new view
                 this.PreDecrement(collectionCount);
@@ -673,46 +678,49 @@ namespace Nito
                 // Inserting into the second half of the list
 
                 // Move higher items up: [index, count) -> [index + collectionCount, collectionCount + count)
-                int copyCount = Count - index;
+                int copyCount = this.Count - index;
                 int writeIndex = index + collectionCount;
                 for (int j = copyCount - 1; j != -1; --j)
-                    buffer[DequeIndexToBufferIndex(writeIndex + j)] = buffer[DequeIndexToBufferIndex(index + j)];
+                    this.buffer[this.DequeIndexToBufferIndex(writeIndex + j)] = this.buffer[this.DequeIndexToBufferIndex(index + j)];
             }
 
             // Copy new items into place
             int i = index;
             foreach (T item in collection)
             {
-                buffer[DequeIndexToBufferIndex(i)] = item;
+                this.buffer[this.DequeIndexToBufferIndex(i)] = item;
                 ++i;
             }
 
             // Adjust valid count
-            Count += collectionCount;
+            this.Count += collectionCount;
         }
 
         /// <summary>
-        /// Removes a range of elements from the view.
+        ///     Removes a range of elements from the view.
         /// </summary>
         /// <param name="index">The index into the view at which the range begins.</param>
-        /// <param name="collectionCount">The number of elements in the range. This must be greater than 0 and less than or equal to <see cref="Count"/>.</param>
-        private void DoRemoveRange(int index, int collectionCount)
+        /// <param name="collectionCount">
+        ///     The number of elements in the range. This must be greater than 0 and less than or equal
+        ///     to <see cref="Count" />.
+        /// </param>
+        void DoRemoveRange(int index, int collectionCount)
         {
             if (index == 0)
             {
                 // Removing from the beginning: rotate to the new view
                 this.PostIncrement(collectionCount);
-                Count -= collectionCount;
+                this.Count -= collectionCount;
                 return;
             }
-            else if (index == Count - collectionCount)
+            else if (index == this.Count - collectionCount)
             {
                 // Removing from the ending: trim the existing view
-                Count -= collectionCount;
+                this.Count -= collectionCount;
                 return;
             }
 
-            if ((index + (collectionCount / 2)) < Count / 2)
+            if ((index + (collectionCount / 2)) < this.Count / 2)
             {
                 // Removing from first half of list
 
@@ -720,7 +728,7 @@ namespace Nito
                 int copyCount = index;
                 int writeIndex = collectionCount;
                 for (int j = copyCount - 1; j != -1; --j)
-                    buffer[DequeIndexToBufferIndex(writeIndex + j)] = buffer[DequeIndexToBufferIndex(j)];
+                    this.buffer[this.DequeIndexToBufferIndex(writeIndex + j)] = this.buffer[this.DequeIndexToBufferIndex(j)];
 
                 // Rotate to new view
                 this.PostIncrement(collectionCount);
@@ -730,20 +738,21 @@ namespace Nito
                 // Removing from second half of list
 
                 // Move higher items down: [index + collectionCount, count) -> [index, count - collectionCount)
-                int copyCount = Count - collectionCount - index;
+                int copyCount = this.Count - collectionCount - index;
                 int readIndex = index + collectionCount;
                 for (int j = 0; j != copyCount; ++j)
-                    buffer[DequeIndexToBufferIndex(index + j)] = buffer[DequeIndexToBufferIndex(readIndex + j)];
+                    this.buffer[this.DequeIndexToBufferIndex(index + j)] = this.buffer[this.DequeIndexToBufferIndex(readIndex + j)];
             }
 
             // Adjust valid count
-            Count -= collectionCount;
+            this.Count -= collectionCount;
         }
 
         /// <summary>
-        /// Doubles the capacity if necessary to make room for one more element. When this method returns, <see cref="IsFull"/> is false.
+        ///     Doubles the capacity if necessary to make room for one more element. When this method returns,
+        ///     <see cref="IsFull" /> is false.
         /// </summary>
-        private void EnsureCapacityForOneElement()
+        void EnsureCapacityForOneElement()
         {
             if (this.IsFull)
             {
@@ -752,40 +761,43 @@ namespace Nito
         }
 
         /// <summary>
-        /// Inserts a single element at the back of this deque.
+        ///     Inserts a single element at the back of this deque.
         /// </summary>
         /// <param name="value">The element to insert.</param>
         public void AddToBack(T value)
         {
-            EnsureCapacityForOneElement();
-            DoAddToBack(value);
+            this.EnsureCapacityForOneElement();
+            this.DoAddToBack(value);
         }
 
         /// <summary>
-        /// Inserts a single element at the front of this deque.
+        ///     Inserts a single element at the front of this deque.
         /// </summary>
         /// <param name="value">The element to insert.</param>
         public void AddToFront(T value)
         {
-            EnsureCapacityForOneElement();
-            DoAddToFront(value);
+            this.EnsureCapacityForOneElement();
+            this.DoAddToFront(value);
         }
 
         /// <summary>
-        /// Inserts a collection of elements into this deque.
+        ///     Inserts a collection of elements into this deque.
         /// </summary>
         /// <param name="index">The index at which the collection is inserted.</param>
         /// <param name="collection">The collection of elements to insert.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is not a valid index to an insertion point for the source.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     <paramref name="index" /> is not a valid index to an insertion point for
+        ///     the source.
+        /// </exception>
         public void InsertRange(int index, IEnumerable<T> collection)
         {
             int collectionCount = collection.Count();
-            CheckNewIndexArgument(Count, index);
+            CheckNewIndexArgument(this.Count, index);
 
             // Overflow-safe check for "this.Count + collectionCount > this.Capacity"
-            if (collectionCount > Capacity - Count)
+            if (collectionCount > this.Capacity - this.Count)
             {
-                this.Capacity = checked(Count + collectionCount);
+                this.Capacity = checked(this.Count + collectionCount);
             }
 
             if (collectionCount == 0)
@@ -797,15 +809,21 @@ namespace Nito
         }
 
         /// <summary>
-        /// Removes a range of elements from this deque.
+        ///     Removes a range of elements from this deque.
         /// </summary>
         /// <param name="offset">The index into the deque at which the range begins.</param>
         /// <param name="count">The number of elements to remove.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Either <paramref name="offset"/> or <paramref name="count"/> is less than 0.</exception>
-        /// <exception cref="ArgumentException">The range [<paramref name="offset"/>, <paramref name="offset"/> + <paramref name="count"/>) is not within the range [0, <see cref="Count"/>).</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Either <paramref name="offset" /> or <paramref name="count" /> is less
+        ///     than 0.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     The range [<paramref name="offset" />, <paramref name="offset" /> +
+        ///     <paramref name="count" />) is not within the range [0, <see cref="Count" />).
+        /// </exception>
         public void RemoveRange(int offset, int count)
         {
-            CheckRangeArguments(Count, offset, count);
+            CheckRangeArguments(this.Count, offset, count);
 
             if (count == 0)
             {
@@ -816,7 +834,7 @@ namespace Nito
         }
 
         /// <summary>
-        /// Removes and returns the last element of this deque.
+        ///     Removes and returns the last element of this deque.
         /// </summary>
         /// <returns>The former last element.</returns>
         /// <exception cref="InvalidOperationException">The deque is empty.</exception>
@@ -829,7 +847,7 @@ namespace Nito
         }
 
         /// <summary>
-        /// Removes and returns the first element of this deque.
+        ///     Removes and returns the first element of this deque.
         /// </summary>
         /// <returns>The former first element.</returns>
         /// <exception cref="InvalidOperationException">The deque is empty.</exception>
@@ -842,7 +860,7 @@ namespace Nito
         }
 
         /// <summary>
-        /// Removes all items from this deque.
+        ///     Removes all items from this deque.
         /// </summary>
         public void Clear()
         {
@@ -851,9 +869,9 @@ namespace Nito
         }
 
         [DebuggerNonUserCode]
-        private sealed class DebugView
+        sealed class DebugView
         {
-            private readonly Deque<T> deque;
+            readonly Deque<T> deque;
 
             public DebugView(Deque<T> deque)
             {
@@ -865,8 +883,8 @@ namespace Nito
             {
                 get
                 {
-                    var array = new T[deque.Count];
-                    ((ICollection<T>)deque).CopyTo(array, 0);
+                    var array = new T[this.deque.Count];
+                    ((ICollection<T>)this.deque).CopyTo(array, 0);
                     return array;
                 }
             }

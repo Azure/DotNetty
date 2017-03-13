@@ -17,14 +17,19 @@ namespace DotNetty.Common.Concurrency
     {
         protected readonly PriorityQueue<IScheduledRunnable> ScheduledTaskQueue = new PriorityQueue<IScheduledRunnable>();
 
-        // TODO: support for EventExecutorGroup
-
-        protected static PreciseTimeSpan GetNanos()
+        protected AbstractScheduledEventExecutor()
         {
-            return PreciseTimeSpan.FromStart;
         }
 
-        protected static bool IsNullOrEmpty<T>(PriorityQueue<T> taskQueue) where T : class
+        protected AbstractScheduledEventExecutor(IEventExecutorGroup parent)
+            : base(parent)
+        {
+        }
+
+        protected static PreciseTimeSpan GetNanos() => PreciseTimeSpan.FromStart;
+
+        protected static bool IsNullOrEmpty<T>(PriorityQueue<T> taskQueue)
+            where T : class
         {
             return taskQueue == null || taskQueue.Count == 0;
         }
@@ -51,10 +56,7 @@ namespace DotNetty.Common.Concurrency
             this.ScheduledTaskQueue.Clear();
         }
 
-        protected IScheduledRunnable PollScheduledTask()
-        {
-            return this.PollScheduledTask(GetNanos());
-        }
+        protected IScheduledRunnable PollScheduledTask() => this.PollScheduledTask(GetNanos());
 
         protected IScheduledRunnable PollScheduledTask(PreciseTimeSpan nanoTime)
         {
@@ -92,23 +94,38 @@ namespace DotNetty.Common.Concurrency
             return scheduledTask != null && scheduledTask.Deadline <= PreciseTimeSpan.FromStart;
         }
 
+        public override IScheduledTask Schedule(IRunnable action, TimeSpan delay)
+        {
+            Contract.Requires(action != null);
+
+            return this.Schedule(new RunnableScheduledTask(this, action, PreciseTimeSpan.Deadline(delay)));
+        }
+
         public override IScheduledTask Schedule(Action action, TimeSpan delay)
         {
+            Contract.Requires(action != null);
+
             return this.Schedule(new ActionScheduledTask(this, action, PreciseTimeSpan.Deadline(delay)));
         }
 
         public override IScheduledTask Schedule(Action<object> action, object state, TimeSpan delay)
         {
+            Contract.Requires(action != null);
+
             return this.Schedule(new StateActionScheduledTask(this, action, state, PreciseTimeSpan.Deadline(delay)));
         }
 
         public override IScheduledTask Schedule(Action<object, object> action, object context, object state, TimeSpan delay)
         {
+            Contract.Requires(action != null);
+
             return this.Schedule(new StateActionWithContextScheduledTask(this, action, context, state, PreciseTimeSpan.Deadline(delay)));
         }
 
         public override Task ScheduleAsync(Action action, TimeSpan delay, CancellationToken cancellationToken)
         {
+            Contract.Requires(action != null);
+
             if (cancellationToken.IsCancellationRequested)
             {
                 return TaskEx.Cancelled;

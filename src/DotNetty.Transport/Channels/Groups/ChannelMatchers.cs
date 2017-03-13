@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels.Groups
 {
     using System;
+    using System.Reflection;
 
     public static class ChannelMatchers
     {
@@ -11,51 +12,27 @@ namespace DotNetty.Transport.Channels.Groups
         static readonly IChannelMatcher ServerChannelMatcher = IsInstanceOf(typeof(IServerChannel));
         static readonly IChannelMatcher NonServerChannelMatcher = IsNotInstanceOf(typeof(IServerChannel));
 
-        public static IChannelMatcher IsServerChannel()
-        {
-            return ServerChannelMatcher;
-        }
+        public static IChannelMatcher IsServerChannel() => ServerChannelMatcher;
 
-        public static IChannelMatcher IsNonServerChannel()
-        {
-            return NonServerChannelMatcher;
-        }
+        public static IChannelMatcher IsNonServerChannel() => NonServerChannelMatcher;
 
-        public static IChannelMatcher All()
-        {
-            return AllMatcher;
-        }
+        public static IChannelMatcher All() => AllMatcher;
 
-        public static IChannelMatcher IsNot(IChannel channel)
-        {
-            return Invert(Is(channel));
-        }
+        public static IChannelMatcher IsNot(IChannel channel) => Invert(Is(channel));
 
-        public static IChannelMatcher Is(IChannel channel)
-        {
-            return new InstanceMatcher(channel);
-        }
+        public static IChannelMatcher Is(IChannel channel) => new InstanceMatcher(channel);
 
-        public static IChannelMatcher IsInstanceOf(Type type)
-        {
-            return new TypeMatcher(type);
-        }
+        public static IChannelMatcher IsInstanceOf(Type type) => new TypeMatcher(type);
 
-        public static IChannelMatcher IsNotInstanceOf(Type type)
-        {
-            return Invert(IsInstanceOf(type));
-        }
+        public static IChannelMatcher IsNotInstanceOf(Type type) => Invert(IsInstanceOf(type));
 
-        public static IChannelMatcher Invert(IChannelMatcher matcher)
-        {
-            return new InvertMatcher(matcher);
-        }
+        public static IChannelMatcher Invert(IChannelMatcher matcher) => new InvertMatcher(matcher);
 
         public static IChannelMatcher Compose(params IChannelMatcher[] matchers)
         {
             if (matchers.Length < 1)
             {
-                throw new ArgumentOutOfRangeException("matchers");
+                throw new ArgumentOutOfRangeException(nameof(matchers));
             }
             if (matchers.Length == 1)
             {
@@ -66,10 +43,7 @@ namespace DotNetty.Transport.Channels.Groups
 
         sealed class AllChannelMatcher : IChannelMatcher
         {
-            public bool Matches(IChannel channel)
-            {
-                return true;
-            }
+            public bool Matches(IChannel channel) => true;
         }
 
         sealed class CompositeMatcher : IChannelMatcher
@@ -103,10 +77,7 @@ namespace DotNetty.Transport.Channels.Groups
                 this.matcher = matcher;
             }
 
-            public bool Matches(IChannel channel)
-            {
-                return !this.matcher.Matches(channel);
-            }
+            public bool Matches(IChannel channel) => !this.matcher.Matches(channel);
         }
 
         sealed class InstanceMatcher : IChannelMatcher
@@ -118,10 +89,7 @@ namespace DotNetty.Transport.Channels.Groups
                 this.channel = channel;
             }
 
-            public bool Matches(IChannel ch)
-            {
-                return this.channel == ch;
-            }
+            public bool Matches(IChannel ch) => this.channel == ch;
         }
 
         sealed class TypeMatcher : IChannelMatcher
@@ -133,10 +101,7 @@ namespace DotNetty.Transport.Channels.Groups
                 this.type = clazz;
             }
 
-            public bool Matches(IChannel channel)
-            {
-                return this.type.IsInstanceOfType(channel);
-            }
+            public bool Matches(IChannel channel) => this.type.IsInstanceOfType(channel);
         }
     }
 }

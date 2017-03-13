@@ -20,54 +20,27 @@ namespace DotNetty.Common
             this.ticks = ticks;
         }
 
-        public long Ticks
-        {
-            get { return this.ticks; }
-        }
+        public long Ticks => this.ticks;
 
         public static readonly PreciseTimeSpan Zero = new PreciseTimeSpan(0);
 
         public static readonly PreciseTimeSpan MinusOne = new PreciseTimeSpan(-1);
 
-        public static PreciseTimeSpan FromStart
-        {
-            get { return new PreciseTimeSpan(GetTimeChangeSinceStart()); }
-        }
+        public static PreciseTimeSpan FromStart => new PreciseTimeSpan(GetTimeChangeSinceStart());
 
-        public static PreciseTimeSpan FromTimeSpan(TimeSpan timeSpan)
-        {
-            return new PreciseTimeSpan(TicksToPreciseTicks(timeSpan.Ticks));
-        }
+        public static PreciseTimeSpan FromTimeSpan(TimeSpan timeSpan) => new PreciseTimeSpan(TicksToPreciseTicks(timeSpan.Ticks));
 
-        public static PreciseTimeSpan Deadline(TimeSpan deadline)
-        {
-            return new PreciseTimeSpan(GetTimeChangeSinceStart() + TicksToPreciseTicks(deadline.Ticks));
-        }
+        public static PreciseTimeSpan Deadline(TimeSpan deadline) => new PreciseTimeSpan(GetTimeChangeSinceStart() + TicksToPreciseTicks(deadline.Ticks));
 
-        public static PreciseTimeSpan Deadline(PreciseTimeSpan deadline)
-        {
-            return new PreciseTimeSpan(GetTimeChangeSinceStart() + deadline.ticks);
-        }
+        public static PreciseTimeSpan Deadline(PreciseTimeSpan deadline) => new PreciseTimeSpan(GetTimeChangeSinceStart() + deadline.ticks);
 
-        static long TicksToPreciseTicks(long ticks)
-        {
-            return Stopwatch.IsHighResolution ? (long)(ticks * PrecisionRatio) : ticks;
-        }
+        static long TicksToPreciseTicks(long ticks) => Stopwatch.IsHighResolution ? (long)(ticks * PrecisionRatio) : ticks;
 
-        public TimeSpan ToTimeSpan()
-        {
-            return TimeSpan.FromTicks((long)(this.ticks * ReversePrecisionRatio));
-        }
+        public TimeSpan ToTimeSpan() => TimeSpan.FromTicks((long)(this.ticks * ReversePrecisionRatio));
 
-        static long GetTimeChangeSinceStart()
-        {
-            return Stopwatch.GetTimestamp() - StartTime;
-        }
+        static long GetTimeChangeSinceStart() => Stopwatch.GetTimestamp() - StartTime;
 
-        public bool Equals(PreciseTimeSpan other)
-        {
-            return this.ticks == other.ticks;
-        }
+        public bool Equals(PreciseTimeSpan other) => this.ticks == other.ticks;
 
         public override bool Equals(object obj)
         {
@@ -79,45 +52,21 @@ namespace DotNetty.Common
             return false;
         }
 
-        public override int GetHashCode()
-        {
-            return this.ticks.GetHashCode();
-        }
+        public override int GetHashCode() => this.ticks.GetHashCode();
 
-        public int CompareTo(PreciseTimeSpan other)
-        {
-            return this.ticks.CompareTo(other.ticks);
-        }
+        public int CompareTo(PreciseTimeSpan other) => this.ticks.CompareTo(other.ticks);
 
-        public static bool operator ==(PreciseTimeSpan t1, PreciseTimeSpan t2)
-        {
-            return t1.ticks == t2.ticks;
-        }
+        public static bool operator ==(PreciseTimeSpan t1, PreciseTimeSpan t2) => t1.ticks == t2.ticks;
 
-        public static bool operator !=(PreciseTimeSpan t1, PreciseTimeSpan t2)
-        {
-            return t1.ticks != t2.ticks;
-        }
+        public static bool operator !=(PreciseTimeSpan t1, PreciseTimeSpan t2) => t1.ticks != t2.ticks;
 
-        public static bool operator >(PreciseTimeSpan t1, PreciseTimeSpan t2)
-        {
-            return t1.ticks > t2.ticks;
-        }
+        public static bool operator >(PreciseTimeSpan t1, PreciseTimeSpan t2) => t1.ticks > t2.ticks;
 
-        public static bool operator <(PreciseTimeSpan t1, PreciseTimeSpan t2)
-        {
-            return t1.ticks < t2.ticks;
-        }
+        public static bool operator <(PreciseTimeSpan t1, PreciseTimeSpan t2) => t1.ticks < t2.ticks;
 
-        public static bool operator >=(PreciseTimeSpan t1, PreciseTimeSpan t2)
-        {
-            return t1.ticks >= t2.ticks;
-        }
+        public static bool operator >=(PreciseTimeSpan t1, PreciseTimeSpan t2) => t1.ticks >= t2.ticks;
 
-        public static bool operator <=(PreciseTimeSpan t1, PreciseTimeSpan t2)
-        {
-            return t1.ticks <= t2.ticks;
-        }
+        public static bool operator <=(PreciseTimeSpan t1, PreciseTimeSpan t2) => t1.ticks <= t2.ticks;
 
         public static PreciseTimeSpan operator +(PreciseTimeSpan t, TimeSpan duration)
         {

@@ -6,7 +6,7 @@ namespace DotNetty.Buffers
     public enum ByteOrder
     {
         /// <summary>
-        /// Default on most Windows systems
+        ///     Default on most Windows systems
         /// </summary>
         LittleEndian = 0,
         BigEndian = 1

@@ -18,26 +18,14 @@ namespace DotNetty.Common.Concurrency
         {
         }
 
-        public bool TryComplete()
-        {
-            return this.TrySetResult(0);
-        }
+        public bool TryComplete() => this.TrySetResult(0);
 
-        public void Complete()
-        {
-            this.SetResult(0);
-        }
+        public void Complete() => this.SetResult(0);
 
-        public bool setUncancellable()
-        {
-            // todo: support cancellation token where used
-            return true;
-        }
+        // todo: support cancellation token where used
+        public bool SetUncancellable() => true;
 
-        public override string ToString()
-        {
-            return "TaskCompletionSource[status: " + this.Task.Status.ToString() + "]";
-        }
+        public override string ToString() => "TaskCompletionSource[status: " + this.Task.Status.ToString() + "]";
 
         static TaskCompletionSource CreateVoidTcs()
         {

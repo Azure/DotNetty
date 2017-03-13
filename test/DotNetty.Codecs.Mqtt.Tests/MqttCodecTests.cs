@@ -103,7 +103,7 @@ namespace DotNetty.Codecs.Mqtt.Tests
         }
 
         [Theory]
-        [InlineData(0, new[] { "+", "+/+", "//", "/#", "+//+" }, new[] {QualityOfService.ExactlyOnce, QualityOfService.AtLeastOnce, QualityOfService.AtMostOnce, QualityOfService.ExactlyOnce, QualityOfService.AtMostOnce})]
+        [InlineData(1, new[] { "+", "+/+", "//", "/#", "+//+" }, new[] { QualityOfService.ExactlyOnce, QualityOfService.AtLeastOnce, QualityOfService.AtMostOnce, QualityOfService.ExactlyOnce, QualityOfService.AtMostOnce })]
         [InlineData(ushort.MaxValue, new[] { "a" }, new[] { QualityOfService.AtLeastOnce })]
         public void TestSubscribeMessage(int packetId, string[] topicFilters, QualityOfService[] requestedQosValues)
         {
@@ -117,7 +117,7 @@ namespace DotNetty.Codecs.Mqtt.Tests
         }
 
         [Theory]
-        [InlineData(0, new[] { QualityOfService.ExactlyOnce, QualityOfService.AtLeastOnce, QualityOfService.AtMostOnce, QualityOfService.Failure, QualityOfService.AtMostOnce })]
+        [InlineData(1, new[] { QualityOfService.ExactlyOnce, QualityOfService.AtLeastOnce, QualityOfService.AtMostOnce, QualityOfService.Failure, QualityOfService.AtMostOnce })]
         [InlineData(ushort.MaxValue, new[] { QualityOfService.AtLeastOnce })]
         public void TestSubAckMessage(int packetId, QualityOfService[] qosValues)
         {
@@ -133,7 +133,7 @@ namespace DotNetty.Codecs.Mqtt.Tests
         }
 
         [Theory]
-        [InlineData(0, new[] { "+", "+/+", "//", "/#", "+//+" })]
+        [InlineData(1, new[] { "+", "+/+", "//", "/#", "+//+" })]
         [InlineData(ushort.MaxValue, new[] { "a" })]
         public void TestUnsubscribeMessage(int packetId, string[] topicFilters)
         {
@@ -147,10 +147,10 @@ namespace DotNetty.Codecs.Mqtt.Tests
         }
 
         [Theory]
-        [InlineData(QualityOfService.AtMostOnce, false, false, 0, "a", null)]
+        [InlineData(QualityOfService.AtMostOnce, false, false, 1, "a", null)]
         [InlineData(QualityOfService.ExactlyOnce, true, false, ushort.MaxValue, "/", new byte[0])]
-        [InlineData(QualityOfService.AtLeastOnce, false, true, 0, "a/b", new byte[] { 1, 2, 3 })]
-        [InlineData(QualityOfService.ExactlyOnce, true, true, 1, "topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/", new byte[] { 1 })]
+        [InlineData(QualityOfService.AtLeastOnce, false, true, 129, "a/b", new byte[] { 1, 2, 3 })]
+        [InlineData(QualityOfService.ExactlyOnce, true, true, ushort.MaxValue - 1, "topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/topic/name/that/is/longer/than/256/characters/", new byte[] { 1 })]
         public void TestPublishMessage(QualityOfService qos, bool dup, bool retain, int packetId, string topicName, byte[] payload)
         {
             var packet = new PublishPacket(qos, dup, retain);
@@ -173,8 +173,8 @@ namespace DotNetty.Codecs.Mqtt.Tests
         }
 
         [Theory]
-        [InlineData(0)]
         [InlineData(1)]
+        [InlineData(127)]
         [InlineData(128)]
         [InlineData(256)]
         [InlineData(257)]
@@ -195,7 +195,10 @@ namespace DotNetty.Codecs.Mqtt.Tests
         void TestPublishResponseMessage<T>(int packetId, bool useServer)
             where T : PacketWithId, new()
         {
-            var packet = new T { PacketId = packetId };
+            var packet = new T
+            {
+                PacketId = packetId
+            };
 
             T recoded = this.RecodePacket(packet, useServer, true);
 
@@ -233,7 +236,7 @@ namespace DotNetty.Codecs.Mqtt.Tests
 
             foreach (IByteBuffer message in output)
             {
-                MqttDecoder mqttDecoder = (useServer ? this.serverDecoder : this.clientDecoder);
+                MqttDecoder mqttDecoder = useServer ? this.serverDecoder : this.clientDecoder;
                 if (explodeForDecode)
                 {
                     while (message.IsReadable())

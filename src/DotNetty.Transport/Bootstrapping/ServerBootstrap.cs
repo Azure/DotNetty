@@ -5,11 +5,8 @@ namespace DotNetty.Transport.Bootstrapping
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Linq;
-    using System.Linq.Expressions;
-    using System.Reflection;
     using System.Text;
     using System.Threading.Tasks;
     using DotNetty.Common.Internal.Logging;
@@ -17,22 +14,21 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    /// {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
-    ///
+    ///     {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
     /// </summary>
     public class ServerBootstrap : AbstractBootstrap<ServerBootstrap, IServerChannel>
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ServerBootstrap>();
 
-        readonly ConcurrentDictionary<ChannelOption, object> childOptions;
-        // todo: attrs
-        //private final Map<AttributeKey<?>, Object> childAttrs = new LinkedHashMap<AttributeKey<?>, Object>();
+        readonly ConcurrentDictionary<ChannelOption, ChannelOptionValue> childOptions;
+        readonly ConcurrentDictionary<IConstant, AttributeValue> childAttrs;
         volatile IEventLoopGroup childGroup;
         volatile IChannelHandler childHandler;
 
         public ServerBootstrap()
         {
-            this.childOptions = new ConcurrentDictionary<ChannelOption, object>();
+            this.childOptions = new ConcurrentDictionary<ChannelOption, ChannelOptionValue>();
+            this.childAttrs = new ConcurrentDictionary<IConstant, AttributeValue>();
         }
 
         ServerBootstrap(ServerBootstrap bootstrap)
@@ -40,25 +36,19 @@ namespace DotNetty.Transport.Bootstrapping
         {
             this.childGroup = bootstrap.childGroup;
             this.childHandler = bootstrap.childHandler;
-            this.childOptions = new ConcurrentDictionary<ChannelOption, object>(bootstrap.childOptions);
-            // todo: attrs
-            //lock (bootstrap.childAttrs) {
-            //    childAttrs.putAll(bootstrap.childAttrs);
-            //}
+            this.childOptions = new ConcurrentDictionary<ChannelOption, ChannelOptionValue>(bootstrap.childOptions);
+            this.childAttrs = new ConcurrentDictionary<IConstant, AttributeValue>(bootstrap.childAttrs);
         }
 
         /// <summary>
-        /// Specify the {@link EventLoopGroup} which is used for the parent (acceptor) and the child (client).
+        ///     Specify the {@link EventLoopGroup} which is used for the parent (acceptor) and the child (client).
         /// </summary>
-        public override ServerBootstrap Group(IEventLoopGroup group)
-        {
-            return this.Group(group, group);
-        }
+        public override ServerBootstrap Group(IEventLoopGroup group) => this.Group(group, group);
 
         /// <summary>
-        /// Set the {@link EventLoopGroup} for the parent (acceptor) and the child (client). These
-        /// {@link EventLoopGroup}'s are used to handle all the events and IO for {@link ServerChannel} and
-        /// {@link Channel}'s.
+        ///     Set the {@link EventLoopGroup} for the parent (acceptor) and the child (client). These
+        ///     {@link EventLoopGroup}'s are used to handle all the events and IO for {@link ServerChannel} and
+        ///     {@link Channel}'s.
         /// </summary>
         public ServerBootstrap Group(IEventLoopGroup parentGroup, IEventLoopGroup childGroup)
         {
@@ -74,9 +64,9 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they get created
-        /// (after the acceptor accepted the {@link Channel}). Use a value of {@code null} to remove a previous set
-        /// {@link ChannelOption}.
+        ///     Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they get created
+        ///     (after the acceptor accepted the {@link Channel}). Use a value of {@code null} to remove a previous set
+        ///     {@link ChannelOption}.
         /// </summary>
         public ServerBootstrap ChildOption<T>(ChannelOption<T> childOption, T value)
         {
@@ -84,34 +74,39 @@ namespace DotNetty.Transport.Bootstrapping
 
             if (value == null)
             {
-                object removed;
+                ChannelOptionValue removed;
                 this.childOptions.TryRemove(childOption, out removed);
             }
             else
             {
-                this.childOptions[childOption] = value;
+                this.childOptions[childOption] = new ChannelOptionValue<T>(childOption, value);
             }
             return this;
         }
 
-        // todo: attrs
-        ///// <summary>
-        // /// Set the specific {@link AttributeKey} with the given value on every child {@link Channel}. If the value is
-        // /// {@code null} the {@link AttributeKey} is removed
-        // /// </summary>
-        //public <T> ServerBootstrap childAttr(AttributeKey<T> childKey, T value) {
-        //    if (childKey == null) {
-        //        throw new NullPointerException("childKey");
-        //    }
-        //    if (value == null) {
-        //        childAttrs.remove(childKey);
-        //    } else {
-        //        childAttrs.put(childKey, value);
-        //    }
-        //    return this;
-        //}
         /// <summary>
-        /// Set the {@link ChannelHandler} which is used to serve the request for the {@link Channel}'s.
+        ///     Set the specific {@link AttributeKey} with the given value on every child {@link Channel}. If the value is
+        ///     {@code null} the {@link AttributeKey} is removed
+        /// </summary>
+        public ServerBootstrap ChildAttribute<T>(AttributeKey<T> childKey, T value)
+            where T : class
+        {
+            Contract.Requires(childKey != null);
+
+            if (value == null)
+            {
+                AttributeValue removed;
+                this.childAttrs.TryRemove(childKey, out removed);
+            }
+            else
+            {
+                this.childAttrs[childKey] = new AttributeValue<T>(childKey, value);
+            }
+            return this;
+        }
+
+        /// <summary>
+        ///     Set the {@link ChannelHandler} which is used to serve the request for the {@link Channel}'s.
         /// </summary>
         public ServerBootstrap ChildHandler(IChannelHandler childHandler)
         {
@@ -122,22 +117,18 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        /// Return the configured {@link EventLoopGroup} which will be used for the child channels or {@code null}
-        /// if non is configured yet.
+        ///     Return the configured {@link EventLoopGroup} which will be used for the child channels or {@code null}
+        ///     if non is configured yet.
         /// </summary>
-        public IEventLoopGroup ChildGroup()
-        {
-            return this.childGroup;
-        }
+        public IEventLoopGroup ChildGroup() => this.childGroup;
 
         protected override void Init(IChannel channel)
         {
-            IDictionary<ChannelOption, object> options = this.Options();
-            foreach (KeyValuePair<ChannelOption, object> e in options)
+            foreach (ChannelOptionValue e in this.Options)
             {
                 try
                 {
-                    if (!channel.Configuration.SetOption(e.Key, e.Value))
+                    if (!e.Set(channel.Configuration))
                     {
                         Logger.Warn("Unknown channel option: " + e);
                     }
@@ -148,33 +139,27 @@ namespace DotNetty.Transport.Bootstrapping
                 }
             }
 
-            // todo: attrs
-            //Map<AttributeKey<?>, Object> attrs = attrs();
-            //lock (attrs) {
-            //    foreach (var e in attrs.entrySet()) {
-            //        AttributeKey<object> key = (AttributeKey<object>) e.getKey();
-            //        channel.attr(key).set(e.getValue());
-            //    }
-            //}
+            foreach (AttributeValue e in this.Attributes)
+            {
+                e.Set(channel);
+            }
 
             IChannelPipeline p = channel.Pipeline;
-            if (this.Handler() != null)
+            IChannelHandler channelHandler = this.Handler();
+            if (channelHandler != null)
             {
-                p.AddLast(this.Handler());
+                p.AddLast((string)null, channelHandler);
             }
 
             IEventLoopGroup currentChildGroup = this.childGroup;
             IChannelHandler currentChildHandler = this.childHandler;
-            KeyValuePair<ChannelOption, object>[] currentChildOptions = this.childOptions.ToArray();
-            // todo: attrs
-            //Entry<AttributeKey<?>, Object>[] currentChildAttrs = this.childAttrs.ToArray();
-
-            Func<IChannelConfiguration, bool> childConfigSetupFunc = CompileOptionsSetupFunc(this.childOptions);
+            ChannelOptionValue[] currentChildOptions = this.childOptions.Values.ToArray();
+            AttributeValue[] currentChildAttrs = this.childAttrs.Values.ToArray();
 
             p.AddLast(new ActionChannelInitializer<IChannel>(ch =>
             {
                 ch.Pipeline.AddLast(new ServerBootstrapAcceptor(currentChildGroup, currentChildHandler,
-                    childConfigSetupFunc /*, currentChildAttrs*/));
+                    currentChildOptions, currentChildAttrs));
             }));
         }
 
@@ -193,90 +178,55 @@ namespace DotNetty.Transport.Bootstrapping
             return this;
         }
 
-        static Func<IChannelConfiguration, bool> CompileOptionsSetupFunc(IDictionary<ChannelOption, object> templateOptions)
-        {
-            if (templateOptions.Count == 0)
-            {
-                return null;
-            }
-
-            ParameterExpression configParam = Expression.Parameter(typeof(IChannelConfiguration));
-            ParameterExpression resultVariable = Expression.Variable(typeof(bool));
-            var assignments = new List<Expression>
-            {
-                Expression.Assign(resultVariable, Expression.Constant(true))
-            };
-
-            MethodInfo setOptionMethodDefinition = typeof(IChannelConfiguration)
-                .FindMembers(MemberTypes.Method, BindingFlags.Instance | BindingFlags.Public, Type.FilterName, "SetOption")
-                .Cast<MethodInfo>()
-                .First(x => x.IsGenericMethodDefinition);
-
-            foreach (KeyValuePair<ChannelOption, object> p in templateOptions)
-            {
-                // todo: emit log if verbose is enabled && option is missing
-                Type optionType = p.Key.GetType();
-                if (!optionType.IsGenericType)
-                {
-                    throw new InvalidOperationException("Only options of type ChannelOption<T> are supported.");
-                }
-                if (optionType.GetGenericTypeDefinition() != typeof(ChannelOption<>))
-                {
-                    throw new NotSupportedException(string.Format("Channel option is of an unsupported type `{0}`. Only ChannelOption and ChannelOption<T> are supported.", optionType));
-                }
-                Type valueType = optionType.GetGenericArguments()[0];
-                MethodInfo setOptionMethod = setOptionMethodDefinition.MakeGenericMethod(valueType);
-                assignments.Add(Expression.Assign(
-                    resultVariable,
-                    Expression.AndAlso(
-                        resultVariable,
-                        Expression.Call(configParam, setOptionMethod, Expression.Constant(p.Key), Expression.Constant(p.Value, valueType)))));
-            }
-
-            return Expression.Lambda<Func<IChannelConfiguration, bool>>(Expression.Block(typeof(bool), new[] { resultVariable }, assignments), configParam).Compile();
-        }
-
         class ServerBootstrapAcceptor : ChannelHandlerAdapter
         {
             readonly IEventLoopGroup childGroup;
             readonly IChannelHandler childHandler;
-            readonly Func<IChannelConfiguration, bool> childOptionsSetupFunc;
-            // todo: attrs
-            //private readonly KeyValuePair<AttributeKey, object>[] childAttrs;
+            readonly ChannelOptionValue[] childOptions;
+            readonly AttributeValue[] childAttrs;
 
             public ServerBootstrapAcceptor(
                 IEventLoopGroup childGroup, IChannelHandler childHandler,
-                Func<IChannelConfiguration, bool> childOptionsSetupFunc /*, KeyValuePair<AttributeKey, object>[] childAttrs*/)
+                ChannelOptionValue[] childOptions, AttributeValue[] childAttrs)
             {
                 this.childGroup = childGroup;
                 this.childHandler = childHandler;
-                this.childOptionsSetupFunc = childOptionsSetupFunc;
-                //this.childAttrs = childAttrs;
+                this.childOptions = childOptions;
+                this.childAttrs = childAttrs;
             }
 
             public override void ChannelRead(IChannelHandlerContext ctx, object msg)
             {
                 var child = (IChannel)msg;
 
-                child.Pipeline.AddLast(this.childHandler);
+                child.Pipeline.AddLast((string)null, this.childHandler);
 
-                if (this.childOptionsSetupFunc != null)
+                foreach (ChannelOptionValue option in this.childOptions)
                 {
-                    if (!this.childOptionsSetupFunc(child.Configuration))
+                    try
                     {
-                        Logger.Warn("Not all configuration options could be set.");
+                        if (!option.Set(child.Configuration))
+                        {
+                            Logger.Warn("Unknown channel option: " + option);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn("Failed to set a channel option: " + child, ex);
                     }
                 }
 
-                // tood: attrs
-                //foreach (var e in this.childAttrs) {
-                //    child.attr((AttributeKey<Object>) e.getKey()).set(e.getValue());
-                //}
+                foreach (AttributeValue attr in this.childAttrs)
+                {
+                    attr.Set(child);
+                }
 
                 // todo: async/await instead?
                 try
                 {
-                    this.childGroup.GetNext().RegisterAsync(child).ContinueWith(future => ForceClose(child, future.Exception),
+                    this.childGroup.GetNext().RegisterAsync(child).ContinueWith(
+                        (future, state) => ForceClose((IChannel)state, future.Exception),
+                        child,
                         TaskContinuationOptions.NotOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously);
                 }
                 catch (Exception ex)
@@ -299,7 +249,7 @@ namespace DotNetty.Transport.Bootstrapping
                     // stop accept new connections for 1 second to allow the channel to recover
                     // See https://github.com/netty/netty/issues/1328
                     config.AutoRead = false;
-                    ctx.Channel.EventLoop.ScheduleAsync(() => { config.AutoRead = true; }, TimeSpan.FromSeconds(1));
+                    ctx.Channel.EventLoop.ScheduleAsync(c => { ((IChannelConfiguration)c).AutoRead = true; }, config, TimeSpan.FromSeconds(1));
                 }
                 // still let the ExceptionCaught event flow through the pipeline to give the user
                 // a chance to do something with it
@@ -307,10 +257,7 @@ namespace DotNetty.Transport.Bootstrapping
             }
         }
 
-        public override object Clone()
-        {
-            return new ServerBootstrap(this);
-        }
+        public override ServerBootstrap Clone() => new ServerBootstrap(this);
 
         public override string ToString()
         {

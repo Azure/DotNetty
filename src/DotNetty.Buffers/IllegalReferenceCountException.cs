@@ -6,12 +6,12 @@ namespace DotNetty.Buffers
     using System;
 
     /// <summary>
-    /// Exception thrown during instances where a reference count is used incorrectly
+    ///     Exception thrown during instances where a reference count is used incorrectly
     /// </summary>
     public class IllegalReferenceCountException : InvalidOperationException
     {
         public IllegalReferenceCountException(int count)
-            : base(string.Format("Illegal reference count of {0} for this object", count))
+            : base($"Illegal reference count of {count} for this object")
         {
         }
 

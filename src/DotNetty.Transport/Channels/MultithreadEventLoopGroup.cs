@@ -7,31 +7,39 @@ namespace DotNetty.Transport.Channels
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
+    /// <summary>
+    /// <see cref="IEventLoopGroup"/> backed by a set of <see cref="SingleThreadEventLoop"/> instances.
+    /// </summary>
     public sealed class MultithreadEventLoopGroup : IEventLoopGroup
     {
         static readonly int DefaultEventLoopThreadCount = Environment.ProcessorCount * 2;
-        static readonly Func<IEventLoop> DefaultEventLoopFactory = () => new SingleThreadEventLoop();
+        static readonly Func<IEventLoopGroup, IEventLoop> DefaultEventLoopFactory = group => new SingleThreadEventLoop(group);
 
         readonly IEventLoop[] eventLoops;
         int requestId;
 
+        /// <summary>Creates a new instance of <see cref="MultithreadEventLoopGroup"/>.</summary>
         public MultithreadEventLoopGroup()
             : this(DefaultEventLoopFactory, DefaultEventLoopThreadCount)
         {
         }
 
+        /// <summary>Creates a new instance of <see cref="MultithreadEventLoopGroup"/>.</summary>
         public MultithreadEventLoopGroup(int eventLoopCount)
             : this(DefaultEventLoopFactory, eventLoopCount)
         {
         }
 
-        public MultithreadEventLoopGroup(Func<IEventLoop> eventLoopFactory)
+        /// <summary>Creates a new instance of <see cref="MultithreadEventLoopGroup"/>.</summary>
+        public MultithreadEventLoopGroup(Func<IEventLoopGroup, IEventLoop> eventLoopFactory)
             : this(eventLoopFactory, DefaultEventLoopThreadCount)
         {
         }
 
-        public MultithreadEventLoopGroup(Func<IEventLoop> eventLoopFactory, int eventLoopCount)
+        /// <summary>Creates a new instance of <see cref="MultithreadEventLoopGroup"/>.</summary>
+        public MultithreadEventLoopGroup(Func<IEventLoopGroup, IEventLoop> eventLoopFactory, int eventLoopCount)
         {
             this.eventLoops = new IEventLoop[eventLoopCount];
             var terminationTasks = new Task[eventLoopCount];
@@ -41,7 +49,7 @@ namespace DotNetty.Transport.Channels
                 bool success = false;
                 try
                 {
-                    eventLoop = eventLoopFactory();
+                    eventLoop = eventLoopFactory(this);
                     success = true;
                 }
                 catch (Exception ex)
@@ -53,8 +61,8 @@ namespace DotNetty.Transport.Channels
                     if (!success)
                     {
                         Task.WhenAll(this.eventLoops
-                            .Take(i)
-                            .Select(loop => loop.ShutdownGracefullyAsync()))
+                                .Take(i)
+                                .Select(loop => loop.ShutdownGracefullyAsync()))
                             .Wait();
                     }
                 }
@@ -65,19 +73,35 @@ namespace DotNetty.Transport.Channels
             this.TerminationCompletion = Task.WhenAll(terminationTasks);
         }
 
-        public Task TerminationCompletion { get; private set; }
+        /// <inheritdoc />
+        public Task TerminationCompletion { get; }
 
+        /// <inheritdoc />
         public IEventLoop GetNext()
         {
             int id = Interlocked.Increment(ref this.requestId);
             return this.eventLoops[Math.Abs(id % this.eventLoops.Length)];
         }
 
+        /// <inheritdoc />
+        IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
+
+        /// <inheritdoc />
         public Task ShutdownGracefullyAsync()
         {
             foreach (IEventLoop eventLoop in this.eventLoops)
             {
                 eventLoop.ShutdownGracefullyAsync();
+            }
+            return this.TerminationCompletion;
+        }
+
+        /// <inheritdoc />
+        public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
+        {
+            foreach (IEventLoop eventLoop in this.eventLoops)
+            {
+                eventLoop.ShutdownGracefullyAsync(quietPeriod, timeout);
             }
             return this.TerminationCompletion;
         }

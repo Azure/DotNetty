@@ -3,28 +3,17 @@
 
 namespace DotNetty.Tests.Common
 {
-    using System;
-    using System.Diagnostics.Tracing;
     using DotNetty.Common.Internal.Logging;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
     using Xunit.Abstractions;
 
-    public abstract class TestBase : IDisposable
+    public abstract class TestBase
     {
         protected readonly ITestOutputHelper Output;
-        readonly ObservableEventListener eventListener;
 
         protected TestBase(ITestOutputHelper output)
         {
             this.Output = output;
-            this.eventListener = new ObservableEventListener();
-            this.eventListener.LogToTestOutput(output);
-            this.eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
-        }
-
-        public void Dispose()
-        {
-            this.eventListener.Dispose();
+            InternalLoggerFactory.DefaultFactory.AddProvider(new XUnitOutputLoggerProvider(output));
         }
     }
 }

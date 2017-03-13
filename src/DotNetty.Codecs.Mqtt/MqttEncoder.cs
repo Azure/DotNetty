@@ -9,6 +9,7 @@ namespace DotNetty.Codecs.Mqtt
     using DotNetty.Buffers;
     using DotNetty.Codecs.Mqtt.Packets;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
     public sealed class MqttEncoder : MessageToMessageEncoder<Packet>
@@ -18,23 +19,16 @@ namespace DotNetty.Codecs.Mqtt
         const int StringSizeLength = 2;
         const int MaxVariableLength = 4;
 
-        protected override void Encode(IChannelHandlerContext context, Packet message, List<object> output)
-        {
-            DoEncode(context.Allocator, message, output);
-        }
+        protected override void Encode(IChannelHandlerContext context, Packet message, List<object> output) => DoEncode(context.Allocator, message, output);
 
-        public override bool IsSharable
-        {
-            get { return true; }
-        }
+        public override bool IsSharable => true;
 
         /// <summary>
-        /// This is the main encoding method.
-        /// It's only visible for testing.
-        ///
-        /// @param bufferAllocator Allocates ByteBuf
-        /// @param packet MQTT packet to encode
-        /// @return ByteBuf with encoded bytes
+        ///     This is the main encoding method.
+        ///     It's only visible for testing.
+        ///     @param bufferAllocator Allocates ByteBuf
+        ///     @param packet MQTT packet to encode
+        ///     @return ByteBuf with encoded bytes
         /// </summary>
         internal static void DoEncode(IByteBufferAllocator bufferAllocator, Packet packet, List<object> output)
         {
@@ -71,7 +65,7 @@ namespace DotNetty.Codecs.Mqtt
                     EncodePacketWithFixedHeaderOnly(bufferAllocator, packet, output);
                     break;
                 default:
-                    throw new ArgumentException("Unknown packet type: " + packet.PacketType, "packet");
+                    throw new ArgumentException("Unknown packet type: " + packet.PacketType, nameof(packet));
             }
         }
 
@@ -131,44 +125,55 @@ namespace DotNetty.Codecs.Mqtt
             int variableHeaderBufferSize = StringSizeLength + protocolNameBytes.Length + 4;
             int variablePartSize = variableHeaderBufferSize + payloadBufferSize;
             int fixedHeaderBufferSize = 1 + MaxVariableLength;
-            IByteBuffer buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
-            buf.WriteByte(CalculateFirstByteOfFixedHeader(packet));
-            WriteVariableLengthInt(buf, variablePartSize);
-
-            buf.WriteShort(protocolNameBytes.Length);
-            buf.WriteBytes(protocolNameBytes);
-
-            buf.WriteByte(Util.ProtocolLevel);
-            buf.WriteByte(CalculateConnectFlagsByte(packet));
-            buf.WriteShort(packet.KeepAliveInSeconds);
-
-            // Payload
-            buf.WriteShort(clientIdBytes.Length);
-            buf.WriteBytes(clientIdBytes, 0, clientIdBytes.Length);
-            if (packet.HasWill)
+            IByteBuffer buf = null;
+            try
             {
-                buf.WriteShort(willTopicBytes.Length);
-                buf.WriteBytes(willTopicBytes, 0, willTopicBytes.Length);
-                buf.WriteShort(willMessage.ReadableBytes);
-                if (willMessage.IsReadable())
-                {
-                    buf.WriteBytes(willMessage);
-                }
-                willMessage.Release();
-            }
-            if (packet.HasUsername)
-            {
-                buf.WriteShort(userNameBytes.Length);
-                buf.WriteBytes(userNameBytes, 0, userNameBytes.Length);
-                
-                if (packet.HasPassword)
-                {
-                    buf.WriteShort(passwordBytes.Length);
-                    buf.WriteBytes(passwordBytes, 0, passwordBytes.Length);
-                }
-            }
+                buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
+                buf.WriteByte(CalculateFirstByteOfFixedHeader(packet));
+                WriteVariableLengthInt(buf, variablePartSize);
 
-            output.Add(buf);
+                buf.WriteShort(protocolNameBytes.Length);
+                buf.WriteBytes(protocolNameBytes);
+
+                buf.WriteByte(Util.ProtocolLevel);
+                buf.WriteByte(CalculateConnectFlagsByte(packet));
+                buf.WriteShort(packet.KeepAliveInSeconds);
+
+                // Payload
+                buf.WriteShort(clientIdBytes.Length);
+                buf.WriteBytes(clientIdBytes, 0, clientIdBytes.Length);
+                if (packet.HasWill)
+                {
+                    buf.WriteShort(willTopicBytes.Length);
+                    buf.WriteBytes(willTopicBytes, 0, willTopicBytes.Length);
+                    buf.WriteShort(willMessage.ReadableBytes);
+                    if (willMessage.IsReadable())
+                    {
+                        buf.WriteBytes(willMessage);
+                    }
+                    willMessage.Release();
+                    willMessage = null;
+                }
+                if (packet.HasUsername)
+                {
+                    buf.WriteShort(userNameBytes.Length);
+                    buf.WriteBytes(userNameBytes, 0, userNameBytes.Length);
+
+                    if (packet.HasPassword)
+                    {
+                        buf.WriteShort(passwordBytes.Length);
+                        buf.WriteBytes(passwordBytes, 0, passwordBytes.Length);
+                    }
+                }
+
+                output.Add(buf);
+                buf = null;
+            }
+            finally
+            {
+                buf?.SafeRelease();
+                willMessage?.SafeRelease();
+            }
         }
 
         static int CalculateConnectFlagsByte(ConnectPacket packet)
@@ -200,20 +205,30 @@ namespace DotNetty.Codecs.Mqtt
 
         static void EncodeConnAckMessage(IByteBufferAllocator bufferAllocator, ConnAckPacket message, List<object> output)
         {
-            IByteBuffer buffer = bufferAllocator.Buffer(4);
-            buffer.WriteByte(CalculateFirstByteOfFixedHeader(message));
-            buffer.WriteByte(2); // remaining length
-            if (message.SessionPresent)
+            IByteBuffer buffer = null;
+            try
             {
-                buffer.WriteByte(1); // 7 reserved 0-bits and SP = 1
-            }
-            else
-            {
-                buffer.WriteByte(0); // 7 reserved 0-bits and SP = 0
-            }
-            buffer.WriteByte((byte)message.ReturnCode);
+                buffer = bufferAllocator.Buffer(4);
+                buffer.WriteByte(CalculateFirstByteOfFixedHeader(message));
+                buffer.WriteByte(2); // remaining length
+                if (message.SessionPresent)
+                {
+                    buffer.WriteByte(1); // 7 reserved 0-bits and SP = 1
+                }
+                else
+                {
+                    buffer.WriteByte(0); // 7 reserved 0-bits and SP = 0
+                }
+                buffer.WriteByte((byte)message.ReturnCode);
 
-            output.Add(buffer);
+
+                output.Add(buffer);
+                buffer = null;
+            }
+            finally
+            {
+                buffer?.SafeRelease();
+            }
         }
 
         static void EncodePublishMessage(IByteBufferAllocator bufferAllocator, PublishPacket packet, List<object> output)
@@ -230,17 +245,26 @@ namespace DotNetty.Codecs.Mqtt
             int variablePartSize = variableHeaderBufferSize + payloadBufferSize;
             int fixedHeaderBufferSize = 1 + MaxVariableLength;
 
-            IByteBuffer buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
-            buf.WriteByte(CalculateFirstByteOfFixedHeader(packet));
-            WriteVariableLengthInt(buf, variablePartSize);
-            buf.WriteShort(topicNameBytes.Length);
-            buf.WriteBytes(topicNameBytes);
-            if (packet.QualityOfService > QualityOfService.AtMostOnce)
+            IByteBuffer buf = null;
+            try
             {
-                buf.WriteShort(packet.PacketId);
-            }
+                buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
+                buf.WriteByte(CalculateFirstByteOfFixedHeader(packet));
+                WriteVariableLengthInt(buf, variablePartSize);
+                buf.WriteShort(topicNameBytes.Length);
+                buf.WriteBytes(topicNameBytes);
+                if (packet.QualityOfService > QualityOfService.AtMostOnce)
+                {
+                    buf.WriteShort(packet.PacketId);
+                }
 
-            output.Add(buf);
+                output.Add(buf);
+                buf = null;
+            }
+            finally
+            {
+                buf?.SafeRelease();
+            }
 
             if (payload.IsReadable())
             {
@@ -254,12 +278,21 @@ namespace DotNetty.Codecs.Mqtt
 
             const int VariableHeaderBufferSize = PacketIdLength; // variable part only has a packet id
             int fixedHeaderBufferSize = 1 + MaxVariableLength;
-            IByteBuffer buffer = bufferAllocator.Buffer(fixedHeaderBufferSize + VariableHeaderBufferSize);
-            buffer.WriteByte(CalculateFirstByteOfFixedHeader(packet));
-            WriteVariableLengthInt(buffer, VariableHeaderBufferSize);
-            buffer.WriteShort(msgId);
+            IByteBuffer buffer = null;
+            try
+            {
+                buffer = bufferAllocator.Buffer(fixedHeaderBufferSize + VariableHeaderBufferSize);
+                buffer.WriteByte(CalculateFirstByteOfFixedHeader(packet));
+                WriteVariableLengthInt(buffer, VariableHeaderBufferSize);
+                buffer.WriteShort(msgId);
 
-            output.Add(buffer);
+                output.Add(buffer);
+                buffer = null;
+            }
+            finally
+            {
+                buffer?.SafeRelease();
+            }
         }
 
         static void EncodeSubscribeMessage(IByteBufferAllocator bufferAllocator, SubscribePacket packet, List<object> output)
@@ -267,8 +300,9 @@ namespace DotNetty.Codecs.Mqtt
             const int VariableHeaderSize = PacketIdLength;
             int payloadBufferSize = 0;
 
-            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.NewInstance();
 
+            IByteBuffer buf = null;
             try
             {
                 foreach (SubscriptionRequest topic in packet.Requests)
@@ -281,7 +315,7 @@ namespace DotNetty.Codecs.Mqtt
                 int variablePartSize = VariableHeaderSize + payloadBufferSize;
                 int fixedHeaderBufferSize = 1 + MaxVariableLength;
 
-                IByteBuffer buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
+                buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
                 buf.WriteByte(CalculateFirstByteOfFixedHeader(packet));
                 WriteVariableLengthInt(buf, variablePartSize);
 
@@ -298,9 +332,11 @@ namespace DotNetty.Codecs.Mqtt
                 }
 
                 output.Add(buf);
+                buf = null;
             }
             finally
             {
+                buf?.SafeRelease();
                 encodedTopicFilters.Return();
             }
         }
@@ -310,16 +346,26 @@ namespace DotNetty.Codecs.Mqtt
             int payloadBufferSize = message.ReturnCodes.Count;
             int variablePartSize = PacketIdLength + payloadBufferSize;
             int fixedHeaderBufferSize = 1 + MaxVariableLength;
-            IByteBuffer buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
-            buf.WriteByte(CalculateFirstByteOfFixedHeader(message));
-            WriteVariableLengthInt(buf, variablePartSize);
-            buf.WriteShort(message.PacketId);
-            foreach (QualityOfService qos in message.ReturnCodes)
+            IByteBuffer buf = null;
+            try
             {
-                buf.WriteByte((byte)qos);
-            }
+                buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
+                buf.WriteByte(CalculateFirstByteOfFixedHeader(message));
+                WriteVariableLengthInt(buf, variablePartSize);
+                buf.WriteShort(message.PacketId);
+                foreach (QualityOfService qos in message.ReturnCodes)
+                {
+                    buf.WriteByte((byte)qos);
+                }
 
-            output.Add(buf);
+                output.Add(buf);
+                buf = null;
+
+            }
+            finally
+            {
+                buf?.SafeRelease();
+            }
         }
 
         static void EncodeUnsubscribeMessage(IByteBufferAllocator bufferAllocator, UnsubscribePacket packet, List<object> output)
@@ -327,8 +373,9 @@ namespace DotNetty.Codecs.Mqtt
             const int VariableHeaderSize = 2;
             int payloadBufferSize = 0;
 
-            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.Take();
+            ThreadLocalObjectList encodedTopicFilters = ThreadLocalObjectList.NewInstance();
 
+            IByteBuffer buf = null;
             try
             {
                 foreach (string topic in packet.TopicFilters)
@@ -341,7 +388,7 @@ namespace DotNetty.Codecs.Mqtt
                 int variablePartSize = VariableHeaderSize + payloadBufferSize;
                 int fixedHeaderBufferSize = 1 + MaxVariableLength;
 
-                IByteBuffer buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
+                buf = bufferAllocator.Buffer(fixedHeaderBufferSize + variablePartSize);
                 buf.WriteByte(CalculateFirstByteOfFixedHeader(packet));
                 WriteVariableLengthInt(buf, variablePartSize);
 
@@ -357,20 +404,31 @@ namespace DotNetty.Codecs.Mqtt
                 }
 
                 output.Add(buf);
+                buf = null;
             }
             finally
             {
+                buf?.SafeRelease();
                 encodedTopicFilters.Return();
             }
         }
 
         static void EncodePacketWithFixedHeaderOnly(IByteBufferAllocator bufferAllocator, Packet packet, List<object> output)
         {
-            IByteBuffer buffer = bufferAllocator.Buffer(2);
-            buffer.WriteByte(CalculateFirstByteOfFixedHeader(packet));
-            buffer.WriteByte(0);
+            IByteBuffer buffer = null;
+            try
+            {
+                buffer = bufferAllocator.Buffer(2);
+                buffer.WriteByte(CalculateFirstByteOfFixedHeader(packet));
+                buffer.WriteByte(0);
 
-            output.Add(buffer);
+                output.Add(buffer);
+                buffer = null;
+            }
+            finally
+            {
+                buffer?.SafeRelease();
+            }
         }
 
         static int CalculateFirstByteOfFixedHeader(Packet packet)

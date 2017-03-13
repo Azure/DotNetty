@@ -7,10 +7,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
     public sealed class SubAckPacket : PacketWithId
     {
-        public override PacketType PacketType
-        {
-            get { return PacketType.SUBACK; }
-        }
+        public override PacketType PacketType => PacketType.SUBACK;
 
         public IReadOnlyList<QualityOfService> ReturnCodes { get; set; }
 

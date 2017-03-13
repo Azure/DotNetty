@@ -4,8 +4,9 @@
 namespace DotNetty.Common.Tests.Internal.Logging
 {
     using System;
-    using System.Reactive.Disposables;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Tests.Common;
+    using Microsoft.Extensions.Logging;
     using Moq;
     using Xunit;
 
@@ -32,29 +33,29 @@ namespace DotNetty.Common.Tests.Internal.Logging
         [Fact]
         public void TestMockReturned()
         {
-            Mock<IInternalLogger> mock;
+            Mock<ILogger> mock;
             using (SetupMockLogger(out mock))
             {
-                mock.SetupGet(x => x.TraceEnabled).Returns(true).Verifiable();
+                mock.Setup(x => x.IsEnabled(LogLevel.Trace)).Returns(true).Verifiable();
 
                 IInternalLogger logger = InternalLoggerFactory.GetInstance("mock");
 
-                Assert.Equal(logger, mock.Object);
                 Assert.True(logger.TraceEnabled);
-                mock.Verify(x => x.TraceEnabled, Times.Once);
+                mock.Verify(x => x.IsEnabled(LogLevel.Trace), Times.Once);
             }
         }
 
-        static IDisposable SetupMockLogger(out Mock<IInternalLogger> loggerMock)
+        static IDisposable SetupMockLogger(out Mock<ILogger> loggerMock)
         {
-            InternalLoggerFactory oldLoggerFactory = InternalLoggerFactory.DefaultFactory;
-            var factoryMock = new Mock<InternalLoggerFactory>(MockBehavior.Strict);
-            InternalLoggerFactory mockFactory = factoryMock.Object;
-            loggerMock = new Mock<IInternalLogger>(MockBehavior.Strict);
-
-            factoryMock.Setup(x => x.NewInstance("mock")).Returns(loggerMock.Object);
-            InternalLoggerFactory.DefaultFactory = mockFactory;
-            return Disposable.Create(() => InternalLoggerFactory.DefaultFactory = oldLoggerFactory);
+            ILoggerFactory oldLoggerFactory = InternalLoggerFactory.DefaultFactory;
+            var loggerFactory = new LoggerFactory();
+            var factoryMock = new Mock<ILoggerProvider>(MockBehavior.Strict);
+            ILoggerProvider mockFactory = factoryMock.Object;
+            loggerMock = new Mock<ILogger>(MockBehavior.Strict);
+            loggerFactory.AddProvider(mockFactory);
+            factoryMock.Setup(x => x.CreateLogger("mock")).Returns(loggerMock.Object);
+            InternalLoggerFactory.DefaultFactory = loggerFactory;
+            return new Disposable(() => InternalLoggerFactory.DefaultFactory = oldLoggerFactory);
         }
     }
 }

@@ -21,7 +21,6 @@ namespace DotNetty.Handlers.Logging
 
         protected readonly InternalLogLevel InternalLevel;
         protected readonly IInternalLogger Logger;
-        readonly LogLevel level;
 
         /// <summary>
         ///     Creates a new instance whose logger name is the fully qualified class
@@ -65,7 +64,7 @@ namespace DotNetty.Handlers.Logging
             }
 
             this.Logger = InternalLoggerFactory.GetInstance(type);
-            this.level = level;
+            this.Level = level;
             this.InternalLevel = level.ToInternalLevel();
         }
 
@@ -73,7 +72,7 @@ namespace DotNetty.Handlers.Logging
         ///     Creates a new instance with the specified logger name using the default log level.
         /// </summary>
         /// <param name="name">the name of the class to use for the logger</param>
-        public LoggingHandler(String name)
+        public LoggingHandler(string name)
             : this(name, DefaultLevel)
         {
         }
@@ -83,7 +82,7 @@ namespace DotNetty.Handlers.Logging
         /// </summary>
         /// <param name="name">the name of the class to use for the logger</param>
         /// <param name="level">the log level</param>
-        public LoggingHandler(String name, LogLevel level)
+        public LoggingHandler(string name, LogLevel level)
         {
             if (name == null)
             {
@@ -91,17 +90,14 @@ namespace DotNetty.Handlers.Logging
             }
 
             this.Logger = InternalLoggerFactory.GetInstance(name);
-            this.level = level;
+            this.Level = level;
             this.InternalLevel = level.ToInternalLevel();
         }
 
         /// <summary>
         ///     Returns the <see cref="LogLevel" /> that this handler uses to log
         /// </summary>
-        public LogLevel Level
-        {
-            get { return this.level; }
-        }
+        public LogLevel Level { get; }
 
         public override void ChannelRegistered(IChannelHandlerContext ctx)
         {
@@ -233,7 +229,7 @@ namespace DotNetty.Handlers.Logging
         ///     Formats an event and returns the formatted message
         /// </summary>
         /// <param name="eventName">the name of the event</param>
-        protected String Format(IChannelHandlerContext ctx, String eventName)
+        protected string Format(IChannelHandlerContext ctx, string eventName)
         {
             string chStr = ctx.Channel.ToString();
             return new StringBuilder(chStr.Length + 1 + eventName.Length)
@@ -248,7 +244,7 @@ namespace DotNetty.Handlers.Logging
         /// </summary>
         /// <param name="eventName">the name of the event</param>
         /// <param name="arg">the argument of the event</param>
-        protected String Format(IChannelHandlerContext ctx, String eventName, Object arg)
+        protected string Format(IChannelHandlerContext ctx, string eventName, object arg)
         {
             if (arg is IByteBuffer)
             {
@@ -271,7 +267,7 @@ namespace DotNetty.Handlers.Logging
         /// <param name="eventName">the name of the event</param>
         /// <param name="firstArg">the first argument of the event</param>
         /// <param name="secondArg">the second argument of the event</param>
-        protected String Format(IChannelHandlerContext ctx, String eventName, object firstArg, object secondArg)
+        protected string Format(IChannelHandlerContext ctx, string eventName, object firstArg, object secondArg)
         {
             if (secondArg == null)
             {

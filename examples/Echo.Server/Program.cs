@@ -4,27 +4,30 @@
 namespace Echo.Server
 {
     using System;
-    using System.Diagnostics.Tracing;
+    using System.IO;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
-    using DotNetty.Common.Internal.Logging;
+    using DotNetty.Codecs;
     using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
-    using Microsoft.Practices.EnterpriseLibrary.SemanticLogging;
+    using Examples.Common;
 
     class Program
     {
-        static async Task RunServer()
+        static async Task RunServerAsync()
         {
-            var eventListener = new ObservableEventListener();
-            eventListener.LogToConsole();
-            eventListener.EnableEvents(DefaultEventSource.Log, EventLevel.Verbose);
+            ExampleHelper.SetConsoleLogger();
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
+            X509Certificate2 tlsCertificate = null;
+            if (ServerSettings.IsSsl)
+            {
+                tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "dotnetty.com.pfx"), "password");
+            }
             try
             {
                 var bootstrap = new ServerBootstrap();
@@ -32,35 +35,35 @@ namespace Echo.Server
                     .Group(bossGroup, workerGroup)
                     .Channel<TcpServerSocketChannel>()
                     .Option(ChannelOption.SoBacklog, 100)
-                    .Handler(new LoggingHandler(LogLevel.INFO))
+                    .Handler(new LoggingHandler("SRV-LSTN"))
                     .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
-
-                        if (EchoServerSettings.IsSsl)
+                        if (tlsCertificate != null)
                         {
-                            pipeline.AddLast(TlsHandler.Server(new X509Certificate2("dotnetty.com.pfx", "password")));
+                            pipeline.AddLast("tls", TlsHandler.Server(tlsCertificate));
                         }
+                        pipeline.AddLast(new LoggingHandler("SRV-CONN"));
+                        pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
+                        pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
-                        pipeline.AddLast(new EchoServerHandler());
+                        pipeline.AddLast("echo", new EchoServerHandler());
                     }));
 
-                IChannel bootstrapChannel = await bootstrap.BindAsync(EchoServerSettings.Port);
+                IChannel boundChannel = await bootstrap.BindAsync(ServerSettings.Port);
 
                 Console.ReadLine();
 
-                await bootstrapChannel.CloseAsync();
+                await boundChannel.CloseAsync();
             }
             finally
             {
-                Task.WaitAll(bossGroup.ShutdownGracefullyAsync(), workerGroup.ShutdownGracefullyAsync());
-                eventListener.Dispose();
+                await Task.WhenAll(
+                    bossGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
+                    workerGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
             }
         }
 
-        static void Main(string[] args)
-        {
-            Task.Run(() => RunServer()).Wait();
-        }
+        static void Main() => RunServerAsync().Wait();
     }
 }

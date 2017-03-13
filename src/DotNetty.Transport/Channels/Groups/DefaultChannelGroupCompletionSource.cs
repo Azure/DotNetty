@@ -6,14 +6,12 @@ namespace DotNetty.Transport.Channels.Groups
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Threading.Tasks;
 
     public class DefaultChannelGroupCompletionSource : TaskCompletionSource<int>, IChannelGroupTaskCompletionSource
     {
         readonly Dictionary<IChannel, Task> futures;
-        readonly IChannelGroup group;
         int failureCount;
         int successCount;
 
@@ -28,7 +26,8 @@ namespace DotNetty.Transport.Channels.Groups
             Contract.Requires(group != null);
             Contract.Requires(futures != null);
 
-            this.group = group;
+            this.Group = group;
+            this.futures = new Dictionary<IChannel, Task>();
             foreach (KeyValuePair<IChannel, Task> pair in futures)
             {
                 this.futures.Add(pair.Key, pair.Value);
@@ -85,15 +84,9 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public IChannelGroup Group
-        {
-            get { return this.group; }
-        }
+        public IChannelGroup Group { get; }
 
-        public Task Find(IChannel channel)
-        {
-            return this.futures[channel];
-        }
+        public Task Find(IChannel channel) => this.futures[channel];
 
         public bool IsPartialSucess()
         {
@@ -103,10 +96,7 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public bool IsSucess()
-        {
-            return this.Task.IsCompleted && !this.Task.IsFaulted && !this.Task.IsCanceled;
-        }
+        public bool IsSucess() => this.Task.IsCompleted && !this.Task.IsFaulted && !this.Task.IsCanceled;
 
         public bool IsPartialFailure()
         {
@@ -116,34 +106,16 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public ChannelGroupException Cause
-        {
-            get { return (ChannelGroupException)this.Task.Exception.InnerException; }
-        }
+        public ChannelGroupException Cause => (ChannelGroupException)this.Task.Exception.InnerException;
 
-        public Task Current
-        {
-            get { return this.futures.Values.GetEnumerator().Current; }
-        }
+        public Task Current => this.futures.Values.GetEnumerator().Current;
 
-        public void Dispose()
-        {
-            this.futures.Values.GetEnumerator().Dispose();
-        }
+        public void Dispose() => this.futures.Values.GetEnumerator().Dispose();
 
-        object IEnumerator.Current
-        {
-            get { return this.futures.Values.GetEnumerator().Current; }
-        }
+        object IEnumerator.Current => this.futures.Values.GetEnumerator().Current;
 
-        public bool MoveNext()
-        {
-            return this.futures.Values.GetEnumerator().MoveNext();
-        }
+        public bool MoveNext() => this.futures.Values.GetEnumerator().MoveNext();
 
-        public void Reset()
-        {
-            ((IEnumerator)this.futures.Values.GetEnumerator()).Reset();
-        }
+        public void Reset() => ((IEnumerator)this.futures.Values.GetEnumerator()).Reset();
     }
 }

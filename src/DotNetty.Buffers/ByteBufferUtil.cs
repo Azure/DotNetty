@@ -3,13 +3,17 @@
 
 namespace DotNetty.Buffers
 {
-    using DotNetty.Common.Utilities;
     using System;
     using System.Diagnostics.Contracts;
     using System.Text;
+    using DotNetty.Common.Internal;
+    using DotNetty.Common.Internal.Logging;
+    using DotNetty.Common.Utilities;
 
     public static class ByteBufferUtil
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(ByteBufferUtil));
+
         static readonly char[] HexdumpTable = new char[256 * 4];
         static readonly string Newline = StringUtil.Newline;
         static readonly string[] Byte2Hex = new string[256];
@@ -17,6 +21,8 @@ namespace DotNetty.Buffers
         static readonly string[] BytePadding = new string[16];
         static readonly char[] Byte2Char = new char[256];
         static readonly string[] HexDumpRowPrefixes = new string[(int)((uint)65536 >> 4)];
+
+        public static readonly IByteBufferAllocator DefaultAllocator;
 
         static ByteBufferUtil()
         {
@@ -81,46 +87,39 @@ namespace DotNetty.Buffers
                 HexDumpRowPrefixes[i] = buf.ToString();
             }
 
-            //todo: port
-            //String allocType = SystemPropertyUtil.get(
-            //    "io.netty.allocator.type", PlatformDependent.isAndroid() ? "unpooled" : "pooled");
-            //allocType = allocType.toLowerCase(Locale.US).trim();
+            string allocType = SystemPropertyUtil.Get(
+                "io.netty.allocator.type", "pooled");
+            allocType = allocType.Trim();
 
-            //ByteBufAllocator alloc;
-            //if ("unpooled".equals(allocType))
-            //{
-            //    alloc = UnpooledByteBufAllocator.DEFAULT;
-            //    logger.debug("-Dio.netty.allocator.type: {}", allocType);
-            //}
-            //else if ("pooled".equals(allocType))
-            //{
-            //    alloc = PooledByteBufAllocator.DEFAULT;
-            //    logger.debug("-Dio.netty.allocator.type: {}", allocType);
-            //}
-            //else
-            //{
-            //    alloc = PooledByteBufAllocator.DEFAULT;
-            //    logger.debug("-Dio.netty.allocator.type: pooled (unknown: {})", allocType);
-            //}
+            IByteBufferAllocator alloc;
+            if ("unpooled".Equals(allocType, StringComparison.OrdinalIgnoreCase))
+            {
+                alloc = UnpooledByteBufferAllocator.Default;
+                Logger.Debug("-Dio.netty.allocator.type: {}", allocType);
+            }
+            else if ("pooled".Equals(allocType, StringComparison.OrdinalIgnoreCase))
+            {
+                alloc = PooledByteBufferAllocator.Default;
+                Logger.Debug("-Dio.netty.allocator.type: {}", allocType);
+            }
+            else
+            {
+                alloc = PooledByteBufferAllocator.Default;
+                Logger.Debug("-Dio.netty.allocator.type: pooled (unknown: {})", allocType);
+            }
 
-            //DEFAULT_ALLOCATOR = alloc;
-
-            //THREAD_LOCAL_BUFFER_SIZE = SystemPropertyUtil.getInt("io.netty.threadLocalDirectBufferSize", 64 * 1024);
-            //logger.debug("-Dio.netty.threadLocalDirectBufferSize: {}", THREAD_LOCAL_BUFFER_SIZE);
+            DefaultAllocator = alloc;
         }
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
-        public static string HexDump(IByteBuffer buffer)
-        {
-            return HexDump(buffer, buffer.ReaderIndex, buffer.ReadableBytes);
-        }
+        public static string HexDump(IByteBuffer buffer) => HexDump(buffer, buffer.ReaderIndex, buffer.ReadableBytes);
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
         public static string HexDump(IByteBuffer buffer, int fromIndex, int length)
         {
@@ -130,7 +129,7 @@ namespace DotNetty.Buffers
                 return "";
             }
             int endIndex = fromIndex + length;
-            char[] buf = new char[length << 1];
+            var buf = new char[length << 1];
 
             int srcIdx = fromIndex;
             int dstIdx = 0;
@@ -145,29 +144,26 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
-        public static string HexDump(byte[] array)
-        {
-            return HexDump(array, 0, array.Length);
-        }
+        public static string HexDump(byte[] array) => HexDump(array, 0, array.Length);
 
         /// <summary>
-        /// Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-        /// of the specified buffer's sub-region.
+        ///     Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+        ///     of the specified buffer's sub-region.
         /// </summary>
         public static string HexDump(byte[] array, int fromIndex, int length)
         {
             Contract.Requires(length >= 0);
-            
+
             if (length == 0)
             {
                 return "";
             }
 
             int endIndex = fromIndex + length;
-            char[] buf = new char[length << 1];
+            var buf = new char[length << 1];
 
             int srcIdx = fromIndex;
             int dstIdx = 0;
@@ -180,8 +176,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Calculates the hash code of the specified buffer.  This method is
-        /// useful when implementing a new buffer type.
+        ///     Calculates the hash code of the specified buffer.  This method is
+        ///     useful when implementing a new buffer type.
         /// </summary>
         public static int HashCode(IByteBuffer buffer)
         {
@@ -222,12 +218,12 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Returns {@code true} if and only if the two specified buffers are
-        ///  identical to each other for {@code length} bytes starting at {@code aStartIndex}
-        ///  index for the {@code a} buffer and {@code bStartIndex} index for the {@code b} buffer.
-        ///  A more compact way to express this is:
-        ///  <p>
-        ///  {@code a[aStartIndex : aStartIndex + length] == b[bStartIndex : bStartIndex + length]}
+        ///     Returns {@code true} if and only if the two specified buffers are
+        ///     identical to each other for {@code length} bytes starting at {@code aStartIndex}
+        ///     index for the {@code a} buffer and {@code bStartIndex} index for the {@code b} buffer.
+        ///     A more compact way to express this is:
+        ///     <p />
+        ///     {@code a[aStartIndex : aStartIndex + length] == b[bStartIndex : bStartIndex + length]}
         /// </summary>
         public static bool Equals(IByteBuffer a, int aStartIndex, IByteBuffer b, int bStartIndex, int length)
         {
@@ -282,9 +278,9 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Returns {@code true} if and only if the two specified buffers are
-        ///  identical to each other as described in {@link ByteBuf#equals(Object)}.
-        ///  This method is useful when implementing a new buffer type.
+        ///     Returns {@code true} if and only if the two specified buffers are
+        ///     identical to each other as described in {@link ByteBuf#equals(Object)}.
+        ///     This method is useful when implementing a new buffer type.
         /// </summary>
         public static bool Equals(IByteBuffer bufferA, IByteBuffer bufferB)
         {
@@ -297,8 +293,8 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Compares the two specified buffers as described in {@link ByteBuf#compareTo(ByteBuf)}.
-        /// This method is useful when implementing a new buffer type.
+        ///     Compares the two specified buffers as described in {@link ByteBuf#compareTo(ByteBuf)}.
+        ///     This method is useful when implementing a new buffer type.
         /// </summary>
         public static int Compare(IByteBuffer bufferA, IByteBuffer bufferB)
         {
@@ -368,33 +364,26 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        ///  Toggles the endianness of the specified 64-bit long integer.
+        ///     Toggles the endianness of the specified 64-bit long integer.
         /// </summary>
         public static long SwapLong(long value)
-        {
-            return (((long)SwapInt((int)value) & 0xFFFFFFFF) << 32)
-                | ((long)SwapInt((int)(value >> 32)) & 0xFFFFFFFF);
-        }
+            => (((long)SwapInt((int)value) & 0xFFFFFFFF) << 32)
+            | ((long)SwapInt((int)(value >> 32)) & 0xFFFFFFFF);
 
         /// <summary>
-        /// Toggles the endianness of the specified 32-bit integer.
+        ///     Toggles the endianness of the specified 32-bit integer.
         /// </summary>
         public static int SwapInt(int value)
-        {
-            return ((SwapShort((short)value) & 0xFFFF) << 16)
-                | (SwapShort((short)(value >> 16)) & 0xFFFF);
-        }
+            => ((SwapShort((short)value) & 0xFFFF) << 16)
+            | (SwapShort((short)(value >> 16)) & 0xFFFF);
 
         /// <summary>
-        /// Toggles the endianness of the specified 16-bit integer.
+        ///     Toggles the endianness of the specified 16-bit integer.
         /// </summary>
-        public static short SwapShort(short value)
-        {
-            return (short)(((value & 0xFF) << 8) | (value >> 8) & 0xFF);
-        }
+        public static short SwapShort(short value) => (short)(((value & 0xFF) << 8) | (value >> 8) & 0xFF);
 
         /// <summary>
-        /// Read the given amount of bytes into a new {@link ByteBuf} that is allocated from the {@link ByteBufAllocator}.
+        ///     Read the given amount of bytes into a new {@link ByteBuf} that is allocated from the {@link ByteBufAllocator}.
         /// </summary>
         public static IByteBuffer ReadBytes(IByteBufferAllocator alloc, IByteBuffer buffer, int length)
         {
@@ -415,41 +404,52 @@ namespace DotNetty.Buffers
             }
         }
 
-        //todo: port
-        //static int firstIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
-        //{
-        //    fromIndex = Math.max(fromIndex, 0);
-        //    if (fromIndex >= toIndex || buffer.capacity() == 0)
-        //    {
-        //        return -1;
-        //    }
-
-        //    return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
-        //}
-
-        ///todo: port
-        //static int lastIndexOf(ByteBuf buffer, int fromIndex, int toIndex, byte value)
-        //{
-        //    fromIndex = Math.min(fromIndex, buffer.capacity());
-        //    if (fromIndex < 0 || buffer.capacity() == 0)
-        //    {
-        //        return -1;
-        //    }
-
-        //    return buffer.forEachByteDesc(toIndex, fromIndex - toIndex, new ByteProcessor.IndexOfProcessor(value));
-        //}
-
         /// <summary>
-        ///  Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans.
+        /// The default implementation of <see cref="IByteBuffer.IndexOf(int, int, byte)"/>.
+        /// This method is useful when implementing a new buffer type.
         /// </summary>
-        public static string PrettyHexDump(IByteBuffer buffer)
+        public static int IndexOf(IByteBuffer buffer, int fromIndex, int toIndex, byte value)
         {
-            return PrettyHexDump(buffer, buffer.ReaderIndex, buffer.ReadableBytes);
+            if (fromIndex <= toIndex)
+            {
+                return FirstIndexOf(buffer, fromIndex, toIndex, value);
+            }
+            else
+            {
+                return LastIndexOf(buffer, fromIndex, toIndex, value);
+            }
+        }
+
+        static int FirstIndexOf(IByteBuffer buffer, int fromIndex, int toIndex, byte value)
+        {
+            fromIndex = Math.Max(fromIndex, 0);
+            if (fromIndex >= toIndex || buffer.Capacity == 0)
+            {
+                return -1;
+            }
+
+            return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
+        }
+
+        static int LastIndexOf(IByteBuffer buffer, int fromIndex, int toIndex, byte value)
+        {
+            fromIndex = Math.Min(fromIndex, buffer.Capacity);
+            if (fromIndex < 0 || buffer.Capacity == 0)
+            {
+                return -1;
+            }
+
+            return buffer.ForEachByteDesc(toIndex, fromIndex - toIndex, new ByteProcessor.IndexOfProcessor(value));
         }
 
         /// <summary>
-        /// Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans,
-        /// starting at the given {@code offset} using the given {@code length}.
+        ///     Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans.
+        /// </summary>
+        public static string PrettyHexDump(IByteBuffer buffer) => PrettyHexDump(buffer, buffer.ReaderIndex, buffer.ReadableBytes);
+
+        /// <summary>
+        ///     Returns a multi-line hexadecimal dump of the specified {@link ByteBuf} that is easy to read by humans,
+        ///     starting at the given {@code offset} using the given {@code length}.
         /// </summary>
         public static string PrettyHexDump(IByteBuffer buffer, int offset, int length)
         {
@@ -467,26 +467,22 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
-        /// {@link StringBuilder} that is easy to read by humans.
+        ///     Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
+        ///     {@link StringBuilder} that is easy to read by humans.
         /// </summary>
-        public static void AppendPrettyHexDump(StringBuilder dump, IByteBuffer buf)
-        {
-            AppendPrettyHexDump(dump, buf, buf.ReaderIndex, buf.ReadableBytes);
-        }
+        public static void AppendPrettyHexDump(StringBuilder dump, IByteBuffer buf) => AppendPrettyHexDump(dump, buf, buf.ReaderIndex, buf.ReadableBytes);
 
         /// <summary>
-        /// Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
-        /// {@link StringBuilder} that is easy to read by humans, starting at the given {@code offset} using
-        /// the given {@code length}.
+        ///     Appends the prettified multi-line hexadecimal dump of the specified {@link ByteBuf} to the specified
+        ///     {@link StringBuilder} that is easy to read by humans, starting at the given {@code offset} using
+        ///     the given {@code length}.
         /// </summary>
         public static void AppendPrettyHexDump(StringBuilder dump, IByteBuffer buf, int offset, int length)
         {
             if (offset < 0 || length > buf.Capacity - offset)
             {
                 throw new IndexOutOfRangeException(
-                    "expected: " + "0 <= offset(" + offset + ") <= offset + length(" + length
-                        + ") <= " + "buf.capacity(" + buf.Capacity + ')');
+                    $"expected: 0 <= offset({offset}) <= offset + length({length}) <= buf.capacity({buf.Capacity}{')'}");
             }
             if (length == 0)
             {
@@ -553,7 +549,7 @@ namespace DotNetty.Buffers
         }
 
         /// <summary>
-        /// Appends the prefix of each hex dump row.  Uses the look-up table for the buffer <= 64 KiB.
+        ///     Appends the prefix of each hex dump row.  Uses the look-up table for the buffer &lt;= 64 KiB.
         /// </summary>
         static void AppendHexDumpRowPrefix(StringBuilder dump, int row, int rowStartIndex)
         {
@@ -567,6 +563,52 @@ namespace DotNetty.Buffers
                 dump.Append((rowStartIndex & 0xFFFFFFFFL | 0x100000000L).ToString("X2"));
                 dump.Insert(dump.Length - 9, '|');
                 dump.Append('|');
+            }
+        }
+
+        /// <summary>
+        ///     Encode the given <see cref="string" /> using the given <see cref="Encoding" /> into a new
+        ///     <see cref="IByteBuffer" /> which
+        ///     is allocated via the <see cref="IByteBufferAllocator" />.
+        /// </summary>
+        /// <param name="alloc">The <see cref="IByteBufferAllocator" /> to allocate {@link IByteBuffer}.</param>
+        /// <param name="src">src The <see cref="string" /> to encode.</param>
+        /// <param name="encoding">charset The specified <see cref="Encoding" /></param>
+        public static IByteBuffer EncodeString(IByteBufferAllocator alloc, string src, Encoding encoding) => EncodeString0(alloc, src, encoding, 0);
+
+        /// <summary>
+        ///     Encode the given <see cref="string" /> using the given <see cref="Encoding" /> into a new
+        ///     <see cref="IByteBuffer" /> which
+        ///     is allocated via the <see cref="IByteBufferAllocator" />.
+        /// </summary>
+        /// <param name="alloc">The <see cref="IByteBufferAllocator" /> to allocate {@link IByteBuffer}.</param>
+        /// <param name="src">src The <see cref="string" /> to encode.</param>
+        /// <param name="encoding">charset The specified <see cref="Encoding" /></param>
+        /// <param name="extraCapacity">the extra capacity to alloc except the space for decoding.</param>
+        public static IByteBuffer EncodeString(IByteBufferAllocator alloc, string src, Encoding encoding, int extraCapacity) => EncodeString0(alloc, src, encoding, extraCapacity);
+
+        static IByteBuffer EncodeString0(IByteBufferAllocator alloc, string src, Encoding encoding, int extraCapacity)
+        {
+            int length = encoding.GetMaxByteCount(src.Length) + extraCapacity;
+            bool release = true;
+
+            IByteBuffer dst = alloc.Buffer(length);
+            Contract.Assert(dst.HasArray, "Operation expects allocator to operate array-based buffers.");
+
+            try
+            {
+                int written = encoding.GetBytes(src, 0, src.Length, dst.Array, dst.ArrayOffset + dst.WriterIndex);
+                dst.SetWriterIndex(dst.WriterIndex + written);
+                release = false;
+
+                return dst;
+            }
+            finally
+            {
+                if (release)
+                {
+                    dst.Release();
+                }
             }
         }
 
@@ -584,10 +626,11 @@ namespace DotNetty.Buffers
             else
             {
                 IByteBuffer buffer = src.Allocator.Buffer(len);
+                Contract.Assert(buffer.HasArray, "Operation expects allocator to operate array-based buffers.");
                 try
                 {
                     buffer.WriteBytes(src, readerIndex, len);
-                    return encoding.GetString(buffer.Array, 0, len);
+                    return encoding.GetString(buffer.Array, buffer.ArrayOffset, len);
                 }
                 finally
                 {

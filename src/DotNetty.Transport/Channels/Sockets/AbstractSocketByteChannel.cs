@@ -5,15 +5,17 @@ namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
     using System.Net.Sockets;
+    using System.Threading;
     using DotNetty.Buffers;
+    using DotNetty.Common.Utilities;
 
     /// <summary>
-    /// {@link AbstractNioChannel} base class for {@link Channel}s that operate on bytes.
+    ///     {@link AbstractNioChannel} base class for {@link Channel}s that operate on bytes.
     /// </summary>
     public abstract class AbstractSocketByteChannel : AbstractSocketChannel
     {
         static readonly string ExpectedTypes =
-            string.Format(" (expected: {0})", typeof(IByteBuffer).Name); //+ ", " +
+            $" (expected: {StringUtil.SimpleClassName<IByteBuffer>()})"; //+ ", " +
 
         // todo: FileRegion support        
         //typeof(FileRegion).Name + ')';
@@ -21,21 +23,15 @@ namespace DotNetty.Transport.Channels.Sockets
         static readonly Action<object> FlushAction = _ => ((AbstractSocketByteChannel)_).Flush();
         static readonly Action<object, object> ReadCompletedSyncCallback = OnReadCompletedSync;
 
-        /// <summary>
-        /// Create a new instance
-        ///
-        /// @param parent            the parent {@link Channel} by which this instance was created. May be {@code null}
-        /// @param ch                the underlying {@link SelectableChannel} on which it operates
-        /// </summary>
+        /// <summary>Create a new instance</summary>
+        /// <param name="parent">the parent <see cref="IChannel"/> by which this instance was created. May be <c>null</c></param>
+        /// <param name="socket">the underlying <see cref="Socket"/> on which it operates</param>
         protected AbstractSocketByteChannel(IChannel parent, Socket socket)
             : base(parent, socket)
         {
         }
 
-        protected override IChannelUnsafe NewUnsafe()
-        {
-            return new SocketByteChannelUnsafe(this);
-        }
+        protected override IChannelUnsafe NewUnsafe() => new SocketByteChannelUnsafe(this);
 
         protected class SocketByteChannelUnsafe : AbstractSocketUnsafe
         {
@@ -44,10 +40,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            new AbstractSocketByteChannel Channel
-            {
-                get { return (AbstractSocketByteChannel)this.channel; }
-            }
+            new AbstractSocketByteChannel Channel => (AbstractSocketByteChannel)this.channel;
 
             void CloseOnRead()
             {
@@ -64,7 +57,8 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
             }
 
-            void HandleReadException(IChannelPipeline pipeline, IByteBuffer byteBuf, Exception cause, bool close)
+            void HandleReadException(IChannelPipeline pipeline, IByteBuffer byteBuf, Exception cause, bool close,
+                IRecvByteBufAllocatorHandle allocHandle)
             {
                 if (byteBuf != null)
                 {
@@ -78,6 +72,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         byteBuf.Release();
                     }
                 }
+                allocHandle.ReadComplete();
                 pipeline.FireChannelReadComplete();
                 pipeline.FireExceptionCaught(cause);
                 if (close || cause is SocketException)
@@ -89,86 +84,55 @@ namespace DotNetty.Transport.Channels.Sockets
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
                 AbstractSocketByteChannel ch = this.Channel;
-                ch.ResetState(StateFlags.ReadScheduled);
-                IChannelConfiguration config = ch.Configuration;
-                if (!config.AutoRead && !ch.ReadPending)
+                if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
                 {
-                    // ChannelConfig.setAutoRead(false) was called in the meantime
-                    //removeReadOp(); -- noop with IOCP, just don't schedule receive again
-                    return;
+                    return; // read was signaled as a result of channel closure
                 }
-
+                IChannelConfiguration config = ch.Configuration;
                 IChannelPipeline pipeline = ch.Pipeline;
                 IByteBufferAllocator allocator = config.Allocator;
-                int maxMessagesPerRead = config.MaxMessagesPerRead;
                 IRecvByteBufAllocatorHandle allocHandle = this.RecvBufAllocHandle;
+                allocHandle.Reset(config);
 
                 IByteBuffer byteBuf = null;
-                int messages = 0;
                 bool close = false;
                 try
                 {
                     operation.Validate();
 
-                    int totalReadAmount = 0;
-                    bool readPendingReset = false;
                     do
                     {
                         byteBuf = allocHandle.Allocate(allocator);
-                        int writable = byteBuf.WritableBytes;
-                        int localReadAmount = ch.DoReadBytes(byteBuf);
-                        if (localReadAmount <= 0)
+                        //int writable = byteBuf.WritableBytes;
+                        allocHandle.LastBytesRead = ch.DoReadBytes(byteBuf);
+                        if (allocHandle.LastBytesRead <= 0)
                         {
-                            // not was read release the buffer
+                            // nothing was read -> release the buffer.
                             byteBuf.Release();
                             byteBuf = null;
-                            close = localReadAmount < 0;
+                            close = allocHandle.LastBytesRead < 0;
                             break;
                         }
-                        if (!readPendingReset)
-                        {
-                            readPendingReset = true;
-                            ch.ReadPending = false;
-                        }
+
+                        allocHandle.IncMessagesRead(1);
+                        this.Channel.ReadPending = false;
+
                         pipeline.FireChannelRead(byteBuf);
                         byteBuf = null;
-
-                        if (totalReadAmount >= int.MaxValue - localReadAmount)
-                        {
-                            // Avoid overflow.
-                            totalReadAmount = int.MaxValue;
-                            break;
-                        }
-
-                        totalReadAmount += localReadAmount;
-
-                        // stop reading
-                        if (!config.AutoRead)
-                        {
-                            break;
-                        }
-
-                        if (localReadAmount < writable)
-                        {
-                            // Read less than what the buffer can hold,
-                            // which might mean we drained the recv buffer completely.
-                            break;
-                        }
                     }
-                    while (++messages < maxMessagesPerRead);
+                    while (allocHandle.ContinueReading());
 
+                    allocHandle.ReadComplete();
                     pipeline.FireChannelReadComplete();
-                    allocHandle.Record(totalReadAmount);
 
                     if (close)
                     {
                         this.CloseOnRead();
-                        close = false;
                     }
                 }
                 catch (Exception t)
                 {
-                    this.HandleReadException(pipeline, byteBuf, t, close);
+                    this.HandleReadException(pipeline, byteBuf, t, close, allocHandle);
                 }
                 finally
                 {
@@ -178,7 +142,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     // /// The user called Channel.read() or ChannelHandlerContext.read() input channelReadComplete(...) method
                     //
                     // See https://github.com/netty/netty/issues/2254
-                    if (!close && (config.AutoRead || ch.ReadPending))
+                    if (!close && (ch.ReadPending || config.AutoRead))
                     {
                         ch.DoBeginRead();
                     }
@@ -189,7 +153,22 @@ namespace DotNetty.Transport.Channels.Sockets
         protected override void ScheduleSocketRead()
         {
             SocketChannelAsyncOperation operation = this.ReadOperation;
-            bool pending = this.Socket.ReceiveAsync(operation);
+            bool pending;
+#if NETSTANDARD1_3
+            pending = this.Socket.ReceiveAsync(operation);
+#else
+            if (ExecutionContext.IsFlowSuppressed())
+            {
+                pending = this.Socket.ReceiveAsync(operation);
+            }
+            else
+            {
+                using (ExecutionContext.SuppressFlow())
+                {
+                    pending = this.Socket.ReceiveAsync(operation);
+                }
+            }
+#endif
             if (!pending)
             {
                 // todo: potential allocation / non-static field?
@@ -197,10 +176,7 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        static void OnReadCompletedSync(object u, object e)
-        {
-            ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)e);
-        }
+        static void OnReadCompletedSync(object u, object e) => ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)e);
 
         protected override void DoWrite(ChannelOutboundBuffer input)
         {
@@ -257,7 +233,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     else
                     {
-                        this.IncompleteWrite(scheduleAsync, buf);
+                        this.IncompleteWrite(scheduleAsync, this.PrepareWriteOperation(buf.GetIoBuffer()));
                         break;
                     }
                 } /*else if (msg is FileRegion) { todo: FileRegion support
@@ -325,15 +301,30 @@ namespace DotNetty.Transport.Channels.Sockets
                 "unsupported message type: " + msg.GetType().Name + ExpectedTypes);
         }
 
-        protected void IncompleteWrite(bool scheduleAsync, IByteBuffer buffer)
+        protected void IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
         {
             // Did not write completely.
             if (scheduleAsync)
             {
-                SocketChannelAsyncOperation operation = this.PrepareWriteOperation(buffer);
-
                 this.SetState(StateFlags.WriteScheduled);
-                bool pending = this.Socket.SendAsync(operation);
+                bool pending;
+
+#if NETSTANDARD1_3
+                pending = this.Socket.SendAsync(operation);
+#else
+                if (ExecutionContext.IsFlowSuppressed())
+                {
+                    pending = this.Socket.SendAsync(operation);
+                }
+                else
+                {
+                    using (ExecutionContext.SuppressFlow())
+                    {
+                        pending = this.Socket.SendAsync(operation);
+                    }
+                }
+#endif
+
                 if (!pending)
                 {
                     ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
@@ -356,15 +347,13 @@ namespace DotNetty.Transport.Channels.Sockets
         //protected abstract long doWriteFileRegion(FileRegion region);
 
         /// <summary>
-        /// Read bytes into the given {@link ByteBuf} and return the amount.
+        ///     Read bytes into the given {@link ByteBuf} and return the amount.
         /// </summary>
         protected abstract int DoReadBytes(IByteBuffer buf);
 
-        /// <summary>
-        /// Write bytes form the given {@link ByteBuf} to the underlying {@link java.nio.channels.Channel}.
-        /// @param buf           the {@link ByteBuf} from which the bytes should be written
-        /// @return amount       the amount of written bytes
-        /// </summary>
+        /// <summary>Write bytes form the given <see cref="IByteBuffer"/> to the underlying <see cref="IChannel"/>.</summary>
+        /// <param name="buf">the <see cref="IByteBuffer"/> from which the bytes should be written</param>
+        /// <returns>the amount of written bytes</returns>
         protected abstract int DoWriteBytes(IByteBuffer buf);
     }
 }

@@ -7,10 +7,7 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
     public sealed class ConnectPacket : Packet
     {
-        public override PacketType PacketType
-        {
-            get { return PacketType.CONNECT; }
-        }
+        public override PacketType PacketType => PacketType.CONNECT;
 
         public string ProtocolName { get; set; }
 

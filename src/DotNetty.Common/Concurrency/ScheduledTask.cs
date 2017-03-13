@@ -8,9 +8,8 @@ namespace DotNetty.Common.Concurrency
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
-    using DotNetty.Common.Utilities;
 
-    abstract class ScheduledTask : MpscLinkedQueueNode<IRunnable>, IScheduledRunnable
+    abstract class ScheduledTask : IScheduledRunnable
     {
         const int CancellationProhibited = 1;
         const int CancellationRequested = 1 << 1;
@@ -26,7 +25,7 @@ namespace DotNetty.Common.Concurrency
             this.Deadline = deadline;
         }
 
-        public PreciseTimeSpan Deadline { get; private set; }
+        public PreciseTimeSpan Deadline { get; }
 
         public bool Cancel()
         {
@@ -34,7 +33,7 @@ namespace DotNetty.Common.Concurrency
             {
                 return false;
             }
-            
+
             bool canceled = this.Promise.TrySetCanceled();
             if (canceled)
             {
@@ -43,26 +42,15 @@ namespace DotNetty.Common.Concurrency
             return canceled;
         }
 
-        public Task Completion
-        {
-            get { return this.Promise.Task; }
-        }
+        public Task Completion => this.Promise.Task;
 
-        public TaskAwaiter GetAwaiter()
-        {
-            return this.Completion.GetAwaiter();
-        }
+        public TaskAwaiter GetAwaiter() => this.Completion.GetAwaiter();
 
         int IComparable<IScheduledRunnable>.CompareTo(IScheduledRunnable other)
         {
             Contract.Requires(other != null);
 
             return this.Deadline.CompareTo(other.Deadline);
-        }
-
-        public override IRunnable Value
-        {
-            get { return this; }
         }
 
         public virtual void Run()
@@ -84,10 +72,7 @@ namespace DotNetty.Common.Concurrency
 
         protected abstract void Execute();
 
-        bool TrySetUncancelable()
-        {
-            return this.AtomicCancellationStateUpdate(CancellationProhibited, CancellationRequested);
-        }
+        bool TrySetUncancelable() => this.AtomicCancellationStateUpdate(CancellationProhibited, CancellationRequested);
 
         bool AtomicCancellationStateUpdate(int newBits, int illegalBits)
         {

@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -11,42 +12,38 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Concurrency;
 
     /// <summary>
-    ///  {@link io.netty.channel.socket.SocketChannel} which uses NIO selector based implementation.
+    ///     <see cref="ISocketChannel" /> which uses Socket-based implementation.
     /// </summary>
     public class TcpSocketChannel : AbstractSocketByteChannel, ISocketChannel
     {
+        static readonly ChannelMetadata METADATA = new ChannelMetadata(false, 16);
+
         readonly ISocketChannelConfiguration config;
 
-        /// <summary>
-        ///  Create a new instance
-        /// </summary>
+        /// <summary>Create a new instance</summary>
         public TcpSocketChannel()
             : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
         }
 
-        /// <summary>
-        ///  Create a new instance
-        /// </summary>
+        /// <summary>Create a new instance</summary>
         public TcpSocketChannel(AddressFamily addressFamily)
             : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
         {
         }
 
-        /// <summary>
-        ///  Create a new instance using the given {@link SocketChannel}.
-        /// </summary>
+        /// <summary>Create a new instance using the given <see cref="ISocketChannel" />.</summary>
         public TcpSocketChannel(Socket socket)
             : this(null, socket)
         {
         }
 
-        /// <summary>
-        ///  Create a new instance
-        /// 
-        ///  @param parent    the {@link Channel} which created this instance or {@code null} if it was created by the user
-        ///  @param socket    the {@link SocketChannel} which will be used
-        /// </summary>
+        /// <summary>Create a new instance</summary>
+        /// <param name="parent">
+        ///     the <see cref="IChannel" /> which created this instance or <c>null</c> if it was created by the
+        ///     user
+        /// </param>
+        /// <param name="socket">the <see cref="ISocketChannel" /> which will be used</param>
         public TcpSocketChannel(IChannel parent, Socket socket)
             : this(parent, socket, false)
         {
@@ -62,30 +59,13 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        //public new IServerSocketChannel Parent
-        //{
-        //    get { return (IServerSocketChannel)base.Parent; }
-        //}
+        public override ChannelMetadata Metadata => METADATA;
 
-        public override bool DisconnectSupported
-        {
-            get { return false; }
-        }
+        public override IChannelConfiguration Configuration => this.config;
 
-        public override IChannelConfiguration Configuration
-        {
-            get { return this.config; }
-        }
+        protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
 
-        protected override EndPoint LocalAddressInternal
-        {
-            get { return this.Socket.LocalEndPoint; }
-        }
-
-        protected override EndPoint RemoteAddressInternal
-        {
-            get { return this.Socket.RemoteEndPoint; }
-        }
+        protected override EndPoint RemoteAddressInternal => this.Socket.RemoteEndPoint;
 
         public bool IsOutputShutdown
         {
@@ -131,10 +111,7 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        protected override void DoBind(EndPoint localAddress)
-        {
-            this.Socket.Bind(localAddress);
-        }
+        protected override void DoBind(EndPoint localAddress) => this.Socket.Bind(localAddress);
 
         protected override bool DoConnect(EndPoint remoteAddress, EndPoint localAddress)
         {
@@ -183,18 +160,21 @@ namespace DotNetty.Transport.Channels.Sockets
             this.CacheRemoteAddress();
         }
 
-        protected override void DoDisconnect()
-        {
-            this.DoClose();
-        }
+        protected override void DoDisconnect() => this.DoClose();
 
         protected override void DoClose()
         {
-            base.DoClose();
-            if (this.ResetState(StateFlags.Open | StateFlags.Active))
+            try
             {
-                this.Socket.Shutdown(SocketShutdown.Both);
-                this.Socket.Close(0);
+                if (this.TryResetState(StateFlags.Open | StateFlags.Active))
+                {
+                    this.Socket.Shutdown(SocketShutdown.Both);
+                    this.Socket.Dispose();
+                }
+            }
+            finally
+            {
+                base.DoClose();
             }
         }
 
@@ -203,6 +183,11 @@ namespace DotNetty.Transport.Channels.Sockets
             if (!byteBuf.HasArray)
             {
                 throw new NotImplementedException("Only IByteBuffer implementations backed by array are supported.");
+            }
+
+            if (!this.Socket.Connected)
+            {
+                return -1; // prevents ObjectDisposedException from being thrown in case connection has been lost in the meantime
             }
 
             SocketError errorCode;
@@ -252,7 +237,6 @@ namespace DotNetty.Transport.Channels.Sockets
             }
 
             return sent;
-            //return buf.readBytes(javaChannel(), expectedWrittenBytes);
         }
 
         //protected long doWriteFileRegion(FileRegion region)
@@ -261,91 +245,104 @@ namespace DotNetty.Transport.Channels.Sockets
         //    return region.transferTo(javaChannel(), position);
         //}
 
-        //protected void doWrite(ChannelOutboundBuffer input)
-        //{
-        //    for (;;)
-        //    {
-        //        int size = input.size();
-        //        if (size == 0)
-        //        {
-        //            // All written so clear OP_WRITE
-        //            this.clearOpWrite();
-        //            break;
-        //        }
-        //        long writtenBytes = 0;
-        //        bool done = false;
-        //        bool setOpWrite = false;
-
-        //        // Ensure the pending writes are made of ByteBufs only.
-        //        IByteBuffer[] nioBuffers = input.nioBuffers();
-        //        int nioBufferCnt = input.nioBufferCount();
-        //        long expectedWrittenBytes = input.nioBufferSize();
-        //        SocketChannel ch = javaChannel();
-
-        //        // Always us nioBuffers() to workaround data-corruption.
-        //        // See https://github.com/netty/netty/issues/2761
-        //        switch (nioBufferCnt)
-        //        {
-        //            case 0:
-        //                // We have something else beside ByteBuffers to write so fallback to normal writes.
-        //                base.doWrite(input);
-        //                return;
-        //            case 1:
-        //                // Only one ByteBuf so use non-gathering write
-        //                ByteBuffer nioBuffer = nioBuffers[0];
-        //                for (int i = config().getWriteSpinCount() - 1; i >= 0; i --)
-        //                {
-        //                    int localWrittenBytes = ch.write(nioBuffer);
-        //                    if (localWrittenBytes == 0)
-        //                    {
-        //                        setOpWrite = true;
-        //                        break;
-        //                    }
-        //                    expectedWrittenBytes -= localWrittenBytes;
-        //                    writtenBytes += localWrittenBytes;
-        //                    if (expectedWrittenBytes == 0)
-        //                    {
-        //                        done = true;
-        //                        break;
-        //                    }
-        //                }
-        //                break;
-        //            default:
-        //                for (int i = config().getWriteSpinCount() - 1; i >= 0; i --)
-        //                {
-        //                    long localWrittenBytes = ch.write(nioBuffers, 0, nioBufferCnt);
-        //                    if (localWrittenBytes == 0)
-        //                    {
-        //                        setOpWrite = true;
-        //                        break;
-        //                    }
-        //                    expectedWrittenBytes -= localWrittenBytes;
-        //                    writtenBytes += localWrittenBytes;
-        //                    if (expectedWrittenBytes == 0)
-        //                    {
-        //                        done = true;
-        //                        break;
-        //                    }
-        //                }
-        //                break;
-        //        }
-
-        //        // Release the fully written buffers, and update the indexes of the partially written buffer.
-        //        input.removeBytes(writtenBytes);
-
-        //        if (!done)
-        //        {
-        //            // Did not write all buffers completely.
-        //            incompleteWrite(setOpWrite);
-        //            break;
-        //        }
-        //    }
-        //}
-
-        protected override IChannelUnsafe NewUnsafe()
+        protected override void DoWrite(ChannelOutboundBuffer input)
         {
-            return new TcpSocketChannelUnsafe(this);
+            while (true)
+            {
+                int size = input.Count;
+                if (size == 0)
+                {
+                    // All written
+                    break;
+                }
+                long writtenBytes = 0;
+                bool done = false;
+                bool setOpWrite = false;
+
+                // Ensure the pending writes are made of ByteBufs only.
+                List<ArraySegment<byte>> nioBuffers = input.GetNioBuffers();
+                int nioBufferCnt = nioBuffers.Count;
+                long expectedWrittenBytes = input.NioBufferSize;
+                Socket socket = this.Socket;
+
+                // Always us nioBuffers() to workaround data-corruption.
+                // See https://github.com/netty/netty/issues/2761
+                switch (nioBufferCnt)
+                {
+                    case 0:
+                        // We have something else beside ByteBuffers to write so fallback to normal writes.
+                        base.DoWrite(input);
+                        return;
+                    case 1:
+                        // Only one ByteBuf so use non-gathering write
+                        ArraySegment<byte> nioBuffer = nioBuffers[0];
+                        for (int i = this.Configuration.WriteSpinCount - 1; i >= 0; i--)
+                        {
+                            SocketError errorCode;
+                            int localWrittenBytes = socket.Send(nioBuffer.Array, nioBuffer.Offset, nioBuffer.Count, SocketFlags.None, out errorCode);
+                            if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
+                            {
+                                throw new SocketException((int)errorCode);
+                            }
+
+                            if (localWrittenBytes == 0)
+                            {
+                                setOpWrite = true;
+                                break;
+                            }
+                            expectedWrittenBytes -= localWrittenBytes;
+                            writtenBytes += localWrittenBytes;
+                            if (expectedWrittenBytes == 0)
+                            {
+                                done = true;
+                                break;
+                            }
+                        }
+                        break;
+                    default:
+                        for (int i = this.Configuration.WriteSpinCount - 1; i >= 0; i--)
+                        {
+                            SocketError errorCode;
+                            long localWrittenBytes = socket.Send(nioBuffers, SocketFlags.None, out errorCode);
+                            if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
+                            {
+                                throw new SocketException((int)errorCode);
+                            }
+
+                            if (localWrittenBytes == 0)
+                            {
+                                setOpWrite = true;
+                                break;
+                            }
+                            expectedWrittenBytes -= localWrittenBytes;
+                            writtenBytes += localWrittenBytes;
+                            if (expectedWrittenBytes == 0)
+                            {
+                                done = true;
+                                break;
+                            }
+                        }
+                        break;
+                }
+
+                if (!done)
+                {
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(nioBuffers);
+
+                    // Release the fully written buffers, and update the indexes of the partially written buffer.
+                    input.RemoveBytes(writtenBytes);
+
+                    // Did not write all buffers completely.
+                    this.IncompleteWrite(setOpWrite, asyncOperation);
+                    break;
+                }
+
+                // Release the fully written buffers, and update the indexes of the partially written buffer.
+                input.RemoveBytes(writtenBytes);
+            }
         }
+
+        protected override IChannelUnsafe NewUnsafe() => new TcpSocketChannelUnsafe(this);
 
         sealed class TcpSocketChannelUnsafe : SocketByteChannelUnsafe
         {
@@ -372,10 +369,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            protected override void AutoReadCleared()
-            {
-                ((TcpSocketChannel)this.Channel).ReadPending = false;
-            }
+            protected override void AutoReadCleared() => ((TcpSocketChannel)this.Channel).ClearReadPending();
         }
     }
 }

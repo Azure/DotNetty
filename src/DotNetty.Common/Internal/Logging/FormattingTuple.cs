@@ -9,7 +9,7 @@ namespace DotNetty.Common.Internal.Logging
     /// <summary>
     ///     Holds the results of formatting done by {@link MessageFormatter}.
     /// </summary>
-    class FormattingTuple
+    public struct FormattingTuple
     {
         static readonly FormattingTuple NULL = new FormattingTuple(null);
 

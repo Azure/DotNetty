@@ -4,18 +4,15 @@
 namespace DotNetty.Buffers
 {
     /// <summary>
-    /// Unpooled implementation of <see cref="IByteBufferAllocator"/>.
+    ///     Unpooled implementation of <see cref="IByteBufferAllocator" />.
     /// </summary>
     public class UnpooledByteBufferAllocator : AbstractByteBufferAllocator
     {
         /// <summary>
-        /// Default instance
+        ///     Default instance
         /// </summary>
         public static readonly UnpooledByteBufferAllocator Default = new UnpooledByteBufferAllocator();
 
-        protected override IByteBuffer NewBuffer(int initialCapacity, int maxCapacity)
-        {
-            return new UnpooledHeapByteBuffer(this, initialCapacity, maxCapacity);
-        }
+        protected override IByteBuffer NewBuffer(int initialCapacity, int maxCapacity) => new UnpooledHeapByteBuffer(this, initialCapacity, maxCapacity);
     }
 }

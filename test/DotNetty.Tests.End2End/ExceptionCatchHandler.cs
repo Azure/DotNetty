@@ -17,9 +17,6 @@ namespace DotNetty.Tests.End2End
             this.exceptionCaughtAction = exceptionCaughtAction;
         }
 
-        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
-        {
-            this.exceptionCaughtAction(exception);
-        }
+        public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => this.exceptionCaughtAction(exception);
     }
 }

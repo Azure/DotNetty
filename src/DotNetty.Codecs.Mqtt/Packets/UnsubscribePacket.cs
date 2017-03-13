@@ -17,15 +17,9 @@ namespace DotNetty.Codecs.Mqtt.Packets
             this.TopicFilters = topicFilters;
         }
 
-        public override PacketType PacketType
-        {
-            get { return PacketType.UNSUBSCRIBE; }
-        }
+        public override PacketType PacketType => PacketType.UNSUBSCRIBE;
 
-        public override QualityOfService QualityOfService
-        {
-            get { return QualityOfService.AtLeastOnce; }
-        }
+        public override QualityOfService QualityOfService => QualityOfService.AtLeastOnce;
 
         public IEnumerable<string> TopicFilters { get; set; }
     }

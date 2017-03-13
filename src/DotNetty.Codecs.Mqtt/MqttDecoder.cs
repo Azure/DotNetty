@@ -84,7 +84,7 @@ namespace DotNetty.Codecs.Mqtt
 
             if (remainingLength > 0)
             {
-                throw new DecoderException(string.Format("Declared remaining length is bigger than packet data size by {0}.", remainingLength));
+                throw new DecoderException($"Declared remaining length is bigger than packet data size by {remainingLength}.");
             }
 
             return true;
@@ -97,7 +97,7 @@ namespace DotNetty.Codecs.Mqtt
                 var qualityOfService = (QualityOfService)((packetSignature >> 1) & 0x3); // take bits #1 and #2 ONLY and convert them into QoS value
                 if (qualityOfService == QualityOfService.Reserved)
                 {
-                    throw new DecoderException(string.Format("Unexpected QoS value of {0} for {1} packet.", (int)qualityOfService, PacketType.PUBLISH));
+                    throw new DecoderException($"Unexpected QoS value of {(int)qualityOfService} for {PacketType.PUBLISH} packet.");
                 }
 
                 bool duplicate = (packetSignature & 0x8) == 0x8; // test bit#3
@@ -168,7 +168,7 @@ namespace DotNetty.Codecs.Mqtt
                     this.ValidateClientPacketExpected(packetSignature);
                     return PingRespPacket.Instance;
                 default:
-                    throw new DecoderException(string.Format("First packet byte value of `{0}` is invalid.", packetSignature));
+                    throw new DecoderException($"First packet byte value of `{packetSignature}` is invalid.");
             }
         }
 
@@ -176,7 +176,7 @@ namespace DotNetty.Codecs.Mqtt
         {
             if (!this.isServer)
             {
-                throw new DecoderException(string.Format("Packet type determined through first packet byte `{0}` is not supported by MQTT client.", signature));
+                throw new DecoderException($"Packet type determined through first packet byte `{signature}` is not supported by MQTT client.");
             }
         }
 
@@ -184,7 +184,7 @@ namespace DotNetty.Codecs.Mqtt
         {
             if (this.isServer)
             {
-                throw new DecoderException(string.Format("Packet type determined through first packet byte `{0}` is not supported by MQTT server.", signature));
+                throw new DecoderException($"Packet type determined through first packet byte `{signature}` is not supported by MQTT server.");
             }
         }
 
@@ -230,7 +230,7 @@ namespace DotNetty.Codecs.Mqtt
             string protocolName = DecodeString(buffer, ref remainingLength);
             if (!Util.ProtocolName.Equals(protocolName, StringComparison.Ordinal))
             {
-                throw new DecoderException(string.Format("Unexpected protocol name. Expected: {0}. Actual: {1}", Util.ProtocolName, protocolName));
+                throw new DecoderException($"Unexpected protocol name. Expected: {Util.ProtocolName}. Actual: {protocolName}");
             }
             packet.ProtocolName = Util.ProtocolName;
 
@@ -242,7 +242,7 @@ namespace DotNetty.Codecs.Mqtt
                 var connAckPacket = new ConnAckPacket();
                 connAckPacket.ReturnCode = ConnectReturnCode.RefusedUnacceptableProtocolVersion;
                 context.WriteAndFlushAsync(connAckPacket);
-                throw new DecoderException(string.Format("Unexpected protocol level. Expected: {0}. Actual: {1}", Util.ProtocolLevel, packet.ProtocolLevel));
+                throw new DecoderException($"Unexpected protocol level. Expected: {Util.ProtocolLevel}. Actual: {packet.ProtocolLevel}");
             }
 
             DecreaseRemainingLength(ref remainingLength, 1);
@@ -258,7 +258,7 @@ namespace DotNetty.Codecs.Mqtt
                 packet.WillQualityOfService = (QualityOfService)((connectFlags & 0x18) >> 3);
                 if (packet.WillQualityOfService == QualityOfService.Reserved)
                 {
-                    throw new DecoderException(string.Format("[MQTT-3.1.2-14] Unexpected Will QoS value of {0}.", (int)packet.WillQualityOfService));
+                    throw new DecoderException($"[MQTT-3.1.2-14] Unexpected Will QoS value of {(int)packet.WillQualityOfService}.");
                 }
                 packet.WillTopicName = string.Empty;
             }
@@ -337,7 +337,11 @@ namespace DotNetty.Codecs.Mqtt
 
         static void DecodePacketIdVariableHeader(IByteBuffer buffer, PacketWithId packet, ref int remainingLength)
         {
-            packet.PacketId = DecodeUnsignedShort(buffer, ref remainingLength);
+            int packetId = packet.PacketId = DecodeUnsignedShort(buffer, ref remainingLength);
+            if (packetId == 0)
+            {
+                throw new DecoderException("[MQTT-2.3.1-1]");
+            }
         }
 
         static void DecodeSubscribePayload(IByteBuffer buffer, SubscribePacket packet, ref int remainingLength)
@@ -352,7 +356,7 @@ namespace DotNetty.Codecs.Mqtt
                 int qos = buffer.ReadByte();
                 if (qos >= (int)QualityOfService.Reserved)
                 {
-                    throw new DecoderException(string.Format("[MQTT-3.8.3-4]. Invalid QoS value: {0}.", qos));
+                    throw new DecoderException($"[MQTT-3.8.3-4]. Invalid QoS value: {qos}.");
                 }
 
                 subscribeTopics.Add(new SubscriptionRequest(topicFilter, (QualityOfService)qos));
@@ -382,13 +386,13 @@ namespace DotNetty.Codecs.Mqtt
                     case '+':
                         if ((i > 0 && topicFilter[i - 1] != '/') || (i < length - 1 && topicFilter[i + 1] != '/'))
                         {
-                            throw new DecoderException(string.Format("[MQTT-4.7.1-3]. Invalid topic filter: {0}", topicFilter));
+                            throw new DecoderException($"[MQTT-4.7.1-3]. Invalid topic filter: {topicFilter}");
                         }
                         break;
                     case '#':
                         if (i < length - 1 || (i > 0 && topicFilter[i - 1] != '/'))
                         {
-                            throw new DecoderException(string.Format("[MQTT-4.7.1-2]. Invalid topic filter: {0}", topicFilter));
+                            throw new DecoderException($"[MQTT-4.7.1-2]. Invalid topic filter: {topicFilter}");
                         }
                         break;
                 }
@@ -403,7 +407,7 @@ namespace DotNetty.Codecs.Mqtt
                 var returnCode = (QualityOfService)buffer.ReadByte();
                 if (returnCode > QualityOfService.ExactlyOnce && returnCode != QualityOfService.Failure)
                 {
-                    throw new DecoderException(string.Format("[MQTT-3.9.3-2]. Invalid return code: {0}", returnCode));
+                    throw new DecoderException($"[MQTT-3.9.3-2]. Invalid return code: {returnCode}");
                 }
                 returnCodes[i] = returnCode;
             }
@@ -438,15 +442,9 @@ namespace DotNetty.Codecs.Mqtt
             return buffer.ReadUnsignedShort();
         }
 
-        static string DecodeString(IByteBuffer buffer, ref int remainingLength)
-        {
-            return DecodeString(buffer, ref remainingLength, 0, int.MaxValue);
-        }
+        static string DecodeString(IByteBuffer buffer, ref int remainingLength) => DecodeString(buffer, ref remainingLength, 0, int.MaxValue);
 
-        static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes)
-        {
-            return DecodeString(buffer, ref remainingLength, minBytes, int.MaxValue);
-        }
+        static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes) => DecodeString(buffer, ref remainingLength, minBytes, int.MaxValue);
 
         static string DecodeString(IByteBuffer buffer, ref int remainingLength, int minBytes, int maxBytes)
         {
@@ -454,11 +452,11 @@ namespace DotNetty.Codecs.Mqtt
 
             if (size < minBytes)
             {
-                throw new DecoderException(string.Format("String value is shorter than minimum allowed {0}. Advertised length: {1}", minBytes, size));
+                throw new DecoderException($"String value is shorter than minimum allowed {minBytes}. Advertised length: {size}");
             }
             if (size > maxBytes)
             {
-                throw new DecoderException(string.Format("String value is longer than maximum allowed {0}. Advertised length: {1}", maxBytes, size));
+                throw new DecoderException($"String value is longer than maximum allowed {maxBytes}. Advertised length: {size}");
             }
 
             if (size == 0)
@@ -468,7 +466,7 @@ namespace DotNetty.Codecs.Mqtt
 
             DecreaseRemainingLength(ref remainingLength, size);
 
-            string value = Encoding.UTF8.GetString(buffer.Array, buffer.ArrayOffset + buffer.ReaderIndex, size);
+            string value = buffer.ToString(buffer.ReaderIndex, size, Encoding.UTF8);
             // todo: enforce string definition by MQTT spec
             buffer.SetReaderIndex(buffer.ReaderIndex + size);
             return value;
@@ -479,8 +477,7 @@ namespace DotNetty.Codecs.Mqtt
         {
             if (remainingLength < minExpectedLength)
             {
-                throw new DecoderException(string.Format("Current Remaining Length of {0} is smaller than expected {1}.",
-                    remainingLength, minExpectedLength));
+                throw new DecoderException($"Current Remaining Length of {remainingLength} is smaller than expected {minExpectedLength}.");
             }
             remainingLength -= minExpectedLength;
         }

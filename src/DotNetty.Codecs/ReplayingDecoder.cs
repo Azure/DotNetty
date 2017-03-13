@@ -20,10 +20,7 @@ namespace DotNetty.Codecs
             this.state = initialState;
         }
 
-        protected TState State
-        {
-            get { return this.state; }
-        }
+        protected TState State => this.state;
 
         protected void Checkpoint()
         {
@@ -36,10 +33,7 @@ namespace DotNetty.Codecs
             this.state = newState;
         }
 
-        protected bool ReplayRequested
-        {
-            get { return this.replayRequested; }
-        }
+        protected bool ReplayRequested => this.replayRequested;
 
         protected void RequestReplay()
         {
@@ -97,7 +91,7 @@ namespace DotNetty.Codecs
                     {
                         if (oldInputLength == input.ReadableBytes && EqualityComparer<TState>.Default.Equals(oldState, this.state))
                         {
-                            throw new DecoderException(string.Format("{0}.Decode() must consume the inbound data or change its state if it did not decode anything.", this.GetType().Name));
+                            throw new DecoderException($"{this.GetType().Name}.Decode() must consume the inbound data or change its state if it did not decode anything.");
                         }
                         else
                         {
@@ -109,7 +103,7 @@ namespace DotNetty.Codecs
 
                     if (oldReaderIndex == input.ReaderIndex && EqualityComparer<TState>.Default.Equals(oldState, this.state))
                     {
-                        throw new DecoderException(string.Format("{0}.Decode() method must consume the inbound data or change its state if it decoded something.", this.GetType().Name));
+                        throw new DecoderException($"{this.GetType().Name}.Decode() method must consume the inbound data or change its state if it decoded something.");
                     }
 
                     if (this.SingleDecode)

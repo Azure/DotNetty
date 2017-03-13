@@ -1,3 +1,42 @@
+#### 0.4.1 January 26 2017
+- Introduced Platform allowing for alternative implementations of platform-specific concepts.
+- STEE and others use Task-based "thread" abstraction.
+
+#### 0.4.0 November 25 2016
+- .NET Standard 1.3 support.
+- Libraries are strong-named by default.
+- Redis codec.
+- Protocol Buffers 2 and 3 codecs.
+- Socket Datagram Channel.
+- Base64 encoder and decoder.
+- STEE uses ConcurrentQueue by default (queue impl is pluggable now).
+
+#### 0.3.2 June 22 2016
+- Better API alignment with final version of netty 4.1 (#125).
+- Exposed API for flexible TlsHandler initialization (#132, #134).
+
+#### 0.3.1 June 01 2016
+- Port of IdleStateHandler, ReadTimeoutHandler, WriteTimeoutHandler (#98).
+- Fixes and optimization in TlsHandler (#116).
+- Port of AdaptiveRecvByteBufAllocator enabling flexible sizing of read buffer (#117).
+- Support for adding Attributes on Channel (#114).
+- Proper xml-doc configuration (#120).
+
+#### 0.3.0 May 13 2016
+- BREAKING CHANGE: default byte buffer is now PooledByteBufferAllocator (unless overriden through environment variable).
+- Port of PooledByteBuffer (support for flexible buffer sizes).
+- Enables sending of multiple buffers in a single socket call.
+- Refreshed DefaultChannelPipeline, AbstractChannelHandlerContext.
+- Port of JsonObjectDecoder, DelimeterBasedFrameDecoder.
+- Fixes to async sending in TcpSocketChannel.
+- IoBufferCount, GetIoBuffer(s) introduced in IByteBuffer.
+
+#### 0.2.6 April 27 2016
+- TlsHandler negotiates TLS 1.0+ on server side (#89).
+- STEE properly supports graceful shutdown (#7).
+- UnpooledHeapByteBuffer.GetBytes honors received index and length (#88).
+- Port of MessageToMessageDecoder, LineBasedFrameDecoder, StringDecoder, StringEncoder, ByteProcessor and ForEachByte family of methods on Byte Buffers (#86).
+
 #### 0.2.5 April 14 2016
 - Fixes regression in STEE where while evaluation of idling timeout did not account for immediately pending scheduled tasks (#83).
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace DotNetty.Transport.Channels.Sockets
@@ -10,12 +10,13 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Internal.Logging;
 
     /// <summary>
-    /// A {@link io.netty.channel.socket.ServerSocketChannel} implementation which uses
-    /// NIO selector based implementation to accept new connections.
+    ///     A <see cref="IServerSocketChannel" /> implementation which uses Socket-based implementation to accept new
+    ///     connections.
     /// </summary>
     public class TcpServerSocketChannel : AbstractSocketChannel, IServerSocketChannel
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<TcpServerSocketChannel>();
+        static readonly ChannelMetadata METADATA = new ChannelMetadata(false, 16);
 
         static readonly Action<object, object> ReadCompletedSyncCallback = OnReadCompletedSync;
 
@@ -24,7 +25,7 @@ namespace DotNetty.Transport.Channels.Sockets
         SocketChannelAsyncOperation acceptOperation;
 
         /// <summary>
-        /// Create a new instance
+        ///     Create a new instance
         /// </summary>
         public TcpServerSocketChannel()
             : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
@@ -32,7 +33,7 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        /// Create a new instance
+        ///     Create a new instance
         /// </summary>
         public TcpServerSocketChannel(AddressFamily addressFamily)
             : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
@@ -40,7 +41,7 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         /// <summary>
-        /// Create a new instance using the given {@link Socket}.
+        ///     Create a new instance using the given <see cref="Socket"/>.
         /// </summary>
         public TcpServerSocketChannel(Socket socket)
             : base(null, socket)
@@ -48,54 +49,34 @@ namespace DotNetty.Transport.Channels.Sockets
             this.config = new TcpServerSocketChannelConfig(this, socket);
         }
 
-        public override IChannelConfiguration Configuration
-        {
-            get { return this.config; }
-        }
+        public override IChannelConfiguration Configuration => this.config;
 
-        public override bool Active
-        {
-            get { return this.Socket.IsBound; }
-        }
+        public override bool Active => this.Socket.IsBound;
 
-        protected override EndPoint RemoteAddressInternal
-        {
-            get { return null; }
-        }
+        public override ChannelMetadata Metadata => METADATA;
 
-        protected override EndPoint LocalAddressInternal
-        {
-            get { return this.Socket.LocalEndPoint; }
-        }
+        protected override EndPoint RemoteAddressInternal => null;
 
-        public override bool DisconnectSupported
-        {
-            get { return false; }
-        }
+        protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
 
-        SocketChannelAsyncOperation AcceptOperation
-        {
-            get { return this.acceptOperation ?? (this.acceptOperation = new SocketChannelAsyncOperation(this, false)); }
-        }
+        SocketChannelAsyncOperation AcceptOperation => this.acceptOperation ?? (this.acceptOperation = new SocketChannelAsyncOperation(this, false));
 
-        protected override IChannelUnsafe NewUnsafe()
-        {
-            return new TcpServerSocketChannelUnsafe(this);
-        }
+        protected override IChannelUnsafe NewUnsafe() => new TcpServerSocketChannelUnsafe(this);
 
         protected override void DoBind(EndPoint localAddress)
         {
             this.Socket.Bind(localAddress);
             this.Socket.Listen(this.config.Backlog);
+            this.SetState(StateFlags.Active);
 
             this.CacheLocalAddress();
         }
 
         protected override void DoClose()
         {
-            if (this.ResetState(StateFlags.Open))
+            if (this.TryResetState(StateFlags.Open | StateFlags.Active))
             {
-                this.Socket.Close(0);
+                this.Socket.Dispose();
             }
         }
 
@@ -109,10 +90,7 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        static void OnReadCompletedSync(object u, object p)
-        {
-            ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)p);
-        }
+        static void OnReadCompletedSync(object u, object p) => ((ISocketChannelUnsafe)u).FinishRead((SocketChannelAsyncOperation)p);
 
         protected override bool DoConnect(EndPoint remoteAddress, EndPoint localAddress)
         {
@@ -134,7 +112,7 @@ namespace DotNetty.Transport.Channels.Sockets
             throw new NotSupportedException();
         }
 
-        protected override sealed object FilterOutboundMessage(object msg)
+        protected sealed override object FilterOutboundMessage(object msg)
         {
             throw new NotSupportedException();
         }
@@ -146,25 +124,24 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            new TcpServerSocketChannel Channel
-            {
-                get { return (TcpServerSocketChannel)this.channel; }
-            }
+            new TcpServerSocketChannel Channel => (TcpServerSocketChannel)this.channel;
 
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
-                Contract.Requires(this.channel.EventLoop.InEventLoop);
+                Contract.Assert(this.channel.EventLoop.InEventLoop);
 
                 TcpServerSocketChannel ch = this.Channel;
-                ch.ResetState(StateFlags.ReadScheduled);
+                if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
+                {
+                    return; // read was signaled as a result of channel closure
+                }
                 IChannelConfiguration config = ch.Configuration;
-
-                int maxMessagesPerRead = config.MaxMessagesPerRead;
                 IChannelPipeline pipeline = ch.Pipeline;
+                IRecvByteBufAllocatorHandle allocHandle = this.Channel.Unsafe.RecvBufAllocHandle;
+                allocHandle.Reset(config);
+
                 bool closed = false;
                 Exception exception = null;
-
-                int messageCount = 0;
 
                 try
                 {
@@ -178,7 +155,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         var message = new TcpSocketChannel(ch, connectedSocket, true);
                         ch.ReadPending = false;
                         pipeline.FireChannelRead(message);
-                        messageCount++;
+                        allocHandle.IncMessagesRead(1);
 
                         if (!config.AutoRead && !ch.ReadPending)
                         {
@@ -187,19 +164,15 @@ namespace DotNetty.Transport.Channels.Sockets
                             return;
                         }
 
-                        while (messageCount < maxMessagesPerRead)
+                        while (allocHandle.ContinueReading())
                         {
                             connectedSocket = null;
                             connectedSocket = ch.Socket.Accept();
                             message = new TcpSocketChannel(ch, connectedSocket, true);
+                            ch.ReadPending = false;
                             pipeline.FireChannelRead(message);
 
-                            // stop reading and remove op
-                            if (!config.AutoRead)
-                            {
-                                break;
-                            }
-                            messageCount++;
+                            allocHandle.IncMessagesRead(1);
                         }
                     }
                     catch (ObjectDisposedException)
@@ -216,7 +189,7 @@ namespace DotNetty.Transport.Channels.Sockets
                             {
                                 try
                                 {
-                                    connectedSocket.Close();
+                                    connectedSocket.Dispose();
                                 }
                                 catch (Exception ex2)
                                 {
@@ -227,6 +200,7 @@ namespace DotNetty.Transport.Channels.Sockets
                         }
                     }
 
+                    allocHandle.ReadComplete();
                     pipeline.FireChannelReadComplete();
 
                     if (exception != null)
@@ -248,7 +222,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 finally
                 {
                     // Check if there is a readPending which was not processed yet.
-                    if (!closed && (config.AutoRead || ch.ReadPending))
+                    if (!closed && (ch.ReadPending || config.AutoRead))
                     {
                         ch.DoBeginRead();
                     }
@@ -263,10 +237,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
             }
 
-            protected override void AutoReadCleared()
-            {
-                ((TcpServerSocketChannel)this.Channel).ReadPending = false;
-            }
+            protected override void AutoReadCleared() => ((TcpServerSocketChannel)this.Channel).ReadPending = false;
         }
     }
 }

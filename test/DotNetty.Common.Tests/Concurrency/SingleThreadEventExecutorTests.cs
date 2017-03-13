@@ -114,8 +114,23 @@ namespace DotNetty.Common.Tests.Concurrency
 
             scheduler.Execute(selfQueueAction);
             Task task = scheduler.ScheduleAsync(() => promise.Complete(), TimeSpan.FromMilliseconds(100));
-            await Task.WhenAny(task, Task.Delay(TimeSpan.FromMilliseconds(300)));
+            await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(1)));
             Assert.True(task.IsCompleted);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(200)]
+        public async Task ShutdownWhileIdle(int delayInMs)
+        {
+            var scheduler = new SingleThreadEventExecutor("test", TimeSpan.FromMilliseconds(10));
+            if (delayInMs > 0)
+            {
+                Thread.Sleep(delayInMs);
+            }
+            Task shutdownTask = scheduler.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(50), TimeSpan.FromSeconds(1));
+            await Task.WhenAny(shutdownTask, Task.Delay(TimeSpan.FromSeconds(5)));
+            Assert.True(shutdownTask.IsCompleted);
         }
 
         class Container<T>
