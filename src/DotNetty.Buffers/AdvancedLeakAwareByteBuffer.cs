@@ -303,12 +303,11 @@ namespace DotNetty.Buffers
             return base.SetBytesAsync(index, input, length, cancellationToken);
         }
 
-        // todo: port: complete
-        //        public override IByteBuffer SetZero(int index, int length)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.SetZero(index, length);
-        //}
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.SetZero(index, length);
+        }
 
         public override bool ReadBoolean()
         {
@@ -520,12 +519,11 @@ namespace DotNetty.Buffers
             return base.WriteBytesAsync(input, length, cancellationToken);
         }
 
-        // todo: port: complete
-        //public override IByteBuffer WriteZero(int length)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.WriteZero(length);
-        //}
+        public override IByteBuffer WriteZero(int length)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.WriteZero(length);
+        }
 
         //public override int indexOf(int fromIndex, int toIndex, byte value)
         //{

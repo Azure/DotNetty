@@ -468,6 +468,8 @@ namespace DotNetty.Buffers
 
         public abstract Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
 
+        public abstract IByteBuffer SetZero(int index, int length);
+
         public virtual bool ReadBoolean() => this.ReadByte() != 0;
 
         public virtual byte ReadByte()
@@ -771,6 +773,15 @@ namespace DotNetty.Buffers
 
         public Task WriteBytesAsync(Stream stream, int length) => this.WriteBytesAsync(stream, length, CancellationToken.None);
 
+        public virtual IByteBuffer WriteZero(int length)
+        {
+            this.EnsureAccessible();
+            this.EnsureWritable(length);
+            this.SetZero(this.WriterIndex, length);
+            this.WriterIndex += length;
+            return this;
+        }
+
         public abstract bool HasArray { get; }
 
         public abstract byte[] Array { get; }
@@ -933,7 +944,7 @@ namespace DotNetty.Buffers
 
         /// <summary>
         ///     Throws a <see cref="IndexOutOfRangeException" /> if the current <see cref="ReadableBytes" /> of this buffer
-        ///     is less than <see cref="minimumReadableBytes" />.
+        ///     is less than <paramref name="minimumReadableBytes" />.
         /// </summary>
         protected void CheckReadableBytes(int minimumReadableBytes)
         {

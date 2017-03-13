@@ -165,5 +165,12 @@ namespace DotNetty.Buffers
             this.buffer.SetBytes(index + this.adjustment, src, srcIndex, length);
             return this;
         }
+
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            this.buffer.SetZero(index + this.adjustment, length);
+            return this;
+        }
     }
 }

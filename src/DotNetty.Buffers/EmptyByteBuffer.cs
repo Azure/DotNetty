@@ -260,6 +260,8 @@ namespace DotNetty.Buffers
             return TaskEx.Zero;
         }
 
+        public IByteBuffer SetZero(int index, int length) => this.CheckIndex(index, length);
+
         public bool ReadBoolean()
         {
             throw new IndexOutOfRangeException();
@@ -479,6 +481,8 @@ namespace DotNetty.Buffers
             this.CheckLength(length);
             return TaskEx.Completed;
         }
+
+        public IByteBuffer WriteZero(int length) => this.CheckLength(length);
 
         public IByteBuffer Unwrap() => null;
 

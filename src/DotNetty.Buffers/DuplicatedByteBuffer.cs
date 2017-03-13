@@ -127,6 +127,12 @@ namespace DotNetty.Buffers
 
         public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken) => this.buffer.SetBytesAsync(index, src, length, cancellationToken);
 
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.buffer.SetZero(index, length);
+            return this;
+        }
+
         public override int IoBufferCount => this.Unwrap().IoBufferCount;
 
         public override ArraySegment<byte>[] GetIoBuffers(int index, int length) => this.Unwrap().GetIoBuffers(index, length);

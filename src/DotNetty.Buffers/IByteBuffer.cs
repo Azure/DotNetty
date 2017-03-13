@@ -567,6 +567,8 @@ namespace DotNetty.Buffers
         /// </exception>
         Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
 
+        IByteBuffer SetZero(int index, int length);
+
         /// <summary>
         ///     Gets a boolean at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
         ///     by <c>1</c> in this buffer.
@@ -848,6 +850,8 @@ namespace DotNetty.Buffers
         Task WriteBytesAsync(Stream stream, int length);
 
         Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
+
+        IByteBuffer WriteZero(int length);
 
         string ToString(Encoding encoding);
 

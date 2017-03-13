@@ -344,6 +344,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer SetZero(int index, int length)
+        {
+            this.buf.SetZero(index, length);
+            return this;
+        }
+
         public Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken) => this.buf.SetBytesAsync(index, src, length, cancellationToken);
 
         public bool ReadBoolean() => this.buf.ReadBoolean();
@@ -587,6 +593,12 @@ namespace DotNetty.Buffers
         public Task WriteBytesAsync(Stream stream, int length) => this.buf.WriteBytesAsync(stream, length);
 
         public Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken) => this.buf.WriteBytesAsync(stream, length, cancellationToken);
+
+        public IByteBuffer WriteZero(int length)
+        {
+            this.buf.WriteZero(length);
+            return this;
+        }
 
         public int ForEachByte(ByteProcessor processor) => this.buf.ForEachByte(processor);
 
