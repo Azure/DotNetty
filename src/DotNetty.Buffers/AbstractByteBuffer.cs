@@ -468,7 +468,32 @@ namespace DotNetty.Buffers
 
         public abstract Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
 
-        public abstract IByteBuffer SetZero(int index, int length);
+        public virtual IByteBuffer SetZero(int index, int length)
+        {
+            if (length == 0)
+            {
+                return this;
+            }
+
+            this.CheckIndex(index, length);
+
+            int longCount = length.RightUShift(3);
+            int byteCount = length & 7;
+
+            for (int i = longCount; i > 0; i--)
+            {
+                this._SetLong(index, 0);
+                index += 8;
+            }
+
+            for (int i = byteCount; i > 0; i--)
+            {
+                this._SetByte(index, 0);
+                index++;
+            }
+
+            return this;
+        }
 
         public virtual bool ReadBoolean() => this.ReadByte() != 0;
 
