@@ -147,7 +147,8 @@ namespace DotNetty.Buffers
 
         public IByteBuffer DiscardSomeReadBytes()
         {
-            throw new NotImplementedException();
+            this.buf.DiscardSomeReadBytes();
+            return this;
         }
 
         public IByteBuffer EnsureWritable(int minWritableBytes)
@@ -156,10 +157,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public int EnsureWritable(int minWritableBytes, bool force)
-        {
-            throw new NotImplementedException();
-        }
+        public int EnsureWritable(int minWritableBytes, bool force) => this.buf.EnsureWritable(minWritableBytes, force);
 
         public bool GetBoolean(int index) => this.buf.GetBoolean(index);
 
@@ -256,11 +254,6 @@ namespace DotNetty.Buffers
         }
 
         public IByteBuffer SetUnsignedShort(int index, ushort value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IByteBuffer SetUnsignedShort(int index, int value)
         {
             unchecked
             {
@@ -455,11 +448,6 @@ namespace DotNetty.Buffers
         }
 
         public IByteBuffer WriteUnsignedShort(ushort value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IByteBuffer WriteUnsignedShort(int value)
         {
             this.buf.WriteUnsignedShort(unchecked((ushort)ByteBufferUtil.SwapShort((short)value)));
             return this;
