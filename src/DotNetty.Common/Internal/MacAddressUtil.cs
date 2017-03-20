@@ -124,7 +124,7 @@ namespace DotNetty.Common.Internal
             StringBuilder buf = new StringBuilder(24);
             foreach (byte b in addr)
             {
-                buf.Append((b & 0xFF).ToString("X2\\:"));
+                buf.Append((b & 0xFF).ToString("X2")).Append(":");
             }
             return buf.ToString(0, buf.Length - 1);
         }
