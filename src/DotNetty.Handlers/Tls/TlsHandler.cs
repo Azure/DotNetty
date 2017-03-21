@@ -513,7 +513,7 @@ namespace DotNetty.Handlers.Tls
                     {
                         var serverNameIndicated = this.sniSslStream.GetServerName();
                         certficateSelector = serverNameIndicated ?? certficateSelector;
-                    }
+                    } 
 
                     this.sslStream.AuthenticateAsServerAsync(serverSettings.Certificates[certficateSelector], serverSettings.NegotiateClientCertificate, serverSettings.EnabledProtocols, serverSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
