@@ -6,7 +6,7 @@
     <Copyright>Copyright © Microsoft Corporation</Copyright>
     <AssemblyTitle>DotNetty: buffer management</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.4.2</VersionPrefix>
+    <VersionPrefix>0.4.3</VersionPrefix>
     <Authors>Microsoft Azure</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

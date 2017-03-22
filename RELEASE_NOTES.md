@@ -1,3 +1,13 @@
+#### 0.4.3 March 21 2017
+- Extended support for .NET 4.5
+- Fix to PooledByteBufferAllocator to promptly release freed chunks for GC
+- Ability to limit overall PooledByteBufferAllocator capacity
+- Updated dependencies
+
+#### 0.4.2 February 9 2017
+- Better alignment with .NET Standard and portability (esp UWP support)
+- New tooling
+
 #### 0.4.1 January 26 2017
 - Introduced Platform allowing for alternative implementations of platform-specific concepts.
 - STEE and others use Task-based "thread" abstraction.
