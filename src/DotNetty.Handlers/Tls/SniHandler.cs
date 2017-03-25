@@ -188,7 +188,7 @@ namespace DotNetty.Handlers.Tls
                                                 //{
                                                 //    PlatformDependent.throwException(t);
                                                 //}
-                                                this.Select(context, hostname); // TODO: verify hostname encoding and case
+                                                this.Select(context, hostname?.ToLowerInvariant()); 
                                                 return;
                                             }
                                             else

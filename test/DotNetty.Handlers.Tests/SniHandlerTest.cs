@@ -176,10 +176,10 @@ namespace DotNetty.Handlers.Tests
 
         static async Task<Tuple<EmbeddedChannel, SslStream>> SetupStreamAndChannelAsync(bool isClient, IEventExecutor executor, IWriteStrategy writeStrategy, SslProtocols protocol, List<Task> writeTasks)
         {
-            X509Certificate2 tlsCertificate = TestResourceHelper.GetTestCertificate();
-            string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
+            X509Certificate2 tlsCertificate2 = TestResourceHelper.GetTestCertificate2();
+            string targetHost = tlsCertificate2.GetNameInfo(X509NameType.DnsName, false);
             IChannelHandler tlsHandler = isClient ?
-                (IChannelHandler)new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(SslProtocols.Tls12, false, new List<X509Certificate>(), targetHost)) :
+                (IChannelHandler)new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => certificate.Issuer.Replace("CN=", String.Empty) == targetHost), new ClientTlsSettings(SslProtocols.Tls12, false, new List<X509Certificate>(), targetHost)) :
                 new SniHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ServerTlsSniSettings(CertificateSelector, false, false, SslProtocols.Tls12));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
@@ -212,7 +212,7 @@ namespace DotNetty.Handlers.Tests
             var driverStream = new SslStream(mediationStream, true, (_1, _2, _3, _4) => true);
             if (isClient)
             {
-                await Task.Run(() => driverStream.AuthenticateAsServerAsync(tlsCertificate)).WithTimeout(TimeSpan.FromSeconds(5));
+                await Task.Run(() => driverStream.AuthenticateAsServerAsync(CertificateSelector(targetHost)).WithTimeout(TimeSpan.FromSeconds(5)));
             }
             else
             {
