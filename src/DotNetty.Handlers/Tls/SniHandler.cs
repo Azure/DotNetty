@@ -177,7 +177,7 @@ namespace DotNetty.Handlers.Tls
                                                     goto LOOP_BREAK;
                                                 }
 
-                                                string hostname = input.ToString(offset, serverNameLength, Encoding.UTF8);
+                                                string hostname = input.ToString(offset, serverNameLength, Encoding.ASCII);
                                                 //try
                                                 //{
                                                 //    select(ctx, IDN.toASCII(hostname,
