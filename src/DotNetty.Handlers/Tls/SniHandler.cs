@@ -5,31 +5,32 @@ namespace DotNetty.Handlers.Tls
 {
     using System;
     using System.Collections.Generic;
-    using System.Security.Cryptography.X509Certificates;
+    using System.IO;
+    using System.Net.Security;
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
+    using DotNetty.Common.Internal.Logging;
     using DotNetty.Transport.Channels;
 
     public sealed class SniHandler : ByteToMessageDecoder
     {
         const int MAX_SSL_RECORDS = 4;
-        readonly Func<string, X509Certificate2> tlsCertificateSelector;
-        readonly ServerTlsSettings tlsSettings;
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(SniHandler));
+        readonly Func<Stream, SslStream> sslStreamFactory;
+        readonly ServerTlsSniSettings serverTlsSniSettings;
 
         bool handshakeFailed;
-        bool suppressRead;
-        bool readPending;
 
-        public SniHandler(Func<string, X509Certificate2> tlsCertificateSelector, ServerTlsSettings settings)
+        public SniHandler(Func<Stream, SslStream> sslStreamFactory, ServerTlsSniSettings settings)
         {
-            this.tlsCertificateSelector = tlsCertificateSelector;
-            this.tlsSettings = settings;
+            this.sslStreamFactory = sslStreamFactory;
+            this.serverTlsSniSettings = settings;
         }
 
         protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
-            if (!this.suppressRead && !this.handshakeFailed)
+            if (!this.handshakeFailed)
             {
                 int writerIndex = input.WriterIndex;
                 try
@@ -55,7 +56,7 @@ namespace DotNetty.Handlers.Tls
                                 // Not an SSL/TLS packet
                                 if (len == TlsUtils.NOT_ENCRYPTED)
                                 {
-                                    handshakeFailed = true;
+                                    this.handshakeFailed = true;
                                     NotSslRecordException e = new NotSslRecordException(
                                         "not an SSL/TLS record: " + ByteBufferUtil.HexDump(input));
                                     input.SkipBytes(input.ReadableBytes);
@@ -177,15 +178,16 @@ namespace DotNetty.Handlers.Tls
                                                 }
 
                                                 string hostname = input.ToString(offset, serverNameLength, Encoding.UTF8);
-
-                                                try
-                                                {
-                                                    // select(ctx, IDN.toASCII(hostname, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.US));
-                                                }
-                                                catch /*(Throwable t)*/
-                                                {
-                                                    // PlatformDependent.throwException(t);
-                                                }
+                                                //try
+                                                //{
+                                                //    select(ctx, IDN.toASCII(hostname,
+                                                //                            IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.US));
+                                                //}
+                                                //catch (Throwable t)
+                                                //{
+                                                //    PlatformDependent.throwException(t);
+                                                //}
+                                                this.Select(context, hostname); // TODO: verify hostname encoding and case
                                                 return;
                                             }
                                             else
@@ -211,10 +213,25 @@ namespace DotNetty.Handlers.Tls
                 }
                 catch (Exception e)
                 {
-                    
-                    throw;
+                    // unexpected encoding, ignore sni and use default
+                    if (Logger.DebugEnabled)
+                    {
+                        Logger.Debug($"Unexpected client hello packet: {ByteBufferUtil.HexDump(input)}", e);
+                    }
                 }
+                // Just select the default certifcate
+                this.Select(context, null);
             }
+        }
+
+        void Select(IChannelHandlerContext context, string hostName) => this.ReplaceHandler(context, hostName);
+
+        void ReplaceHandler(IChannelHandlerContext context, string hostName)
+        {
+            var serverTlsSetting = new ServerTlsSettings(this.serverTlsSniSettings.CertificateSelector(hostName), this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
+            var tlsHandler = new TlsHandler(this.sslStreamFactory, serverTlsSetting);
+            context.Channel.Pipeline.Replace(this, nameof(TlsHandler), tlsHandler);
+            tlsHandler = null;
         }
     }
 }
