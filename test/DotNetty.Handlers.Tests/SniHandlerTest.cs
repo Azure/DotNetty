@@ -45,7 +45,7 @@ namespace DotNetty.Handlers.Tests
                     Enumerable.Repeat(0, 30).Select(_ => random.Next(0, 17000)).ToArray()
                 };
             var boolToggle = new[] { false, true };
-            var protocols = new[] { SslProtocols.Tls, SslProtocols.Tls11, SslProtocols.Tls12 };
+            var protocols = new[] { SslProtocols.Tls12 };
             var writeStrategyFactories = new Func<IWriteStrategy>[]
             {
                 () => new AsIsWriteStrategy(),
@@ -117,7 +117,7 @@ namespace DotNetty.Handlers.Tests
                     Enumerable.Repeat(0, 30).Select(_ => random.Next(0, 10) < 2 ? -1 : random.Next(0, 17000)).ToArray()
                 };
             var boolToggle = new[] { false, true };
-            var protocols = new[] { SslProtocols.Tls, SslProtocols.Tls11, SslProtocols.Tls12 };
+            var protocols = new[] { SslProtocols.Tls12 };
 
             return
                 from frameLengths in lengthVariations
@@ -179,7 +179,7 @@ namespace DotNetty.Handlers.Tests
             X509Certificate2 tlsCertificate = TestResourceHelper.GetTestCertificate();
             string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
             IChannelHandler tlsHandler = isClient ?
-                (IChannelHandler)new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(SslProtocols.Tls12, false, null, targetHost)) :
+                (IChannelHandler)new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(SslProtocols.Tls12, false, new List<X509Certificate>(), targetHost)) :
                 new SniHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ServerTlsSniSettings(CertificateSelector, false, false, SslProtocols.Tls12));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
