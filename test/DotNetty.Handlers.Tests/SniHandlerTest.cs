@@ -246,11 +246,8 @@ namespace DotNetty.Handlers.Tests
 
         static X509Certificate2 CertificateSelector(string hostName)
         {
+            Assert.NotNull(hostName);
             X509Certificate2 tlsCertificate = TestResourceHelper.GetTestCertificate();
-
-            if (string.IsNullOrWhiteSpace(hostName))
-                return tlsCertificate;
-
             X509Certificate2 tlsCertificate2 = TestResourceHelper.GetTestCertificate2();
 
             var certMap = new Dictionary<string, X509Certificate2>();
