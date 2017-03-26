@@ -81,6 +81,7 @@ namespace DotNetty.Handlers.Tests
             this.Output.WriteLine($"frameLengths: {string.Join(", ", frameLengths)}");
             this.Output.WriteLine($"writeStrategy: {writeStrategy}");
             this.Output.WriteLine($"protocol: {protocol}");
+            this.Output.WriteLine($"targetHost: {targetHost}");
 
             var executor = new SingleThreadEventExecutor("test executor", TimeSpan.FromMilliseconds(10));
 
@@ -150,6 +151,8 @@ namespace DotNetty.Handlers.Tests
         public async Task TlsWrite(int[] frameLengths, bool isClient, SslProtocols protocol, string targetHost)
         {
             this.Output.WriteLine("frameLengths: " + string.Join(", ", frameLengths));
+            this.Output.WriteLine($"protocol: {protocol}");
+            this.Output.WriteLine($"targetHost: {targetHost}");
 
             var writeStrategy = new AsIsWriteStrategy();
 
