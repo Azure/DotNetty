@@ -5,6 +5,7 @@ namespace DotNetty.Handlers.Tls
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.Contracts;
     using System.IO;
     using System.Net.Security;
     using System.Text;
@@ -34,6 +35,7 @@ namespace DotNetty.Handlers.Tls
             if (!this.handshakeFailed)
             {
                 int writerIndex = input.WriterIndex;
+                Exception error = null;
                 try
                 {
                     for (int i = 0; i < MAX_SSL_RECORDS; i++)
@@ -173,7 +175,7 @@ namespace DotNetty.Handlers.Tls
                                                 int serverNameLength = input.GetUnsignedShort(offset);
                                                 offset += 2;
 
-                                                if (extensionsLimit - offset < serverNameLength)
+                                                if (serverNameLength <= 0 || extensionsLimit - offset < serverNameLength)
                                                 {
                                                     goto LOOP_BREAK;
                                                 }
@@ -188,7 +190,7 @@ namespace DotNetty.Handlers.Tls
                                                 //{
                                                 //    PlatformDependent.throwException(t);
                                                 //}
-                                                this.Select(context, hostname?.ToLowerInvariant()); 
+                                                this.Select(context, hostname.ToLowerInvariant()); 
                                                 return;
                                             }
                                             else
@@ -214,14 +216,27 @@ namespace DotNetty.Handlers.Tls
                 }
                 catch (Exception e)
                 {
+                    error = e;
+
                     // unexpected encoding, ignore sni and use default
                     if (Logger.DebugEnabled)
                     {
-                        Logger.Debug($"Unexpected client hello packet: {ByteBufferUtil.HexDump(input)}", e);
+                        Logger.Warn($"Unexpected client hello packet: {ByteBufferUtil.HexDump(input)}", e);
                     }
                 }
-                // Just select the default certifcate
-                this.Select(context, null);
+
+                if (this.serverTlsSniSettings.DefaultServerHostName != null)
+                {
+                    // Just select the default certifcate
+                    this.Select(context, this.serverTlsSniSettings.DefaultServerHostName); 
+                }
+                else
+                {
+                    this.handshakeFailed = true;
+                    var e = new InvalidOperationException("Unable to determine server certicate", error);
+                    TlsUtils.NotifyHandshakeFailure(context, e);
+                    throw e;
+                }
             }
         }
 
@@ -229,7 +244,8 @@ namespace DotNetty.Handlers.Tls
 
         void ReplaceHandler(IChannelHandlerContext context, string hostName)
         {
-            var serverTlsSetting = new ServerTlsSettings(this.serverTlsSniSettings.CertificateSelector(hostName), this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
+            Contract.Requires(hostName != null);
+            var serverTlsSetting = new ServerTlsSettings(this.serverTlsSniSettings.ServerCertificateSelector(hostName), this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
             var tlsHandler = new TlsHandler(this.sslStreamFactory, serverTlsSetting);
             context.Channel.Pipeline.Replace(this, nameof(TlsHandler), tlsHandler);
             tlsHandler = null;
