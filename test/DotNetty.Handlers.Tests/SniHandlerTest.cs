@@ -94,6 +94,13 @@ namespace DotNetty.Handlers.Tests
                 IByteBuffer finalReadBuffer = Unpooled.Buffer(16 * 1024);
                 await ReadOutboundAsync(async () => ch.ReadInbound<IByteBuffer>(), expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
                 Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+
+                if (!isClient)
+                {
+                    // check if snihandler got replaced with tls handler
+                    Assert.Null(ch.Pipeline.Get<SniHandler>());
+                    Assert.NotNull(ch.Pipeline.Get<TlsHandler>()); 
+                }
             }
             finally
             {
@@ -167,6 +174,13 @@ namespace DotNetty.Handlers.Tests
                     },
                     expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
                 Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+
+                if (!isClient)
+                {
+                    // check if snihandler got replaced with tls handler
+                    Assert.Null(ch.Pipeline.Get<SniHandler>());
+                    Assert.NotNull(ch.Pipeline.Get<TlsHandler>());
+                }
             }
             finally
             {
@@ -183,6 +197,13 @@ namespace DotNetty.Handlers.Tests
                 new SniHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ServerTlsSniSettings(CertificateSelector, false, false, SslProtocols.Tls12));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
+
+            if (!isClient)
+            {
+                // check if in the beginning snihandler exists in the pipeline, but not tls handler
+                Assert.NotNull(ch.Pipeline.Get<SniHandler>());
+                Assert.Null(ch.Pipeline.Get<TlsHandler>());
+            }
 
             IByteBuffer readResultBuffer = Unpooled.Buffer(4 * 1024);
             Func<ArraySegment<byte>, Task<int>> readDataFunc = async output =>
