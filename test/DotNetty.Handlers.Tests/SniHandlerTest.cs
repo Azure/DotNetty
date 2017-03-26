@@ -23,6 +23,16 @@ namespace DotNetty.Handlers.Tests
     public class SniHandlerTest : TestBase
     {
         static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(10);
+        static readonly Dictionary<string, X509Certificate2> CertMap = new Dictionary<string, X509Certificate2>();
+
+        static SniHandlerTest()
+        {
+            X509Certificate2 tlsCertificate = TestResourceHelper.GetTestCertificate();
+            X509Certificate2 tlsCertificate2 = TestResourceHelper.GetTestCertificate2();
+
+            CertMap[tlsCertificate.GetNameInfo(X509NameType.DnsName, false)] = tlsCertificate;
+            CertMap[tlsCertificate2.GetNameInfo(X509NameType.DnsName, false)] = tlsCertificate2;
+        }
 
         public SniHandlerTest(ITestOutputHelper output)
             : base(output)
@@ -59,13 +69,14 @@ namespace DotNetty.Handlers.Tests
                 from isClient in boolToggle
                 from writeStrategyFactory in writeStrategyFactories
                 from protocol in protocols
-                select new object[] { frameLengths, isClient, writeStrategyFactory(), protocol };
+                from targetHost in CertMap.Keys
+                select new object[] { frameLengths, isClient, writeStrategyFactory(), protocol, targetHost };
         }
 
 
         [Theory]
         [MemberData(nameof(GetTlsReadTestData))]
-        public async Task TlsRead(int[] frameLengths, bool isClient, IWriteStrategy writeStrategy, SslProtocols protocol)
+        public async Task TlsRead(int[] frameLengths, bool isClient, IWriteStrategy writeStrategy, SslProtocols protocol, string targetHost)
         {
             this.Output.WriteLine($"frameLengths: {string.Join(", ", frameLengths)}");
             this.Output.WriteLine($"writeStrategy: {writeStrategy}");
@@ -76,7 +87,7 @@ namespace DotNetty.Handlers.Tests
             try
             {
                 var writeTasks = new List<Task>();
-                var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, protocol, writeTasks).WithTimeout(TimeSpan.FromSeconds(10));
+                var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, protocol, writeTasks, targetHost).WithTimeout(TimeSpan.FromSeconds(10));
                 EmbeddedChannel ch = pair.Item1;
                 SslStream driverStream = pair.Item2;
 
@@ -130,12 +141,13 @@ namespace DotNetty.Handlers.Tests
                 from frameLengths in lengthVariations
                 from isClient in boolToggle
                 from protocol in protocols
-                select new object[] { frameLengths, isClient, protocol };
+                from targetHost in CertMap.Keys
+                select new object[] { frameLengths, isClient, protocol, targetHost };
         }
 
         [Theory]
         [MemberData(nameof(GetTlsWriteTestData))]
-        public async Task TlsWrite(int[] frameLengths, bool isClient, SslProtocols protocol)
+        public async Task TlsWrite(int[] frameLengths, bool isClient, SslProtocols protocol, string targetHost)
         {
             this.Output.WriteLine("frameLengths: " + string.Join(", ", frameLengths));
 
@@ -146,7 +158,7 @@ namespace DotNetty.Handlers.Tests
             try
             {
                 var writeTasks = new List<Task>();
-                var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, protocol, writeTasks);
+                var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, protocol, writeTasks, targetHost);
                 EmbeddedChannel ch = pair.Item1;
                 SslStream driverStream = pair.Item2;
 
@@ -188,12 +200,10 @@ namespace DotNetty.Handlers.Tests
             }
         }
 
-        static async Task<Tuple<EmbeddedChannel, SslStream>> SetupStreamAndChannelAsync(bool isClient, IEventExecutor executor, IWriteStrategy writeStrategy, SslProtocols protocol, List<Task> writeTasks)
+        static async Task<Tuple<EmbeddedChannel, SslStream>> SetupStreamAndChannelAsync(bool isClient, IEventExecutor executor, IWriteStrategy writeStrategy, SslProtocols protocol, List<Task> writeTasks, string targetHost)
         {
-            X509Certificate2 tlsCertificate2 = TestResourceHelper.GetTestCertificate2();
-            string targetHost = tlsCertificate2.GetNameInfo(X509NameType.DnsName, false);
             IChannelHandler tlsHandler = isClient ?
-                (IChannelHandler)new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => certificate.Issuer.Replace("CN=", String.Empty) == targetHost), new ClientTlsSettings(SslProtocols.Tls12, false, new List<X509Certificate>(), targetHost)) :
+                (IChannelHandler)new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => certificate.Issuer.Replace("CN=", string.Empty) == targetHost), new ClientTlsSettings(SslProtocols.Tls12, false, new List<X509Certificate>(), targetHost)) :
                 new SniHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ServerTlsSniSettings(CertificateSelector, false, false, SslProtocols.Tls12));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
@@ -247,13 +257,8 @@ namespace DotNetty.Handlers.Tests
         static X509Certificate2 CertificateSelector(string hostName)
         {
             Assert.NotNull(hostName);
-            X509Certificate2 tlsCertificate = TestResourceHelper.GetTestCertificate();
-            X509Certificate2 tlsCertificate2 = TestResourceHelper.GetTestCertificate2();
-
-            var certMap = new Dictionary<string, X509Certificate2>();
-            certMap[tlsCertificate.GetNameInfo(X509NameType.DnsName, false)] = tlsCertificate;
-            certMap[tlsCertificate2.GetNameInfo(X509NameType.DnsName, false)] = tlsCertificate2;
-            return certMap[hostName];
+            
+            return CertMap[hostName];
         }
 
         static Task ReadOutboundAsync(Func<Task<IByteBuffer>> readFunc, int expectedBytes, IByteBuffer result, TimeSpan timeout)
