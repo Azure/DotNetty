@@ -16,7 +16,7 @@ namespace DotNetty.Handlers.Tls
 
     public sealed class SniHandler : ByteToMessageDecoder
     {
-        // Maximal number of ssl records to inspect before fallback to the default (alingned with netty)
+        // Maximal number of ssl records to inspect before fallback to the default (aligned with netty)
         const int MAX_SSL_RECORDS = 4;
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(SniHandler));
         readonly Func<Stream, SslStream> sslStreamFactory;
