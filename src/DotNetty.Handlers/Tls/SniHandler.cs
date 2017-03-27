@@ -20,7 +20,6 @@ namespace DotNetty.Handlers.Tls
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(SniHandler));
         readonly Func<Stream, SslStream> sslStreamFactory;
         readonly ServerTlsSniSettings serverTlsSniSettings;
-        bool handlerReplaced;
 
         bool handshakeFailed;
 
@@ -248,18 +247,6 @@ namespace DotNetty.Handlers.Tls
             var serverTlsSetting = new ServerTlsSettings(this.serverTlsSniSettings.ServerCertificateSelector(hostName), this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
             var tlsHandler = new TlsHandler(this.sslStreamFactory, serverTlsSetting);
             context.Channel.Pipeline.Replace(this, nameof(TlsHandler), tlsHandler);
-            tlsHandler = null;
-            this.handlerReplaced = true;
-        }
-
-        public override void Read(IChannelHandlerContext context)
-        {
-            if (!this.handlerReplaced)
-            {
-                base.Read(context);
-            }
-
-            // Either handler is replaced or failed, so suppress read
         }
     }
 }

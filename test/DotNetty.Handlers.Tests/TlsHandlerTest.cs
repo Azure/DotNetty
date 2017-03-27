@@ -93,6 +93,7 @@ namespace DotNetty.Handlers.Tests
                 IByteBuffer finalReadBuffer = Unpooled.Buffer(16 * 1024);
                 await ReadOutboundAsync(async () => ch.ReadInbound<IByteBuffer>(), expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
                 Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                driverStream.Dispose();
             }
             finally
             {
@@ -166,6 +167,7 @@ namespace DotNetty.Handlers.Tests
                     },
                     expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
                 Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                driverStream.Dispose();
             }
             finally
             {

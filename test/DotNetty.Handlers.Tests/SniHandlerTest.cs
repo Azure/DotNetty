@@ -113,6 +113,8 @@ namespace DotNetty.Handlers.Tests
                     Assert.Null(ch.Pipeline.Get<SniHandler>());
                     Assert.NotNull(ch.Pipeline.Get<TlsHandler>()); 
                 }
+
+                driverStream.Dispose();
             }
             finally
             {
@@ -196,6 +198,8 @@ namespace DotNetty.Handlers.Tests
                     Assert.Null(ch.Pipeline.Get<SniHandler>());
                     Assert.NotNull(ch.Pipeline.Get<TlsHandler>());
                 }
+
+                driverStream.Dispose();
             }
             finally
             {
