@@ -16,6 +16,7 @@ namespace DotNetty.Handlers.Tls
 
     public sealed class SniHandler : ByteToMessageDecoder
     {
+        // Maximal number of ssl records to inspect before fallback to the default (alingned with netty)
         const int MAX_SSL_RECORDS = 4;
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(SniHandler));
         readonly Func<Stream, SslStream> sslStreamFactory;
@@ -37,7 +38,8 @@ namespace DotNetty.Handlers.Tls
                 Exception error = null;
                 try
                 {
-                    for (int i = 0; i < MAX_SSL_RECORDS; i++)
+                    bool continueLoop = true;
+                    for (int i = 0; i < MAX_SSL_RECORDS && continueLoop; i++)
                     {
                         int readerIndex = input.ReaderIndex;
                         int readableBytes = writerIndex - readerIndex;
@@ -116,7 +118,8 @@ namespace DotNetty.Handlers.Tls
 
                                     if (endOffset - offset < 6)
                                     {
-                                        goto LOOP_BREAK;
+                                        continueLoop = false;
+                                        break;
                                     }
 
                                     int sessionIdLength = input.GetByte(offset);
@@ -135,14 +138,16 @@ namespace DotNetty.Handlers.Tls
                                     if (extensionsLimit > endOffset)
                                     {
                                         // Extensions should never exceed the record boundary.
-                                        goto LOOP_BREAK; 
+                                        continueLoop = false;
+                                        break;
                                     }
 
                                     for (;;)
                                     {
                                         if (extensionsLimit - offset < 4)
                                         {
-                                            goto LOOP_BREAK;
+                                            continueLoop = false;
+                                            break;
                                         }
 
                                         int extensionType = input.GetUnsignedShort(offset);
@@ -153,7 +158,8 @@ namespace DotNetty.Handlers.Tls
 
                                         if (extensionsLimit - offset < extensionLength)
                                         {
-                                            goto LOOP_BREAK;
+                                            continueLoop = false;
+                                            break;
                                         }
 
                                         // SNI
@@ -163,7 +169,8 @@ namespace DotNetty.Handlers.Tls
                                             offset += 2;
                                             if (extensionsLimit - offset < 3)
                                             {
-                                                goto LOOP_BREAK;
+                                                continueLoop = false;
+                                                break;
                                             }
 
                                             int serverNameType = input.GetByte(offset);
@@ -176,7 +183,8 @@ namespace DotNetty.Handlers.Tls
 
                                                 if (serverNameLength <= 0 || extensionsLimit - offset < serverNameLength)
                                                 {
-                                                    goto LOOP_BREAK;
+                                                    continueLoop = false;
+                                                    break;
                                                 }
 
                                                 string hostname = input.ToString(offset, serverNameLength, Encoding.ASCII);
@@ -195,7 +203,8 @@ namespace DotNetty.Handlers.Tls
                                             else
                                             {
                                                 // invalid enum value
-                                                goto LOOP_BREAK;
+                                                continueLoop = false;
+                                                break;
                                             }
                                         }
 
@@ -207,11 +216,10 @@ namespace DotNetty.Handlers.Tls
                             // Fall-through
                             default:
                                 //not tls, ssl or application data, do not try sni
+                                continueLoop = false;
                                 break;
                         }
                     }
-                    LOOP_BREAK:
-                    ;
                 }
                 catch (Exception e)
                 {
