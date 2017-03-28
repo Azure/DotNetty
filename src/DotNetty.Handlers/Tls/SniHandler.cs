@@ -6,8 +6,10 @@ namespace DotNetty.Handlers.Tls
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Globalization;
     using System.IO;
     using System.Net.Security;
+    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
@@ -23,16 +25,19 @@ namespace DotNetty.Handlers.Tls
         readonly ServerTlsSniSettings serverTlsSniSettings;
 
         bool handshakeFailed;
+        bool suppressRead;
+        bool readPending;
 
         public SniHandler(Func<Stream, SslStream> sslStreamFactory, ServerTlsSniSettings settings)
         {
+            Contract.Requires(settings != null);
             this.sslStreamFactory = sslStreamFactory;
             this.serverTlsSniSettings = settings;
         }
 
         protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
-            if (!this.handshakeFailed)
+            if (!this.suppressRead && !this.handshakeFailed)
             {
                 int writerIndex = input.WriterIndex;
                 Exception error = null;
@@ -61,7 +66,7 @@ namespace DotNetty.Handlers.Tls
                                 if (len == TlsUtils.NOT_ENCRYPTED)
                                 {
                                     this.handshakeFailed = true;
-                                    NotSslRecordException e = new NotSslRecordException(
+                                    var e = new NotSslRecordException(
                                         "not an SSL/TLS record: " + ByteBufferUtil.HexDump(input));
                                     input.SkipBytes(input.ReadableBytes);
 
@@ -187,7 +192,7 @@ namespace DotNetty.Handlers.Tls
                                                     break;
                                                 }
 
-                                                string hostname = input.ToString(offset, serverNameLength, Encoding.ASCII);
+                                                string hostname = input.ToString(offset, serverNameLength, Encoding.UTF8);
                                                 //try
                                                 //{
                                                 //    select(ctx, IDN.toASCII(hostname,
@@ -197,7 +202,20 @@ namespace DotNetty.Handlers.Tls
                                                 //{
                                                 //    PlatformDependent.throwException(t);
                                                 //}
-                                                this.Select(context, hostname.ToLowerInvariant()); 
+
+                                                var idn = new IdnMapping()
+                                                {
+                                                    AllowUnassigned = true
+                                                };
+
+                                                hostname = idn.GetAscii(hostname);
+#if NETSTANDARD1_3
+                                                // TODO: netcore does not have culture sensitive tolower()
+                                                hostname = hostname.ToLowerInvariant();
+#else
+                                                hostname = hostname.ToLower(new CultureInfo("en-US"));
+#endif
+                                                this.Select(context, hostname);
                                                 return;
                                             }
                                             else
@@ -247,14 +265,75 @@ namespace DotNetty.Handlers.Tls
             }
         }
 
-        void Select(IChannelHandlerContext context, string hostName) => this.ReplaceHandler(context, hostName);
-
-        void ReplaceHandler(IChannelHandlerContext context, string hostName)
+        void Select(IChannelHandlerContext context, string hostName)
         {
             Contract.Requires(hostName != null);
-            var serverTlsSetting = new ServerTlsSettings(this.serverTlsSniSettings.ServerCertificateSelector(hostName), this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
+            var getCertTask = this.serverTlsSniSettings.ServerCertificateSelector(hostName);
+            if (getCertTask.IsCompleted)
+            {
+                if (!getCertTask.IsFaulted)
+                {
+                    this.ReplaceHandler(context, getCertTask.GetAwaiter().GetResult()); 
+                }
+                else
+                {
+                    throw new DecoderException($"failed to get the Tls Certificate for {hostName}, {getCertTask.Exception}");
+                }
+            }
+            else
+            {
+                this.suppressRead = true;
+                getCertTask.ContinueWith(task =>
+                {
+                    try
+                    {
+                        this.suppressRead = false;
+                        if (!task.IsFaulted)
+                        {
+                            try
+                            {
+                                this.ReplaceHandler(context, task.GetAwaiter().GetResult());
+                            }
+                            catch (Exception ex)
+                            {
+                                this.ExceptionCaught(context, ex);
+                            }
+                        }
+                        else
+                        {
+                            this.ExceptionCaught(context, new DecoderException($"failed to get the Tls Certificate for {hostName}, {getCertTask.Exception}"));
+                        }
+                    }
+                    finally
+                    {
+                        if (this.readPending)
+                        {
+                            this.readPending = false;
+                            context.Read();
+                        }
+                    }
+                });
+            }
+        }
+
+        void ReplaceHandler(IChannelHandlerContext context, X509Certificate2 tlsCertificate)
+        {
+            Contract.Requires(tlsCertificate != null);
+            var serverTlsSetting = new ServerTlsSettings(tlsCertificate, this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
             var tlsHandler = new TlsHandler(this.sslStreamFactory, serverTlsSetting);
             context.Channel.Pipeline.Replace(this, nameof(TlsHandler), tlsHandler);
+        }
+
+        public override void Read(IChannelHandlerContext context)
+        {
+            if (this.suppressRead)
+            {
+                this.readPending = true;
+            }
+            else
+            {
+                base.Read(context);
+            }
         }
     }
 }

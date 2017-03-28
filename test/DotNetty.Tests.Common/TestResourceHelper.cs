@@ -25,7 +25,7 @@ namespace DotNetty.Tests.Common
         public static X509Certificate2 GetTestCertificate2()
         {
             byte[] certData;
-            using (Stream resStream = typeof(TestResourceHelper).GetTypeInfo().Assembly.GetManifestResourceStream(typeof(TestResourceHelper).Namespace + "." + "protocol-gateway.contoso.com.pfx"))
+            using (Stream resStream = typeof(TestResourceHelper).GetTypeInfo().Assembly.GetManifestResourceStream(typeof(TestResourceHelper).Namespace + "." + "contoso.com.pfx"))
             using (var memStream = new MemoryStream())
             {
                 resStream.CopyTo(memStream);

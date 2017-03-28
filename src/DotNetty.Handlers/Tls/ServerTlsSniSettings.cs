@@ -7,30 +7,31 @@ namespace DotNetty.Handlers.Tls
     using System.Diagnostics.Contracts;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
+    using System.Threading.Tasks;
 
     public sealed class ServerTlsSniSettings : TlsSettings
     {
-        public ServerTlsSniSettings(Func<string, X509Certificate2> serverCertificateSelector)
+        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector)
             : this(serverCertificateSelector, false)
         {
         }
 
-        public ServerTlsSniSettings(Func<string, X509Certificate2> serverCertificateSelector, bool negotiateClientCertificate)
+        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, bool negotiateClientCertificate)
             : this(serverCertificateSelector, negotiateClientCertificate, false)
         {
         }
 
-        public ServerTlsSniSettings(Func<string, X509Certificate2> serverCertificateSelector, bool negotiateClientCertificate, bool checkCertificateRevocation)
+        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, bool negotiateClientCertificate, bool checkCertificateRevocation)
             : this(serverCertificateSelector, negotiateClientCertificate, checkCertificateRevocation, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12)
         {
         }
 
-        public ServerTlsSniSettings(Func<string, X509Certificate2> serverCertificateSelector, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
+        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
             : this(serverCertificateSelector, null, negotiateClientCertificate, checkCertificateRevocation, enabledProtocols)
         {
         }
 
-        public ServerTlsSniSettings(Func<string, X509Certificate2> serverCertificateSelector, string defaultServerHostName, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
+        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, string defaultServerHostName, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
             : base(enabledProtocols, checkCertificateRevocation)
         {
             Contract.Requires(serverCertificateSelector != null);
@@ -39,7 +40,7 @@ namespace DotNetty.Handlers.Tls
             this.NegotiateClientCertificate = negotiateClientCertificate;
         }
 
-        public Func<string, X509Certificate2> ServerCertificateSelector { get; }
+        public Func<string, Task<X509Certificate2>> ServerCertificateSelector { get; }
 
         public string DefaultServerHostName { get; } 
 

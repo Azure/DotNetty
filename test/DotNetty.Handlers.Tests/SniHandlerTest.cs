@@ -250,7 +250,7 @@ namespace DotNetty.Handlers.Tests
             var driverStream = new SslStream(mediationStream, true, (_1, _2, _3, _4) => true);
             if (isClient)
             {
-                await Task.Run(() => driverStream.AuthenticateAsServerAsync(CertificateSelector(targetHost)).WithTimeout(TimeSpan.FromSeconds(5)));
+                await Task.Run(() => driverStream.AuthenticateAsServerAsync(CertificateSelector(targetHost).Result).WithTimeout(TimeSpan.FromSeconds(5)));
             }
             else
             {
@@ -261,11 +261,11 @@ namespace DotNetty.Handlers.Tests
             return Tuple.Create(ch, driverStream);
         }
 
-        static X509Certificate2 CertificateSelector(string hostName)
+        static Task<X509Certificate2> CertificateSelector(string hostName)
         {
             Assert.NotNull(hostName);
             
-            return CertMap[hostName];
+            return Task.FromResult(CertMap[hostName]);
         }
 
         static Task ReadOutboundAsync(Func<Task<IByteBuffer>> readFunc, int expectedBytes, IByteBuffer result, TimeSpan timeout)
