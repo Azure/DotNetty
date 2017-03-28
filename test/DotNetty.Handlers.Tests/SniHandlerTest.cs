@@ -264,7 +264,7 @@ namespace DotNetty.Handlers.Tests
         static Task<X509Certificate2> CertificateSelector(string hostName)
         {
             Assert.NotNull(hostName);
-            
+            Assert.Contains(hostName, CertMap.Keys);
             return Task.FromResult(CertMap[hostName]);
         }
 
