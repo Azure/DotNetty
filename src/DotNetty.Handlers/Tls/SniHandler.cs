@@ -11,6 +11,7 @@ namespace DotNetty.Handlers.Tls
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
+    using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
@@ -312,7 +313,7 @@ namespace DotNetty.Handlers.Tls
                             context.Read();
                         }
                     }
-                });
+                }, TaskContinuationOptions.ExecuteSynchronously);
             }
         }
 
