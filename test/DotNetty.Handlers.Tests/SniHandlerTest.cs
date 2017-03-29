@@ -45,22 +45,12 @@ namespace DotNetty.Handlers.Tests
             var lengthVariations =
                 new[]
                 {
-                    new[] { 1 },
-                    new[] { 2, 8000, 300 },
-                    new[] { 100, 0, 1000 },
-                    new[] { 4 * 1024 - 10, 1, 0, 1 },
-                    new[] { 0, 24000, 0, 1000 },
-                    new[] { 0, 4000, 0 },
-                    new[] { 16 * 1024 - 100 },
                     Enumerable.Repeat(0, 30).Select(_ => random.Next(0, 17000)).ToArray()
                 };
             var boolToggle = new[] { false, true };
             var protocols = new[] { SslProtocols.Tls12 };
             var writeStrategyFactories = new Func<IWriteStrategy>[]
             {
-                () => new AsIsWriteStrategy(),
-                () => new BatchingWriteStrategy(1, TimeSpan.FromMilliseconds(20), true),
-                () => new BatchingWriteStrategy(4096, TimeSpan.FromMilliseconds(20), true),
                 () => new BatchingWriteStrategy(32 * 1024, TimeSpan.FromMilliseconds(20), false)
             };
 
@@ -128,13 +118,6 @@ namespace DotNetty.Handlers.Tests
             var lengthVariations =
                 new[]
                 {
-                    new[] { 1 },
-                    new[] { 2, 8000, 300 },
-                    new[] { 100, 0, 1000 },
-                    new[] { 4 * 1024 - 10, 1, -1, 0, -1, 1 },
-                    new[] { 0, 24000, 0, -1, 1000 },
-                    new[] { 0, 4000, 0 },
-                    new[] { 16 * 1024 - 100 },
                     Enumerable.Repeat(0, 30).Select(_ => random.Next(0, 10) < 2 ? -1 : random.Next(0, 17000)).ToArray()
                 };
             var boolToggle = new[] { false, true };
