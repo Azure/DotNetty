@@ -5,45 +5,19 @@ namespace DotNetty.Handlers.Tls
 {
     using System;
     using System.Diagnostics.Contracts;
-    using System.Security.Authentication;
-    using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
 
-    public sealed class ServerTlsSniSettings : TlsSettings
+    public sealed class ServerTlsSniSettings
     {
-        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector)
-            : this(serverCertificateSelector, false)
+        public ServerTlsSniSettings(Func<string, Task<ServerTlsSettings>> serverTlsSettingMap, string defaultServerHostName = null)
         {
-        }
-
-        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, bool negotiateClientCertificate)
-            : this(serverCertificateSelector, negotiateClientCertificate, false)
-        {
-        }
-
-        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, bool negotiateClientCertificate, bool checkCertificateRevocation)
-            : this(serverCertificateSelector, negotiateClientCertificate, checkCertificateRevocation, SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12)
-        {
-        }
-
-        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
-            : this(serverCertificateSelector, null, negotiateClientCertificate, checkCertificateRevocation, enabledProtocols)
-        {
-        }
-
-        public ServerTlsSniSettings(Func<string, Task<X509Certificate2>> serverCertificateSelector, string defaultServerHostName, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
-            : base(enabledProtocols, checkCertificateRevocation)
-        {
-            Contract.Requires(serverCertificateSelector != null);
-            this.ServerCertificateSelector = serverCertificateSelector;
+            Contract.Requires(serverTlsSettingMap != null);
+            this.ServerTlsSettingMap = serverTlsSettingMap;
             this.DefaultServerHostName = defaultServerHostName;
-            this.NegotiateClientCertificate = negotiateClientCertificate;
         }
 
-        public Func<string, Task<X509Certificate2>> ServerCertificateSelector { get; }
+        public Func<string, Task<ServerTlsSettings>> ServerTlsSettingMap { get; }
 
         public string DefaultServerHostName { get; } 
-
-        public bool NegotiateClientCertificate { get; }
     }
 }

@@ -9,7 +9,6 @@ namespace DotNetty.Handlers.Tls
     using System.Globalization;
     using System.IO;
     using System.Net.Security;
-    using System.Security.Cryptography.X509Certificates;
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
@@ -271,8 +270,8 @@ namespace DotNetty.Handlers.Tls
             this.suppressRead = true;
             try
             {
-                var certificate = await this.serverTlsSniSettings.ServerCertificateSelector(hostName);
-                this.ReplaceHandler(context, certificate);
+                var serverTlsSetting = await this.serverTlsSniSettings.ServerTlsSettingMap(hostName);
+                this.ReplaceHandler(context, serverTlsSetting);
             }
             catch (Exception ex)
             {
@@ -289,10 +288,9 @@ namespace DotNetty.Handlers.Tls
             }
         }
 
-        void ReplaceHandler(IChannelHandlerContext context, X509Certificate2 tlsCertificate)
+        void ReplaceHandler(IChannelHandlerContext context, ServerTlsSettings serverTlsSetting)
         {
-            Contract.Requires(tlsCertificate != null);
-            var serverTlsSetting = new ServerTlsSettings(tlsCertificate, this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
+            Contract.Requires(serverTlsSetting != null);
             var tlsHandler = new TlsHandler(this.sslStreamFactory, serverTlsSetting);
             context.Channel.Pipeline.Replace(this, nameof(TlsHandler), tlsHandler);
         }
