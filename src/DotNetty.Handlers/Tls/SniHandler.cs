@@ -27,9 +27,15 @@ namespace DotNetty.Handlers.Tls
         bool suppressRead;
         bool readPending;
 
+        public SniHandler(ServerTlsSniSettings settings)
+            : this(stream => new SslStream(stream, true), settings)
+        {
+        }
+
         public SniHandler(Func<Stream, SslStream> sslStreamFactory, ServerTlsSniSettings settings)
         {
             Contract.Requires(settings != null);
+            Contract.Requires(sslStreamFactory != null);
             this.sslStreamFactory = sslStreamFactory;
             this.serverTlsSniSettings = settings;
         }
