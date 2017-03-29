@@ -25,6 +25,8 @@ namespace DotNetty.Handlers.Tls
         readonly ServerTlsSniSettings serverTlsSniSettings;
 
         bool handshakeFailed;
+        bool suppressRead;
+        bool readPending;
 
         public SniHandler(Func<Stream, SslStream> sslStreamFactory, ServerTlsSniSettings settings)
         {
@@ -35,7 +37,7 @@ namespace DotNetty.Handlers.Tls
 
         protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
-            if (!this.handshakeFailed)
+            if (!this.suppressRead && !this.handshakeFailed)
             {
                 int writerIndex = input.WriterIndex;
                 Exception error = null;
@@ -266,13 +268,24 @@ namespace DotNetty.Handlers.Tls
         async void Select(IChannelHandlerContext context, string hostName)
         {
             Contract.Requires(hostName != null);
+            this.suppressRead = true;
             try
             {
-                this.ReplaceHandler(context, await this.serverTlsSniSettings.ServerCertificateSelector(hostName));
+                var certificate = await this.serverTlsSniSettings.ServerCertificateSelector(hostName);
+                this.ReplaceHandler(context, certificate);
             }
             catch (Exception ex)
             {
                 this.ExceptionCaught(context, new DecoderException($"failed to get the Tls Certificate for {hostName}, {ex}"));
+            }
+            finally
+            {
+                this.suppressRead = false;
+                if (this.readPending)
+                {
+                    this.readPending = false;
+                    context.Read();
+                }
             }
         }
 
@@ -282,6 +295,18 @@ namespace DotNetty.Handlers.Tls
             var serverTlsSetting = new ServerTlsSettings(tlsCertificate, this.serverTlsSniSettings.NegotiateClientCertificate, this.serverTlsSniSettings.CheckCertificateRevocation, this.serverTlsSniSettings.EnabledProtocols);
             var tlsHandler = new TlsHandler(this.sslStreamFactory, serverTlsSetting);
             context.Channel.Pipeline.Replace(this, nameof(TlsHandler), tlsHandler);
+        }
+
+        public override void Read(IChannelHandlerContext context)
+        {
+            if (this.suppressRead)
+            {
+                this.readPending = true;
+            }
+            else
+            {
+                base.Read(context);
+            }
         }
     }
 }
