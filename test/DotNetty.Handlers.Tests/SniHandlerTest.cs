@@ -140,7 +140,6 @@ namespace DotNetty.Handlers.Tests
             this.Output.WriteLine($"targetHost: {targetHost}");
 
             var writeStrategy = new AsIsWriteStrategy();
-
             var executor = new SingleThreadEventExecutor("test executor", TimeSpan.FromMilliseconds(10));
 
             try
