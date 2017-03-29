@@ -41,17 +41,16 @@ namespace DotNetty.Handlers.Tests
 
         public static IEnumerable<object[]> GetTlsReadTestData()
         {
-            var random = new Random(Environment.TickCount);
             var lengthVariations =
                 new[]
                 {
-                    Enumerable.Repeat(0, 30).Select(_ => random.Next(0, 17000)).ToArray()
+                    new[] { 1 }
                 };
             var boolToggle = new[] { false, true };
             var protocols = new[] { SslProtocols.Tls12 };
             var writeStrategyFactories = new Func<IWriteStrategy>[]
             {
-                () => new BatchingWriteStrategy(32 * 1024, TimeSpan.FromMilliseconds(20), false)
+                () => new AsIsWriteStrategy()
             };
 
             return
@@ -114,11 +113,10 @@ namespace DotNetty.Handlers.Tests
 
         public static IEnumerable<object[]> GetTlsWriteTestData()
         {
-            var random = new Random(Environment.TickCount);
             var lengthVariations =
                 new[]
                 {
-                    Enumerable.Repeat(0, 30).Select(_ => random.Next(0, 10) < 2 ? -1 : random.Next(0, 17000)).ToArray()
+                    new[] { 1 }
                 };
             var boolToggle = new[] { false, true };
             var protocols = new[] { SslProtocols.Tls12 };
