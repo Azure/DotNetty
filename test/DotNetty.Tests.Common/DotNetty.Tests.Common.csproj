@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\shared\dotnetty.com.pfx" />
+    <EmbeddedResource Include="..\..\shared\contoso.com.pfx" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

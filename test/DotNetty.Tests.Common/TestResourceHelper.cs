@@ -21,5 +21,18 @@ namespace DotNetty.Tests.Common
 
             return new X509Certificate2(certData, "password");
         }
+
+        public static X509Certificate2 GetTestCertificate2()
+        {
+            byte[] certData;
+            using (Stream resStream = typeof(TestResourceHelper).GetTypeInfo().Assembly.GetManifestResourceStream(typeof(TestResourceHelper).Namespace + "." + "contoso.com.pfx"))
+            using (var memStream = new MemoryStream())
+            {
+                resStream.CopyTo(memStream);
+                certData = memStream.ToArray();
+            }
+
+            return new X509Certificate2(certData, "password");
+        }
     }
 }
