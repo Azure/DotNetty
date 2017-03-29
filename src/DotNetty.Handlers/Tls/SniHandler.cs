@@ -17,7 +17,7 @@ namespace DotNetty.Handlers.Tls
 
     public sealed class SniHandler : ByteToMessageDecoder
     {
-        // Maximal number of ssl records to inspect before fallback to the default (aligned with netty) 
+        // Maximal number of ssl records to inspect before fallback to the default server TLS setting (aligned with netty) 
         const int MAX_SSL_RECORDS = 4;
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(SniHandler));
         readonly Func<Stream, SslStream> sslStreamFactory;
@@ -257,13 +257,13 @@ namespace DotNetty.Handlers.Tls
 
                 if (this.serverTlsSniSettings.DefaultServerHostName != null)
                 {
-                    // Just select the default certifcate
+                    // Just select the default server TLS setting
                     this.Select(context, this.serverTlsSniSettings.DefaultServerHostName); 
                 }
                 else
                 {
                     this.handshakeFailed = true;
-                    var e = new DecoderException($"failed to get the Tls Certificate {error}");
+                    var e = new DecoderException($"failed to get the server TLS setting {error}");
                     TlsUtils.NotifyHandshakeFailure(context, e);
                     throw e;
                 }
@@ -281,7 +281,7 @@ namespace DotNetty.Handlers.Tls
             }
             catch (Exception ex)
             {
-                this.ExceptionCaught(context, new DecoderException($"failed to get the Tls Certificate for {hostName}, {ex}"));
+                this.ExceptionCaught(context, new DecoderException($"failed to get the server TLS setting for {hostName}, {ex}"));
             }
             finally
             {
