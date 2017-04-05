@@ -8,6 +8,7 @@ namespace DotNetty.Handlers.Tls
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Net.Security;
+    using System.Runtime.ExceptionServices;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
