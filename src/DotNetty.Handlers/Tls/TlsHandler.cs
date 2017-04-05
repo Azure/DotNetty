@@ -8,7 +8,6 @@ namespace DotNetty.Handlers.Tls
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Net.Security;
-    using System.Runtime.ExceptionServices;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading;
     using System.Threading.Tasks;
@@ -69,6 +68,13 @@ namespace DotNetty.Handlers.Tls
         bool IsServer => this.settings is ServerTlsSettings;
 
         public void Dispose() => this.sslStream?.Dispose();
+
+        public X509Certificate2 GetRemoteCertificate()
+        {
+            // Cannot cast from X509Certificate to X509Certificate2
+            // using workaround mentioned here: https://github.com/dotnet/corefx/issues/4510
+            return new X509Certificate2(this.sslStream.RemoteCertificate.Export(X509ContentType.Cert));
+        }
 
         public override void ChannelActive(IChannelHandlerContext context)
         {
