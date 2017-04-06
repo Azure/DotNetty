@@ -17,7 +17,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
     using Xunit;
     using Xunit.Abstractions;
 
-    [Collection("UDP Transport Tests")]
+    [Collection("DisableTestParallelization")]
     public class SocketDatagramChannelUnicastTest : TestBase
     {
         const int DefaultTimeOutInMilliseconds = 800;
@@ -188,7 +188,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                     .Option(ChannelOption.IpMulticastLoopDisabled, false)
                     .Handler(new ActionChannelInitializer<IChannel>(channel =>
                     {
-                        channel.Pipeline.AddLast("Dummy", new NetUtil.DummyHandler());
+                        channel.Pipeline.AddLast("Dummy", new NetUtil.DummyHandler<DatagramPacket>());
                     }));
 
                 var clientEndPoint = new IPEndPoint(

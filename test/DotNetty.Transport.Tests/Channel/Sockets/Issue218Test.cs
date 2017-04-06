@@ -17,7 +17,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
     using Xunit;
     using Xunit.Abstractions;
 
-    [Collection("Issue 218(WriteAndFlush on IOCP's IO thread) Test")]
+    [Collection("DisableTestParallelization")]
     public class Issue218Test : TestBase
     {
         private const int blockSize = 1024;
@@ -81,13 +81,6 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
             }
         }
 
-        public class DummyHandler : SimpleChannelInboundHandler<IByteBuffer>
-        {
-            protected override void ChannelRead0(IChannelHandlerContext ctx, IByteBuffer msg)
-            {
-            }
-        }
-
         [Fact]
         public void IOCPSend()
         {
@@ -106,12 +99,12 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                     .Option(ChannelOption.SoRcvbuf, blockSize * 2)
                     .Handler(new ActionChannelInitializer<IChannel>(channel =>
                     {
-                        channel.Pipeline.AddLast("Dummy", new DummyHandler());
+                        channel.Pipeline.AddLast("Dummy", new NetUtil.DummyHandler<IByteBuffer>());
                     }))
                     //.ChildOption(ChannelOption.AutoRead, false)
                     .ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
                     {
-                        channel.Pipeline.AddLast("Dummy", new DummyHandler());
+                        channel.Pipeline.AddLast("Dummy", new NetUtil.DummyHandler<IByteBuffer>());
                     }));
 
                 var address = addressFamily == AddressFamily.InterNetwork ? IPAddress.Loopback : IPAddress.IPv6Loopback;
