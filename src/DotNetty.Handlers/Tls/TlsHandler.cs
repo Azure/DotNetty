@@ -65,7 +65,7 @@ namespace DotNetty.Handlers.Tls
         public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
 
         // using workaround mentioned here: https://github.com/dotnet/corefx/issues/4510
-        public X509Certificate2 RemoteCertificate => new X509Certificate2(this.sslStream.RemoteCertificate.Export(X509ContentType.Cert));
+        public X509Certificate2 RemoteCertificate => new X509Certificate2(this.sslStream.RemoteCertificate?.Export(X509ContentType.Cert));
 
         bool IsServer => this.settings is ServerTlsSettings;
 
