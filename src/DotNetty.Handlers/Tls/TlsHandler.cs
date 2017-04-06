@@ -64,18 +64,12 @@ namespace DotNetty.Handlers.Tls
 
         public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
 
-        public X509Certificate RemoteCertificate => this.sslStream.RemoteCertificate;
+        // using workaround mentioned here: https://github.com/dotnet/corefx/issues/4510
+        public X509Certificate2 RemoteCertificate => new X509Certificate2(this.sslStream.RemoteCertificate.Export(X509ContentType.Cert));
 
         bool IsServer => this.settings is ServerTlsSettings;
 
         public void Dispose() => this.sslStream?.Dispose();
-
-        public X509Certificate2 GetRemoteCertificate()
-        {
-            // Cannot cast from X509Certificate to X509Certificate2
-            // using workaround mentioned here: https://github.com/dotnet/corefx/issues/4510
-            return new X509Certificate2(this.sslStream.RemoteCertificate.Export(X509ContentType.Cert));
-        }
 
         public override void ChannelActive(IChannelHandlerContext context)
         {
