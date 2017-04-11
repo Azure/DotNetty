@@ -1,3 +1,7 @@
+#### 0.4.4 March 31 2017
+- Added SNI support
+- Fixed assembly metadata
+
 #### 0.4.3 March 21 2017
 - Extended support for .NET 4.5
 - Fix to PooledByteBufferAllocator to promptly release freed chunks for GC

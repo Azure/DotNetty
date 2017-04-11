@@ -154,8 +154,10 @@ Task("Publish-NuGet")
   foreach(var package in packages)
   {
     NuGetPush(package, new NuGetPushSettings {
+      ToolPath = ".nuget/nuget.exe",
       Source = source,
-      ApiKey = apiKey
+      ApiKey = apiKey,
+      Verbosity = NuGetVerbosity.Detailed
     });
   }
 });
@@ -272,6 +274,13 @@ Task("Update-Version")
     throw new CakeException("No version specified!");
   }
 
+  CreateAssemblyInfo("src/shared/SharedAssemblyInfo.cs", new AssemblyInfoSettings {
+      Product = "DotNetty",
+      Company = "Microsoft",
+      Version = version,
+      FileVersion = version,
+      Copyright = string.Format("(c) Microsoft 2015 - {0}", DateTime.Now.Year)
+  });
   UpdateCsProjectVersion(version, csProjectFiles);
 });
 
@@ -303,6 +312,7 @@ Task("PR")
 
 Task("Nightly")
   .IsDependentOn("Update-Version")
+  .IsDependentOn("Compile")
   .IsDependentOn("Package-NuGet");
   
 
