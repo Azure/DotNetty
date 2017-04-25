@@ -26,6 +26,8 @@ namespace DotNetty.Common
 
         public static readonly PreciseTimeSpan MinusOne = new PreciseTimeSpan(-1);
 
+        public static PreciseTimeSpan FromTicks(long ticks) => new PreciseTimeSpan(ticks);
+
         public static PreciseTimeSpan FromStart => new PreciseTimeSpan(GetTimeChangeSinceStart());
 
         public static PreciseTimeSpan FromTimeSpan(TimeSpan timeSpan) => new PreciseTimeSpan(TicksToPreciseTicks(timeSpan.Ticks));
