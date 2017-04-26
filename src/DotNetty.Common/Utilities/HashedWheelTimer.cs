@@ -53,11 +53,10 @@ namespace DotNetty.Common.Utilities
 
         /// <summary>
         /// Creates a new timer.
-        ///
         /// </summary>
         /// <param name="tickDuration">the duration between tick</param>
         /// <param name="ticksPerWheel">the size of the wheel</param>
-        /// <param name=" maxPendingTimeouts">The maximum number of pending timeouts after which call to
+        /// <param name="maxPendingTimeouts">The maximum number of pending timeouts after which call to
         /// <c>newTimeout</c> will result in <see cref="RejectedExecutionException"/> being thrown.
         /// No maximum pending timeouts limit is assumed if this value is 0 or negative.</param>
         /// <exception cref="ArgumentException">if either of <c>tickDuration</c> and <c>ticksPerWheel</c> is &lt;= 0</exception>
@@ -70,6 +69,10 @@ namespace DotNetty.Common.Utilities
             {
                 throw new ArgumentException("tickDuration must be greater than 0: " + tickDuration);
             }
+            if (Math.Ceiling(tickDuration.TotalMilliseconds) > int.MaxValue)
+            {
+                throw new ArgumentException($"{nameof(tickDuration)} must be less than or equal to ${int.MaxValue} ms.");
+            }
             if (ticksPerWheel <= 0)
             {
                 throw new ArgumentException("ticksPerWheel must be greater than 0: " + ticksPerWheel);
@@ -80,8 +83,7 @@ namespace DotNetty.Common.Utilities
             this.worker = new Worker(this);
             this.mask = this.wheel.Length - 1;
 
-            // Convert tickDuration to nanos.
-            this.tickDuration = PreciseTimeSpan.FromTimeSpan(tickDuration).Ticks;
+            this.tickDuration = tickDuration.Ticks;
 
             // Prevent overflow
             if (this.tickDuration >= long.MaxValue / this.wheel.Length)
@@ -234,19 +236,22 @@ namespace DotNetty.Common.Utilities
 
             // Add the timeout to the timeout queue which will be processed on the next tick.
             // During processing all the queued HashedWheelTimeouts will be added to the correct HashedWheelBucket.
-            PreciseTimeSpan deadline = PreciseTimeSpan.Deadline(delay) - this.StartTime;
+            TimeSpan deadline = CeilTimeSpanToMilliseconds((PreciseTimeSpan.Deadline(delay) - this.StartTime).ToTimeSpan());
             var timeout = new HashedWheelTimeout(this, task, deadline);
             this.timeouts.TryEnqueue(timeout);
             return timeout;
         }
 
-        bool ShouldLimitTimeouts()
-        {
-            return this.maxPendingTimeouts > 0;
-        }
+        bool ShouldLimitTimeouts() => this.maxPendingTimeouts > 0;
 
         static void ReportTooManyInstances() =>
             Logger.Error($"You are creating too many {nameof(HashedWheelTimer)} instances. {nameof(HashedWheelTimer)} is a shared resource that must be reused across the process,so that only a few instances are created.");
+
+        static TimeSpan CeilTimeSpanToMilliseconds(TimeSpan time)
+        {
+            long remainder = time.Ticks % TimeSpan.TicksPerMillisecond;
+            return remainder == 0 ? time : new TimeSpan(time.Ticks - remainder + TimeSpan.TicksPerMillisecond);
+        }
 
         sealed class Worker : IRunnable
         {
@@ -277,8 +282,8 @@ namespace DotNetty.Common.Utilities
 
                     do
                     {
-                        PreciseTimeSpan deadline = this.WaitForNextTick();
-                        if (deadline > PreciseTimeSpan.Zero)
+                        TimeSpan deadline = this.WaitForNextTick();
+                        if (deadline > TimeSpan.Zero)
                         {
                             int idx = (int)(this.tick & this.owner.mask);
                             this.ProcessCancelledTasks();
@@ -311,7 +316,7 @@ namespace DotNetty.Common.Utilities
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error("", ex);
+                    Logger.Error("Timeout processing failed.", ex);
                 }
             }
 
@@ -333,7 +338,7 @@ namespace DotNetty.Common.Utilities
                         continue;
                     }
 
-                    long calculated = timeout.Deadline.Ticks / this.owner.tickDuration;
+                    long calculated = (timeout.Deadline.Ticks + this.owner.tickDuration - 1) / this.owner.tickDuration; // ceiling to timeout later rather than earlier
                     timeout.RemainingRounds = (calculated - this.tick) / this.owner.wheel.Length;
 
                     long ticks = Math.Max(calculated, this.tick); // Ensure we don't schedule for past.
@@ -375,20 +380,20 @@ namespace DotNetty.Common.Utilities
             /// <returns>long.MinValue if received a shutdown request,
             /// current time otherwise (with long.MinValue changed by +1)
             /// </returns>
-            PreciseTimeSpan WaitForNextTick()
+            TimeSpan WaitForNextTick()
             {
                 long deadline = this.owner.tickDuration * (this.tick + 1);
 
                 while (true)
                 {
-                    PreciseTimeSpan currentTime = PreciseTimeSpan.FromStart - this.owner.StartTime;
-                    TimeSpan sleepTime = PreciseTimeSpan.FromTicks(deadline - currentTime.Ticks + (Stopwatch.Frequency / 1000 - 1)).ToTimeSpan();
+                    TimeSpan currentTime = (PreciseTimeSpan.FromStart - this.owner.StartTime).ToTimeSpan();
+                    TimeSpan sleepTime = CeilTimeSpanToMilliseconds(TimeSpan.FromTicks(deadline - currentTime.Ticks));
 
                     if (sleepTime <= TimeSpan.Zero)
                     {
                         if (currentTime.Ticks == long.MinValue)
                         {
-                            return PreciseTimeSpan.FromTicks(-long.MaxValue);
+                            return TimeSpan.FromTicks(-long.MaxValue);
                         }
                         else
                         {
@@ -399,14 +404,16 @@ namespace DotNetty.Common.Utilities
                     Task delay = null;
                     try
                     {
-                        delay = Task.Delay(sleepTime, this.owner.CancellationToken);
+                        long sleepTimeMs = sleepTime.Ticks / TimeSpan.TicksPerMillisecond; // we've already rounded so no worries about the remainder > 0 here
+                        Contract.Assert(sleepTimeMs <= int.MaxValue);
+                        delay = Task.Delay((int)sleepTimeMs, this.owner.CancellationToken);
                         delay.Wait();
                     }
                     catch (AggregateException) when (delay != null && delay.IsCanceled)
                     {
                         if (Volatile.Read(ref this.owner.workerStateVolatile) == WorkerStateShutdown)
                         {
-                            return PreciseTimeSpan.FromTicks(long.MinValue);
+                            return TimeSpan.FromTicks(long.MinValue);
                         }
                     }
                 }
@@ -422,7 +429,7 @@ namespace DotNetty.Common.Utilities
             const int StExpired = 2;
 
             internal readonly HashedWheelTimer timer;
-            internal readonly PreciseTimeSpan Deadline;
+            internal readonly TimeSpan Deadline;
 
             volatile int state = StInit;
 
@@ -439,7 +446,7 @@ namespace DotNetty.Common.Utilities
             // The bucket to which the timeout was added
             internal HashedWheelBucket Bucket;
 
-            internal HashedWheelTimeout(HashedWheelTimer timer, ITimerTask task, PreciseTimeSpan deadline)
+            internal HashedWheelTimeout(HashedWheelTimer timer, ITimerTask task, TimeSpan deadline)
             {
                 this.timer = timer;
                 this.Task = task;
@@ -510,21 +517,21 @@ namespace DotNetty.Common.Utilities
 
             public override string ToString()
             {
-                PreciseTimeSpan currentTime = PreciseTimeSpan.FromStart;
-                PreciseTimeSpan remaining = this.Deadline - currentTime;
+                PreciseTimeSpan currentTime = PreciseTimeSpan.FromStart - this.timer.StartTime;
+                TimeSpan remaining = this.Deadline - currentTime.ToTimeSpan();
 
                 StringBuilder buf = new StringBuilder(192)
                     .Append(this.GetType().Name)
                     .Append('(')
                     .Append("deadline: ");
-                if (remaining > PreciseTimeSpan.Zero)
+                if (remaining > TimeSpan.Zero)
                 {
-                    buf.Append(remaining.ToTimeSpan())
+                    buf.Append(remaining)
                         .Append(" later");
                 }
-                else if (remaining < PreciseTimeSpan.Zero)
+                else if (remaining < TimeSpan.Zero)
                 {
-                    buf.Append(-remaining.ToTimeSpan())
+                    buf.Append(-remaining)
                         .Append(" ago");
                 }
                 else
@@ -577,7 +584,7 @@ namespace DotNetty.Common.Utilities
             /// <summary>
             /// Expire all <see cref="HashedWheelTimeout"/>s for the given <c>deadline</c>.
             /// </summary>
-            public void ExpireTimeouts(PreciseTimeSpan deadline)
+            public void ExpireTimeouts(TimeSpan deadline)
             {
                 HashedWheelTimeout timeout = this.head;
 
