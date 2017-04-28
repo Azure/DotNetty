@@ -40,7 +40,7 @@ namespace DotNetty.Buffers
 
         public override int Read(byte[] output, int offset, int count)
         {
-            int read = Math.Min(count - offset, this.buffer.ReadableBytes);
+            int read = Math.Min(count, this.buffer.ReadableBytes);
             this.buffer.ReadBytes(output, offset, read);
             return read;
         }
