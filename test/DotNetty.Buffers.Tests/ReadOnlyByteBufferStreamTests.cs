@@ -30,5 +30,25 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(2, read);
             Assert.Equal(new byte[] { 0, 42, 42, 0 }, output);
         }
+
+        [Fact]
+        public void CanGetTheStreamLength()
+        {
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            Assert.Equal(this.testBuffer.WriterIndex, stream.Length);
+        }
+
+        [Fact]
+        public void CanGetConsistentStreamLengthAcrossReads()
+        {
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            var output = new byte[4];
+
+            stream.Read(output, 0, 4);
+            Assert.Equal(100, stream.Length);
+
+            stream.Read(output, 0, 4);
+            Assert.Equal(100, stream.Length);
+        }
     }
 }

@@ -21,15 +21,15 @@ namespace DotNetty.Buffers.Tests
             return this;
         }
 
+        public int ReaderIndex { get; private set; } = 0;
+
+        public int WriterIndex { get; private set; } = 100;
+
         public int Capacity => throw new NotImplementedException();
 
         public int MaxCapacity => throw new NotImplementedException();
 
         public IByteBufferAllocator Allocator => throw new NotImplementedException();
-
-        public int ReaderIndex => throw new NotImplementedException();
-
-        public int WriterIndex => throw new NotImplementedException();
 
         public int WritableBytes => throw new NotImplementedException();
 

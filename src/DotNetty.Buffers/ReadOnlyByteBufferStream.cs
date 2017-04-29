@@ -27,10 +27,7 @@ namespace DotNetty.Buffers
 
         public override bool CanWrite => false;
 
-        public override long Length
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override long Length => this.buffer.WriterIndex;
 
         public override long Position
         {
