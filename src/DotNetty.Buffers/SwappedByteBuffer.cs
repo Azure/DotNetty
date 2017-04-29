@@ -186,6 +186,10 @@ namespace DotNetty.Buffers
 
         public long GetLong(int index) => ByteBufferUtil.SwapLong(this.buf.GetLong(index));
 
+        public int GetMedium(int index) => ByteBufferUtil.SwapMedium(this.buf.GetMedium(index));
+
+        public int GetUnsignedMedium(int index) => this.GetMedium(index).ToUnsignedMediumInt();
+
         public char GetChar(int index) => (char)this.GetShort(index);
 
         public double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
@@ -279,6 +283,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer SetMedium(int index, int value)
+        {
+            this.buf.SetMedium(index, ByteBufferUtil.SwapMedium(value));
+            return this;
+        }
+
         public IByteBuffer SetChar(int index, char value)
         {
             this.SetShort(index, (short)value);
@@ -348,6 +358,10 @@ namespace DotNetty.Buffers
         }
 
         public long ReadLong() => ByteBufferUtil.SwapLong(this.buf.ReadLong());
+
+        public int ReadMedium() => ByteBufferUtil.SwapMedium(this.buf.ReadMedium());
+
+        public int ReadUnsignedMedium() => this.ReadMedium().ToUnsignedMediumInt();
 
         public char ReadChar() => (char)this.ReadShort();
 
@@ -445,6 +459,18 @@ namespace DotNetty.Buffers
         public IByteBuffer WriteLong(long value)
         {
             this.buf.WriteLong(ByteBufferUtil.SwapLong(value));
+            return this;
+        }
+
+        public IByteBuffer WriteUnsignedMedium(int value)
+        {
+            this.buf.WriteMedium(ByteBufferUtil.SwapMedium(value.ToUnsignedMediumInt()));
+            return this;
+        }
+
+        public IByteBuffer WriteMedium(int value)
+        {
+            this.buf.WriteMedium(ByteBufferUtil.SwapMedium(value));
             return this;
         }
 

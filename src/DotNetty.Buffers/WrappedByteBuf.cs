@@ -137,6 +137,10 @@ namespace DotNetty.Buffers
 
         public virtual long GetLong(int index) => this.Buf.GetLong(index);
 
+        public virtual int GetMedium(int index) => this.Buf.GetMedium(index);
+
+        public virtual int GetUnsignedMedium(int index) => this.Buf.GetUnsignedMedium(index);
+
         public virtual char GetChar(int index) => this.Buf.GetChar(index);
 
         // todo: port: complete
@@ -206,6 +210,12 @@ namespace DotNetty.Buffers
         public virtual IByteBuffer SetInt(int index, int value)
         {
             this.Buf.SetInt(index, value);
+            return this;
+        }
+
+        public virtual IByteBuffer SetMedium(int index, int value)
+        {
+            this.Buf.SetMedium(index, value);
             return this;
         }
 
@@ -288,6 +298,10 @@ namespace DotNetty.Buffers
         public virtual uint ReadUnsignedInt() => this.Buf.ReadUnsignedInt();
 
         public virtual long ReadLong() => this.Buf.ReadLong();
+
+        public virtual int ReadMedium() => this.Buf.ReadMedium();
+
+        public virtual int ReadUnsignedMedium() => this.Buf.ReadUnsignedMedium();
 
         public virtual char ReadChar() => this.Buf.ReadChar();
 
@@ -384,6 +398,14 @@ namespace DotNetty.Buffers
         public virtual IByteBuffer WriteChar(char value)
         {
             this.Buf.WriteChar(value);
+            return this;
+        }
+
+        public virtual IByteBuffer WriteUnsignedMedium(int value) => this.Buf.WriteUnsignedMedium(value);
+
+        public virtual IByteBuffer WriteMedium(int value)
+        {
+            this.Buf.WriteMedium(value);
             return this;
         }
 

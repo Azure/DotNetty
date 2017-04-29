@@ -57,6 +57,7 @@ namespace DotNetty.Buffers
             {
                 throw new IndexOutOfRangeException($"ReaderIndex: {readerIndex} (expected: 0 <= readerIndex <= writerIndex({this.WriterIndex})");
             }
+
             this.ReaderIndex = readerIndex;
             return this;
         }
@@ -276,6 +277,19 @@ namespace DotNetty.Buffers
             }
         }
 
+        public virtual int GetMedium(int index)
+        {
+            this.CheckIndex(index, 3);
+            return this._GetMedium(index);
+        }
+
+        public virtual int GetUnsignedMedium(int index)
+        {
+            return this.GetMedium(index).ToUnsignedMediumInt();
+        }
+
+        protected abstract int _GetMedium(int index);
+
         public virtual int GetInt(int index)
         {
             this.CheckIndex(index, 4);
@@ -386,6 +400,15 @@ namespace DotNetty.Buffers
 
         protected abstract void _SetLong(int index, long value);
 
+        public virtual IByteBuffer SetMedium(int index, int value)
+        {
+            this.CheckIndex(index, 3);
+            this._SetMedium(index, value);
+            return this;
+        }
+
+        protected abstract void _SetMedium(int index, int value);
+
         public virtual IByteBuffer SetChar(int index, char value)
         {
             this.SetShort(index, value);
@@ -467,6 +490,17 @@ namespace DotNetty.Buffers
             return v;
         }
 
+        public virtual int ReadMedium()
+        {
+            this.CheckReadableBytes(3);
+            int v = this._GetMedium(this.ReaderIndex);
+            this.ReaderIndex += 3;
+            return v;
+        }
+        public virtual int ReadUnsignedMedium()
+        {
+            return this.ReadMedium().ToUnsignedMediumInt();
+        }
         public virtual uint ReadUnsignedInt()
         {
             unchecked
@@ -585,6 +619,21 @@ namespace DotNetty.Buffers
             {
                 this.WriteShort((short)value);
             }
+            return this;
+        }
+
+        public IByteBuffer WriteUnsignedMedium(int value)
+        {
+            this.WriteMedium(value.ToUnsignedMediumInt());
+            return this;
+        }
+
+        public virtual IByteBuffer WriteMedium(int value)
+        {
+            this.EnsureAccessible();
+            this.EnsureWritable(3);
+            this._SetMedium(this.WriterIndex, value);
+            this.WriterIndex += 3;
             return this;
         }
 

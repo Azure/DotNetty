@@ -702,6 +702,23 @@ namespace DotNetty.Buffers
             }
         }
 
+        protected override int _GetMedium(int index)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 3 <= c.EndOffset)
+            {
+                return c.Buffer.GetMedium(index - c.Offset);
+            }
+            else if (this.Order == ByteOrder.BigEndian)
+            {
+                return this._GetShort(index) << 8 | this._GetByte(index + 2);
+            }
+            else
+            {
+                return (ushort)this._GetShort(index) | (sbyte)this._GetByte(index + 2) << 16;
+            }
+        }
+
         protected override long _GetLong(int index)
         {
             ComponentEntry c = this.FindComponent(index);
@@ -815,6 +832,25 @@ namespace DotNetty.Buffers
             {
                 this._SetByte(index, (byte)value);
                 this._SetByte(index + 1, (byte)((uint)value >> 8));
+            }
+        }
+
+        protected override void _SetMedium(int index, int value)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 3 <= c.EndOffset)
+            {
+                c.Buffer.SetMedium(index - c.Offset, value);
+            }
+            else if (this.Order == ByteOrder.BigEndian)
+            {
+                this._SetShort(index, (short)(value >> 8));
+                this._SetByte(index + 2, (byte)value);
+            }
+            else
+            {
+                this._SetShort(index, (short)value);
+                this._SetByte(index + 2, (byte)(value.RightUShift(16)));
             }
         }
 

@@ -147,6 +147,12 @@ namespace DotNetty.Buffers.Tests
         public void GetLongBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetLong(-1));
 
         [Fact]
+        public void GetMediumBoundaryCheck1() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetMedium(-1));
+
+        [Fact]
+        public void GetMediumBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetMedium(this.buffer.Capacity -2));
+
+        [Fact]
         public void GetLongBoundaryCheck2() => Assert.Throws<IndexOutOfRangeException>(() => this.buffer.GetLong(this.buffer.Capacity - 7));
 
         [Fact]
@@ -238,6 +244,78 @@ namespace DotNetty.Buffers.Tests
             {
                 byte value = (byte)this.random.Next();
                 Assert.Equal(value, this.buffer.GetByte(i));
+            }
+        }
+
+        [Fact]
+        public void TestRandomMediumAccess() => this.TestRandomMediumAccess(true);
+
+        [Fact]
+        public void TestRandomMediumLeAccess() => this.TestRandomMediumAccess(false);
+
+        public void TestRandomMediumAccess(bool testBigEndian)
+        {
+            for (int i = 0; i < this.buffer.Capacity - 2; i += 3)
+            {
+                int value = this.random.Next();
+                if (testBigEndian)
+                {
+                    this.buffer.SetMedium(i, value);
+                }
+                else
+                {
+                    this.buffer.WithOrder(ByteOrder.LittleEndian).SetMedium(i, value);
+                }
+            }
+
+            this.random = new Random(this.seed);
+            for (int i = 0; i < this.buffer.Capacity - 2; i += 3)
+            {
+                int value = this.random.Next() << 8 >> 8;
+                if (testBigEndian)
+                {
+                    Assert.Equal(value, this.buffer.GetMedium(i));
+                }
+                else
+                {
+                    Assert.Equal(value, this.buffer.WithOrder(ByteOrder.LittleEndian).GetMedium(i));
+                }
+            }
+        }
+
+        [Fact]
+        public void TestRandomUnsignedMediumAccess() => this.TestRandomUnsignedMediumAccess(true);
+
+        [Fact]
+        public void TestRandomUnsignedMediumLeAccess() => this.TestRandomUnsignedMediumAccess(false);
+
+        public void TestRandomUnsignedMediumAccess(bool testBigEndian)
+        {
+            for (int i = 0; i < this.buffer.Capacity - 2; i += 3)
+            {
+                int value = this.random.Next();
+                if (testBigEndian)
+                {
+                    this.buffer.SetMedium(i, value);
+                }
+                else
+                {
+                    this.buffer.WithOrder(ByteOrder.LittleEndian).SetMedium(i, value);
+                }
+            }
+
+            this.random = new Random(this.seed);
+            for (int i = 0; i < this.buffer.Capacity - 2; i += 3)
+            {
+                int value = this.random.Next().ToUnsignedMediumInt();
+                if (testBigEndian)
+                {
+                    Assert.Equal(value, this.buffer.GetUnsignedMedium(i));
+                }
+                else
+                {
+                    Assert.Equal(value, this.buffer.WithOrder(ByteOrder.LittleEndian).GetUnsignedMedium(i));
+                }
             }
         }
 
@@ -567,6 +645,105 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(this.buffer.Capacity, this.buffer.WriterIndex);
             Assert.False(this.buffer.IsReadable());
             Assert.False(this.buffer.IsWritable());
+        }
+
+        [Fact]
+        public void TestSequentialMediumAccess() => this.TestSequentialMediumAccess(true);
+
+        [Fact]
+        public void TestSequentialMediumLeAccess() => this.TestSequentialMediumAccess(false);
+
+        void TestSequentialMediumAccess(bool testBigEndian)
+        {
+            this.buffer.SetWriterIndex(0);
+            for (int i = 0; i < this.buffer.Capacity / 3 * 3; i += 3)
+            {
+                int value = this.random.Next();
+                Assert.Equal(i, this.buffer.WriterIndex);
+                Assert.True(this.buffer.IsWritable());
+                if (testBigEndian)
+                {
+                    this.buffer.WriteMedium(value);
+                }
+                else
+                {
+                    this.buffer.WithOrder(ByteOrder.LittleEndian).WriteMedium(value);
+                }
+            }
+            Assert.Equal(0, this.buffer.ReaderIndex);
+            Assert.Equal(this.buffer.Capacity / 3 * 3, this.buffer.WriterIndex);
+            Assert.Equal(this.buffer.Capacity % 3, this.buffer.WritableBytes);
+
+            this.random = new Random(this.seed);
+            for (int i = 0; i < this.buffer.Capacity / 3 * 3; i += 3)
+            {
+                int value = this.random.Next() << 8 >> 8;
+                Assert.Equal(i, this.buffer.ReaderIndex);
+                Assert.True(this.buffer.IsReadable());
+                if (testBigEndian)
+                {
+                    Assert.Equal(value, this.buffer.ReadMedium());
+                }
+                else
+                {
+                    Assert.Equal(value, this.buffer.WithOrder(ByteOrder.LittleEndian).ReadMedium());
+                }
+            }
+
+            Assert.Equal(this.buffer.Capacity / 3 * 3, this.buffer.ReaderIndex);
+            Assert.Equal(this.buffer.Capacity / 3 * 3, this.buffer.WriterIndex);
+            Assert.Equal(0, this.buffer.ReadableBytes);
+            Assert.Equal(this.buffer.Capacity % 3, this.buffer.WritableBytes);
+        }
+
+        [Fact]
+        public void TestSequentialUnsignedMediumAccess() => this.TestSequentialUnsignedMediumAccess(true);
+
+        [Fact]
+        public void TestSequentialUnsignedMediumLeAccess() => this.TestSequentialUnsignedMediumAccess(false);
+
+        void TestSequentialUnsignedMediumAccess(bool testBigEndian)
+        {
+            this.buffer.SetWriterIndex(0);
+            for (int i = 0; i < this.buffer.Capacity / 3 * 3; i += 3)
+            {
+                int value = this.random.Next();
+                Assert.Equal(i, this.buffer.WriterIndex);
+                Assert.True(this.buffer.IsWritable());
+                if (testBigEndian)
+                {
+                    this.buffer.WriteUnsignedMedium(value);
+                }
+                else
+                {
+                    this.buffer.WithOrder(ByteOrder.LittleEndian).WriteUnsignedMedium(value);
+                }
+            }
+
+            Assert.Equal(0, this.buffer.ReaderIndex);
+            Assert.Equal(this.buffer.Capacity / 3 * 3, this.buffer.WriterIndex);
+            Assert.Equal(this.buffer.Capacity % 3, this.buffer.WritableBytes);
+
+            this.random = new Random(this.seed);
+            for (int i = 0; i < this.buffer.Capacity / 3 * 3; i += 3)
+            {
+                int value = this.random.Next().ToUnsignedMediumInt();
+                Assert.Equal(i, this.buffer.ReaderIndex);
+                Assert.True(this.buffer.IsReadable());
+                if (testBigEndian)
+                {
+                    Assert.Equal(value, this.buffer.ReadUnsignedMedium());
+                }
+                else
+                {
+                    Assert.Equal(value, this.buffer.WithOrder(ByteOrder.LittleEndian).ReadUnsignedMedium());
+                }
+            }
+
+            Assert.Equal(this.buffer.Capacity / 3 * 3, this.buffer.ReaderIndex);
+            Assert.Equal(this.buffer.Capacity / 3 * 3, this.buffer.WriterIndex);
+            Assert.Equal(0, this.buffer.ReadableBytes);
+            Assert.Equal(this.buffer.Capacity % 3, this.buffer.WritableBytes);
         }
 
         [Fact]
@@ -1777,6 +1954,18 @@ namespace DotNetty.Buffers.Tests
         public void TestGetByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetByte(0));
 
         [Fact]
+        public void TestGetMediumAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetMedium(0));
+
+        [Fact]
+        public void TestGetMediumLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetMedium(0));
+
+        [Fact]
+        public void TestGetUnsignedMediumAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetUnsignedMedium(0));
+
+        [Fact]
+        public void TestGetUnsignedMediumLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).GetUnsignedMedium(0));
+
+        [Fact]
         public void TestGetShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetShort(0));
 
         [Fact]
@@ -1837,6 +2026,12 @@ namespace DotNetty.Buffers.Tests
         public void TestSetShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetShort(0, 1));
 
         [Fact]
+        public void TestSetMediumAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetMedium(0, 1));
+
+        [Fact]
+        public void TestSetMediumLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetMedium(0, 1));
+
+        [Fact]
         public void TestSetShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetShort(0, 1));
 
         [Fact]
@@ -1883,6 +2078,18 @@ namespace DotNetty.Buffers.Tests
 
         [Fact]
         public void TestReadShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadShort());
+
+        [Fact]
+        public void TestReadMediumAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadMedium());
+
+        [Fact]
+        public void TestReadMediumLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadMedium());
+
+        [Fact]
+        public void TestReadUnsignedMediumAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadUnsignedMedium());
+
+        [Fact]
+        public void TestReadUnsignedMediumLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).ReadUnsignedMedium());
 
         [Fact]
         public void TestReadUnsignedShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadUnsignedShort());
@@ -1937,6 +2144,12 @@ namespace DotNetty.Buffers.Tests
 
         [Fact]
         public void TestWriteByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteByte(1));
+
+        [Fact]
+        public void TestWriteMediumAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteMedium(1));
+
+        [Fact]
+        public void TestWriteMediumLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteMedium(1));
 
         [Fact]
         public void TestWriteShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteShort(1));
