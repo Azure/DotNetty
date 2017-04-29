@@ -13,18 +13,43 @@ namespace DotNetty.Buffers.Tests
     using DotNetty.Common.Utilities;
     class TestByteBuffer : IByteBuffer
     {
-        public int ReadableBytes => 100;
+        const int DefaultLength = 100;
+
+        public TestByteBuffer()
+            : this(DefaultLength)
+        {
+        }
+
+        public TestByteBuffer(int length)
+        {
+            this.WriterIndex = length;
+        }
+
+        public int ReadableBytes => this.WriterIndex - this.ReaderIndex;
 
         public IByteBuffer ReadBytes(byte[] destination, int dstIndex, int length)
         {
             destination.Fill(dstIndex, length, (byte)42);
+            this.ReaderIndex += length;
             return this;
         }
 
         public int ReaderIndex { get; private set; } = 0;
 
-        public int WriterIndex { get; private set; } = 100;
+        public int WriterIndex { get; }
 
+        public IByteBuffer SetReaderIndex(int readerIndex)
+        {
+            if (readerIndex < 0 || readerIndex > this.WriterIndex)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            this.ReaderIndex = readerIndex;
+            return this;
+        }
+
+        // NOT IMPLEMENTED
         public int Capacity => throw new NotImplementedException();
 
         public int MaxCapacity => throw new NotImplementedException();
@@ -418,11 +443,6 @@ namespace DotNetty.Buffers.Tests
         }
 
         public IByteBuffer SetLong(int index, long value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IByteBuffer SetReaderIndex(int readerIndex)
         {
             throw new NotImplementedException();
         }

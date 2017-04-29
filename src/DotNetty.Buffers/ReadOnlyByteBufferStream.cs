@@ -31,12 +31,17 @@ namespace DotNetty.Buffers
 
         public override long Position
         {
-            get { throw new NotSupportedException(); }
-            set { throw new NotSupportedException(); }
+            get => this.buffer.ReaderIndex;
+            set => this.buffer.SetReaderIndex((int)value);
         }
 
         public override int Read(byte[] output, int offset, int count)
         {
+            if (offset + count > output.Length)
+            {
+                throw new ArgumentException($"The sum of {nameof(offset)} and {nameof(count)} is larger than the {nameof(output)} length");
+            }
+
             int read = Math.Min(count, this.buffer.ReadableBytes);
             this.buffer.ReadBytes(output, offset, read);
             return read;
