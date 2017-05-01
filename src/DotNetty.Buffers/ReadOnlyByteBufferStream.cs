@@ -69,7 +69,17 @@ namespace DotNetty.Buffers
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotSupportedException();
+            if (origin == SeekOrigin.Current)
+            {
+                offset += this.Position;
+            }
+            else if (origin == SeekOrigin.End)
+            {
+                offset += this.Length;
+            }
+
+            this.Position = offset;
+            return this.Position;
         }
 
         public override void SetLength(long value)

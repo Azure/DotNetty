@@ -4,6 +4,7 @@
 namespace DotNetty.Buffers.Tests
 {
     using System;
+    using System.IO;
     using Xunit;
 
     public class ReadOnlyByteBufferStreamTests
@@ -176,6 +177,84 @@ namespace DotNetty.Buffers.Tests
             Assert.Throws<IndexOutOfRangeException>(() => stream.Position = int.MinValue);
             Assert.Throws<IndexOutOfRangeException>(() => stream.Position = -1);
             Assert.Throws<IndexOutOfRangeException>(() => stream.Position = (long)int.MaxValue + 1);
+        }
+
+        [Fact]
+        public void CanSeekFromTheBeginningOfTheStream()
+        {
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            int readTo = this.testBuffer.WriterIndex / 2;
+            stream.Read(new byte[readTo], 0, readTo); // ensure seek calcs don't depend on read pos
+
+            long position = stream.Seek(0, SeekOrigin.Begin);
+            Assert.Equal(0, position);
+            Assert.Equal(position, stream.Position);
+
+            position = stream.Seek(10, SeekOrigin.Begin);
+            Assert.Equal(10, position);
+            Assert.Equal(position, stream.Position);
+
+            position = stream.Seek(this.testBuffer.WriterIndex, SeekOrigin.Begin);
+            Assert.Equal(this.testBuffer.WriterIndex, position);
+            Assert.Equal(position, stream.Position);
+        }
+
+        [Fact]
+        public void CanSeekFromTheCurrentStreamPosition()
+        {
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+
+            long position = stream.Seek(0, SeekOrigin.Current);
+            Assert.Equal(0, position);
+            Assert.Equal(position, stream.Position);
+
+            position = stream.Seek(10, SeekOrigin.Current);
+            Assert.Equal(10, position);
+            Assert.Equal(position, stream.Position);
+
+            int relativeEnd = this.testBuffer.WriterIndex - 10;
+            position = stream.Seek(relativeEnd, SeekOrigin.Current);
+            Assert.Equal(this.testBuffer.WriterIndex, position);
+            Assert.Equal(position, stream.Position);
+        }
+
+        [Fact]
+        public void CanSeekFromTheEndOfTheStream()
+        {
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            int readTo = this.testBuffer.WriterIndex / 2;
+            stream.Read(new byte[readTo], 0, readTo); // ensure seek calcs don't depend on read pos
+
+            long position = stream.Seek(-this.testBuffer.WriterIndex, SeekOrigin.End);
+            Assert.Equal(0, position);
+            Assert.Equal(position, stream.Position);
+
+            position = stream.Seek(-10, SeekOrigin.End);
+            Assert.Equal(this.testBuffer.WriterIndex - 10, position);
+            Assert.Equal(position, stream.Position);
+
+            position = stream.Seek(0, SeekOrigin.End);
+            Assert.Equal(this.testBuffer.WriterIndex, position);
+            Assert.Equal(position, stream.Position);
+        }
+
+        [Fact]
+        public void CannotSeekOutsideTheBufferBounds()
+        {
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            int length = this.testBuffer.WriterIndex;
+            int half = length / 2;
+            stream.Position = half;
+
+            // before the beginning of the buffer
+            Assert.Throws<IndexOutOfRangeException>(() => stream.Seek(-1, SeekOrigin.Begin));
+            Assert.Throws<IndexOutOfRangeException>(() => stream.Seek(-half - 1, SeekOrigin.Current));
+            Assert.Throws<IndexOutOfRangeException>(() => stream.Seek(-length - 1, SeekOrigin.End));
+
+            // after the end of the buffer
+            Assert.Throws<IndexOutOfRangeException>(() => stream.Seek(length + 1, SeekOrigin.Begin));
+            Assert.Throws<IndexOutOfRangeException>(() => stream.Seek(half + 1, SeekOrigin.Current));
+            Assert.Throws<IndexOutOfRangeException>(() => stream.Seek(1, SeekOrigin.End));
         }
     }
 }
