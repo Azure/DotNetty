@@ -12,6 +12,13 @@ namespace DotNetty.Buffers.Tests
         readonly TestByteBuffer testBuffer = new TestByteBuffer();
 
         [Fact]
+        public void StreamIsSeekable()
+        {
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            Assert.True(stream.CanSeek);
+        }
+
+        [Fact]
         public void CanReadCountBytesIntoBuffer()
         {
             var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
