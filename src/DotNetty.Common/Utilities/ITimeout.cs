@@ -27,13 +27,13 @@ namespace DotNetty.Common.Utilities
 
         /// <summary>
         /// Returns <c>true</c> if and only if the <see cref="ITimerTask"/> associated
-        /// with this handle has been cancelled.
+        /// with this handle has been canceled.
         /// </summary>
-        bool Cancelled { get; }
+        bool Canceled { get; }
 
         /// <summary>
         /// Attempts to cancel the <see cref="ITimerTask"/> associated with this handle.
-        /// If the task has been executed or cancelled already, it will return with
+        /// If the task has been executed or canceled already, it will return with
         /// no side effect.
         ///
         /// @return True if the cancellation completed successfully, otherwise false

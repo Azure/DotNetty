@@ -307,7 +307,7 @@ namespace DotNetty.Common.Utilities
                         {
                             break;
                         }
-                        if (!timeout.Cancelled)
+                        if (!timeout.Canceled)
                         {
                             this.unprocessedTimeouts.Add(timeout);
                         }
@@ -332,7 +332,7 @@ namespace DotNetty.Common.Utilities
                         // all processed
                         break;
                     }
-                    if (timeout.State == HashedWheelTimeout.StCancelled)
+                    if (timeout.State == HashedWheelTimeout.StCanceled)
                     {
                         // Was cancelled in the meantime.
                         continue;
@@ -425,7 +425,7 @@ namespace DotNetty.Common.Utilities
         sealed class HashedWheelTimeout : ITimeout
         {
             const int StInit = 0;
-            internal const int StCancelled = 1;
+            internal const int StCanceled = 1;
             const int StExpired = 2;
 
             internal readonly HashedWheelTimer timer;
@@ -460,7 +460,7 @@ namespace DotNetty.Common.Utilities
             public bool Cancel()
             {
                 // only update the state it will be removed from HashedWheelBucket on next tick.
-                if (!this.CompareAndSetState(StInit, StCancelled))
+                if (!this.CompareAndSetState(StInit, StCanceled))
                 {
                     return false;
                 }
@@ -491,7 +491,7 @@ namespace DotNetty.Common.Utilities
 
             internal int State => this.state;
 
-            public bool Cancelled => this.State == StCancelled;
+            public bool Canceled => this.State == StCanceled;
 
             public bool Expired => this.State == StExpired;
 
@@ -539,7 +539,7 @@ namespace DotNetty.Common.Utilities
                     buf.Append("now");
                 }
 
-                if (this.Cancelled)
+                if (this.Canceled)
                 {
                     buf.Append(", cancelled");
                 }
@@ -609,7 +609,7 @@ namespace DotNetty.Common.Utilities
                                     deadline));
                         }
                     }
-                    else if (timeout.Cancelled)
+                    else if (timeout.Canceled)
                     {
                         next = this.Remove(timeout);
                     }
@@ -675,7 +675,7 @@ namespace DotNetty.Common.Utilities
                     {
                         return;
                     }
-                    if (timeout.Expired || timeout.Cancelled)
+                    if (timeout.Expired || timeout.Canceled)
                     {
                         continue;
                     }
