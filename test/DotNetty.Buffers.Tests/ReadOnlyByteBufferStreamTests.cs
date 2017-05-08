@@ -5,11 +5,51 @@ namespace DotNetty.Buffers.Tests
 {
     using System;
     using System.IO;
+    using DotNetty.Common.Utilities;
+    using Moq;
     using Xunit;
 
     public class ReadOnlyByteBufferStreamTests
     {
-        readonly TestByteBuffer testBuffer = new TestByteBuffer();
+        IByteBuffer testBuffer;
+
+        void SetupByteBuffer(int length)
+        {
+            int reader = 0;
+            int writer = length;
+            var mock = new Mock<IByteBuffer>();
+
+            mock.Setup(buf => buf.ReadableBytes).Returns(() => writer - reader);
+            mock.Setup(buf => buf.ReaderIndex).Returns(() => reader);
+            mock.Setup(buf => buf.WriterIndex).Returns(() => writer);
+
+            mock.Setup(buf => buf.ReadBytes(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Callback((byte[] buffer, int offset, int count) =>
+                {
+                    buffer.Fill(offset, count, (byte)42);
+                    reader += count;
+                })
+                .Returns(mock.Object);
+
+            mock.Setup(buf => buf.SetReaderIndex(It.IsAny<int>()))
+                .Callback((int index) =>
+                {
+                    if (index < 0 || index > writer)
+                    {
+                        throw new IndexOutOfRangeException();
+                    }
+
+                    reader = index;
+                })
+                .Returns(mock.Object);
+
+            this.testBuffer = mock.Object;
+        }
+
+        public ReadOnlyByteBufferStreamTests()
+        {
+            SetupByteBuffer(4);
+        }
 
         [Fact]
         public void StreamIsSeekable()
@@ -43,8 +83,7 @@ namespace DotNetty.Buffers.Tests
         [Fact]
         public void CanDoMultipleReadsFromStreamIntoBuffer()
         {
-            var streamBuffer = new TestByteBuffer(4);
-            var stream = new ReadOnlyByteBufferStream(streamBuffer, false);
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
             var output = new byte[4];
             stream.Read(output, 0, 2);
             int read = stream.Read(output, 2, 2);
@@ -56,8 +95,7 @@ namespace DotNetty.Buffers.Tests
         [Fact]
         public void SingleReadCannotPassTheEndOfTheStream()
         {
-            var streamBuffer = new TestByteBuffer(4);
-            var stream = new ReadOnlyByteBufferStream(streamBuffer, false);
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
             var output = new byte[6];
 
             // single read is too big for the stream
@@ -69,8 +107,7 @@ namespace DotNetty.Buffers.Tests
         [Fact]
         public void MultiReadCannotPassTheEndOfTheStream()
         {
-            var streamBuffer = new TestByteBuffer(4);
-            var stream = new ReadOnlyByteBufferStream(streamBuffer, false);
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
             var output = new byte[6];
 
             // 2nd read is too big for the stream
@@ -83,31 +120,29 @@ namespace DotNetty.Buffers.Tests
         [Fact]
         public void SingleReadCannotWritePastTheEndOfTheDestinationBuffer()
         {
-            var streamBuffer = new TestByteBuffer(6);
-            var stream = new ReadOnlyByteBufferStream(streamBuffer, false);
-            var output = new byte[4];
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            var output = new byte[3];
 
             // single read is too big for the output buffer
-            Assert.Throws<ArgumentException>(() => stream.Read(output, 0, 6));
+            var e = Assert.Throws<ArgumentException>(() => stream.Read(output, 0, 4));
+            Assert.Equal("The sum of offset and count is larger than the output length", e.Message);
         }
 
         [Fact]
         public void MultiReadCannotWritePastTheEndOfTheDestinationBuffer()
         {
-            var streamBuffer = new TestByteBuffer(6);
-            var stream = new ReadOnlyByteBufferStream(streamBuffer, false);
-            var output = new byte[4];
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
+            var output = new byte[3];
 
             // 2nd read is too big for the output buffer
             stream.Read(output, 0, 2);
-            Assert.Throws<ArgumentException>(() => stream.Read(output, 2, 4));
+            Assert.Throws<ArgumentException>(() => stream.Read(output, 2, 2));
         }
 
         [Fact]
         public void ReadZeroBytesFromTheEndOfTheStream()
         {
-            var streamBuffer = new TestByteBuffer(4);
-            var stream = new ReadOnlyByteBufferStream(streamBuffer, false);
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
             var output = new byte[4];
 
             stream.Read(output, 0, 4);
@@ -130,10 +165,10 @@ namespace DotNetty.Buffers.Tests
             var output = new byte[4];
 
             stream.Read(output, 0, 4);
-            Assert.Equal(100, stream.Length);
+            Assert.Equal(this.testBuffer.WriterIndex, stream.Length);
 
             stream.Read(output, 0, 4);
-            Assert.Equal(100, stream.Length);
+            Assert.Equal(this.testBuffer.WriterIndex, stream.Length);
         }
 
         [Fact]
@@ -178,8 +213,8 @@ namespace DotNetty.Buffers.Tests
         [Fact]
         public void CannotSetThePositionOutsideTheBoundsOfPositiveInt32()
         {
-            var streamBuffer = new TestByteBuffer(int.MaxValue);
-            var stream = new ReadOnlyByteBufferStream(streamBuffer, false);
+            SetupByteBuffer(int.MaxValue);
+            var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
 
             Assert.Throws<IndexOutOfRangeException>(() => stream.Position = int.MinValue);
             Assert.Throws<IndexOutOfRangeException>(() => stream.Position = -1);
@@ -190,15 +225,14 @@ namespace DotNetty.Buffers.Tests
         public void CanSeekFromTheBeginningOfTheStream()
         {
             var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
-            int readTo = this.testBuffer.WriterIndex / 2;
-            stream.Read(new byte[readTo], 0, readTo); // ensure seek calcs don't depend on read pos
+            stream.Position = this.testBuffer.WriterIndex / 2; // ensure seek calcs don't depend on read pos
 
             long position = stream.Seek(0, SeekOrigin.Begin);
             Assert.Equal(0, position);
             Assert.Equal(position, stream.Position);
 
-            position = stream.Seek(10, SeekOrigin.Begin);
-            Assert.Equal(10, position);
+            position = stream.Seek(2, SeekOrigin.Begin);
+            Assert.Equal(2, position);
             Assert.Equal(position, stream.Position);
 
             position = stream.Seek(this.testBuffer.WriterIndex, SeekOrigin.Begin);
@@ -215,11 +249,11 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(0, position);
             Assert.Equal(position, stream.Position);
 
-            position = stream.Seek(10, SeekOrigin.Current);
-            Assert.Equal(10, position);
+            position = stream.Seek(2, SeekOrigin.Current);
+            Assert.Equal(2, position);
             Assert.Equal(position, stream.Position);
 
-            int relativeEnd = this.testBuffer.WriterIndex - 10;
+            int relativeEnd = this.testBuffer.WriterIndex - (int)position;
             position = stream.Seek(relativeEnd, SeekOrigin.Current);
             Assert.Equal(this.testBuffer.WriterIndex, position);
             Assert.Equal(position, stream.Position);
@@ -230,14 +264,14 @@ namespace DotNetty.Buffers.Tests
         {
             var stream = new ReadOnlyByteBufferStream(this.testBuffer, false);
             int readTo = this.testBuffer.WriterIndex / 2;
-            stream.Read(new byte[readTo], 0, readTo); // ensure seek calcs don't depend on read pos
+            stream.Position = this.testBuffer.WriterIndex / 2; // ensure seek calcs don't depend on read pos
 
             long position = stream.Seek(-this.testBuffer.WriterIndex, SeekOrigin.End);
             Assert.Equal(0, position);
             Assert.Equal(position, stream.Position);
 
-            position = stream.Seek(-10, SeekOrigin.End);
-            Assert.Equal(this.testBuffer.WriterIndex - 10, position);
+            position = stream.Seek(-2, SeekOrigin.End);
+            Assert.Equal(this.testBuffer.WriterIndex - 2, position);
             Assert.Equal(position, stream.Position);
 
             position = stream.Seek(0, SeekOrigin.End);
