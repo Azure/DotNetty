@@ -8,7 +8,6 @@ namespace DotNetty.Common.Utilities
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Text;
     using System.Threading;
@@ -54,28 +53,33 @@ namespace DotNetty.Common.Utilities
         /// <summary>
         /// Creates a new timer.
         /// </summary>
-        /// <param name="tickDuration">the duration between tick</param>
+        /// <param name="tickInterval">the interval between two consecutive ticks</param>
         /// <param name="ticksPerWheel">the size of the wheel</param>
         /// <param name="maxPendingTimeouts">The maximum number of pending timeouts after which call to
         /// <c>newTimeout</c> will result in <see cref="RejectedExecutionException"/> being thrown.
         /// No maximum pending timeouts limit is assumed if this value is 0 or negative.</param>
-        /// <exception cref="ArgumentException">if either of <c>tickDuration</c> and <c>ticksPerWheel</c> is &lt;= 0</exception>
+        /// <exception cref="ArgumentException">if either of <c>tickInterval</c> and <c>ticksPerWheel</c> is &lt;= 0</exception>
         public HashedWheelTimer(
-            TimeSpan tickDuration,
+            TimeSpan tickInterval,
             int ticksPerWheel,
             long maxPendingTimeouts)
         {
-            if (tickDuration <= TimeSpan.Zero)
+            if (tickInterval <= TimeSpan.Zero)
             {
-                throw new ArgumentException("tickDuration must be greater than 0: " + tickDuration);
+                throw new ArgumentException($"{nameof(tickInterval)} must be greater than 0: {tickInterval}");
             }
-            if (Math.Ceiling(tickDuration.TotalMilliseconds) > int.MaxValue)
+            if (Math.Ceiling(tickInterval.TotalMilliseconds) > int.MaxValue)
             {
-                throw new ArgumentException($"{nameof(tickDuration)} must be less than or equal to ${int.MaxValue} ms.");
+                throw new ArgumentException($"{nameof(tickInterval)} must be less than or equal to ${int.MaxValue} ms.");
             }
             if (ticksPerWheel <= 0)
             {
-                throw new ArgumentException("ticksPerWheel must be greater than 0: " + ticksPerWheel);
+                throw new ArgumentException($"{nameof(ticksPerWheel)} must be greater than 0: {ticksPerWheel}");
+            }
+            if (ticksPerWheel > int.MaxValue / 2 + 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    $"{nameof(ticksPerWheel)} may not be greater than 2^30: {ticksPerWheel}");
             }
 
             // Normalize ticksPerWheel to power of two and initialize the wheel.
@@ -83,15 +87,15 @@ namespace DotNetty.Common.Utilities
             this.worker = new Worker(this);
             this.mask = this.wheel.Length - 1;
 
-            this.tickDuration = tickDuration.Ticks;
+            this.tickDuration = tickInterval.Ticks;
 
             // Prevent overflow
             if (this.tickDuration >= long.MaxValue / this.wheel.Length)
             {
                 throw new ArgumentException(
                     string.Format(
-                        "tickDuration: {0} (expected: 0 < tickDuration in nanos < {1}",
-                        tickDuration,
+                        "tickInterval: {0} (expected: 0 < tickInterval in nanos < {1}",
+                        tickInterval,
                         long.MaxValue / this.wheel.Length));
             }
             this.workerThread = new XThread(st => this.worker.Run());
@@ -117,25 +121,18 @@ namespace DotNetty.Common.Utilities
 
         internal CancellationToken CancellationToken => this.cancellationTokenSource.Token;
 
+        bool ShouldLimitTimeouts => this.maxPendingTimeouts > 0;
+
         PreciseTimeSpan StartTime
         {
-            get { return PreciseTimeSpan.FromTicks(Volatile.Read(ref this.startTimeVolatile)); }
-            set { Volatile.Write(ref this.startTimeVolatile, value.Ticks); }
+            get => PreciseTimeSpan.FromTicks(Volatile.Read(ref this.startTimeVolatile));
+            set => Volatile.Write(ref this.startTimeVolatile, value.Ticks);
         }
+
+        int WorkerState => Volatile.Read(ref this.workerStateVolatile);
 
         static HashedWheelBucket[] CreateWheel(int ticksPerWheel)
         {
-            if (ticksPerWheel <= 0)
-            {
-                throw new ArgumentException(
-                    "ticksPerWheel must be greater than 0: " + ticksPerWheel);
-            }
-            if (ticksPerWheel > 1073741824)
-            {
-                throw new ArgumentException(
-                    "ticksPerWheel may not be greater than 2^30: " + ticksPerWheel);
-            }
-
             ticksPerWheel = NormalizeTicksPerWheel(ticksPerWheel);
             var wheel = new HashedWheelBucket[ticksPerWheel];
             for (int i = 0; i < wheel.Length; i++)
@@ -163,7 +160,7 @@ namespace DotNetty.Common.Utilities
         /// stopped already.</exception>
         public void Start()
         {
-            switch (Volatile.Read(ref this.workerStateVolatile))
+            switch (this.WorkerState)
             {
                 case WorkerStateInit:
                     if (Interlocked.CompareExchange(ref this.workerStateVolatile, WorkerStateStarted, WorkerStateInit) == WorkerStateInit)
@@ -180,7 +177,7 @@ namespace DotNetty.Common.Utilities
             }
 
             // Wait until the startTime is initialized by the worker.
-            while (this.StartTime == PreciseTimeSpan.Zero)
+            if (this.StartTime == PreciseTimeSpan.Zero)
             {
                 this.startTimeInitialized.Wait(this.CancellationToken);
             }
@@ -188,6 +185,8 @@ namespace DotNetty.Common.Utilities
 
         public ISet<ITimeout> Stop()
         {
+            GC.SuppressFinalize(this);
+
             if (XThread.CurrentThread == this.workerThread)
             {
                 throw new InvalidOperationException($"{nameof(HashedWheelTimer)}.stop() cannot be called from timer task.");
@@ -198,6 +197,7 @@ namespace DotNetty.Common.Utilities
                 // workerState can be 0 or 2 at this moment - let it always be 2.
                 if (Interlocked.Exchange(ref this.workerStateVolatile, WorkerStateShutdown) != WorkerStateShutdown)
                 {
+                    this.cancellationTokenSource.Cancel();
                     Interlocked.Decrement(ref instanceCounter);
                 }
 
@@ -222,7 +222,11 @@ namespace DotNetty.Common.Utilities
             {
                 throw new ArgumentNullException(nameof(task));
             }
-            if (this.ShouldLimitTimeouts())
+            if (this.WorkerState == WorkerStateShutdown)
+            {
+                throw new RejectedExecutionException($"Timer has been stopped and cannot process new operations.");
+            }
+            if (this.ShouldLimitTimeouts)
             {
                 long pendingTimeoutsCount = Interlocked.Increment(ref this.PendingTimeouts);
                 if (pendingTimeoutsCount > this.maxPendingTimeouts)
@@ -242,7 +246,13 @@ namespace DotNetty.Common.Utilities
             return timeout;
         }
 
-        bool ShouldLimitTimeouts() => this.maxPendingTimeouts > 0;
+        void ScheduleCancellation(HashedWheelTimeout timeout)
+        {
+            if (this.WorkerState != WorkerStateShutdown)
+            {
+                this.cancelledTimeouts.TryEnqueue(timeout);
+            }
+        }
 
         static void ReportTooManyInstances() =>
             Logger.Error($"You are creating too many {nameof(HashedWheelTimer)} instances. {nameof(HashedWheelTimer)} is a shared resource that must be reused across the process,so that only a few instances are created.");
@@ -280,9 +290,13 @@ namespace DotNetty.Common.Utilities
                     // Notify the other threads waiting for the initialization at start().
                     this.owner.startTimeInitialized.Signal();
 
-                    do
+                    while (true)
                     {
                         TimeSpan deadline = this.WaitForNextTick();
+                        if (Volatile.Read(ref this.owner.workerStateVolatile) != WorkerStateStarted)
+                        {
+                            break;
+                        }
                         if (deadline > TimeSpan.Zero)
                         {
                             int idx = (int)(this.tick & this.owner.mask);
@@ -293,20 +307,14 @@ namespace DotNetty.Common.Utilities
                             this.tick++;
                         }
                     }
-                    while (Volatile.Read(ref this.owner.workerStateVolatile) == WorkerStateStarted);
 
                     // Fill the unprocessedTimeouts so we can return them from stop() method.
                     foreach (HashedWheelBucket bucket in this.owner.wheel)
                     {
                         bucket.ClearTimeouts(this.unprocessedTimeouts);
                     }
-                    while (true)
+                    while (!this.owner.timeouts.TryDequeue(out var timeout))
                     {
-                        HashedWheelTimeout timeout;
-                        if (!this.owner.timeouts.TryDequeue(out timeout))
-                        {
-                            break;
-                        }
                         if (!timeout.Canceled)
                         {
                             this.unprocessedTimeouts.Add(timeout);
@@ -322,7 +330,7 @@ namespace DotNetty.Common.Utilities
 
             void TransferTimeoutsToBuckets()
             {
-                // transfer only max. 100000 timeouts per tick to prevent a thread to stale the workerThread when it just
+                // transfer only max. 100000 timeouts per tick to prevent a thread to stall the workerThread when it just
                 // adds new timeouts in a loop.
                 for (int i = 0; i < 100000; i++)
                 {
@@ -467,7 +475,7 @@ namespace DotNetty.Common.Utilities
                 // If a task should be canceled we put this to another queue which will be processed on each tick.
                 // So this means that we will have a GC latency of max. 1 tick duration which is good enough. This way
                 // we can make again use of our MpscLinkedQueue and so minimize the locking / overhead as much as possible.
-                this.timer.cancelledTimeouts.TryEnqueue(this);
+                this.timer.ScheduleCancellation(this);
                 return true;
             }
 
@@ -476,9 +484,10 @@ namespace DotNetty.Common.Utilities
                 HashedWheelBucket bucket = this.Bucket;
                 if (bucket != null)
                 {
+                    // timeout got canceled before it was added to the bucket
                     bucket.Remove(this);
                 }
-                else if (this.timer.ShouldLimitTimeouts())
+                else if (this.timer.ShouldLimitTimeouts)
                 {
                     Interlocked.Decrement(ref this.timer.PendingTimeouts);
                 }
@@ -609,10 +618,6 @@ namespace DotNetty.Common.Utilities
                                     deadline));
                         }
                     }
-                    else if (timeout.Canceled)
-                    {
-                        next = this.Remove(timeout);
-                    }
                     else
                     {
                         timeout.RemainingRounds--;
@@ -656,7 +661,7 @@ namespace DotNetty.Common.Utilities
                 timeout.Prev = null;
                 timeout.Next = null;
                 timeout.Bucket = null;
-                if (timeout.timer.ShouldLimitTimeouts())
+                if (timeout.timer.ShouldLimitTimeouts)
                 {
                     Interlocked.Decrement(ref timeout.timer.PendingTimeouts);
                 }

@@ -9,14 +9,8 @@ namespace DotNetty.Common.Utilities
     {
         readonly Action<ITimeout> action;
 
-        public ActionTimerTask(Action<ITimeout> action)
-        {
-            this.action = action;
-        }
+        public ActionTimerTask(Action<ITimeout> action) => this.action = action;
 
-        public void Run(ITimeout timeout)
-        {
-            this.action(timeout);
-        }
+        public void Run(ITimeout timeout) => this.action(timeout);
     }
 }
