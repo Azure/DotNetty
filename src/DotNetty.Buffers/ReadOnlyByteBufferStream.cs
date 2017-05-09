@@ -23,24 +23,26 @@ namespace DotNetty.Buffers
 
         public override bool CanRead => true;
 
-        public override bool CanSeek => false;
+        public override bool CanSeek => true;
 
         public override bool CanWrite => false;
 
-        public override long Length
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override long Length => this.buffer.WriterIndex;
 
         public override long Position
         {
-            get { throw new NotSupportedException(); }
-            set { throw new NotSupportedException(); }
+            get => this.buffer.ReaderIndex;
+            set => this.buffer.SetReaderIndex((int)value);
         }
 
         public override int Read(byte[] output, int offset, int count)
         {
-            int read = Math.Min(count - offset, this.buffer.ReadableBytes);
+            if (offset + count > output.Length)
+            {
+                throw new ArgumentException($"The sum of {nameof(offset)} and {nameof(count)} is larger than the {nameof(output)} length");
+            }
+
+            int read = Math.Min(count, this.buffer.ReadableBytes);
             this.buffer.ReadBytes(output, offset, read);
             return read;
         }
@@ -67,7 +69,17 @@ namespace DotNetty.Buffers
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotSupportedException();
+            if (origin == SeekOrigin.Current)
+            {
+                offset += this.Position;
+            }
+            else if (origin == SeekOrigin.End)
+            {
+                offset += this.Length;
+            }
+
+            this.Position = offset;
+            return this.Position;
         }
 
         public override void SetLength(long value)
