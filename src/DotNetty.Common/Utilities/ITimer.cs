@@ -5,6 +5,7 @@ namespace DotNetty.Common.Utilities
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
 
     /// <summary>
@@ -28,6 +29,6 @@ namespace DotNetty.Common.Utilities
         /// </summary>
         /// <returns>the handles associated with the tasks which were canceled by
         /// this method</returns>
-        ISet<ITimeout> Stop();
+        Task<ISet<ITimeout>> StopAsync();
     }
 }

@@ -8,10 +8,17 @@ namespace DotNetty.Common.Tests.Utilities
     using System.Threading;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
+    using DotNetty.Tests.Common;
     using Xunit;
+    using Xunit.Abstractions;
 
-    public class HashedWheelTimerTest
+    public class HashedWheelTimerTest : TestBase
     {
+        public HashedWheelTimerTest(ITestOutputHelper output)
+            : base(output)
+        {
+        }
+
         [Fact]
         public void TestScheduleTimeoutShouldNotRunBeforeDelay()
         {
@@ -27,7 +34,7 @@ namespace DotNetty.Common.Tests.Utilities
                 TimeSpan.FromSeconds(10));
             Assert.False(barrier.Wait(TimeSpan.FromSeconds(3)));
             Assert.False(timeout.Expired, "timer should not expire");
-            timer.Stop();
+            timer.StopAsync().Wait();
         }
 
         [Fact]
@@ -41,7 +48,7 @@ namespace DotNetty.Common.Tests.Utilities
                 TimeSpan.FromSeconds(2));
             Assert.True(barrier.Wait(TimeSpan.FromSeconds(3)));
             Assert.True(timeout.Expired, "timer should expire");
-            timer.Stop();
+            timer.StopAsync().Wait();
         }
 
         [Fact] // (timeout = 3000)
@@ -58,7 +65,7 @@ namespace DotNetty.Common.Tests.Utilities
             }
 
             latch.Wait();
-            Assert.Equal(0, timerProcessed.Stop().Count); // "Number of unprocessed timeouts should be 0"
+            Assert.Equal(0, timerProcessed.StopAsync().Result.Count); // "Number of unprocessed timeouts should be 0"
 
             ITimer timerUnprocessed = new HashedWheelTimer();
             for (int i = 0; i < 5; i++)
@@ -69,7 +76,7 @@ namespace DotNetty.Common.Tests.Utilities
                     TimeSpan.FromSeconds(5));
             }
             Thread.Sleep(1000); // sleep for a second
-            Assert.False(timerUnprocessed.Stop().Count == 0, "Number of unprocessed timeouts should be greater than 0");
+            Assert.NotEqual(0, timerUnprocessed.StopAsync().Result.Count); // Number of unprocessed timeouts should be greater than 0
         }
 
         [Fact] // (timeout = 3000)
@@ -86,23 +93,15 @@ namespace DotNetty.Common.Tests.Utilities
             }
 
             latch.Wait(3000);
-            timer.Stop();
+            timer.StopAsync().Wait();
 
-            try
-            {
-                timer.NewTimeout(CreateNoOpTimerTask(), TimeSpan.FromMilliseconds(1));
-                Assert.True(false, "Expected exception didn't occur.");
-            }
-            catch (InvalidOperationException ignored)
-            {
-                // expected
-            }
+            Assert.Throws<RejectedExecutionException>(() => timer.NewTimeout(CreateNoOpTimerTask(), TimeSpan.FromMilliseconds(1)));
         }
 
         [Fact] // (timeout = 5000)
         public void TestTimerOverflowWheelLength()
         {
-            var timer = new HashedWheelTimer(TimeSpan.FromMilliseconds(32), 512, -1);
+            var timer = new HashedWheelTimer(TimeSpan.FromMilliseconds(100), 32, -1);
             var latch = new CountdownEvent(3);
 
             ActionTimerTask task = null;
@@ -114,8 +113,8 @@ namespace DotNetty.Common.Tests.Utilities
                 });
             timer.NewTimeout(task, TimeSpan.FromMilliseconds(100));
 
-            latch.Wait(5000);
-            Assert.False(timer.Stop().Count == 0);
+            Assert.True(latch.Wait(5000));
+            Assert.NotEqual(0, timer.StopAsync().Result.Count);
         }
 
         [Fact]
@@ -143,7 +142,7 @@ namespace DotNetty.Common.Tests.Utilities
                 Assert.True(delay >= timeout && delay < maxTimeout, "Timeout + " + scheduledTasks + " delay " + delay + " must be " + timeout + " < " + maxTimeout);
             }
 
-            timer.Stop();
+            timer.StopAsync().Wait();
         }
 
         [Fact]
@@ -163,7 +162,7 @@ namespace DotNetty.Common.Tests.Utilities
             }
             finally
             {
-                timer.Stop();
+                timer.StopAsync().Wait();
             }
         }
 
@@ -183,7 +182,7 @@ namespace DotNetty.Common.Tests.Utilities
             timer.NewTimeout(CreateCountdownEventTimerTask(secondLatch), TimeSpan.FromMilliseconds(90));
 
             secondLatch.Wait();
-            timer.Stop();
+            timer.StopAsync().Wait();
         }
 
         [Fact] // (timeout = 3000)
@@ -201,7 +200,7 @@ namespace DotNetty.Common.Tests.Utilities
             timer.NewTimeout(CreateCountdownEventTimerTask(secondLatch), TimeSpan.FromMilliseconds(90));
 
             secondLatch.Wait(3000);
-            timer.Stop();
+            timer.StopAsync().Wait();
         }
 
         static ActionTimerTask CreateNoOpTimerTask() => new ActionTimerTask(t => { });

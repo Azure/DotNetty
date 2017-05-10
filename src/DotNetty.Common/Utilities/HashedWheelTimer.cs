@@ -183,7 +183,7 @@ namespace DotNetty.Common.Utilities
             }
         }
 
-        public ISet<ITimeout> Stop()
+        public async Task<ISet<ITimeout>> StopAsync()
         {
             GC.SuppressFinalize(this);
 
@@ -207,13 +207,13 @@ namespace DotNetty.Common.Utilities
             try
             {
                 this.cancellationTokenSource.Cancel();
-                this.workerThread.Join(100);
             }
             finally
             {
                 Interlocked.Decrement(ref instanceCounter);
             }
-            return this.worker.UnprocessedTimeouts();
+            await this.worker.ClosedFuture;
+            return this.worker.UnprocessedTimeouts;
         }
 
         public ITimeout NewTimeout(ITimerTask task, TimeSpan delay)
@@ -224,7 +224,7 @@ namespace DotNetty.Common.Utilities
             }
             if (this.WorkerState == WorkerStateShutdown)
             {
-                throw new RejectedExecutionException($"Timer has been stopped and cannot process new operations.");
+                throw new RejectedExecutionException("Timer has been stopped and cannot process new operations.");
             }
             if (this.ShouldLimitTimeouts)
             {
@@ -266,14 +266,17 @@ namespace DotNetty.Common.Utilities
         sealed class Worker : IRunnable
         {
             readonly HashedWheelTimer owner;
-            readonly ISet<ITimeout> unprocessedTimeouts = new HashSet<ITimeout>();
 
             long tick;
+            readonly TaskCompletionSource closedPromise;
 
             public Worker(HashedWheelTimer owner)
             {
                 this.owner = owner;
+                this.closedPromise = new TaskCompletionSource();
             }
+
+            public Task ClosedFuture => this.closedPromise.Task;
 
             public void Run()
             {
@@ -311,13 +314,13 @@ namespace DotNetty.Common.Utilities
                     // Fill the unprocessedTimeouts so we can return them from stop() method.
                     foreach (HashedWheelBucket bucket in this.owner.wheel)
                     {
-                        bucket.ClearTimeouts(this.unprocessedTimeouts);
+                        bucket.ClearTimeouts(this.UnprocessedTimeouts);
                     }
-                    while (!this.owner.timeouts.TryDequeue(out var timeout))
+                    while (this.owner.timeouts.TryDequeue(out var timeout))
                     {
                         if (!timeout.Canceled)
                         {
-                            this.unprocessedTimeouts.Add(timeout);
+                            this.UnprocessedTimeouts.Add(timeout);
                         }
                     }
                     this.ProcessCancelledTasks();
@@ -325,6 +328,10 @@ namespace DotNetty.Common.Utilities
                 catch (Exception ex)
                 {
                     Logger.Error("Timeout processing failed.", ex);
+                }
+                finally
+                {
+                    this.closedPromise.TryComplete();
                 }
             }
 
@@ -399,14 +406,9 @@ namespace DotNetty.Common.Utilities
 
                     if (sleepTime <= TimeSpan.Zero)
                     {
-                        if (currentTime.Ticks == long.MinValue)
-                        {
-                            return TimeSpan.FromTicks(-long.MaxValue);
-                        }
-                        else
-                        {
-                            return currentTime;
-                        }
+                        return currentTime.Ticks == long.MinValue 
+                            ? TimeSpan.FromTicks(-long.MaxValue)
+                            : currentTime;
                     }
 
                     Task delay = null;
@@ -427,7 +429,7 @@ namespace DotNetty.Common.Utilities
                 }
             }
 
-            internal ISet<ITimeout> UnprocessedTimeouts() => this.unprocessedTimeouts;
+            internal ISet<ITimeout> UnprocessedTimeouts { get; } = new HashSet<ITimeout>();
         }
 
         sealed class HashedWheelTimeout : ITimeout
