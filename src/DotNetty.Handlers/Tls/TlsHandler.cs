@@ -41,8 +41,18 @@ namespace DotNetty.Handlers.Tls
         Task<int> pendingSslStreamReadFuture;
 
         public TlsHandler(TlsSettings settings)
-            : this(stream => new SslStream(stream, true), settings)
         {
+            this.settings = settings;
+            this.closeFuture = new TaskCompletionSource();
+            this.mediationStream = new MediationStream(this);
+            if (this.settings.RemoteCertificateValidationCallback == null)
+            {
+                this.sslStream = new SslStream(this.mediationStream, true, null, this.settings.LocalCertificateSelectionCallback);
+            }
+            else
+            {
+                this.sslStream = new SslStream(this.mediationStream, true, this.RemoteCertificateValidationCallback, settings.LocalCertificateSelectionCallback);
+            }
         }
 
         public TlsHandler(Func<Stream, SslStream> sslStreamFactory, TlsSettings settings)
@@ -66,6 +76,8 @@ namespace DotNetty.Handlers.Tls
         public X509Certificate2 LocalCertificate => this.sslStream.LocalCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.LocalCertificate?.Export(X509ContentType.Cert));
 
         public X509Certificate2 RemoteCertificate => this.sslStream.RemoteCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.RemoteCertificate?.Export(X509ContentType.Cert));
+
+        public X509Chain RemoteCertificateChain { get; private set; }
 
         bool IsServer => this.settings is ServerTlsSettings;
 
@@ -105,6 +117,12 @@ namespace DotNetty.Handlers.Tls
             {
                 base.ExceptionCaught(context, exception);
             }
+        }
+
+        bool RemoteCertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            this.RemoteCertificateChain = chain;
+            return this.settings.RemoteCertificateValidationCallback(sender, certificate, chain, sslPolicyErrors);
         }
 
         bool IgnoreException(Exception t)
