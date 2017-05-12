@@ -158,6 +158,16 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
+        public int GetMedium(int index)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public int GetUnsignedMedium(int index)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
         public IByteBuffer GetBytes(int index, IByteBuffer destination) => this.CheckIndex(index, destination.WritableBytes);
 
         public IByteBuffer GetBytes(int index, IByteBuffer destination, int length) => this.CheckIndex(index, length);
@@ -195,7 +205,13 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
+
         public IByteBuffer SetUnsignedInt(int index, uint value)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public IByteBuffer SetMedium(int index, int value)
         {
             throw new IndexOutOfRangeException();
         }
@@ -269,6 +285,16 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
+        public int ReadMedium()
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public int ReadUnsignedMedium()
+        {
+            throw new IndexOutOfRangeException();
+        }
+
         public char ReadChar()
         {
             throw new IndexOutOfRangeException();
@@ -326,6 +352,16 @@ namespace DotNetty.Buffers
         }
 
         public IByteBuffer WriteLong(long value)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public IByteBuffer WriteUnsignedMedium(int value)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public IByteBuffer WriteMedium(int value)
         {
             throw new IndexOutOfRangeException();
         }

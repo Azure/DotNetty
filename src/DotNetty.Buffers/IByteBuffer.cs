@@ -260,6 +260,28 @@ namespace DotNetty.Buffers
         long GetLong(int index);
 
         /// <summary>
+        ///     Gets a 24-bit medium integer at the specified absolute index in this buffer.
+        ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
+        ///     of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetMedium(int index);
+
+        /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the specified absolute index in this buffer.
+        ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
+        ///     of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetUnsignedMedium(int index);
+
+        /// <summary>
         ///     Gets a char at the specified absolute <see cref="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
@@ -410,6 +432,17 @@ namespace DotNetty.Buffers
         IByteBuffer SetUnsignedInt(int index, uint value);
 
         /// <summary>
+        ///     Sets the specified 24-bit medium integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Note that the most significant byte is ignored in the specified value.
+        ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetMedium(int index, int value);
+
+        /// <summary>
         ///     Sets the specified long integer at the specified absolute <see cref="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
@@ -528,6 +561,20 @@ namespace DotNetty.Buffers
         short ReadShort();
 
         /// <summary>
+        ///     Gets a 24-bit medium integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
+        ///     by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadMedium();
+
+        /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
+        ///     by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadUnsignedMedium();
+
+        /// <summary>
         ///     Gets an unsigned short at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
         ///     by <c>2</c> in this buffer.
         /// </summary>
@@ -618,6 +665,10 @@ namespace DotNetty.Buffers
         IByteBuffer WriteChar(char value);
 
         IByteBuffer WriteDouble(double value);
+
+        IByteBuffer WriteUnsignedMedium(int value);
+
+        IByteBuffer WriteMedium(int value);
 
         IByteBuffer WriteBytes(IByteBuffer src);
 

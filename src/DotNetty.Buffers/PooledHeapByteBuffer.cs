@@ -59,6 +59,14 @@ namespace DotNetty.Buffers
                 (long)this.Memory[index + 7] & 0xff;
         }
 
+        protected override int _GetMedium(int index)
+        {
+            index = this.Idx(index);
+            return (sbyte)this.Memory[index] << 16 |
+                   this.Memory[index + 1] << 8 |
+                   this.Memory[index + 2];
+        }
+
         public override IByteBuffer GetBytes(int index, IByteBuffer dst, int dstIndex, int length)
         {
             this.CheckDstIndex(index, length, dstIndex, dst.Capacity);
@@ -103,6 +111,14 @@ namespace DotNetty.Buffers
             this.Memory[index + 1] = (byte)value.RightUShift(16);
             this.Memory[index + 2] = (byte)value.RightUShift(8);
             this.Memory[index + 3] = (byte)value;
+        }
+
+        protected override void _SetMedium(int index, int value)
+        {
+            index = this.Idx(index);
+            this.Memory[index] = (byte)value.RightUShift(16);
+            this.Memory[index + 1] = (byte)value.RightUShift(8);
+            this.Memory[index + 2] = (byte)value;
         }
 
         protected override void _SetLong(int index, long value)

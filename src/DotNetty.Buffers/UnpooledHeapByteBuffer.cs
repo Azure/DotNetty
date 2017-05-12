@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using DotNetty.Common.Utilities;
     using System;
     using System.Diagnostics.Contracts;
     using System.IO;
@@ -217,6 +218,19 @@ namespace DotNetty.Buffers
             return this._GetLong(index);
         }
 
+        public override int GetMedium(int index)
+        {
+            this.EnsureAccessible();
+            return this._GetMedium(index);
+        }
+
+        protected override int _GetMedium(int index)
+        {
+            return (sbyte)this.array[index] << 16 |
+                    this.array[index + 1] << 8 |
+                    this.array[index + 2];
+        }
+
         protected override long _GetLong(int index)
         {
             unchecked
@@ -255,6 +269,24 @@ namespace DotNetty.Buffers
             {
                 this.array[index] = (byte)((ushort)value >> 8);
                 this.array[index + 1] = (byte)value;
+            }
+        }
+
+        public override IByteBuffer SetMedium(int index, int value)
+        {
+            this.EnsureAccessible();
+            this._SetMedium(index, value);
+            return this;
+        }
+
+        protected override void _SetMedium(int index, int value)
+        {
+            unchecked
+            {
+                uint unsignedValue = (uint)value;
+                this.array[index] = (byte)(unsignedValue >> 16);
+                this.array[index + 1] = (byte)(unsignedValue >> 8);
+                this.array[index + 2] = (byte)value;
             }
         }
 

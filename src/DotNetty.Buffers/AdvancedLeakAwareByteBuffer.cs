@@ -117,6 +117,18 @@ namespace DotNetty.Buffers
             return base.GetByte(index);
         }
 
+        public override int GetMedium(int index)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.GetMedium(index);
+        }
+
+        public override int GetUnsignedMedium(int index)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.GetUnsignedMedium(index);
+        }
+
         public override short GetShort(int index)
         {
             this.RecordLeakNonRefCountingOperation();
@@ -212,6 +224,12 @@ namespace DotNetty.Buffers
         {
             this.RecordLeakNonRefCountingOperation();
             return base.SetByte(index, value);
+        }
+
+        public override IByteBuffer SetMedium(int index, int value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.SetMedium(index, value);
         }
 
         public override IByteBuffer SetShort(int index, int value)
@@ -316,6 +334,18 @@ namespace DotNetty.Buffers
         {
             this.RecordLeakNonRefCountingOperation();
             return base.ReadUnsignedShort();
+        }
+
+        public override int ReadMedium()
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.ReadMedium();
+        }
+
+        public override int ReadUnsignedMedium()
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.ReadUnsignedMedium();
         }
 
         public override int ReadInt()
@@ -425,6 +455,12 @@ namespace DotNetty.Buffers
         {
             this.RecordLeakNonRefCountingOperation();
             return base.WriteInt(value);
+        }
+
+        public override IByteBuffer WriteMedium(int value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.WriteMedium(value);
         }
 
         public override IByteBuffer WriteLong(long value)
