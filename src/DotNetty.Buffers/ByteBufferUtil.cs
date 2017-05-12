@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.Diagnostics.Contracts;
+    using System.Linq;
     using System.Text;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
@@ -361,6 +362,54 @@ namespace DotNetty.Buffers
             }
 
             return aLen - bLen;
+        }
+
+        /// <summary>
+        ///     Merge the byte arrays into one byte array.
+        /// </summary>
+        public static byte[] CombineBytes(params byte[][] arrays)
+        {
+            int length = arrays.Sum(a => a.Length);
+            var mergedArray = new byte[length];
+            int offset = 0;
+            foreach (byte[] array in arrays)
+            {
+                Buffer.BlockCopy(array, 0, mergedArray, offset, array.Length);
+                offset += array.Length;
+            }
+
+            return mergedArray;
+        }
+
+        /// <summary>
+        ///     Merge the IByteBuffer arrays into one byte array.
+        /// </summary>
+        public static byte[] CombineBytes(params IByteBuffer[] buffers)
+        {
+            int length = buffers.Sum(a => a.ReadableBytes);
+            ByteOrder? order = null;
+            var mergedArray = new byte[length];
+            for (int i = 0, j = 0; i < buffers.Length; i++)
+            {
+                IByteBuffer b = buffers[i];
+                if (order != null)
+                {
+                    if (!order.Equals(b.Order))
+                    {
+                        throw new ArgumentException($"The byte orders in {nameof(buffers)} are inconsistent ");
+                    }
+                }
+                else
+                {
+                    order = b.Order;
+                }
+
+                int bLen = b.ReadableBytes;
+                b.GetBytes(b.ReaderIndex, mergedArray, j, bLen);
+                j += bLen;
+            }
+
+            return mergedArray;
         }
 
         /// <summary>

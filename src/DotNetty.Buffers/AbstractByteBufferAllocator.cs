@@ -11,8 +11,9 @@ namespace DotNetty.Buffers
     /// </summary>
     public abstract class AbstractByteBufferAllocator : IByteBufferAllocator
     {
-        const int DefaultInitialCapacity = 256;
-        const int DefaultMaxComponents = 16;
+        public const int DefaultInitialCapacity = 256;
+        public const int DefaultMaxComponents = 16;
+        public const int DefaultMaxCapacity = int.MaxValue;
 
         protected static IByteBuffer ToLeakAwareBuffer(IByteBuffer buf)
         {
