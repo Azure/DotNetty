@@ -153,6 +153,11 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
+        public float GetFloat(int index)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
         public double GetDouble(int index)
         {
             throw new IndexOutOfRangeException();
@@ -226,6 +231,11 @@ namespace DotNetty.Buffers
             throw new IndexOutOfRangeException();
         }
 
+        public IByteBuffer SetFloat(int index, float value)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
         public IByteBuffer SetDouble(int index, double value)
         {
             throw new IndexOutOfRangeException();
@@ -249,6 +259,8 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             return TaskEx.Zero;
         }
+
+        public IByteBuffer SetZero(int index, int length) => this.CheckIndex(index, length);
 
         public bool ReadBoolean()
         {
@@ -296,6 +308,11 @@ namespace DotNetty.Buffers
         }
 
         public char ReadChar()
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public float ReadFloat()
         {
             throw new IndexOutOfRangeException();
         }
@@ -367,6 +384,11 @@ namespace DotNetty.Buffers
         }
 
         public IByteBuffer WriteChar(char value)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        public IByteBuffer WriteFloat(float value)
         {
             throw new IndexOutOfRangeException();
         }
@@ -459,6 +481,8 @@ namespace DotNetty.Buffers
             this.CheckLength(length);
             return TaskEx.Completed;
         }
+
+        public IByteBuffer WriteZero(int length) => this.CheckLength(length);
 
         public IByteBuffer Unwrap() => null;
 

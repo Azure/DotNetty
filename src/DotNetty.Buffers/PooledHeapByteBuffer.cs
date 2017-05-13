@@ -170,6 +170,13 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            System.Array.Clear(this.Memory, this.Idx(index), length);
+            return this;
+        }
+
         public override IByteBuffer Copy(int index, int length)
         {
             this.CheckIndex(index, length);

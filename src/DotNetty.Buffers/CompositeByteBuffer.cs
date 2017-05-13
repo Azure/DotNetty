@@ -990,6 +990,29 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            if (length == 0)
+            {
+                return this;
+            }
+
+            int i = this.ToComponentIndex(index);
+            while (length > 0)
+            {
+                ComponentEntry c = this.components[i];
+                IByteBuffer s = c.Buffer;
+                int adjustment = c.Offset;
+                int localLength = Math.Min(length, s.Capacity - (index - adjustment));
+                s.SetZero(index - adjustment, localLength);
+                index += localLength;
+                length -= localLength;
+                i++;
+            }
+            return this;
+        }
+
         public override IByteBuffer Copy(int index, int length)
         {
             this.CheckIndex(index, length);

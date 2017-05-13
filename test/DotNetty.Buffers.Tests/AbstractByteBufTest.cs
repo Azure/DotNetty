@@ -365,14 +365,14 @@ namespace DotNetty.Buffers.Tests
         {
             for (int i = 0; i < this.buffer.Capacity - 1; i += 2)
             {
-                short value = (short)this.random.Next();
+                ushort value = (ushort)(this.random.Next() & 0xFFFF);
                 if (testBigEndian)
                 {
-                    this.buffer.SetShort(i, value);
+                    this.buffer.SetUnsignedShort(i, value);
                 }
                 else
                 {
-                    this.buffer.WithOrder(ByteOrder.LittleEndian).SetShort(i, value);
+                    this.buffer.WithOrder(ByteOrder.LittleEndian).SetUnsignedShort(i, value);
                 }
             }
 
@@ -437,14 +437,14 @@ namespace DotNetty.Buffers.Tests
         {
             for (int i = 0; i < this.buffer.Capacity - 3; i += 4)
             {
-                int value = this.random.Next();
+                uint value = (uint)(this.random.Next() & 0xFFFFFFFFL);
                 if (testBigEndian)
                 {
-                    this.buffer.SetInt(i, value);
+                    this.buffer.SetUnsignedInt(i, value);
                 }
                 else
                 {
-                    this.buffer.WithOrder(ByteOrder.LittleEndian).SetInt(i, value);
+                    this.buffer.WithOrder(ByteOrder.LittleEndian).SetUnsignedInt(i, value);
                 }
             }
 
@@ -513,6 +513,45 @@ namespace DotNetty.Buffers.Tests
             {
                 double value = this.random.NextDouble();
                 Assert.Equal(value, this.buffer.GetDouble(i), 2);
+            }
+        }
+
+        [Fact]
+        public void TestRandomFloatAccess()
+        {
+            for (int i = 0; i < this.buffer.Capacity - 3; i += 4)
+            {
+                float value = (float)this.random.NextDouble();
+                this.buffer.SetFloat(i, value);
+            }
+
+            this.random = new Random(this.seed);
+            for (int i = 0; i < this.buffer.Capacity - 3; i += 4)
+            {
+                float value = (float)this.random.NextDouble();
+                Assert.Equal(value, this.buffer.GetFloat(i), 2);
+            }
+        }
+
+        [Fact]
+        public void TestSetZero()
+        {
+            this.buffer.Clear();
+            while (this.buffer.IsWritable())
+            {
+                this.buffer.WriteByte((byte)0xFF);
+            }
+
+            for (int i = 0; i < this.buffer.Capacity;)
+            {
+                int length = Math.Min(this.buffer.Capacity - i, random.Next(32));
+                this.buffer.SetZero(i, length);
+                i += length;
+            }
+
+            for (int i = 0; i < this.buffer.Capacity; i++)
+            {
+                Assert.Equal(0, this.buffer.GetByte(i));
             }
         }
 
@@ -1459,6 +1498,34 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
+        public void TestWriteZero()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => this.buffer.WriteZero(-1));
+
+            this.buffer.Clear();
+            while (this.buffer.IsWritable())
+            {
+                this.buffer.WriteByte((byte)0xFF);
+            }
+
+            this.buffer.Clear();
+            for (int i = 0; i < this.buffer.Capacity;)
+            {
+                int length = Math.Min(this.buffer.Capacity - i, random.Next(32));
+                this.buffer.WriteZero(length);
+                i += length;
+            }
+
+            Assert.Equal(0, this.buffer.ReaderIndex);
+            Assert.Equal(buffer.Capacity, buffer.WriterIndex);
+
+            for (int i = 0; i < this.buffer.Capacity; i++)
+            {
+                Assert.Equal(0, this.buffer.GetByte(i));
+            }
+        }
+
+        [Fact]
         public void TestDiscardReadBytes()
         {
             this.buffer.SetWriterIndex(0);
@@ -1654,7 +1721,7 @@ namespace DotNetty.Buffers.Tests
             {
                 value[0] ++;
             }
-            else if (value[0] == -1)
+            else if (value[0] == 0xFF)
             {
                 value[0] --;
             }
@@ -2002,6 +2069,9 @@ namespace DotNetty.Buffers.Tests
         public void TestGetDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetDouble(0));
 
         [Fact]
+        public void TestGetFloatAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetFloat(0));
+
+        [Fact]
         public void TestGetBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().GetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
 
         [Fact]
@@ -2035,10 +2105,22 @@ namespace DotNetty.Buffers.Tests
         public void TestSetShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetShort(0, 1));
 
         [Fact]
+        public void TestSetUnsignedShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetUnsignedShort(0, 1));
+
+        [Fact]
+        public void TestSetUnsignedShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetUnsignedShort(0, 1));
+
+        [Fact]
         public void TestSetIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetInt(0, 1));
 
         [Fact]
         public void TestSetIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetInt(0, 1));
+
+        [Fact]
+        public void TestSetUnsignedIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetUnsignedInt(0, 1));
+
+        [Fact]
+        public void TestSetUnsignedIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).SetUnsignedInt(0, 1));
 
         [Fact]
         public void TestSetLongAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetLong(0, 1));
@@ -2051,6 +2133,9 @@ namespace DotNetty.Buffers.Tests
 
         [Fact]
         public void TestSetDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetDouble(0, 1));
+
+        [Fact]
+        public void TestSetFloatAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetFloat(0, 1));
 
         [Fact]
         public void TestSetBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, ReferenceCountUtil.ReleaseLater(Unpooled.Buffer())));
@@ -2066,6 +2151,9 @@ namespace DotNetty.Buffers.Tests
 
         [Fact]
         public void TestSetBytesAfterRelease5() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, new byte[8], 0, 1));
+
+        [Fact]
+        public void TestSetZeroAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetZero(0, 1));
 
         [Fact]
         public void TestReadBooleanAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBoolean());
@@ -2122,6 +2210,9 @@ namespace DotNetty.Buffers.Tests
         public void TestReadDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadDouble());
 
         [Fact]
+        public void TestReadFloatAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadFloat());
+
+        [Fact]
         public void TestReadBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ReadBytes(1));
 
         [Fact]
@@ -2158,10 +2249,22 @@ namespace DotNetty.Buffers.Tests
         public void TestWriteShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteShort(1));
 
         [Fact]
+        public void TestWriteUnsignedShortAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteUnsignedShort(1));
+
+        [Fact]
+        public void TestWriteUnsignedShortLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteUnsignedShort(1));
+
+        [Fact]
         public void TestWriteIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteInt(1));
 
         [Fact]
         public void TestWriteIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteInt(1));
+
+        [Fact]
+        public void TestWriteUnsignedIntAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteUnsignedInt(1));
+
+        [Fact]
+        public void TestWriteUnsignedIntLeAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WithOrder(ByteOrder.LittleEndian).WriteUnsignedInt(1));
 
         [Fact]
         public void TestWriteLongAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteLong(1));
@@ -2174,6 +2277,9 @@ namespace DotNetty.Buffers.Tests
 
         [Fact]
         public void TestWriteDoubleAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteDouble(1));
+
+        [Fact]
+        public void TestWriteFloatAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteFloat(1));
 
         [Fact]
         public void TestWriteBytesAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(ReferenceCountUtil.ReleaseLater(Unpooled.Buffer(8))));
@@ -2189,6 +2295,9 @@ namespace DotNetty.Buffers.Tests
 
         [Fact]
         public void TestWriteBytesAfterRelease5() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteBytes(new byte[8], 0, 1));
+
+        [Fact]
+        public void TestWriteZeroAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteZero(1));
 
         [Fact]
         public void TestForEachByteAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().ForEachByte(new TestByteProcessor()));

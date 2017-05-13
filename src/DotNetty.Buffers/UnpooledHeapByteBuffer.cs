@@ -182,6 +182,13 @@ namespace DotNetty.Buffers
             return readTotal;
         }
 
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            System.Array.Clear(this.array, index, length);
+            return this;
+        }
+
         public override byte GetByte(int index)
         {
             this.EnsureAccessible();

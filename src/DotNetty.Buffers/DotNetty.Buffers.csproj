@@ -9,6 +9,7 @@
     <VersionPrefix>0.4.4</VersionPrefix>
     <Authors>Microsoft Azure</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>DotNetty.Buffers</AssemblyName>

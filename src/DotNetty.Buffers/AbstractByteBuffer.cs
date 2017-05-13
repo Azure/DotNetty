@@ -11,6 +11,7 @@ namespace DotNetty.Buffers
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     ///     Abstract base class implementation of a <see cref="IByteBuffer" />
@@ -316,6 +317,8 @@ namespace DotNetty.Buffers
 
         public virtual char GetChar(int index) => Convert.ToChar(this.GetShort(index));
 
+        public virtual float GetFloat(int index) => ByteBufferUtil.Int32BitsToSingle(this.GetInt(index));
+
         public virtual double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
 
         public virtual IByteBuffer GetBytes(int index, IByteBuffer destination)
@@ -415,6 +418,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public virtual IByteBuffer SetFloat(int index, float value)
+        {
+            this.SetInt(index, ByteBufferUtil.SingleToInt32Bits(value));
+            return this;
+        }
+
         public virtual IByteBuffer SetDouble(int index, double value)
         {
             this.SetLong(index, BitConverter.DoubleToInt64Bits(value));
@@ -454,6 +463,33 @@ namespace DotNetty.Buffers
         public abstract IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length);
 
         public abstract Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
+
+        public virtual IByteBuffer SetZero(int index, int length)
+        {
+            if (length == 0)
+            {
+                return this;
+            }
+
+            this.CheckIndex(index, length);
+
+            int longCount = length.RightUShift(3);
+            int byteCount = length & 7;
+
+            for (int i = longCount; i > 0; i--)
+            {
+                this._SetLong(index, 0);
+                index += 8;
+            }
+
+            for (int i = byteCount; i > 0; i--)
+            {
+                this._SetByte(index, 0);
+                index++;
+            }
+
+            return this;
+        }
 
         public virtual bool ReadBoolean() => this.ReadByte() != 0;
 
@@ -518,6 +554,8 @@ namespace DotNetty.Buffers
         }
 
         public virtual char ReadChar() => (char)this.ReadShort();
+
+        public virtual float ReadFloat() => ByteBufferUtil.Int32BitsToSingle(this.ReadInt());
 
         public virtual double ReadDouble() => BitConverter.Int64BitsToDouble(this.ReadLong());
 
@@ -670,6 +708,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public virtual IByteBuffer WriteFloat(float value)
+        {
+            this.WriteInt(ByteBufferUtil.SingleToInt32Bits(value));
+            return this;
+        }
+
         public virtual IByteBuffer WriteDouble(double value)
         {
             this.WriteLong(BitConverter.DoubleToInt64Bits(value));
@@ -745,6 +789,15 @@ namespace DotNetty.Buffers
         }
 
         public Task WriteBytesAsync(Stream stream, int length) => this.WriteBytesAsync(stream, length, CancellationToken.None);
+
+        public virtual IByteBuffer WriteZero(int length)
+        {
+            this.EnsureAccessible();
+            this.EnsureWritable(length);
+            this.SetZero(this.WriterIndex, length);
+            this.WriterIndex += length;
+            return this;
+        }
 
         public abstract bool HasArray { get; }
 
@@ -908,7 +961,7 @@ namespace DotNetty.Buffers
 
         /// <summary>
         ///     Throws a <see cref="IndexOutOfRangeException" /> if the current <see cref="ReadableBytes" /> of this buffer
-        ///     is less than <see cref="minimumReadableBytes" />.
+        ///     is less than <paramref name="minimumReadableBytes" />.
         /// </summary>
         protected void CheckReadableBytes(int minimumReadableBytes)
         {
