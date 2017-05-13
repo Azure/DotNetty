@@ -148,7 +148,6 @@ namespace DotNetty.Handlers.Tls
                         // ReSharper disable once AssignNullToNotNullAttribute -- task.Exception will be present as task is faulted
                         TlsHandlerState oldState = self.state;
                         Contract.Assert(!oldState.HasAny(TlsHandlerState.AuthenticationCompleted));
-                        self.state = (oldState | TlsHandlerState.FailedAuthentication) & ~TlsHandlerState.Authenticating;
                         self.HandleFailure(task.Exception);
                         break;
                     }

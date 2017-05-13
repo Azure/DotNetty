@@ -1289,7 +1289,7 @@ namespace DotNetty.Buffers.Tests
             {
                 this.buffer.WriteInt(i);
             }
-            IByteBuffer copy = ReferenceCountUtil.ReleaseLater(Unpooled.CopiedBuffer(this.buffer));
+            IByteBuffer copy = Unpooled.CopiedBuffer(this.buffer);
 
             // Make sure there's no effect if called when readerIndex is 0.
             this.buffer.SetReaderIndex(Capacity / 4);
@@ -1332,6 +1332,8 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(Capacity / 4 - 1, this.buffer.ReaderIndex);
             this.buffer.ResetWriterIndex();
             Assert.Equal(Capacity / 3 - 1, this.buffer.WriterIndex);
+
+            copy.Release();
         }
 
         /**

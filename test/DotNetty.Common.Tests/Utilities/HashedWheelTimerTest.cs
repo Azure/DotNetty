@@ -126,7 +126,7 @@ namespace DotNetty.Common.Tests.Utilities
             var timer = new HashedWheelTimer(TimeSpan.FromMilliseconds(tickDuration), 512, -1);
             var queue = new BlockingCollection<PreciseTimeSpan>();
 
-            int scheduledTasks = 100000;
+            int scheduledTasks = 10000;
             for (int i = 0; i < scheduledTasks; i++)
             {
                 PreciseTimeSpan start = PreciseTimeSpan.FromStart;
