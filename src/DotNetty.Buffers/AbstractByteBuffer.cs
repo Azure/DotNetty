@@ -317,11 +317,7 @@ namespace DotNetty.Buffers
 
         public virtual char GetChar(int index) => Convert.ToChar(this.GetShort(index));
 
-        public virtual float GetFloat(int index)
-        {
-            int raw = this.GetInt(index);
-            return Unsafe.As<int, float>(ref raw);
-        }
+        public virtual float GetFloat(int index) => ByteBufferUtil.Int32BitsToSingle(this.GetInt(index));
 
         public virtual double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
 
@@ -424,7 +420,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer SetFloat(int index, float value)
         {
-            this.SetInt(index, Unsafe.As<float, int>(ref value));
+            this.SetInt(index, ByteBufferUtil.SingleToInt32Bits(value));
             return this;
         }
 
@@ -559,11 +555,7 @@ namespace DotNetty.Buffers
 
         public virtual char ReadChar() => (char)this.ReadShort();
 
-        public virtual float ReadFloat()
-        {
-            int raw = this.ReadInt();
-            return Unsafe.As<int, float>(ref raw);
-        }
+        public virtual float ReadFloat() => ByteBufferUtil.Int32BitsToSingle(this.ReadInt());
 
         public virtual double ReadDouble() => BitConverter.Int64BitsToDouble(this.ReadLong());
 
@@ -718,7 +710,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer WriteFloat(float value)
         {
-            this.WriteInt(Unsafe.As<float, int>(ref value));
+            this.WriteInt(ByteBufferUtil.SingleToInt32Bits(value));
             return this;
         }
 
