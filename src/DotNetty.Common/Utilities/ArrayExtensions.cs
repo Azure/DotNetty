@@ -72,5 +72,44 @@ namespace DotNetty.Common.Utilities
                 array[i] = value;
             }
         }
+
+        /// <summary>
+        ///     Merge the byte arrays into one byte array.
+        /// </summary>
+        public static byte[] CombineBytes(this byte[][] arrays)
+        {
+            int newlength = 0;
+            arrays.ForEach(delegate (byte[] array) { newlength += array.Length; });
+            var mergedArray = new byte[newlength];
+            int offset = 0;
+            foreach (byte[] array in arrays)
+            {
+                Buffer.BlockCopy(array, 0, mergedArray, offset, array.Length);
+                offset += array.Length;
+            }
+
+            return mergedArray;
+        }
+
+        /// <summary>
+        ///     Performs the specified action on each element of the specified array.
+        /// </summary>
+        public static void ForEach<T>(this T[] array, Action<T> action)
+        {
+            if (array == null)
+            {
+                throw new ArgumentNullException("array");
+            }
+
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
+
+            for (int i = 0; i < array.Length; i++)
+            {
+                action(array[i]);
+            }
+        }
     }
 }

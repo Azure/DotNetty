@@ -6,7 +6,7 @@ namespace DotNetty.Buffers
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
-    using System.Linq;
+    using DotNetty.Common.Utilities;
 
     /// <summary>
     ///     Utility class for managing and creating unpooled buffers
@@ -34,6 +34,10 @@ namespace DotNetty.Buffers
             return Allocator.Buffer(initialCapacity, maxCapacity);
         }
 
+        /// <summary>
+        ///     Creates a new big-endian buffer which wraps the specified <see cref="array"/>.
+        ///     A modification on the specified array's content will be visible to the returned buffer.
+        /// </summary>
         public static IByteBuffer WrappedBuffer(byte[] array)
         {
             Contract.Requires(array != null);
@@ -41,6 +45,12 @@ namespace DotNetty.Buffers
             return array.Length == 0 ? Empty : new UnpooledHeapByteBuffer(Allocator, array, array.Length);
         }
 
+        /// <summary>
+        ///     Creates a new buffer which wraps the specified buffer's readable bytes.
+        ///     A modification on the specified buffer's content will be visible to the returned buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to wrap. Reference count ownership of this variable is transfered to this method.</param>
+        /// <returns>The readable portion of the <see cref="buffer"/>, or an empty buffer if there is no readable portion.</returns>
         public static IByteBuffer WrappedBuffer(IByteBuffer buffer)
         {
             Contract.Requires(buffer != null);
@@ -56,11 +66,21 @@ namespace DotNetty.Buffers
             }
         }
 
+        /// <summary>
+        ///     Creates a new big-endian composite buffer which wraps the specified arrays without copying them.
+        ///     A modification on the specified arrays' content will be visible to the returned buffer.
+        /// </summary>
         public static IByteBuffer WrappedBuffer(params byte[][] arrays)
         {
             return WrappedBuffer(AbstractByteBufferAllocator.DefaultMaxComponents, arrays);
         }
 
+        /// <summary>
+        ///     Creates a new big-endian composite buffer which wraps the readable bytes of the specified buffers without copying them. 
+        ///     A modification on the content of the specified buffers will be visible to the returned buffer.
+        /// </summary>
+        /// <param name="buffers">The buffers to wrap. Reference count ownership of all variables is transfered to this method.</param>
+        /// <returns>The readable portion of the <see cref="buffers"/>. The caller is responsible for releasing this buffer.</returns>
         public static IByteBuffer WrappedBuffer(params IByteBuffer[] buffers)
         {
             return WrappedBuffer(AbstractByteBufferAllocator.DefaultMaxComponents, buffers);
@@ -85,12 +105,19 @@ namespace DotNetty.Buffers
             return WrappedBuffer(array).Slice(offset, length);
         }
 
+        /// <summary>
+        ///     Creates a new big-endian composite buffer which wraps the readable bytes of the specified buffers without copying them.
+        ///     A modification on the content of the specified buffers will be visible to the returned buffer.
+        /// </summary>
+        /// <param name="maxNumComponents">Advisement as to how many independent buffers are allowed to exist before consolidation occurs.</param>
+        /// <param name="buffers">The buffers to wrap. Reference count ownership of all variables is transfered to this method.</param>
+        /// <returns>The readable portion of the <see cref="buffers"/>. The caller is responsible for releasing this buffer.</returns>
         public static IByteBuffer WrappedBuffer(int maxNumComponents, params IByteBuffer[] buffers)
         {
             switch (buffers.Length)
             {
                 case 0:
-                    return Empty;
+                    break;
                 case 1:
                     IByteBuffer buffer = buffers[0];
                     if (buffer.IsReadable())
@@ -112,6 +139,10 @@ namespace DotNetty.Buffers
             return Empty;
         }
 
+        /// <summary>
+        ///     Creates a new big-endian composite buffer which wraps the specified arrays without copying them.
+        ///     A modification on the specified arrays' content will be visible to the returned buffer.
+        /// </summary>
         public static IByteBuffer WrappedBuffer(int maxNumComponents, params byte[][] arrays)
         {
             if (arrays.Length == 0)
@@ -139,7 +170,7 @@ namespace DotNetty.Buffers
                 }
             }
 
-            return components.Any() ? new CompositeByteBuffer(Allocator, maxNumComponents, components) : Empty;
+            return components.Count > 0 ? new CompositeByteBuffer(Allocator, maxNumComponents, components) : Empty;
         }
 
         public static IByteBuffer UnreleasableBuffer(IByteBuffer buffer)
@@ -194,7 +225,7 @@ namespace DotNetty.Buffers
                 return arrays[0].Length == 0 ? Empty : CopiedBuffer(arrays[0]);
             }
 
-            byte[] mergedArray = ByteBufferUtil.CombineBytes(arrays);
+            byte[] mergedArray = arrays.CombineBytes();
             return WrappedBuffer(mergedArray);
         }
 
@@ -266,8 +297,24 @@ namespace DotNetty.Buffers
                 return CopiedBuffer(buffers[0]);
             }
 
-            ByteOrder order = buffers.First().Order;
-            return WrappedBuffer(ByteBufferUtil.CombineBytes(buffers)).WithOrder(order);
+            ByteOrder order = buffers[0].Order;
+            int newlength = 0;
+            buffers.ForEach(delegate(IByteBuffer buffer) { newlength += buffer.ReadableBytes; });
+            var mergedArray = new byte[newlength];
+            for (int i = 0, j = 0; i < buffers.Length; i++)
+            {
+                IByteBuffer b = buffers[i];
+                if (!order.Equals(b.Order))
+                {
+                    throw new ArgumentException($"The byte orders in {nameof(buffers)} are inconsistent ");
+                }
+
+                int bLen = b.ReadableBytes;
+                b.GetBytes(b.ReaderIndex, mergedArray, j, bLen);
+                j += bLen;
+            }
+
+            return WrappedBuffer(mergedArray).WithOrder(order);
         }
 
         /// <summary>
