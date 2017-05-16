@@ -41,7 +41,7 @@ namespace DotNetty.Buffers
         bool freed;
 
         public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents)
-            : base(int.MaxValue)
+            : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
         {
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
@@ -52,7 +52,7 @@ namespace DotNetty.Buffers
         }
 
         public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, params IByteBuffer[] buffers)
-            : base(int.MaxValue)
+            : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
         {
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
@@ -66,9 +66,23 @@ namespace DotNetty.Buffers
             this.leak = LeakDetector.Open(this);
         }
 
+        public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, IByteBuffer[] buffers, int offset, int length)
+            : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
+        {
+            Contract.Requires(allocator != null);
+            Contract.Requires(maxNumComponents >= 2);
+
+            this.allocator = allocator;
+            this.maxNumComponents = maxNumComponents;
+            this.AddComponents0(0, buffers, offset, length);
+            this.ConsolidateIfNeeded();
+            this.SetIndex(0, this.Capacity);
+            this.leak = LeakDetector.Open(this);
+        }
+
         public CompositeByteBuffer(
             IByteBufferAllocator allocator, int maxNumComponents, IEnumerable<IByteBuffer> buffers)
-            : base(int.MaxValue)
+            : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
         {
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
@@ -134,7 +148,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        void AddComponent0(int cIndex, IByteBuffer buffer)
+        int AddComponent0(int cIndex, IByteBuffer buffer)
         {
             Contract.Requires(buffer != null);
 
@@ -166,6 +180,7 @@ namespace DotNetty.Buffers
                     this.UpdateComponentOffsets(cIndex);
                 }
             }
+            return cIndex;
         }
 
         /// <summary>
@@ -203,6 +218,59 @@ namespace DotNetty.Buffers
                     cIndex = size;
                 }
             }
+        }
+
+        int AddComponents0(int cIndex, IByteBuffer[] buffers, int offset, int length)
+        {
+            Contract.Requires(buffers != null);
+
+            int i = offset;
+            try
+            {
+                this.CheckComponentIndex(cIndex);
+
+                // No need for consolidation
+                while (i < length)
+                {
+                    // Increment i now to prepare for the next iteration and prevent a duplicate release (addComponent0
+                    // will release if an exception occurs, and we also release in the finally block here).
+                    IByteBuffer b = buffers[i++];
+                    if (b == null)
+                    {
+                        break;
+                    }
+
+                    cIndex = this.AddComponent0(cIndex, b) + 1;
+                    int size = this.components.Count;
+                    if (cIndex > size)
+                    {
+                        cIndex = size;
+                    }
+
+                }
+
+                return cIndex;
+            }
+            finally
+            {
+                for (; i < length; ++i)
+                {
+                    IByteBuffer b = buffers[i];
+                    if (b != null)
+                    {
+                        try
+                        {
+                            b.Release();
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+                    }
+
+                }
+            }
+
         }
 
         /// <summary>
