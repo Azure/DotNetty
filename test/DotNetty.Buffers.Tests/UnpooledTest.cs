@@ -554,12 +554,31 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
+        public void TestInconsistentOrder()
+        {
+            Assert.Throws<ArgumentException>(() =>
+            {
+                IByteBuffer buf = WrappedBuffer(new byte[] { 1 }).WithOrder(ByteOrder.BigEndian);
+                IByteBuffer buf1 = WrappedBuffer(new byte[] { 2, 3 }).WithOrder(ByteOrder.LittleEndian);
+                try
+                {
+                    CopiedBuffer(buf, buf1);
+                }
+                finally
+                {
+                    buf.Release();
+                    buf1.Release();
+                }
+            });
+        }
+
+        [Fact]
         public void TestWrapByteBufArrayStartsWithNonReadable()
         {
             IByteBuffer buffer1 = Buffer(8);
-            IByteBuffer buffer2 = Buffer(8).WriteZero(8); // Ensure the ByteBuf is readable.
+            IByteBuffer buffer2 = Buffer(8).WriteZero(8); // Ensure the IByteBuffer is readable.
             IByteBuffer buffer3 = Buffer(8);
-            IByteBuffer buffer4 = Buffer(8).WriteZero(8); // Ensure the ByteBuf is readable.
+            IByteBuffer buffer4 = Buffer(8).WriteZero(8); // Ensure the IByteBuffer is readable.
 
             IByteBuffer wrapped = WrappedBuffer(buffer1, buffer2, buffer3, buffer4);
             Assert.Equal(16, wrapped.ReadableBytes);

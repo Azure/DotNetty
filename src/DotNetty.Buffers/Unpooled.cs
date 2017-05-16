@@ -297,9 +297,13 @@ namespace DotNetty.Buffers
                 return CopiedBuffer(buffers[0]);
             }
 
+            long newlength = 0;
             ByteOrder order = buffers[0].Order;
-            int newlength = 0;
-            buffers.ForEach(delegate(IByteBuffer buffer) { newlength += buffer.ReadableBytes; });
+            foreach (IByteBuffer buffer in buffers)
+            {
+                newlength += buffer.ReadableBytes;
+            }
+
             var mergedArray = new byte[newlength];
             for (int i = 0, j = 0; i < buffers.Length; i++)
             {
