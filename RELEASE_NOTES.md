@@ -1,3 +1,9 @@
+#### 0.4.5 May 15 2017
+- Support for Medium and Unsigned Medium types (#244)
+- Support for Float (Single) type and Zeroing API (#209)
+- Hashed Wheel Timer (#242)
+- Fix for unintended concurrent flush (#218), silent failures during TLS handshake (#225)
+
 #### 0.4.4 March 31 2017
 - Added SNI support
 - Fixed assembly metadata

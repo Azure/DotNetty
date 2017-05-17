@@ -8,7 +8,7 @@
     <Copyright>Copyright © Microsoft Corporation</Copyright>
     <AssemblyTitle>DotNetty: common routines</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.4.4</VersionPrefix>
+    <VersionPrefix>0.4.5</VersionPrefix>
     <Authors>Microsoft Azure</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
