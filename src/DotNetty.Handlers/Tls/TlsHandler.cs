@@ -62,9 +62,10 @@ namespace DotNetty.Handlers.Tls
  
         public static TlsHandler Server(X509Certificate certificate) => new TlsHandler(new ServerTlsSettings(certificate));
 
-        public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
+        // using workaround mentioned here: https://github.com/dotnet/corefx/issues/4510
+        public X509Certificate2 LocalCertificate => this.sslStream.LocalCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.LocalCertificate?.Export(X509ContentType.Cert));
 
-        public X509Certificate RemoteCertificate => this.sslStream.RemoteCertificate;
+        public X509Certificate2 RemoteCertificate => this.sslStream.RemoteCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.RemoteCertificate?.Export(X509ContentType.Cert));
 
         bool IsServer => this.settings is ServerTlsSettings;
 
@@ -147,7 +148,6 @@ namespace DotNetty.Handlers.Tls
                         // ReSharper disable once AssignNullToNotNullAttribute -- task.Exception will be present as task is faulted
                         TlsHandlerState oldState = self.state;
                         Contract.Assert(!oldState.HasAny(TlsHandlerState.AuthenticationCompleted));
-                        self.state = (oldState | TlsHandlerState.FailedAuthentication) & ~TlsHandlerState.Authenticating;
                         self.HandleFailure(task.Exception);
                         break;
                     }

@@ -41,6 +41,10 @@ namespace DotNetty.Buffers
 
         protected override int _GetInt(int index) => this.buffer.GetInt(index);
 
+        public override int GetMedium(int index) => this._GetMedium(index);
+
+        protected override int _GetMedium(int index) => this.buffer.GetMedium(index);
+
         public override long GetLong(int index) => this._GetLong(index);
 
         protected override long _GetLong(int index) => this.buffer.GetLong(index);
@@ -93,6 +97,14 @@ namespace DotNetty.Buffers
 
         protected override void _SetInt(int index, int value) => this.buffer.SetInt(index, value);
 
+        public override IByteBuffer SetMedium(int index, int value)
+        {
+            this._SetMedium(index, value);
+            return this;
+        }
+
+        protected override void _SetMedium(int index, int value) => this.buffer.SetMedium(index, value);
+
         public override IByteBuffer SetLong(int index, long value)
         {
             this._SetLong(index, value);
@@ -114,6 +126,12 @@ namespace DotNetty.Buffers
         }
 
         public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken) => this.buffer.SetBytesAsync(index, src, length, cancellationToken);
+
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.buffer.SetZero(index, length);
+            return this;
+        }
 
         public override int IoBufferCount => this.Unwrap().IoBufferCount;
 

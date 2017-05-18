@@ -1,3 +1,23 @@
+#### 0.4.5 May 15 2017
+- Support for Medium and Unsigned Medium types (#244)
+- Support for Float (Single) type and Zeroing API (#209)
+- Hashed Wheel Timer (#242)
+- Fix for unintended concurrent flush (#218), silent failures during TLS handshake (#225)
+
+#### 0.4.4 March 31 2017
+- Added SNI support
+- Fixed assembly metadata
+
+#### 0.4.3 March 21 2017
+- Extended support for .NET 4.5
+- Fix to PooledByteBufferAllocator to promptly release freed chunks for GC
+- Ability to limit overall PooledByteBufferAllocator capacity
+- Updated dependencies
+
+#### 0.4.2 February 9 2017
+- Better alignment with .NET Standard and portability (esp UWP support)
+- New tooling
+
 #### 0.4.1 January 26 2017
 - Introduced Platform allowing for alternative implementations of platform-specific concepts.
 - STEE and others use Task-based "thread" abstraction.

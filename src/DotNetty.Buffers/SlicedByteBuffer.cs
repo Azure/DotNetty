@@ -84,6 +84,8 @@ namespace DotNetty.Buffers
 
         protected override long _GetLong(int index) => this.buffer.GetLong(index + this.adjustment);
 
+        protected override int _GetMedium(int index) => this.buffer.GetMedium(index + this.adjustment);
+
         public override IByteBuffer Duplicate()
         {
             IByteBuffer duplicate = this.buffer.Slice(this.adjustment, this.length);
@@ -142,6 +144,8 @@ namespace DotNetty.Buffers
 
         protected override void _SetLong(int index, long value) => this.buffer.SetLong(index + this.adjustment, value);
 
+        protected override void _SetMedium(int index, int value) => this.buffer.SetMedium(index + this.adjustment, value);
+
         public override IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length)
         {
             this.CheckIndex(index, length);
@@ -159,6 +163,13 @@ namespace DotNetty.Buffers
         {
             this.CheckIndex(index, length);
             this.buffer.SetBytes(index + this.adjustment, src, srcIndex, length);
+            return this;
+        }
+
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.CheckIndex(index, length);
+            this.buffer.SetZero(index + this.adjustment, length);
             return this;
         }
     }

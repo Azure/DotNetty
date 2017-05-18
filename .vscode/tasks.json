@@ -5,9 +5,9 @@
     "args": [],
     "tasks": [
         {
-            "taskName": "build",
+            "taskName": "msbuild",
             "args": [
-                "**/project.json"
+                "dotnetty.sln"
             ],
             "isBuildCommand": true,
             "problemMatcher": "$msCompile"

@@ -33,6 +33,12 @@ namespace DotNetty.Handlers.Tls
         /// the length of the ssl record header (in bytes)
         public const int SSL_RECORD_HEADER_LENGTH = 5;
 
+        // Not enough data in buffer to parse the record length
+        public const int NOT_ENOUGH_DATA = -1;
+
+        // data is not encrypted
+        public const int NOT_ENCRYPTED = -2;
+
         /// <summary>
         ///     Return how much bytes can be read out of the encrypted data. Be aware that this method will not increase
         ///     the readerIndex of the given <see cref="IByteBuffer"/>.

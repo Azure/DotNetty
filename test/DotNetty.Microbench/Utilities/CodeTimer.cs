@@ -39,7 +39,7 @@ namespace DotNetty.Microbench.Utilities
             // Get the time before returning so that any code above doesn't 
             // impact the time.
             this.startTime = Stopwatch.GetTimestamp();
-#if NET45
+#if NET452
             var handle = Process.GetCurrentProcess().Handle;
 #else
             var handle = Process.GetCurrentProcess().SafeHandle.DangerousGetHandle();
@@ -121,7 +121,7 @@ namespace DotNetty.Microbench.Utilities
 
         public void Dispose()
         {
-#if NET45
+#if NET452
             var handle = Process.GetCurrentProcess().Handle;
 #else
             var handle = Process.GetCurrentProcess().SafeHandle.DangerousGetHandle();

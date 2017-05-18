@@ -154,8 +154,10 @@ Task("Publish-NuGet")
   foreach(var package in packages)
   {
     NuGetPush(package, new NuGetPushSettings {
+      ToolPath = ".nuget/nuget.exe",
       Source = source,
-      ApiKey = apiKey
+      ApiKey = apiKey,
+      Verbosity = NuGetVerbosity.Detailed
     });
   }
 });
@@ -167,9 +169,9 @@ Task("Benchmark")
   .IsDependentOn("Compile")
   .Does(() =>
 {
-  StartProcess(nuget.ToString() + "/nuget.exe", "install NBench.Runner -OutputDirectory tools -ExcludeVersion -Version 0.3.4");
+  StartProcess(nuget.ToString() + "/nuget.exe", "install NBench.Runner -OutputDirectory tools -ExcludeVersion -Version 1.0.0");
 
-  var libraries = GetFiles("./test/**/bin/" + configuration + "/net45/*.Performance.dll");
+  var libraries = GetFiles("./test/**/bin/" + configuration + "/net452/*.Performance.dll");
   CreateDirectory(outputPerfResults);
 
   foreach (var lib in libraries)
@@ -272,6 +274,13 @@ Task("Update-Version")
     throw new CakeException("No version specified!");
   }
 
+  CreateAssemblyInfo("src/shared/SharedAssemblyInfo.cs", new AssemblyInfoSettings {
+      Product = "DotNetty",
+      Company = "Microsoft",
+      Version = version,
+      FileVersion = version,
+      Copyright = string.Format("(c) Microsoft 2015 - {0}", DateTime.Now.Year)
+  });
   UpdateCsProjectVersion(version, csProjectFiles);
 });
 
@@ -303,6 +312,7 @@ Task("PR")
 
 Task("Nightly")
   .IsDependentOn("Update-Version")
+  .IsDependentOn("Compile")
   .IsDependentOn("Package-NuGet");
   
 

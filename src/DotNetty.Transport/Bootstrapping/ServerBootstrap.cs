@@ -124,20 +124,7 @@ namespace DotNetty.Transport.Bootstrapping
 
         protected override void Init(IChannel channel)
         {
-            foreach (ChannelOptionValue e in this.Options)
-            {
-                try
-                {
-                    if (!e.Set(channel.Configuration))
-                    {
-                        Logger.Warn("Unknown channel option: " + e);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("Failed to set a channel option: " + channel, ex);
-                }
-            }
+            SetChannelOptions(channel, this.Options, Logger);
 
             foreach (AttributeValue e in this.Attributes)
             {
@@ -201,20 +188,7 @@ namespace DotNetty.Transport.Bootstrapping
 
                 child.Pipeline.AddLast((string)null, this.childHandler);
 
-                foreach (ChannelOptionValue option in this.childOptions)
-                {
-                    try
-                    {
-                        if (!option.Set(child.Configuration))
-                        {
-                            Logger.Warn("Unknown channel option: " + option);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warn("Failed to set a channel option: " + child, ex);
-                    }
-                }
+                SetChannelOptions(child, this.childOptions, Logger);
 
                 foreach (AttributeValue attr in this.childAttrs)
                 {

@@ -4,6 +4,7 @@
 namespace DotNetty.Common.Utilities
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
 
     /// <summary>
@@ -71,6 +72,28 @@ namespace DotNetty.Common.Utilities
             {
                 array[i] = value;
             }
+        }
+
+        /// <summary>
+        ///     Merge the byte arrays into one byte array.
+        /// </summary>
+        public static byte[] CombineBytes(this byte[][] arrays)
+        {
+            long newlength = 0;
+            foreach (byte[] array in arrays)
+            {
+                newlength += array.Length;
+            }
+
+            var mergedArray = new byte[newlength];
+            int offset = 0;
+            foreach (byte[] array in arrays)
+            {
+                Buffer.BlockCopy(array, 0, mergedArray, offset, array.Length);
+                offset += array.Length;
+            }
+
+            return mergedArray;
         }
     }
 }
