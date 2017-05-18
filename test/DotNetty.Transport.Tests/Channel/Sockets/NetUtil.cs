@@ -56,9 +56,9 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
             throw new NotSupportedException($"Address family {addressFamily} is not supported. Expecting InterNetwork/InterNetworkV6");
         }
 
-        internal class DummyHandler : SimpleChannelInboundHandler<DatagramPacket>
+        internal class DummyHandler<T> : SimpleChannelInboundHandler<T>
         {
-            protected override void ChannelRead0(IChannelHandlerContext ctx, DatagramPacket msg)
+            protected override void ChannelRead0(IChannelHandlerContext ctx, T msg)
             {
                 // Do nothing
             }
