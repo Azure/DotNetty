@@ -28,6 +28,7 @@ namespace DotNetty.Handlers.Tls
         static readonly Action<Task, object> HandshakeCompletionCallback = new Action<Task, object>(HandleHandshakeCompleted);
 
         readonly SslStream sslStream;
+        readonly SniSslStream sniSslStream;
         readonly MediationStream mediationStream;
         readonly TaskCompletionSource closeFuture;
 
@@ -54,6 +55,17 @@ namespace DotNetty.Handlers.Tls
             this.closeFuture = new TaskCompletionSource();
             this.mediationStream = new MediationStream(this);
             this.sslStream = sslStreamFactory(this.mediationStream);
+        }
+
+        public TlsHandler(Func<Stream, SniSslStream> sslStreamFactory, TlsSettings settings)
+        {
+            Contract.Requires(sslStreamFactory != null);
+            Contract.Requires(settings != null);
+
+            this.settings = settings;
+            this.closeFuture = new TaskCompletionSource();
+            this.mediationStream = new MediationStream(this);
+            this.sniSslStream = sslStreamFactory(this.mediationStream);
         }
 
         public static TlsHandler Client(string targetHost) => new TlsHandler(new ClientTlsSettings(targetHost));
@@ -485,7 +497,25 @@ namespace DotNetty.Handlers.Tls
                 if (this.IsServer)
                 {
                     var serverSettings = (ServerTlsSettings)this.settings;
-                    this.sslStream.AuthenticateAsServerAsync(serverSettings.Certificate, serverSettings.NegotiateClientCertificate, serverSettings.EnabledProtocols, serverSettings.CheckCertificateRevocation)
+
+                    if (serverSettings.SniEnabled && this.sniSslStream == null)
+                    {
+                        throw new ArgumentException("SNI configuration is not valid");
+                    }
+
+                    if (!serverSettings.SniEnabled && this.sslStream == null)
+                    {
+                        throw new ArgumentException("SSL configuration is not valid");
+                    }
+
+                    var certficateSelector = ServerTlsSettings.DefaultCertficateSelectorKey;
+                    if (serverSettings.SniEnabled)
+                    {
+                        var serverNameIndicated = this.sniSslStream.GetServerName();
+                        certficateSelector = serverNameIndicated ?? certficateSelector;
+                    } 
+
+                    this.sslStream.AuthenticateAsServerAsync(serverSettings.Certificates[certficateSelector], serverSettings.NegotiateClientCertificate, serverSettings.EnabledProtocols, serverSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
                 else

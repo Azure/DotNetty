@@ -3,11 +3,14 @@
 
 namespace DotNetty.Handlers.Tls
 {
+    using System.Collections.Generic;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
 
     public sealed class ServerTlsSettings : TlsSettings
     {
+        public const string DefaultCertficateSelectorKey = "Default";
+
         public ServerTlsSettings(X509Certificate certificate)
             : this(certificate, false)
         {
@@ -26,12 +29,25 @@ namespace DotNetty.Handlers.Tls
         public ServerTlsSettings(X509Certificate certificate, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
             : base(enabledProtocols, checkCertificateRevocation)
         {
-            this.Certificate = certificate;
+            this.Certificates = new Dictionary<string, X509Certificate>
+            {
+                { DefaultCertficateSelectorKey, certificate }
+            };
             this.NegotiateClientCertificate = negotiateClientCertificate;
         }
 
-        public X509Certificate Certificate { get; }
+        public ServerTlsSettings(IDictionary<string, X509Certificate> hostnameCertificateMapping, bool negotiateClientCertificate, bool checkCertificateRevocation, SslProtocols enabledProtocols)
+            : base(enabledProtocols, checkCertificateRevocation)
+        {
+            this.Certificates = hostnameCertificateMapping;
+            this.NegotiateClientCertificate = negotiateClientCertificate;
+            this.SniEnabled = true; // assuming SNI intended since this variant of constructor called
+        }
+
+        public IDictionary<string, X509Certificate> Certificates { get; }
 
         public bool NegotiateClientCertificate { get; }
+
+        public bool SniEnabled { get; }
     }
 }
