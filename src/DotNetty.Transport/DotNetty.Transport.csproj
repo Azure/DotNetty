@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Transport model in DotNetty</Description>
+    <Copyright>Copyright © Microsoft Corporation</Copyright>
+    <AssemblyTitle>DotNetty: transport model</AssemblyTitle>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <VersionPrefix>0.4.0</VersionPrefix>
+    <Authors>Microsoft Azure</Authors>
+    <TargetFrameworks>netstandard1.3;net451</TargetFrameworks>
+    <AssemblyName>DotNetty.Transport</AssemblyName>
+    <AssemblyOriginatorKeyFile>../../DotNetty.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <PackageId>DotNetty.Transport</PackageId>
+    <PackageTags>socket;tcp;protocol;netty;dotnetty;network</PackageTags>
+    <PackageProjectUrl>https://github.com/Azure/DotNetty/</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
+    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.0</NetStandardImplicitPackageVersion>
+    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj" />
+    <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.1.0" />
+    <PackageReference Include="System.Diagnostics.Contracts" Version="4.0.1" />
+    <PackageReference Include="System.Net.Sockets" Version="4.1.0" />
+    <PackageReference Include="System.Net.Primitives" Version="4.0.11" />
+    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.0.1" />
+    <PackageReference Include="System.Net.NameResolution" Version="4.0.0" />
+    <PackageReference Include="System.Diagnostics.Process" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+</Project>

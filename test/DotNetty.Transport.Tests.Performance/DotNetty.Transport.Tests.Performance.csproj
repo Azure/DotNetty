@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Copyright>Copyright © Microsoft Corporation</Copyright>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Authors>Microsoft Azure</Authors>
+    <TargetFramework>net451</TargetFramework>
+    <AssemblyName>DotNetty.Transport.Tests.Performance</AssemblyName>
+    <PackageId>DotNetty.Transport.Tests.Performance</PackageId>
+    <PackageTags>socket;tcp;protocol;netty;dotnetty;network</PackageTags>
+    <PackageProjectUrl>https://github.com/Azure/DotNetty/</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
+    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DotNetty.Common\DotNetty.Common.csproj" />
+    <ProjectReference Include="..\..\src\DotNetty.Buffers\DotNetty.Buffers.csproj" />
+    <ProjectReference Include="..\..\src\DotNetty.Transport\DotNetty.Transport.csproj" />
+    <ProjectReference Include="..\..\src\DotNetty.Codecs\DotNetty.Codecs.csproj" />
+    <ProjectReference Include="..\..\src\DotNetty.Handlers\DotNetty.Handlers.csproj" />
+    <ProjectReference Include="..\DotNetty.Tests.Common\DotNetty.Tests.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NBench" Version="0.3.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+</Project>

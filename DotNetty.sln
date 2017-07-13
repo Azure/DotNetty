@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F02D7F30-ABA7-4438-8D28-10898E731906}"
 EndProject
@@ -22,45 +22,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{2B766264-D269-415C-8F2A-5AFC44409C01}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A328D992-54A1-4611-834A-CDA13176371F}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Common", "src\DotNetty.Common\DotNetty.Common.xproj", "{C2AEE3C8-EB40-4605-83E1-6D3C1F660B36}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Buffers", "src\DotNetty.Buffers\DotNetty.Buffers.xproj", "{9E8C428E-1979-457E-8BAF-58228D02F587}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Transport", "src\DotNetty.Transport\DotNetty.Transport.xproj", "{EB59C435-1C34-46E4-8F39-BC76ED3AAD05}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs", "src\DotNetty.Codecs\DotNetty.Codecs.xproj", "{110520DD-436B-4D17-A99B-5E8AB53B5DC9}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Mqtt", "src\DotNetty.Codecs.Mqtt\DotNetty.Codecs.Mqtt.xproj", "{74943329-1E1F-4651-A56B-2CB6D309E8CB}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Handlers", "src\DotNetty.Handlers\DotNetty.Handlers.xproj", "{F50FF206-E3DB-452D-A93E-883E05D7A873}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Tests.Common", "test\DotNetty.Tests.Common\DotNetty.Tests.Common.xproj", "{EDF30087-8B53-4432-84B8-D21BD9F49E95}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Common.Tests", "test\DotNetty.Common.Tests\DotNetty.Common.Tests.xproj", "{B509D8B8-BD4A-46B1-916B-685DE387D01B}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Buffers.Tests", "test\DotNetty.Buffers.Tests\DotNetty.Buffers.Tests.xproj", "{94E10283-E26E-441A-A2A7-D9671A6E9818}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Transport.Tests", "test\DotNetty.Transport.Tests\DotNetty.Transport.Tests.xproj", "{1BC30CEA-312E-41ED-A338-75FBC01C8C91}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Tests", "test\DotNetty.Codecs.Tests\DotNetty.Codecs.Tests.xproj", "{F9566A9E-FABB-4A57-BF20-C1842AB87012}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Mqtt.Tests", "test\DotNetty.Codecs.Mqtt.Tests\DotNetty.Codecs.Mqtt.Tests.xproj", "{F6019665-4C5E-4769-911A-FA1E83549BF5}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Handlers.Tests", "test\DotNetty.Handlers.Tests\DotNetty.Handlers.Tests.xproj", "{0F5AC479-520B-476F-8E2B-1849F5B63A91}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Tests.End2End", "test\DotNetty.Tests.End2End\DotNetty.Tests.End2End.xproj", "{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Redis", "src\DotNetty.Codecs.Redis\DotNetty.Codecs.Redis.xproj", "{6AE7CF76-971C-428B-853A-DBE73A861E60}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Redis.Tests", "test\DotNetty.Codecs.Redis.Tests\DotNetty.Codecs.Redis.Tests.xproj", "{258ABFFC-4AF5-4CCA-9145-929AC854D139}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Transport.Tests.Performance", "test\DotNetty.Transport.Tests.Performance\DotNetty.Transport.Tests.Performance.xproj", "{F2C39894-476D-441D-878F-23A03B848E06}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Microbench", "test\DotNetty.Microbench\DotNetty.Microbench.xproj", "{D0D45DCD-EF82-43FA-8B95-D85D50378806}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Discard", "Discard", "{B833B237-9230-412F-BBFB-A1094B3B572C}"
 EndProject
@@ -70,45 +31,81 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Telnet", "Telnet", "{D2EDC6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Factorial", "Factorial", "{BEFD6C13-AB81-41AD-A887-4F2457751AA6}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Discard.Client", "examples\Discard.Client\Discard.Client.xproj", "{6109C1DB-327D-439B-A0C0-6DD63F1D3DEA}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Discard.Server", "examples\Discard.Server\Discard.Server.xproj", "{821D5A3F-F4CD-4579-A0A0-95F6770F1DC4}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Examples.Common", "examples\Examples.Common\Examples.Common.xproj", "{FC7F860D-BBC8-42E5-B045-F8D98A8A2FD2}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Echo.Client", "examples\Echo.Client\Echo.Client.xproj", "{C24AB93F-41E9-4291-BA8F-E9D3CF6C2EBC}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Echo.Server", "examples\Echo.Server\Echo.Server.xproj", "{BA163586-F875-4488-9188-53A4A14DFD34}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SecureChat", "SecureChat", "{1F198DCE-5712-43F0-986A-13A2041C2657}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Factorial", "examples\Factorial\Factorial.xproj", "{C7559BFC-023F-445E-BAB8-E2B5E199B774}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Factorial.Client", "examples\Factorial.Client\Factorial.Client.xproj", "{E7B7F314-6E72-4CE1-B69C-F5732DCF07F2}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Factorial.Server", "examples\Factorial.Server\Factorial.Server.xproj", "{CAA57BA8-D7F2-467E-8F6F-5BA5B55A2F0B}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SecureChat.Client", "examples\SecureChat.Client\SecureChat.Client.xproj", "{B6C42665-2A5B-4BFD-B5B9-965C31A383D3}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SecureChat.Server", "examples\SecureChat.Server\SecureChat.Server.xproj", "{DDA47BCE-752F-4DEE-BB75-28E7D6921E79}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Telnet.Client", "examples\Telnet.Client\Telnet.Client.xproj", "{ABABFE48-551E-4C4B-8640-B334329D5C5D}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Telnet.Server", "examples\Telnet.Server\Telnet.Server.xproj", "{5543847A-8509-4646-8472-1E4450025FDF}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Protobuf", "src\DotNetty.Codecs.Protobuf\DotNetty.Codecs.Protobuf.xproj", "{94912F93-2E93-4AF0-A976-41BDD52B6AF5}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.Protobuf.Tests", "test\DotNetty.Codecs.Protobuf.Tests\DotNetty.Codecs.Protobuf.Tests.xproj", "{57AB7999-1705-4F12-A05D-89FEC4EAA305}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.ProtocolBuffers", "src\DotNetty.Codecs.ProtocolBuffers\DotNetty.Codecs.ProtocolBuffers.xproj", "{676744F7-3B28-4EE5-B3D0-7EBAF418B727}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DotNetty.Codecs.ProtocolBuffers.Tests", "test\DotNetty.Codecs.ProtocolBuffers.Tests\DotNetty.Codecs.ProtocolBuffers.Tests.xproj", "{E33A7419-E4E8-4243-A2E5-7376BA32D608}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Datagram", "Datagram", "{7151B6B9-67C1-4899-9DD5-6E05AF16B743}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "QuoteOfTheMoment.Server", "examples\QuoteOfTheMoment.Server\QuoteOfTheMoment.Server.xproj", "{5E6F211F-A215-409C-8A6D-5AC0251F66B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Common", "src\DotNetty.Common\DotNetty.Common.csproj", "{C2AEE3C8-EB40-4605-83E1-6D3C1F660B36}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "QuoteOfTheMoment.Client", "examples\QuoteOfTheMoment.Client\QuoteOfTheMoment.Client.xproj", "{81AA23B3-E975-403C-8C90-0AA0E572B539}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Buffers", "src\DotNetty.Buffers\DotNetty.Buffers.csproj", "{9E8C428E-1979-457E-8BAF-58228D02F587}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Transport", "src\DotNetty.Transport\DotNetty.Transport.csproj", "{EB59C435-1C34-46E4-8F39-BC76ED3AAD05}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs", "src\DotNetty.Codecs\DotNetty.Codecs.csproj", "{110520DD-436B-4D17-A99B-5E8AB53B5DC9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Mqtt", "src\DotNetty.Codecs.Mqtt\DotNetty.Codecs.Mqtt.csproj", "{74943329-1E1F-4651-A56B-2CB6D309E8CB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Handlers", "src\DotNetty.Handlers\DotNetty.Handlers.csproj", "{F50FF206-E3DB-452D-A93E-883E05D7A873}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Tests.Common", "test\DotNetty.Tests.Common\DotNetty.Tests.Common.csproj", "{EDF30087-8B53-4432-84B8-D21BD9F49E95}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Common.Tests", "test\DotNetty.Common.Tests\DotNetty.Common.Tests.csproj", "{B509D8B8-BD4A-46B1-916B-685DE387D01B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Buffers.Tests", "test\DotNetty.Buffers.Tests\DotNetty.Buffers.Tests.csproj", "{94E10283-E26E-441A-A2A7-D9671A6E9818}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Transport.Tests", "test\DotNetty.Transport.Tests\DotNetty.Transport.Tests.csproj", "{1BC30CEA-312E-41ED-A338-75FBC01C8C91}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Tests", "test\DotNetty.Codecs.Tests\DotNetty.Codecs.Tests.csproj", "{F9566A9E-FABB-4A57-BF20-C1842AB87012}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Mqtt.Tests", "test\DotNetty.Codecs.Mqtt.Tests\DotNetty.Codecs.Mqtt.Tests.csproj", "{F6019665-4C5E-4769-911A-FA1E83549BF5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Handlers.Tests", "test\DotNetty.Handlers.Tests\DotNetty.Handlers.Tests.csproj", "{0F5AC479-520B-476F-8E2B-1849F5B63A91}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Tests.End2End", "test\DotNetty.Tests.End2End\DotNetty.Tests.End2End.csproj", "{6E76FCAF-C7C8-4F45-8C95-0FD42F2AC83B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Redis", "src\DotNetty.Codecs.Redis\DotNetty.Codecs.Redis.csproj", "{6AE7CF76-971C-428B-853A-DBE73A861E60}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Redis.Tests", "test\DotNetty.Codecs.Redis.Tests\DotNetty.Codecs.Redis.Tests.csproj", "{258ABFFC-4AF5-4CCA-9145-929AC854D139}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Transport.Tests.Performance", "test\DotNetty.Transport.Tests.Performance\DotNetty.Transport.Tests.Performance.csproj", "{F2C39894-476D-441D-878F-23A03B848E06}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Microbench", "test\DotNetty.Microbench\DotNetty.Microbench.csproj", "{D0D45DCD-EF82-43FA-8B95-D85D50378806}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Discard.Client", "examples\Discard.Client\Discard.Client.csproj", "{6109C1DB-327D-439B-A0C0-6DD63F1D3DEA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Discard.Server", "examples\Discard.Server\Discard.Server.csproj", "{821D5A3F-F4CD-4579-A0A0-95F6770F1DC4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples.Common", "examples\Examples.Common\Examples.Common.csproj", "{FC7F860D-BBC8-42E5-B045-F8D98A8A2FD2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Echo.Client", "examples\Echo.Client\Echo.Client.csproj", "{C24AB93F-41E9-4291-BA8F-E9D3CF6C2EBC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Echo.Server", "examples\Echo.Server\Echo.Server.csproj", "{BA163586-F875-4488-9188-53A4A14DFD34}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factorial", "examples\Factorial\Factorial.csproj", "{C7559BFC-023F-445E-BAB8-E2B5E199B774}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factorial.Client", "examples\Factorial.Client\Factorial.Client.csproj", "{E7B7F314-6E72-4CE1-B69C-F5732DCF07F2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Factorial.Server", "examples\Factorial.Server\Factorial.Server.csproj", "{CAA57BA8-D7F2-467E-8F6F-5BA5B55A2F0B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SecureChat.Client", "examples\SecureChat.Client\SecureChat.Client.csproj", "{B6C42665-2A5B-4BFD-B5B9-965C31A383D3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SecureChat.Server", "examples\SecureChat.Server\SecureChat.Server.csproj", "{DDA47BCE-752F-4DEE-BB75-28E7D6921E79}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telnet.Client", "examples\Telnet.Client\Telnet.Client.csproj", "{ABABFE48-551E-4C4B-8640-B334329D5C5D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telnet.Server", "examples\Telnet.Server\Telnet.Server.csproj", "{5543847A-8509-4646-8472-1E4450025FDF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Protobuf", "src\DotNetty.Codecs.Protobuf\DotNetty.Codecs.Protobuf.csproj", "{94912F93-2E93-4AF0-A976-41BDD52B6AF5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Protobuf.Tests", "test\DotNetty.Codecs.Protobuf.Tests\DotNetty.Codecs.Protobuf.Tests.csproj", "{57AB7999-1705-4F12-A05D-89FEC4EAA305}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.ProtocolBuffers", "src\DotNetty.Codecs.ProtocolBuffers\DotNetty.Codecs.ProtocolBuffers.csproj", "{676744F7-3B28-4EE5-B3D0-7EBAF418B727}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.ProtocolBuffers.Tests", "test\DotNetty.Codecs.ProtocolBuffers.Tests\DotNetty.Codecs.ProtocolBuffers.Tests.csproj", "{E33A7419-E4E8-4243-A2E5-7376BA32D608}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuoteOfTheMoment.Server", "examples\QuoteOfTheMoment.Server\QuoteOfTheMoment.Server.csproj", "{5E6F211F-A215-409C-8A6D-5AC0251F66B5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuoteOfTheMoment.Client", "examples\QuoteOfTheMoment.Client\QuoteOfTheMoment.Client.csproj", "{81AA23B3-E975-403C-8C90-0AA0E572B539}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -265,6 +262,12 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{B833B237-9230-412F-BBFB-A1094B3B572C} = {2B766264-D269-415C-8F2A-5AFC44409C01}
+		{101381DE-CE28-4021-91A9-0461286E093F} = {2B766264-D269-415C-8F2A-5AFC44409C01}
+		{D2EDC657-B73C-4F20-BBEB-5A3B176072DE} = {2B766264-D269-415C-8F2A-5AFC44409C01}
+		{BEFD6C13-AB81-41AD-A887-4F2457751AA6} = {2B766264-D269-415C-8F2A-5AFC44409C01}
+		{1F198DCE-5712-43F0-986A-13A2041C2657} = {2B766264-D269-415C-8F2A-5AFC44409C01}
+		{7151B6B9-67C1-4899-9DD5-6E05AF16B743} = {2B766264-D269-415C-8F2A-5AFC44409C01}
 		{C2AEE3C8-EB40-4605-83E1-6D3C1F660B36} = {F02D7F30-ABA7-4438-8D28-10898E731906}
 		{9E8C428E-1979-457E-8BAF-58228D02F587} = {F02D7F30-ABA7-4438-8D28-10898E731906}
 		{EB59C435-1C34-46E4-8F39-BC76ED3AAD05} = {F02D7F30-ABA7-4438-8D28-10898E731906}
@@ -283,16 +286,11 @@ Global
 		{258ABFFC-4AF5-4CCA-9145-929AC854D139} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
 		{F2C39894-476D-441D-878F-23A03B848E06} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
 		{D0D45DCD-EF82-43FA-8B95-D85D50378806} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
-		{B833B237-9230-412F-BBFB-A1094B3B572C} = {2B766264-D269-415C-8F2A-5AFC44409C01}
-		{101381DE-CE28-4021-91A9-0461286E093F} = {2B766264-D269-415C-8F2A-5AFC44409C01}
-		{D2EDC657-B73C-4F20-BBEB-5A3B176072DE} = {2B766264-D269-415C-8F2A-5AFC44409C01}
-		{BEFD6C13-AB81-41AD-A887-4F2457751AA6} = {2B766264-D269-415C-8F2A-5AFC44409C01}
 		{6109C1DB-327D-439B-A0C0-6DD63F1D3DEA} = {B833B237-9230-412F-BBFB-A1094B3B572C}
 		{821D5A3F-F4CD-4579-A0A0-95F6770F1DC4} = {B833B237-9230-412F-BBFB-A1094B3B572C}
 		{FC7F860D-BBC8-42E5-B045-F8D98A8A2FD2} = {2B766264-D269-415C-8F2A-5AFC44409C01}
 		{C24AB93F-41E9-4291-BA8F-E9D3CF6C2EBC} = {101381DE-CE28-4021-91A9-0461286E093F}
 		{BA163586-F875-4488-9188-53A4A14DFD34} = {101381DE-CE28-4021-91A9-0461286E093F}
-		{1F198DCE-5712-43F0-986A-13A2041C2657} = {2B766264-D269-415C-8F2A-5AFC44409C01}
 		{C7559BFC-023F-445E-BAB8-E2B5E199B774} = {BEFD6C13-AB81-41AD-A887-4F2457751AA6}
 		{E7B7F314-6E72-4CE1-B69C-F5732DCF07F2} = {BEFD6C13-AB81-41AD-A887-4F2457751AA6}
 		{CAA57BA8-D7F2-467E-8F6F-5BA5B55A2F0B} = {BEFD6C13-AB81-41AD-A887-4F2457751AA6}
@@ -304,7 +302,6 @@ Global
 		{57AB7999-1705-4F12-A05D-89FEC4EAA305} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
 		{676744F7-3B28-4EE5-B3D0-7EBAF418B727} = {F02D7F30-ABA7-4438-8D28-10898E731906}
 		{E33A7419-E4E8-4243-A2E5-7376BA32D608} = {6A0821D4-8A5D-42AD-8E3F-F519100F4AD8}
-		{7151B6B9-67C1-4899-9DD5-6E05AF16B743} = {2B766264-D269-415C-8F2A-5AFC44409C01}
 		{5E6F211F-A215-409C-8A6D-5AC0251F66B5} = {7151B6B9-67C1-4899-9DD5-6E05AF16B743}
 		{81AA23B3-E975-403C-8C90-0AA0E572B539} = {7151B6B9-67C1-4899-9DD5-6E05AF16B743}
 	EndGlobalSection

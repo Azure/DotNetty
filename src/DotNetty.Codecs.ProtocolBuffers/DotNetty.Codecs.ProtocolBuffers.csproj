@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>ProtocolBuffers Proto2 codec for DotNetty</Description>
+    <Copyright>Copyright © Microsoft Corporation</Copyright>
+    <AssemblyTitle>DotNetty: ProtocolBuffers Proto2 codec</AssemblyTitle>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <VersionPrefix>0.4.0</VersionPrefix>
+    <Authors>Microsoft Azure</Authors>
+    <TargetFrameworks>netstandard1.3;net451</TargetFrameworks>
+    <AssemblyName>DotNetty.Codecs.ProtocolBuffers</AssemblyName>
+    <AssemblyOriginatorKeyFile>../../DotNetty.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <PackageId>DotNetty.Codecs.ProtocolBuffers</PackageId>
+    <PackageTags>socket;tcp;protocol;netty;dotnetty;network;ProtocolBuffers</PackageTags>
+    <PackageProjectUrl>https://github.com/Azure/DotNetty/</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
+    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.3' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>
+    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.0</NetStandardImplicitPackageVersion>
+    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj" />
+    <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj" />
+    <ProjectReference Include="..\DotNetty.Codecs\DotNetty.Codecs.csproj" />
+    <ProjectReference Include="..\DotNetty.Transport\DotNetty.Transport.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.ProtocolBuffers" Version="2.4.1.555" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
+    <PackageReference Include="Microsoft.NETCore.Portable.Compatibility" Version="1.0.1" />
+    <PackageReference Include="System.Diagnostics.Contracts" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+</Project>
