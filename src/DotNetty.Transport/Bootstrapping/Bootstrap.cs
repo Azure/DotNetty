@@ -185,7 +185,7 @@ namespace DotNetty.Transport.Bootstrapping
                 }
                 catch (Exception ex)
                 {
-                    channel.CloseAsync();
+                    channel.CloseSafe();
                     promise.TrySetException(ex);
                 }
             });

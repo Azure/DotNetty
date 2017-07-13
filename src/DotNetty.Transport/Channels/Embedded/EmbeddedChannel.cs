@@ -362,7 +362,7 @@ namespace DotNetty.Transport.Channels.Embedded
          */
         bool Finish(bool releaseAll)
         {
-            this.CloseAsync();
+            this.CloseSafe();
             try
             {
                 this.CheckException();

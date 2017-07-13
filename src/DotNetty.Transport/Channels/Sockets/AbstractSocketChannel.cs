@@ -287,7 +287,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                     var cause = new ConnectTimeoutException("connection timed out: " + a.ToString());
                                     if (promise != null && promise.TrySetException(cause))
                                     {
-                                        self.CloseAsync();
+                                        self.CloseSafe();
                                     }
                                 },
                                 this.channel,
@@ -301,7 +301,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                 var c = (AbstractSocketChannel)s;
                                 c.connectCancellationTask?.Cancel();
                                 c.connectPromise = null;
-                                c.CloseAsync();
+                                c.CloseSafe();
                             },
                             ch,
                             TaskContinuationOptions.OnlyOnCanceled | TaskContinuationOptions.ExecuteSynchronously);

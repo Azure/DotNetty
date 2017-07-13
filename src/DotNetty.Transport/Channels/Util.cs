@@ -4,11 +4,14 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
 
     static class Util
     {
+        static readonly IInternalLogger Log = InternalLoggerFactory.GetInstance<IChannel>();
+
         /// <summary>
         ///     Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
         /// </summary>
@@ -28,6 +31,24 @@ namespace DotNetty.Transport.Channels
             if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
             {
                 logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
+            }
+        }
+
+        public static async void CloseSafe(this IChannel channel)
+        {
+            try
+            {
+                await channel.CloseAsync();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            catch (Exception ex) 
+            {
+                if (Log.DebugEnabled)
+                {
+                    Log.Debug("Failed to close channel " + channel + " cleanly.", ex);
+                }
             }
         }
     }
