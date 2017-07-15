@@ -583,7 +583,7 @@ namespace DotNetty.Transport.Channels
             IEventExecutor nextExecutor = next.Executor;
             if (nextExecutor.InEventLoop)
             {
-                next.InvokeChannelReadComplete();
+                next.InvokeChannelWritabilityChanged();
             }
             else
             {
