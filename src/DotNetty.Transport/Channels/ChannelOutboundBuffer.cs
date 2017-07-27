@@ -543,7 +543,7 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         public bool IsEmpty => this.flushed == 0;
 
-        internal void FailFlushed(Exception cause, bool notify)
+        public void FailFlushed(Exception cause, bool notify)
         {
             // Make sure that this method does not reenter.  A listener added to the current promise can be notified by the
             // current thread in the tryFailure() call of the loop below, and the listener can trigger another fail() call
