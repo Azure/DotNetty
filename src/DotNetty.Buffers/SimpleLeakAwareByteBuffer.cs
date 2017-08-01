@@ -5,9 +5,9 @@ namespace DotNetty.Buffers
 {
     using DotNetty.Common;
 
-    sealed class SimpleLeakAwareByteBuffer : WrappedByteBuffer
+    class SimpleLeakAwareByteBuffer : WrappedByteBuffer
     {
-        readonly IResourceLeak leak;
+        protected readonly IResourceLeak leak;
 
         internal SimpleLeakAwareByteBuffer(IByteBuffer buf, IResourceLeak leak)
             : base(buf)
@@ -21,22 +21,22 @@ namespace DotNetty.Buffers
 
         public override bool Release()
         {
-            bool deallocated = base.Release();
-            if (deallocated)
+            if (base.Release())
             {
                 this.leak.Close();
+                return true;
             }
-            return deallocated;
+            return false;
         }
 
         public override bool Release(int decrement)
         {
-            bool deallocated = base.Release(decrement);
-            if (deallocated)
+            if (base.Release(decrement))
             {
                 this.leak.Close();
+                return true;
             }
-            return deallocated;
+            return false;
         }
 
         public override IByteBuffer WithOrder(ByteOrder endianness)

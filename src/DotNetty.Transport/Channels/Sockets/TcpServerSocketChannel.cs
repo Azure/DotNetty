@@ -82,11 +82,45 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected override void ScheduleSocketRead()
         {
+            bool closed = false;
             SocketChannelAsyncOperation operation = this.AcceptOperation;
-            bool pending = this.Socket.AcceptAsync(operation);
-            if (!pending)
+            while (!closed)
             {
-                this.EventLoop.Execute(ReadCompletedSyncCallback, this.Unsafe, operation);
+                try
+                {
+                    bool pending = this.Socket.AcceptAsync(operation);
+                    if (!pending)
+                    {
+                        this.EventLoop.Execute(ReadCompletedSyncCallback, this.Unsafe, operation);
+                    }
+                    return;
+                }
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.OperationAborted)
+                {
+                    closed = true;
+                }
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.WouldBlock)
+                {
+                }
+                catch (SocketException ex)
+                {
+                    // socket exceptions here are internal to channel's operation and should not go through the pipeline
+                    // especially as they have no effect on overall channel's operation
+                    Logger.Info("Exception on accept.", ex);
+                }
+                catch (ObjectDisposedException)
+                {
+                    closed = true;
+                }
+                catch (Exception ex)
+                {
+                    this.Pipeline.FireExceptionCaught(ex);
+                    closed = true;
+                }
+            }
+            if (closed && this.Open)
+            {
+                this.Unsafe.CloseAsync();
             }
         }
 
@@ -152,7 +186,9 @@ namespace DotNetty.Transport.Channels.Sockets
                         operation.Validate();
                         operation.AcceptSocket = null;
 
-                        var message = new TcpSocketChannel(ch, connectedSocket, true);
+                        var message = this.PrepareChannel(connectedSocket);
+                        
+                        connectedSocket = null;
                         ch.ReadPending = false;
                         pipeline.FireChannelRead(message);
                         allocHandle.IncMessagesRead(1);
@@ -166,14 +202,27 @@ namespace DotNetty.Transport.Channels.Sockets
 
                         while (allocHandle.ContinueReading())
                         {
-                            connectedSocket = null;
                             connectedSocket = ch.Socket.Accept();
-                            message = new TcpSocketChannel(ch, connectedSocket, true);
+                            message = this.PrepareChannel(connectedSocket);
+
+                            connectedSocket = null;
                             ch.ReadPending = false;
                             pipeline.FireChannelRead(message);
-
                             allocHandle.IncMessagesRead(1);
                         }
+                    }
+                    catch (SocketException ex) when (ex.SocketErrorCode == SocketError.OperationAborted)
+                    {
+                        closed = true;
+                    }
+                    catch (SocketException ex) when (ex.SocketErrorCode == SocketError.WouldBlock)
+                    {
+                    }
+                    catch (SocketException ex)
+                    {
+                        // socket exceptions here are internal to channel's operation and should not go through the pipeline
+                        // especially as they have no effect on overall channel's operation
+                        Logger.Info("Exception on accept.", ex);
                     }
                     catch (ObjectDisposedException)
                     {
@@ -181,23 +230,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     catch (Exception ex)
                     {
-                        var asSocketException = ex as SocketException;
-                        if (asSocketException == null || asSocketException.SocketErrorCode != SocketError.WouldBlock)
-                        {
-                            Logger.Warn("Failed to create a new channel from an accepted socket.", ex);
-                            if (connectedSocket != null)
-                            {
-                                try
-                                {
-                                    connectedSocket.Dispose();
-                                }
-                                catch (Exception ex2)
-                                {
-                                    Logger.Warn("Failed to close a socket.", ex2);
-                                }
-                            }
-                            exception = ex;
-                        }
+                        exception = ex;
                     }
 
                     allocHandle.ReadComplete();
@@ -211,12 +244,9 @@ namespace DotNetty.Transport.Channels.Sockets
                         pipeline.FireExceptionCaught(exception);
                     }
 
-                    if (closed)
+                    if (closed && ch.Open)
                     {
-                        if (ch.Open)
-                        {
-                            this.CloseAsync();
-                        }
+                        this.CloseAsync();
                     }
                 }
                 finally
@@ -226,6 +256,27 @@ namespace DotNetty.Transport.Channels.Sockets
                     {
                         ch.DoBeginRead();
                     }
+                }
+            }
+
+            TcpSocketChannel PrepareChannel(Socket socket)
+            {
+                try
+                {
+                    return new TcpSocketChannel(this.channel, socket, true);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Failed to create a new channel from accepted socket.", ex);
+                    try
+                    {
+                        socket.Dispose();
+                    }
+                    catch (Exception ex2)
+                    {
+                        Logger.Warn("Failed to close a socket cleanly.", ex2);
+                    }
+                    throw;
                 }
             }
         }

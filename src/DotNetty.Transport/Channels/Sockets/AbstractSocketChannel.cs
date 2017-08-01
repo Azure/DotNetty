@@ -468,7 +468,7 @@ namespace DotNetty.Transport.Channels.Sockets
             if (promise != null)
             {
                 // Use TrySetException() instead of SetException() to avoid the race against cancellation due to timeout.
-                promise.TrySetException(ClosedChannelException);
+                promise.TrySetException(new ClosedChannelException());
                 this.connectPromise = null;
             }
 
