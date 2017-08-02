@@ -1,3 +1,8 @@
+#### 0.4.6 August 2 2017
+- Small fixes (#259, #260, #264, #266)
+- Properly handling handshake with AutoRead = false when Read is not issued by upstream handlers in pipeline (#263)
+- Proper exception handling in TcpServerSocketChannel to retry accept instead of closing (#272)
+
 #### 0.4.5 May 15 2017
 - Support for Medium and Unsigned Medium types (#244)
 - Support for Float (Single) type and Zeroing API (#209)
