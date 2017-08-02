@@ -11,7 +11,7 @@ namespace DotNetty.Buffers
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
 
-    class AdvancedLeakAwareByteBuffer : WrappedByteBuffer
+    class AdvancedLeakAwareByteBuffer : SimpleLeakAwareByteBuffer
     {
         static readonly string PropAcquireAndReleaseOnly = "io.netty.leakDetection.acquireAndReleaseOnly";
         static readonly bool AcquireAndReleaseOnly;
@@ -28,12 +28,9 @@ namespace DotNetty.Buffers
             }
         }
 
-        readonly IResourceLeak leak;
-
         internal AdvancedLeakAwareByteBuffer(IByteBuffer buf, IResourceLeak leak)
-            : base(buf)
+            : base(buf, leak)
         {
-            this.leak = leak;
         }
 
         void RecordLeakNonRefCountingOperation()
@@ -631,30 +628,14 @@ namespace DotNetty.Buffers
 
         public override bool Release()
         {
-            bool deallocated = base.Release();
-            if (deallocated)
-            {
-                this.leak.Close();
-            }
-            else
-            {
-                this.leak.Record();
-            }
-            return deallocated;
+            this.leak.Record();
+            return base.Release();
         }
 
         public override bool Release(int decrement)
         {
-            bool deallocated = base.Release(decrement);
-            if (deallocated)
-            {
-                this.leak.Close();
-            }
-            else
-            {
-                this.leak.Record();
-            }
-            return deallocated;
+            this.leak.Record();
+            return base.Release(decrement);
         }
 
         public override string ToString(Encoding encoding)
