@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using DotNetty.Common.Utilities;
 
@@ -39,17 +40,17 @@ namespace DotNetty.Buffers
             this.bitmap = null;
         }
 
-        public PoolSubpage(PoolChunk<T> chunk, int memoryMapIdx, int runOffset, int pageSize, int elemSize)
+        public PoolSubpage(PoolSubpage<T> head, PoolChunk<T> chunk, int memoryMapIdx, int runOffset, int pageSize, int elemSize)
         {
             this.Chunk = chunk;
             this.memoryMapIdx = memoryMapIdx;
             this.runOffset = runOffset;
             this.pageSize = pageSize;
             this.bitmap = new long[pageSize.RightUShift(10)]; // pageSize / 16 / 64
-            this.Init(elemSize);
+            this.Init(head, elemSize);
         }
 
-        public void Init(int elemSize)
+        public void Init(PoolSubpage<T> head, int elemSize)
         {
             this.DoNotDestroy = true;
             this.ElemSize = elemSize;
@@ -69,11 +70,7 @@ namespace DotNetty.Buffers
                 }
             }
 
-            PoolSubpage<T> head = this.Chunk.Arena.FindSubpagePoolHead(elemSize);
-            lock (head)
-            {
-                this.AddToPool(head);
-            }
+            this.AddToPool(head);
         }
 
         /**
@@ -87,32 +84,23 @@ namespace DotNetty.Buffers
                 return this.ToHandle(0);
             }
 
-            /**
-             * Synchronize on the head of the SubpagePool stored in the {@link PoolArena. This is needed as we synchronize
-             * on it when calling {@link PoolArena#allocate(PoolThreadCache, int, int)} und try to allocate out of the
-             * {@link PoolSubpage} pool for a given size.
-             */
-            PoolSubpage<T> head = this.Chunk.Arena.FindSubpagePoolHead(this.ElemSize);
-            lock (head)
+            if (this.numAvail == 0 || !this.DoNotDestroy)
             {
-                if (this.numAvail == 0 || !this.DoNotDestroy)
-                {
-                    return -1;
-                }
-
-                int bitmapIdx = this.GetNextAvail();
-                int q = bitmapIdx.RightUShift(6);
-                int r = bitmapIdx & 63;
-                Contract.Assert((this.bitmap[q].RightUShift(r) & 1) == 0);
-                this.bitmap[q] |= 1L << r;
-
-                if (--this.numAvail == 0)
-                {
-                    this.RemoveFromPool();
-                }
-
-                return this.ToHandle(bitmapIdx);
+                return -1;
             }
+
+            int bitmapIdx = this.GetNextAvail();
+            int q = bitmapIdx.RightUShift(6);
+            int r = bitmapIdx & 63;
+            Contract.Assert((this.bitmap[q].RightUShift(r) & 1) == 0);
+            this.bitmap[q] |= 1L << r;
+
+            if (--this.numAvail == 0)
+            {
+                this.RemoveFromPool();
+            }
+
+            return this.ToHandle(bitmapIdx);
         }
 
         /**
@@ -120,59 +108,49 @@ namespace DotNetty.Buffers
          *         {@code false} if this subpage is not used by its chunk and thus it's OK to be released.
          */
 
-        internal bool Free(int bitmapIdx)
+        internal bool Free(PoolSubpage<T> head, int bitmapIdx)
         {
             if (this.ElemSize == 0)
             {
                 return true;
             }
 
-            /**
-             * Synchronize on the head of the SubpagePool stored in the {@link PoolArena. This is needed as we synchronize
-             * on it when calling {@link PoolArena#allocate(PoolThreadCache, int, int)} und try to allocate out of the
-             * {@link PoolSubpage} pool for a given size.
-             */
-            PoolSubpage<T> head = this.Chunk.Arena.FindSubpagePoolHead(this.ElemSize);
+            int q = bitmapIdx.RightUShift(6);
+            int r = bitmapIdx & 63;
+            Debug.Assert((this.bitmap[q].RightUShift(r) & 1) != 0);
+            this.bitmap[q] ^= 1L << r;
 
-            lock (head)
+            this.SetNextAvail(bitmapIdx);
+
+            if (this.numAvail++ == 0)
             {
-                int q = bitmapIdx.RightUShift(6);
-                int r = bitmapIdx & 63;
-                Contract.Assert((this.bitmap[q].RightUShift(r) & 1) != 0);
-                this.bitmap[q] ^= 1L << r;
+                this.AddToPool(head);
+                return true;
+            }
 
-                this.SetNextAvail(bitmapIdx);
-
-                if (this.numAvail++ == 0)
+            if (this.numAvail != this.maxNumElems)
+            {
+                return true;
+            }
+            else
+            {
+                // Subpage not in use (numAvail == maxNumElems)
+                if (this.Prev == this.Next)
                 {
-                    this.AddToPool(head);
+                    // Do not remove if this subpage is the only one left in the pool.
                     return true;
                 }
 
-                if (this.numAvail != this.maxNumElems)
-                {
-                    return true;
-                }
-                else
-                {
-                    // Subpage not in use (numAvail == maxNumElems)
-                    if (this.Prev == this.Next)
-                    {
-                        // Do not remove if this subpage is the only one left in the pool.
-                        return true;
-                    }
-
-                    // Remove this subpage from the pool if there are other subpages left in the pool.
-                    this.DoNotDestroy = false;
-                    this.RemoveFromPool();
-                    return false;
-                }
+                // Remove this subpage from the pool if there are other subpages left in the pool.
+                this.DoNotDestroy = false;
+                this.RemoveFromPool();
+                return false;
             }
         }
 
         void AddToPool(PoolSubpage<T> head)
         {
-            Contract.Assert(this.Prev == null && this.Next == null);
+            Debug.Assert(this.Prev == null && this.Next == null);
 
             this.Prev = head;
             this.Next = head.Next;
@@ -182,7 +160,7 @@ namespace DotNetty.Buffers
 
         void RemoveFromPool()
         {
-            Contract.Assert(this.Prev != null && this.Next != null);
+            Debug.Assert(this.Prev != null && this.Next != null);
 
             this.Prev.Next = this.Next;
             this.Next.Prev = this.Prev;
@@ -242,25 +220,75 @@ namespace DotNetty.Buffers
             return -1;
         }
 
-        long ToHandle(int bitmapIdx) => 0x4000000000000000L | (long)bitmapIdx << 32 | this.memoryMapIdx;
+        long ToHandle(int bitmapIdx) => 0x4000000000000000L | (long)bitmapIdx << 32 | (uint)this.memoryMapIdx;
 
         public override string ToString()
         {
-            if (!this.DoNotDestroy)
+            bool doNotDestroy;
+            int maxNumElems;
+            int numAvail;
+            int elemSize;
+            lock (this.Chunk.Arena)
+            {
+                if (!this.DoNotDestroy)
+                {
+                    doNotDestroy = false;
+                    // Not used for creating the String.
+                    maxNumElems = numAvail = elemSize = -1;
+                }
+                else
+                {
+                    doNotDestroy = true;
+                    maxNumElems = this.maxNumElems;
+                    numAvail = this.numAvail;
+                    elemSize = this.ElemSize;
+                }
+            }
+
+            if (!doNotDestroy)
             {
                 return "(" + this.memoryMapIdx + ": not in use)";
             }
 
-            return '(' + this.memoryMapIdx + ": " + (this.maxNumElems - this.numAvail) + '/' + this.maxNumElems +
-                ", offset: " + this.runOffset + ", length: " + this.pageSize + ", elemSize: " + this.ElemSize + ')';
+            return '(' + this.memoryMapIdx + ": " + (maxNumElems - numAvail) + '/' + maxNumElems +
+                ", offset: " + this.runOffset + ", length: " + this.pageSize + ", elemSize: " + elemSize + ')';
         }
 
-        public int MaxNumElements => this.maxNumElems;
+        public int MaxNumElements
+        {
+            get
+            {
+                lock (this.Chunk.Arena)
+                {
+                    return this.maxNumElems;
+                }
+            }
+        }
 
-        public int NumAvailable => this.numAvail;
+        public int NumAvailable
+        {
+            get
+            {
+                lock (this.Chunk.Arena)
+                {
+                    return this.numAvail;
+                }
+            }
+        }
 
-        public int ElementSize => this.ElemSize;
+        public int ElementSize
+        {
+            get
+            {
+                lock (this.Chunk.Arena)
+                {
+                    return this.ElemSize;
+                }
+            }
+        }
 
         public int PageSize => this.pageSize;
+
+        internal void Destroy() => this.Chunk?.Destroy();
     }
 }

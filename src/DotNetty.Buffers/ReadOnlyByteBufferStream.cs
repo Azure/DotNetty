@@ -62,7 +62,7 @@ namespace DotNetty.Buffers
                 }
                 else
                 {
-                    ReferenceCountUtil.SafeRelease(this.buffer);
+                    this.buffer.SafeRelease();
                 }
             }
         }

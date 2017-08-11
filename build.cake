@@ -80,7 +80,8 @@ Task("Test")
   .Does(() =>
 {
   var projects = GetFiles("./test/**/*.csproj")
-    - GetFiles("./test/**/*.Performance.csproj");
+    - GetFiles("./test/**/*.Microbench.csproj")
+	- GetFiles("./test/**/*.Performance.csproj");
 
   foreach(var project in projects)
   {

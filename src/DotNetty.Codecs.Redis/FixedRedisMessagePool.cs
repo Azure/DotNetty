@@ -67,9 +67,8 @@ namespace DotNetty.Codecs.Redis
 
             foreach (string simpleString in SimpleStrings)
             {
-                IByteBuffer key = Unpooled
-                    .WrappedBuffer(Encoding.UTF8.GetBytes(simpleString))
-                    .Unreleasable();
+                IByteBuffer key = Unpooled.UnreleasableBuffer(
+                    Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(simpleString)));
 
                 var redisMessage = new SimpleStringRedisMessage(simpleString);
                 stringToSimpleStringValues.Add(simpleString, redisMessage);
@@ -82,9 +81,8 @@ namespace DotNetty.Codecs.Redis
             var byteBufferToErrorValues = new Dictionary<IByteBuffer, ErrorRedisMessage>();
             foreach (string error in Errors)
             {
-                IByteBuffer key = Unpooled
-                    .WrappedBuffer(Encoding.UTF8.GetBytes(error))
-                    .Unreleasable();
+                IByteBuffer key = Unpooled.UnreleasableBuffer(
+                    Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(error)));
 
                 var redisMessage = new ErrorRedisMessage(error);
                 errorToErrorValues.Add(error, redisMessage);
@@ -100,9 +98,8 @@ namespace DotNetty.Codecs.Redis
             for (long value = MinimumCachedIntegerNumber; value < MaximumCachedIntegerNumber; value++)
             {
                 byte[] bytes = RedisCodecUtil.LongToAsciiBytes(value);
-                IByteBuffer key = Unpooled
-                    .WrappedBuffer(bytes)
-                    .Unreleasable();
+                IByteBuffer key = Unpooled.UnreleasableBuffer(
+                    Unpooled.WrappedBuffer(bytes));
 
                 var redisMessage = new IntegerRedisMessage(value);
                 longToIntegerValues.Add(value, redisMessage);

@@ -12,7 +12,7 @@ namespace DotNetty.Buffers
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
-    public class WrappedByteBuffer : IByteBuffer
+    class WrappedByteBuffer : IByteBuffer
     {
         protected readonly IByteBuffer Buf;
 
@@ -34,10 +34,6 @@ namespace DotNetty.Buffers
         public int MaxCapacity => this.Buf.MaxCapacity;
 
         public IByteBufferAllocator Allocator => this.Buf.Allocator;
-
-        public ByteOrder Order => this.Buf.Order;
-
-        public virtual IByteBuffer WithOrder(ByteOrder endianness) => this.Buf.WithOrder(endianness);
 
         public IByteBuffer Unwrap() => this.Buf;
 
@@ -129,23 +125,41 @@ namespace DotNetty.Buffers
 
         public virtual short GetShort(int index) => this.Buf.GetShort(index);
 
+        public virtual short GetShortLE(int index) => this.Buf.GetShortLE(index);
+
         public virtual ushort GetUnsignedShort(int index) => this.Buf.GetUnsignedShort(index);
 
-        public virtual int GetInt(int index) => this.Buf.GetInt(index);
-
-        public virtual uint GetUnsignedInt(int index) => this.Buf.GetUnsignedInt(index);
-
-        public virtual long GetLong(int index) => this.Buf.GetLong(index);
+        public virtual ushort GetUnsignedShortLE(int index) => this.Buf.GetUnsignedShortLE(index);
 
         public virtual int GetMedium(int index) => this.Buf.GetMedium(index);
 
+        public virtual int GetMediumLE(int index) => this.Buf.GetMediumLE(index);
+
         public virtual int GetUnsignedMedium(int index) => this.Buf.GetUnsignedMedium(index);
+
+        public virtual int GetUnsignedMediumLE(int index) => this.Buf.GetUnsignedMediumLE(index);
+
+        public virtual int GetInt(int index) => this.Buf.GetInt(index);
+
+        public virtual int GetIntLE(int index) => this.Buf.GetIntLE(index);
+
+        public virtual uint GetUnsignedInt(int index) => this.Buf.GetUnsignedInt(index);
+
+        public virtual uint GetUnsignedIntLE(int index) => this.Buf.GetUnsignedIntLE(index);
+
+        public virtual long GetLong(int index) => this.Buf.GetLong(index);
+
+        public virtual long GetLongLE(int index) => this.Buf.GetLongLE(index);
 
         public virtual char GetChar(int index) => this.Buf.GetChar(index);
 
         public virtual float GetFloat(int index) => this.Buf.GetFloat(index);
 
+        public float GetFloatLE(int index) => this.Buf.GetFloatLE(index);
+
         public virtual double GetDouble(int index) => this.Buf.GetDouble(index);
+
+        public double GetDoubleLE(int index) => this.Buf.GetDoubleLE(index);
 
         public virtual IByteBuffer GetBytes(int index, IByteBuffer dst)
         {
@@ -201,13 +215,15 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public virtual IByteBuffer SetUnsignedShort(int index, ushort value) => this.Buf.SetUnsignedShort(index, value);
-
-        public virtual IByteBuffer SetInt(int index, int value)
+        public virtual IByteBuffer SetShortLE(int index, int value)
         {
-            this.Buf.SetInt(index, value);
+            this.Buf.SetShortLE(index, value);
             return this;
         }
+
+        public IByteBuffer SetUnsignedShort(int index, ushort value) => this.Buf.SetUnsignedShort(index, value);
+
+        public IByteBuffer SetUnsignedShortLE(int index, ushort value) => this.Buf.SetUnsignedShortLE(index, value);
 
         public virtual IByteBuffer SetMedium(int index, int value)
         {
@@ -215,11 +231,37 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public virtual IByteBuffer SetUnsignedInt(int index, uint value) => this.Buf.SetUnsignedInt(index, value);
+        public virtual IByteBuffer SetMediumLE(int index, int value)
+        {
+            this.Buf.SetMediumLE(index, value);
+            return this;
+        }
+
+        public virtual IByteBuffer SetInt(int index, int value)
+        {
+            this.Buf.SetInt(index, value);
+            return this;
+        }
+
+        public virtual IByteBuffer SetIntLE(int index, int value)
+        {
+            this.Buf.SetIntLE(index, value);
+            return this;
+        }
+
+        public IByteBuffer SetUnsignedInt(int index, uint value) => this.Buf.SetUnsignedInt(index, value);
+
+        public IByteBuffer SetUnsignedIntLE(int index, uint value) => this.Buf.SetUnsignedIntLE(index, value);
 
         public virtual IByteBuffer SetLong(int index, long value)
         {
             this.Buf.SetLong(index, value);
+            return this;
+        }
+
+        public virtual IByteBuffer SetLongLE(int index, long value)
+        {
+            this.Buf.SetLongLE(index, value);
             return this;
         }
 
@@ -235,9 +277,21 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer SetFloatLE(int index, float value)
+        {
+            this.Buf.SetFloatLE(index, value);
+            return this;
+        }
+
         public virtual IByteBuffer SetDouble(int index, double value)
         {
             this.Buf.SetDouble(index, value);
+            return this;
+        }
+
+        public IByteBuffer SetDoubleLE(int index, double value)
+        {
+            this.Buf.SetDoubleLE(index, value);
             return this;
         }
 
@@ -285,29 +339,49 @@ namespace DotNetty.Buffers
 
         public virtual short ReadShort() => this.Buf.ReadShort();
 
+        public virtual short ReadShortLE() => this.Buf.ReadShortLE();
+
         public virtual ushort ReadUnsignedShort() => this.Buf.ReadUnsignedShort();
 
-        public virtual int ReadInt() => this.Buf.ReadInt();
-
-        public virtual uint ReadUnsignedInt() => this.Buf.ReadUnsignedInt();
-
-        public virtual long ReadLong() => this.Buf.ReadLong();
+        public virtual ushort ReadUnsignedShortLE() => this.Buf.ReadUnsignedShortLE();
 
         public virtual int ReadMedium() => this.Buf.ReadMedium();
 
+        public virtual int ReadMediumLE() => this.Buf.ReadMediumLE();
+
         public virtual int ReadUnsignedMedium() => this.Buf.ReadUnsignedMedium();
+
+        public virtual int ReadUnsignedMediumLE() => this.Buf.ReadUnsignedMediumLE();
+
+        public virtual int ReadInt() => this.Buf.ReadInt();
+
+        public virtual int ReadIntLE() => this.Buf.ReadIntLE();
+
+        public virtual uint ReadUnsignedInt() => this.Buf.ReadUnsignedInt();
+
+        public virtual uint ReadUnsignedIntLE() => this.Buf.ReadUnsignedIntLE();
+
+        public virtual long ReadLong() => this.Buf.ReadLong();
+
+        public virtual long ReadLongLE() => this.Buf.ReadLongLE();
 
         public virtual char ReadChar() => this.Buf.ReadChar();
 
         public virtual float ReadFloat() => this.Buf.ReadFloat();
 
+        public float ReadFloatLE() => this.Buf.ReadFloatLE();
+
         public virtual double ReadDouble() => this.Buf.ReadDouble();
+
+        public double ReadDoubleLE() => this.Buf.ReadDoubleLE();
 
         public virtual IByteBuffer ReadBytes(int length) => this.Buf.ReadBytes(length);
 
         public virtual IByteBuffer ReadSlice(int length) => this.Buf.ReadSlice(length);
 
-        public virtual Task WriteBytesAsync(Stream stream, int length) => this.Buf.WriteBytesAsync(stream, length);
+        public virtual IByteBuffer ReadRetainedSlice(int length) => this.Buf.ReadRetainedSlice(length);
+
+        public Task WriteBytesAsync(Stream stream, int length) => this.Buf.WriteBytesAsync(stream, length);
 
         public virtual IByteBuffer ReadBytes(IByteBuffer dst)
         {
@@ -369,7 +443,27 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public virtual IByteBuffer WriteUnsignedShort(ushort value) => this.Buf.WriteUnsignedShort(value);
+        public virtual IByteBuffer WriteShortLE(int value)
+        {
+            this.Buf.WriteShortLE(value);
+            return this;
+        }
+
+        public IByteBuffer WriteUnsignedShort(ushort value) => this.Buf.WriteUnsignedShort(value);
+
+        public IByteBuffer WriteUnsignedShortLE(ushort value) => this.Buf.WriteUnsignedShortLE(value);
+
+        public virtual IByteBuffer WriteMedium(int value)
+        {
+            this.Buf.WriteMedium(value);
+            return this;
+        }
+
+        public virtual IByteBuffer WriteMediumLE(int value)
+        {
+            this.Buf.WriteMediumLE(value);
+            return this;
+        }
 
         public virtual IByteBuffer WriteInt(int value)
         {
@@ -377,11 +471,21 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public virtual IByteBuffer WriteUnsignedInt(uint value) => this.Buf.WriteUnsignedInt(value);
+        public virtual IByteBuffer WriteIntLE(int value)
+        {
+            this.Buf.WriteIntLE(value);
+            return this;
+        }
 
         public virtual IByteBuffer WriteLong(long value)
         {
             this.Buf.WriteLong(value);
+            return this;
+        }
+
+        public virtual IByteBuffer WriteLongLE(long value)
+        {
+            this.Buf.WriteLongLE(value);
             return this;
         }
 
@@ -391,23 +495,27 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public virtual IByteBuffer WriteUnsignedMedium(int value) => this.Buf.WriteUnsignedMedium(value);
-
-        public virtual IByteBuffer WriteMedium(int value)
-        {
-            this.Buf.WriteMedium(value);
-            return this;
-        }
-
         public virtual IByteBuffer WriteFloat(float value)
         {
             this.Buf.WriteFloat(value);
             return this;
         }
 
+        public IByteBuffer WriteFloatLE(float value)
+        {
+            this.Buf.WriteFloatLE(value);
+            return this;
+        }
+
         public virtual IByteBuffer WriteDouble(double value)
         {
             this.Buf.WriteDouble(value);
+            return this;
+        }
+
+        public IByteBuffer WriteDoubleLE(double value)
+        {
+            this.Buf.WriteDoubleLE(value);
             return this;
         }
 
@@ -441,16 +549,6 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public int IoBufferCount => this.Buf.IoBufferCount;
-
-        public ArraySegment<byte> GetIoBuffer() => this.Buf.GetIoBuffer();
-
-        public ArraySegment<byte> GetIoBuffer(int index, int length) => this.Buf.GetIoBuffer(index, length);
-
-        public ArraySegment<byte>[] GetIoBuffers() => this.Buf.GetIoBuffers();
-
-        public ArraySegment<byte>[] GetIoBuffers(int index, int length) => this.Buf.GetIoBuffers(index, length);
-
         public virtual Task WriteBytesAsync(Stream input, int length, CancellationToken cancellationToken) => this.Buf.WriteBytesAsync(input, length, cancellationToken);
 
         public virtual IByteBuffer WriteZero(int length)
@@ -459,25 +557,21 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        //public virtual int IndexOf(int fromIndex, int toIndex, byte value)
-        //{
-        //    return this.buf.IndexOf(fromIndex, toIndex, value);
-        //}
+        public virtual int IndexOf(int fromIndex, int toIndex, byte value) => this.Buf.IndexOf(fromIndex, toIndex, value);
 
-        //public virtual int BytesBefore(byte value)
-        //{
-        //    return this.buf.BytesBefore(value);
-        //}
+        public virtual int BytesBefore(byte value) => this.Buf.BytesBefore(value);
 
-        //public virtual int BytesBefore(int length, byte value)
-        //{
-        //    return this.buf.BytesBefore(length, value);
-        //}
+        public virtual int BytesBefore(int length, byte value) => this.Buf.BytesBefore(length, value);
 
-        //public virtual int BytesBefore(int index, int length, byte value)
-        //{
-        //    return this.buf.BytesBefore(index, length, value);
-        //}
+        public virtual int BytesBefore(int index, int length, byte value) => this.Buf.BytesBefore(index, length, value);
+
+        public virtual int ForEachByte(ByteProcessor processor) => this.Buf.ForEachByte(processor);
+
+        public virtual int ForEachByte(int index, int length, ByteProcessor processor) => this.Buf.ForEachByte(index, length, processor);
+
+        public virtual int ForEachByteDesc(ByteProcessor processor) => this.Buf.ForEachByteDesc(processor);
+
+        public virtual int ForEachByteDesc(int index, int length, ByteProcessor processor) => this.Buf.ForEachByteDesc(index, length, processor);
 
         public virtual IByteBuffer Copy() => this.Buf.Copy();
 
@@ -485,17 +579,35 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer Slice() => this.Buf.Slice();
 
+        public virtual IByteBuffer RetainedSlice() => this.Buf.RetainedSlice();
+        
         public virtual IByteBuffer Slice(int index, int length) => this.Buf.Slice(index, length);
 
-        public virtual byte[] ToArray() => this.Buf.ToArray();
+        public virtual IByteBuffer RetainedSlice(int index, int length) => this.Buf.RetainedSlice(index, length);
 
         public virtual IByteBuffer Duplicate() => this.Buf.Duplicate();
 
-        public virtual bool HasArray => this.Buf.HasArray;
+        public virtual IByteBuffer RetainedDuplicate() => this.Buf.RetainedDuplicate();
 
-        public virtual byte[] Array => this.Buf.Array;
+        public virtual int IoBufferCount => this.Buf.IoBufferCount;
 
-        public virtual int ArrayOffset => this.Buf.ArrayOffset;
+        public virtual ArraySegment<byte> GetIoBuffer() => this.Buf.GetIoBuffer();
+
+        public virtual ArraySegment<byte> GetIoBuffer(int index, int length) => this.Buf.GetIoBuffer(index, length);
+
+        public virtual ArraySegment<byte>[] GetIoBuffers() => this.Buf.GetIoBuffers();
+
+        public virtual ArraySegment<byte>[] GetIoBuffers(int index, int length) => this.Buf.GetIoBuffers(index, length);
+
+        public bool HasArray => this.Buf.HasArray;
+
+        public int ArrayOffset => this.Buf.ArrayOffset;
+
+        public byte[] Array => this.Buf.Array;
+
+        public virtual string ToString(Encoding encoding) => this.Buf.ToString(encoding);
+
+        public virtual string ToString(int index, int length, Encoding encoding) => this.Buf.ToString(index, length, encoding);
 
         public override int GetHashCode() => this.Buf.GetHashCode();
 
@@ -503,7 +615,7 @@ namespace DotNetty.Buffers
 
         public bool Equals(IByteBuffer buffer) => this.Buf.Equals(buffer);
 
-        public virtual int CompareTo(IByteBuffer buffer) => this.Buf.CompareTo(buffer);
+        public int CompareTo(IByteBuffer buffer) => this.Buf.CompareTo(buffer);
 
         public override string ToString() => this.GetType().Name + '(' + this.Buf + ')';
 
@@ -540,17 +652,5 @@ namespace DotNetty.Buffers
         public virtual bool Release() => this.Buf.Release();
 
         public virtual bool Release(int decrement) => this.Buf.Release(decrement);
-
-        public int ForEachByte(ByteProcessor processor) => this.Buf.ForEachByte(processor);
-
-        public int ForEachByte(int index, int length, ByteProcessor processor) => this.Buf.ForEachByte(index, length, processor);
-
-        public int ForEachByteDesc(ByteProcessor processor) => this.Buf.ForEachByteDesc(processor);
-
-        public int ForEachByteDesc(int index, int length, ByteProcessor processor) => this.Buf.ForEachByteDesc(processor);
-
-        public virtual string ToString(Encoding encoding) => this.Buf.ToString(encoding);
-
-        public virtual string ToString(int index, int length, Encoding encoding) => this.Buf.ToString(index, length, encoding);
     }
 }

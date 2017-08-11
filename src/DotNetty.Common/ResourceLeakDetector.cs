@@ -6,6 +6,7 @@ namespace DotNetty.Common
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Runtime.CompilerServices;
     using System.Text;
@@ -22,14 +23,12 @@ namespace DotNetty.Common
 
         const string PropMaxRecords = "io.netty.leakDetection.maxRecords";
         const int DefaultMaxRecords = 4;
+
         static readonly int MaxRecords;
 
-        readonly ConditionalWeakTable<object, GCNotice> gcNotificationMap = new ConditionalWeakTable<object, GCNotice>();
-
-        /**
-         * Represents the level of resource leak detection.
-         */
-
+        /// <summary>
+        ///    Represents the level of resource leak detection.
+        /// </summary>
         public enum DetectionLevel
         {
             /// <summary>
@@ -62,8 +61,7 @@ namespace DotNetty.Common
         {
             // If new property name is present, use it
             string levelStr = SystemPropertyUtil.Get(PropLevel, DefaultLevel.ToString());
-            DetectionLevel level;
-            if (!Enum.TryParse(levelStr, true, out level))
+            if (!Enum.TryParse(levelStr, true, out DetectionLevel level))
             {
                 level = DefaultLevel;
             }
@@ -78,91 +76,70 @@ namespace DotNetty.Common
             }
         }
 
-        static readonly int DEFAULT_SAMPLING_INTERVAL = 113;
+        // Should be power of two.
+        const int DefaultSamplingInterval = 128;
+
+        /// Returns <c>true</c> if resource leak detection is enabled.
+        public static bool Enabled => Level > DetectionLevel.Disabled;
 
         /// <summary>
         ///     Gets or sets resource leak detection level
         /// </summary>
         public static DetectionLevel Level { get; set; }
 
-        /// Returns <c>true</c> if resource leak detection is enabled.
-        public static bool Enabled => Level > DetectionLevel.Disabled;
-
+        readonly ConditionalWeakTable<object, GCNotice> gcNotificationMap = new ConditionalWeakTable<object, GCNotice>();
         readonly ConcurrentDictionary<string, bool> reportedLeaks = new ConcurrentDictionary<string, bool>();
 
         readonly string resourceType;
         readonly int samplingInterval;
-        readonly long maxActive;
-        long active;
-        int loggedTooManyActive;
-
-        long leakCheckCnt;
 
         public ResourceLeakDetector(string resourceType)
-            : this(resourceType, DEFAULT_SAMPLING_INTERVAL, long.MaxValue)
+            : this(resourceType, DefaultSamplingInterval)
         {
         }
 
-        public ResourceLeakDetector(string resourceType, int samplingInterval, long maxActive)
+        public ResourceLeakDetector(string resourceType, int samplingInterval)
         {
             Contract.Requires(resourceType != null);
             Contract.Requires(samplingInterval > 0);
-            Contract.Requires(maxActive > 0);
 
             this.resourceType = resourceType;
             this.samplingInterval = samplingInterval;
-            this.maxActive = maxActive;
         }
 
         public static ResourceLeakDetector Create<T>() => new ResourceLeakDetector(StringUtil.SimpleClassName<T>());
 
-        public static ResourceLeakDetector Create<T>(int samplingInterval, long maxActive) => new ResourceLeakDetector(StringUtil.SimpleClassName<T>(), samplingInterval, maxActive);
-
         /// <summary>
-        ///     Creates a new <see cref="IResourceLeak" /> which is expected to be closed via <see cref="IResourceLeak.Close()" />
+        ///     Creates a new <see cref="IResourceLeakTracker" /> which is expected to be closed
         ///     when the
         ///     related resource is deallocated.
         /// </summary>
-        /// <returns>the <see cref="IResourceLeak" /> or <c>null</c></returns>
-        public IResourceLeak Open(object obj)
+        /// <returns>the <see cref="IResourceLeakTracker" /> or <c>null</c></returns>
+        public IResourceLeakTracker Track(object obj)
         {
             DetectionLevel level = Level;
-            switch (level)
+            if (level == DetectionLevel.Disabled)
             {
-                case DetectionLevel.Disabled:
-                    return null;
-                case DetectionLevel.Paranoid:
-                    this.CheckForCountLeak(level);
+                return null;
+            }
+            if (level < DetectionLevel.Paranoid)
+            {
+                if ((PlatformDependent.GetThreadLocalRandom().Next(this.samplingInterval)) == 0)
+                {
                     return new DefaultResourceLeak(this, obj);
-                case DetectionLevel.Simple:
-                case DetectionLevel.Advanced:
-                    if (this.leakCheckCnt++ % this.samplingInterval == 0)
-                    {
-                        this.CheckForCountLeak(level);
-                        return new DefaultResourceLeak(this, obj);
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                default:
-                    throw new ArgumentOutOfRangeException();
+                }
+                else
+                {
+                    return null;
+                }
             }
-        }
-
-        internal void CheckForCountLeak(DetectionLevel level)
-        {
-            // Report too many instances.
-            int interval = level == DetectionLevel.Paranoid ? 1 : this.samplingInterval;
-            if (Volatile.Read(ref this.active) * interval > this.maxActive
-                && Interlocked.CompareExchange(ref this.loggedTooManyActive, 0, 1) == 0)
+            else
             {
-                Logger.Error("LEAK: You are creating too many " + this.resourceType + " instances.  " + this.resourceType + " is a shared resource that must be reused across the AppDomain," +
-                    "so that only a few instances are created.");
+                return new DefaultResourceLeak(this, obj);
             }
         }
 
-        internal void Report(IResourceLeak resourceLeak)
+        internal void Report(IResourceLeakTracker resourceLeak)
         {
             string records = resourceLeak.ToString();
             if (this.reportedLeaks.TryAdd(records, true))
@@ -184,44 +161,35 @@ namespace DotNetty.Common
             }
         }
 
-        sealed class DefaultResourceLeak : IResourceLeak
+        sealed class DefaultResourceLeak : IResourceLeakTracker
         {
             readonly ResourceLeakDetector owner;
             readonly string creationRecord;
             readonly Deque<string> lastRecords = new Deque<string>();
-            int freed;
+            int removedRecords;
 
             public DefaultResourceLeak(ResourceLeakDetector owner, object referent)
             {
+                Debug.Assert(referent != null);
+
                 this.owner = owner;
-                GCNotice existingNotice;
-                if (owner.gcNotificationMap.TryGetValue(referent, out existingNotice))
+                if (owner.gcNotificationMap.TryGetValue(referent, out GCNotice existingNotice))
                 {
                     existingNotice.Rearm(this);
                 }
                 else
                 {
-                    owner.gcNotificationMap.Add(referent, new GCNotice(this));
+                    owner.gcNotificationMap.Add(referent, new GCNotice(this, referent));
                 }
 
-                if (referent != null)
+                DetectionLevel level = Level;
+                if (level >= DetectionLevel.Advanced)
                 {
-                    DetectionLevel level = Level;
-                    if (level >= DetectionLevel.Advanced)
-                    {
-                        this.creationRecord = NewRecord(null);
-                    }
-                    else
-                    {
-                        this.creationRecord = null;
-                    }
-
-                    Interlocked.Increment(ref this.owner.active);
+                    this.creationRecord = NewRecord(null);
                 }
                 else
                 {
                     this.creationRecord = null;
-                    this.freed = 1;
                 }
             }
 
@@ -231,7 +199,7 @@ namespace DotNetty.Common
 
             void RecordInternal(object hint)
             {
-                if (this.creationRecord != null)
+                if (this.creationRecord != null && MaxRecords > 0)
                 {
                     string value = NewRecord(hint);
 
@@ -240,29 +208,25 @@ namespace DotNetty.Common
                         int size = this.lastRecords.Count;
                         if (size == 0 || this.lastRecords[size - 1].Equals(value))
                         {
+                            if (size > MaxRecords)
+                            {
+                                this.lastRecords.RemoveFromFront();
+                                ++this.removedRecords;
+                            }
                             this.lastRecords.AddToBack(value);
-                        }
-                        if (size > MaxRecords)
-                        {
-                            this.lastRecords.RemoveFromFront();
                         }
                     }
                 }
             }
 
-            public bool Close()
+            public bool Close(object trackedObject)
             {
-                if (Interlocked.CompareExchange(ref this.freed, 1, 0) == 0)
-                {
-                    Interlocked.Decrement(ref this.owner.active);
-                    return true;
-                }
-                return false;
+                return this.owner.gcNotificationMap.Remove(trackedObject);
             }
 
-            internal void CloseFinal()
+            internal void CloseFinal(object trackedObject)
             {
-                if (this.Close())
+                if (this.Close(trackedObject))
                 {
                     this.owner.Report(this);
                 }
@@ -272,19 +236,32 @@ namespace DotNetty.Common
             {
                 if (this.creationRecord == null)
                 {
-                    return "";
+                    return string.Empty;
                 }
 
                 string[] array;
+                int removed;
                 lock (this.lastRecords)
                 {
                     array = new string[this.lastRecords.Count];
                     ((ICollection<string>)this.lastRecords).CopyTo(array, 0);
+                    removed = this.removedRecords;
                 }
 
-                StringBuilder buf = new StringBuilder(16384)
-                    .Append(StringUtil.Newline)
-                    .Append("Recent access records: ")
+                StringBuilder buf = new StringBuilder(16384).Append(StringUtil.Newline);
+                if (removed > 0)
+                {
+                    buf.Append("WARNING: ")
+                        .Append(removed)
+                        .Append(" leak records were discarded because the leak record count is limited to ")
+                        .Append(MaxRecords)
+                        .Append(". Use system property ")
+                        .Append(PropMaxRecords)
+                        .Append(" to increase the limit.")
+                        .Append(StringUtil.Newline);
+                }
+
+                buf.Append("Recent access records: ")
                     .Append(array.Length)
                     .Append(StringUtil.Newline);
 
@@ -339,22 +316,40 @@ namespace DotNetty.Common
 
         class GCNotice
         {
+            // ConditionalWeakTable
+            //
+            // Lifetimes of keys and values:
+            //
+            //    Inserting a key and value into the dictonary will not
+            //    prevent the key from dying, even if the key is strongly reachable
+            //    from the value.
+            //
+            //    Prior to ConditionalWeakTable, the CLR did not expose
+            //    the functionality needed to implement this guarantee.
+            //
+            //    Once the key dies, the dictionary automatically removes
+            //    the key/value entry.
+            //
             DefaultResourceLeak leak;
+            object referent;
 
-            public GCNotice(DefaultResourceLeak leak)
+            public GCNotice(DefaultResourceLeak leak, object referent)
             {
                 this.leak = leak;
+                this.referent = referent;
             }
 
             ~GCNotice()
             {
-                this.leak.CloseFinal();
+                object trackedObject = this.referent;
+                this.referent = null;
+                this.leak.CloseFinal(trackedObject);
             }
 
             public void Rearm(DefaultResourceLeak newLeak)
             {
                 DefaultResourceLeak oldLeak = Interlocked.Exchange(ref this.leak, newLeak);
-                oldLeak.CloseFinal();
+                oldLeak.CloseFinal(this.referent);
             }
         }
     }

@@ -3,7 +3,7 @@
 
 namespace DotNetty.Common
 {
-    public interface IResourceLeak
+    public interface IResourceLeakTracker
     {
         /// <summary>
         ///     Records the caller's current stack trace so that the <see cref="ResourceLeakDetector" /> can tell where the
@@ -24,6 +24,6 @@ namespace DotNetty.Common
         ///     Close the leak so that <see cref="ResourceLeakDetector" /> does not warn about leaked resources.
         /// </summary>
         /// <returns><c>true</c> if called first time, <c>false</c> if called already</returns>
-        bool Close();
+        bool Close(object trackedObject);
     }
 }
