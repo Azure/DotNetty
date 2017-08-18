@@ -49,7 +49,7 @@
 
                 IChannel bootstrapChannel = await bootstrap.BindAsync(port);
 
-                Console.ReadKey();
+                Console.ReadLine();
 
                 await bootstrapChannel.CloseAsync();
             }
