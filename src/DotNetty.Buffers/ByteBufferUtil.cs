@@ -383,6 +383,15 @@ namespace DotNetty.Buffers
         public static short SwapShort(short value) => (short)(((value & 0xFF) << 8) | (value >> 8) & 0xFF);
 
         /// <summary>
+        ///     Toggles the endianness of the specified 24-bit medium integer.
+        /// </summary>
+        public static int SwapMedium(int value)
+        {
+            int swapped = value << 16 & 0xff0000 | value & 0xff00 | value.RightUShift(16) & 0xff;
+            return swapped.ToMediumInt();
+        }
+
+        /// <summary>
         ///     Read the given amount of bytes into a new {@link ByteBuf} that is allocated from the {@link ByteBufAllocator}.
         /// </summary>
         public static IByteBuffer ReadBytes(IByteBufferAllocator alloc, IByteBuffer buffer, int length)
@@ -638,6 +647,16 @@ namespace DotNetty.Buffers
                     buffer.Release();
                 }
             }
+        }
+
+        public static unsafe int SingleToInt32Bits(float value)
+        {
+            return *(int*)(&value);
+        }
+
+        public static unsafe float Int32BitsToSingle(int value)
+        {
+            return *(float*)(&value);
         }
     }
 }

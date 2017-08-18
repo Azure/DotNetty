@@ -297,7 +297,7 @@ namespace DotNetty.Transport.Bootstrapping
                 }
                 catch (Exception ex)
                 {
-                    channel.CloseAsync();
+                    channel.CloseSafe();
                     promise.TrySetException(ex);
                 }
             });
@@ -328,6 +328,37 @@ namespace DotNetty.Transport.Bootstrapping
         protected ICollection<ChannelOptionValue> Options => this.options.Values;
 
         protected ICollection<AttributeValue> Attributes => this.attrs.Values;
+
+        protected static void SetChannelOptions(IChannel channel, ICollection<ChannelOptionValue> options, IInternalLogger logger)
+        {
+            foreach (var e in options)
+            {
+                SetChannelOption(channel, e, logger);
+            }
+        }
+
+        protected static void SetChannelOptions(IChannel channel, ChannelOptionValue[] options, IInternalLogger logger)
+        {
+            foreach (var e in options)
+            {
+                SetChannelOption(channel, e, logger);
+            }
+        }
+
+        protected static void SetChannelOption(IChannel channel, ChannelOptionValue option, IInternalLogger logger)
+        {
+            try
+            {
+                if (!option.Set(channel.Configuration))
+                {
+                    logger.Warn("Unknown channel option '{}' for channel '{}'", option.Option, channel);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Warn("Failed to set channel option '{}' with value '{}' for channel '{}'", option.Option, option, channel, ex);
+            }
+        }
 
         public override string ToString()
         {
@@ -413,21 +444,22 @@ namespace DotNetty.Transport.Bootstrapping
 
         protected abstract class ChannelOptionValue
         {
+            public abstract ChannelOption Option { get; }
             public abstract bool Set(IChannelConfiguration config);
         }
 
         protected sealed class ChannelOptionValue<T> : ChannelOptionValue
         {
-            readonly ChannelOption<T> option;
+            public override ChannelOption Option { get; }
             readonly T value;
 
             public ChannelOptionValue(ChannelOption<T> option, T value)
             {
-                this.option = option;
+                this.Option = option;
                 this.value = value;
             }
 
-            public override bool Set(IChannelConfiguration config) => config.SetOption(this.option, this.value);
+            public override bool Set(IChannelConfiguration config) => config.SetOption(this.Option, this.value);
 
             public override string ToString() => this.value.ToString();
         }

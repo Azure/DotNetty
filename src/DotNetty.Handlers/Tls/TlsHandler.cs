@@ -62,9 +62,10 @@ namespace DotNetty.Handlers.Tls
  
         public static TlsHandler Server(X509Certificate certificate) => new TlsHandler(new ServerTlsSettings(certificate));
 
-        public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
+        // using workaround mentioned here: https://github.com/dotnet/corefx/issues/4510
+        public X509Certificate2 LocalCertificate => this.sslStream.LocalCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.LocalCertificate?.Export(X509ContentType.Cert));
 
-        public X509Certificate RemoteCertificate => this.sslStream.RemoteCertificate;
+        public X509Certificate2 RemoteCertificate => this.sslStream.RemoteCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.RemoteCertificate?.Export(X509ContentType.Cert));
 
         bool IsServer => this.settings is ServerTlsSettings;
 
@@ -147,7 +148,6 @@ namespace DotNetty.Handlers.Tls
                         // ReSharper disable once AssignNullToNotNullAttribute -- task.Exception will be present as task is faulted
                         TlsHandlerState oldState = self.state;
                         Contract.Assert(!oldState.HasAny(TlsHandlerState.AuthenticationCompleted));
-                        self.state = (oldState | TlsHandlerState.FailedAuthentication) & ~TlsHandlerState.Authenticating;
                         self.HandleFailure(task.Exception);
                         break;
                     }
@@ -601,6 +601,13 @@ namespace DotNetty.Handlers.Tls
             this.lastContextWriteTask = this.capturedContext.WriteAsync(output);
         }
 
+        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
+        {
+            var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+            this.ReadIfNeeded(this.capturedContext);
+            return future;
+        }
+
         public override Task CloseAsync(IChannelHandlerContext context)
         {
             this.closeFuture.TryComplete();
@@ -792,14 +799,14 @@ namespace DotNetty.Handlers.Tls
             public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count);
 
             public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-                => this.owner.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
 
 #if !NETSTANDARD1_3
             static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
 
             public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
             {
-                Task task = this.owner.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+                Task task = this.WriteAsync(buffer, offset, count);
                 switch (task.Status)
                 {
                     case TaskStatus.RanToCompletion:

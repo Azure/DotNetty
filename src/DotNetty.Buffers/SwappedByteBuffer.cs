@@ -11,6 +11,7 @@ namespace DotNetty.Buffers
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     ///     Wrapper which swaps the <see cref="ByteOrder" /> of a <see cref="IByteBuffer" />.
@@ -146,7 +147,8 @@ namespace DotNetty.Buffers
 
         public IByteBuffer DiscardSomeReadBytes()
         {
-            throw new NotImplementedException();
+            this.buf.DiscardSomeReadBytes();
+            return this;
         }
 
         public IByteBuffer EnsureWritable(int minWritableBytes)
@@ -155,10 +157,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public int EnsureWritable(int minWritableBytes, bool force)
-        {
-            throw new NotImplementedException();
-        }
+        public int EnsureWritable(int minWritableBytes, bool force) => this.buf.EnsureWritable(minWritableBytes, force);
 
         public bool GetBoolean(int index) => this.buf.GetBoolean(index);
 
@@ -186,7 +185,13 @@ namespace DotNetty.Buffers
 
         public long GetLong(int index) => ByteBufferUtil.SwapLong(this.buf.GetLong(index));
 
+        public int GetMedium(int index) => ByteBufferUtil.SwapMedium(this.buf.GetMedium(index));
+
+        public int GetUnsignedMedium(int index) => this.GetMedium(index).ToUnsignedMediumInt();
+
         public char GetChar(int index) => (char)this.GetShort(index);
+
+        public float GetFloat(int index) => ByteBufferUtil.Int32BitsToSingle(this.GetInt(index));
 
         public double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
 
@@ -246,11 +251,6 @@ namespace DotNetty.Buffers
 
         public IByteBuffer SetUnsignedShort(int index, ushort value)
         {
-            throw new NotImplementedException();
-        }
-
-        public IByteBuffer SetUnsignedShort(int index, int value)
-        {
             unchecked
             {
                 this.buf.SetUnsignedShort(index, (ushort)ByteBufferUtil.SwapShort((short)value));
@@ -279,9 +279,21 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer SetMedium(int index, int value)
+        {
+            this.buf.SetMedium(index, ByteBufferUtil.SwapMedium(value));
+            return this;
+        }
+
         public IByteBuffer SetChar(int index, char value)
         {
             this.SetShort(index, (short)value);
+            return this;
+        }
+
+        public IByteBuffer SetFloat(int index, float value)
+        {
+            this.SetInt(index, ByteBufferUtil.SingleToInt32Bits(value));
             return this;
         }
 
@@ -321,6 +333,12 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer SetZero(int index, int length)
+        {
+            this.buf.SetZero(index, length);
+            return this;
+        }
+
         public Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken) => this.buf.SetBytesAsync(index, src, length, cancellationToken);
 
         public bool ReadBoolean() => this.buf.ReadBoolean();
@@ -349,7 +367,13 @@ namespace DotNetty.Buffers
 
         public long ReadLong() => ByteBufferUtil.SwapLong(this.buf.ReadLong());
 
+        public int ReadMedium() => ByteBufferUtil.SwapMedium(this.buf.ReadMedium());
+
+        public int ReadUnsignedMedium() => this.ReadMedium().ToUnsignedMediumInt();
+
         public char ReadChar() => (char)this.ReadShort();
+
+        public float ReadFloat() => ByteBufferUtil.Int32BitsToSingle(this.ReadInt());
 
         public double ReadDouble() => BitConverter.Int64BitsToDouble(this.ReadLong());
 
@@ -417,11 +441,6 @@ namespace DotNetty.Buffers
 
         public IByteBuffer WriteUnsignedShort(ushort value)
         {
-            throw new NotImplementedException();
-        }
-
-        public IByteBuffer WriteUnsignedShort(int value)
-        {
             this.buf.WriteUnsignedShort(unchecked((ushort)ByteBufferUtil.SwapShort((short)value)));
             return this;
         }
@@ -448,9 +467,27 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer WriteUnsignedMedium(int value)
+        {
+            this.buf.WriteMedium(ByteBufferUtil.SwapMedium(value.ToUnsignedMediumInt()));
+            return this;
+        }
+
+        public IByteBuffer WriteMedium(int value)
+        {
+            this.buf.WriteMedium(ByteBufferUtil.SwapMedium(value));
+            return this;
+        }
+
         public IByteBuffer WriteChar(char value)
         {
             this.WriteShort(value);
+            return this;
+        }
+
+        public IByteBuffer WriteFloat(float value)
+        {
+            this.WriteInt(ByteBufferUtil.SingleToInt32Bits(value));
             return this;
         }
 
@@ -536,6 +573,12 @@ namespace DotNetty.Buffers
         public Task WriteBytesAsync(Stream stream, int length) => this.buf.WriteBytesAsync(stream, length);
 
         public Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken) => this.buf.WriteBytesAsync(stream, length, cancellationToken);
+
+        public IByteBuffer WriteZero(int length)
+        {
+            this.buf.WriteZero(length);
+            return this;
+        }
 
         public int ForEachByte(ByteProcessor processor) => this.buf.ForEachByte(processor);
 

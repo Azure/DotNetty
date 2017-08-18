@@ -11,7 +11,7 @@ namespace DotNetty.Buffers
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
 
-    class AdvancedLeakAwareByteBuffer : WrappedByteBuffer
+    class AdvancedLeakAwareByteBuffer : SimpleLeakAwareByteBuffer
     {
         static readonly string PropAcquireAndReleaseOnly = "io.netty.leakDetection.acquireAndReleaseOnly";
         static readonly bool AcquireAndReleaseOnly;
@@ -28,12 +28,9 @@ namespace DotNetty.Buffers
             }
         }
 
-        readonly IResourceLeak leak;
-
         internal AdvancedLeakAwareByteBuffer(IByteBuffer buf, IResourceLeak leak)
-            : base(buf)
+            : base(buf, leak)
         {
-            this.leak = leak;
         }
 
         void RecordLeakNonRefCountingOperation()
@@ -117,6 +114,18 @@ namespace DotNetty.Buffers
             return base.GetByte(index);
         }
 
+        public override int GetMedium(int index)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.GetMedium(index);
+        }
+
+        public override int GetUnsignedMedium(int index)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.GetUnsignedMedium(index);
+        }
+
         public override short GetShort(int index)
         {
             this.RecordLeakNonRefCountingOperation();
@@ -153,12 +162,11 @@ namespace DotNetty.Buffers
             return base.GetChar(index);
         }
 
-        // todo: port: complete
-        //    public override float GetFloat(int index)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.GetFloat(index);
-        //}
+        public override float GetFloat(int index)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.GetFloat(index);
+        }
 
         public override double GetDouble(int index)
         {
@@ -214,6 +222,12 @@ namespace DotNetty.Buffers
             return base.SetByte(index, value);
         }
 
+        public override IByteBuffer SetMedium(int index, int value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.SetMedium(index, value);
+        }
+
         public override IByteBuffer SetShort(int index, int value)
         {
             this.RecordLeakNonRefCountingOperation();
@@ -238,12 +252,11 @@ namespace DotNetty.Buffers
             return base.SetChar(index, value);
         }
 
-        // todo: port: complete
-        //    public override IByteBuffer SetFloat(int index, float value)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.SetFloat(index, value);
-        //}
+        public override IByteBuffer SetFloat(int index, float value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.SetFloat(index, value);
+        }
 
         public override IByteBuffer SetDouble(int index, double value)
         {
@@ -287,12 +300,11 @@ namespace DotNetty.Buffers
             return base.SetBytesAsync(index, input, length, cancellationToken);
         }
 
-        // todo: port: complete
-        //        public override IByteBuffer SetZero(int index, int length)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.SetZero(index, length);
-        //}
+        public override IByteBuffer SetZero(int index, int length)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.SetZero(index, length);
+        }
 
         public override bool ReadBoolean()
         {
@@ -316,6 +328,18 @@ namespace DotNetty.Buffers
         {
             this.RecordLeakNonRefCountingOperation();
             return base.ReadUnsignedShort();
+        }
+
+        public override int ReadMedium()
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.ReadMedium();
+        }
+
+        public override int ReadUnsignedMedium()
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.ReadUnsignedMedium();
         }
 
         public override int ReadInt()
@@ -342,12 +366,11 @@ namespace DotNetty.Buffers
             return base.ReadChar();
         }
 
-        // todo: port: complete
-        //    public override float ReadFloat()
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.ReadFloat();
-        //}
+        public override float ReadFloat()
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.ReadFloat();
+        }
 
         public override double ReadDouble()
         {
@@ -427,6 +450,12 @@ namespace DotNetty.Buffers
             return base.WriteInt(value);
         }
 
+        public override IByteBuffer WriteMedium(int value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.WriteMedium(value);
+        }
+
         public override IByteBuffer WriteLong(long value)
         {
             this.RecordLeakNonRefCountingOperation();
@@ -439,12 +468,11 @@ namespace DotNetty.Buffers
             return base.WriteChar(value);
         }
 
-        // todo: port: complete
-        //        public override IByteBuffer WriteFloat(float value)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.WriteFloat(value);
-        //}
+        public override IByteBuffer WriteFloat(float value)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.WriteFloat(value);
+        }
 
         public override IByteBuffer WriteDouble(double value)
         {
@@ -488,12 +516,11 @@ namespace DotNetty.Buffers
             return base.WriteBytesAsync(input, length, cancellationToken);
         }
 
-        // todo: port: complete
-        //public override IByteBuffer WriteZero(int length)
-        //{
-        //    this.RecordLeakNonRefCountingOperation();
-        //    return base.WriteZero(length);
-        //}
+        public override IByteBuffer WriteZero(int length)
+        {
+            this.RecordLeakNonRefCountingOperation();
+            return base.WriteZero(length);
+        }
 
         //public override int indexOf(int fromIndex, int toIndex, byte value)
         //{
@@ -601,30 +628,14 @@ namespace DotNetty.Buffers
 
         public override bool Release()
         {
-            bool deallocated = base.Release();
-            if (deallocated)
-            {
-                this.leak.Close();
-            }
-            else
-            {
-                this.leak.Record();
-            }
-            return deallocated;
+            this.leak.Record();
+            return base.Release();
         }
 
         public override bool Release(int decrement)
         {
-            bool deallocated = base.Release(decrement);
-            if (deallocated)
-            {
-                this.leak.Close();
-            }
-            else
-            {
-                this.leak.Record();
-            }
-            return deallocated;
+            this.leak.Record();
+            return base.Release(decrement);
         }
 
         public override string ToString(Encoding encoding)

@@ -287,7 +287,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                     var cause = new ConnectTimeoutException("connection timed out: " + a.ToString());
                                     if (promise != null && promise.TrySetException(cause))
                                     {
-                                        self.CloseAsync();
+                                        self.CloseSafe();
                                     }
                                 },
                                 this.channel,
@@ -301,7 +301,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                 var c = (AbstractSocketChannel)s;
                                 c.connectCancellationTask?.Cancel();
                                 c.connectPromise = null;
-                                c.CloseAsync();
+                                c.CloseSafe();
                             },
                             ch,
                             TaskContinuationOptions.OnlyOnCanceled | TaskContinuationOptions.ExecuteSynchronously);
@@ -419,8 +419,9 @@ namespace DotNetty.Transport.Channels.Sockets
                     throw;
                 }
 
-                // directly call base.Flush0() to force a flush now
-                base.Flush0(); // todo: does it make sense now that we've actually written out everything that was flushed previously? concurrent flush handling?
+                // Double check if there's no pending flush
+                // See https://github.com/Azure/DotNetty/issues/218
+                this.Flush0(); // todo: does it make sense now that we've actually written out everything that was flushed previously? concurrent flush handling?
             }
 
             bool IsFlushPending() => this.Channel.IsInState(StateFlags.WriteScheduled);
@@ -467,7 +468,7 @@ namespace DotNetty.Transport.Channels.Sockets
             if (promise != null)
             {
                 // Use TrySetException() instead of SetException() to avoid the race against cancellation due to timeout.
-                promise.TrySetException(ClosedChannelException);
+                promise.TrySetException(new ClosedChannelException());
                 this.connectPromise = null;
             }
 

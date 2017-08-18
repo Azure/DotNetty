@@ -39,7 +39,12 @@ namespace DotNetty.Microbench.Utilities
             // Get the time before returning so that any code above doesn't 
             // impact the time.
             this.startTime = Stopwatch.GetTimestamp();
-            this.startCycles = CycleTime.Process(new SafeWaitHandle(Process.GetCurrentProcess().Handle, false));
+#if NET452
+            var handle = Process.GetCurrentProcess().Handle;
+#else
+            var handle = Process.GetCurrentProcess().SafeHandle.DangerousGetHandle();
+#endif
+            this.startCycles = CycleTime.Process(new SafeWaitHandle(handle, false));
         }
 
         /// <summary>
@@ -116,7 +121,12 @@ namespace DotNetty.Microbench.Utilities
 
         public void Dispose()
         {
-            ulong elapsedCycles = CycleTime.Process(new SafeWaitHandle(Process.GetCurrentProcess().Handle, false)) - this.startCycles;
+#if NET452
+            var handle = Process.GetCurrentProcess().Handle;
+#else
+            var handle = Process.GetCurrentProcess().SafeHandle.DangerousGetHandle();
+#endif
+            ulong elapsedCycles = CycleTime.Process(new SafeWaitHandle(handle, false)) - this.startCycles;
 
             long elapsedTime = Stopwatch.GetTimestamp() - this.startTime;
 

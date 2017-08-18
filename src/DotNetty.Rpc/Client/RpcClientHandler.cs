@@ -102,7 +102,6 @@
                 }
                 else
                 {
-                    base.ExceptionCaught(context, exception);
                     Logger.Error(exception);
                 }
             }

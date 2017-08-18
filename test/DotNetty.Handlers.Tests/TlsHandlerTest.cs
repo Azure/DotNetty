@@ -15,6 +15,7 @@ namespace DotNetty.Handlers.Tests
     using DotNetty.Common.Concurrency;
     using DotNetty.Handlers.Tls;
     using DotNetty.Tests.Common;
+    using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Embedded;
     using Xunit;
     using Xunit.Abstractions;
@@ -93,6 +94,7 @@ namespace DotNetty.Handlers.Tests
                 IByteBuffer finalReadBuffer = Unpooled.Buffer(16 * 1024);
                 await ReadOutboundAsync(async () => ch.ReadInbound<IByteBuffer>(), expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
                 Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                driverStream.Dispose();
             }
             finally
             {
@@ -166,6 +168,7 @@ namespace DotNetty.Handlers.Tests
                     },
                     expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
                 Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                driverStream.Dispose();
             }
             finally
             {
@@ -177,8 +180,8 @@ namespace DotNetty.Handlers.Tests
         {
             X509Certificate2 tlsCertificate = TestResourceHelper.GetTestCertificate();
             string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
-            TlsHandler tlsHandler = isClient ? 
-                new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)) : 
+            TlsHandler tlsHandler = isClient ?
+                new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)) :
                 TlsHandler.Server(tlsCertificate);
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
@@ -245,6 +248,54 @@ namespace DotNetty.Handlers.Tests
                 },
                 TimeSpan.FromMilliseconds(10),
                 timeout);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void NoAutoReadHandshakeProgresses(bool dropChannelActive)
+        {
+            var readHandler = new ReadRegisterHandler();
+            EmbeddedChannel ch = new EmbeddedChannel(EmbeddedChannelId.Instance, false, false,
+               readHandler,
+               TlsHandler.Client("dotnetty.com"),
+               new ActivatingHandler(dropChannelActive)
+           );
+
+           ch.Configuration.AutoRead = false;
+           ch.Start();
+           Assert.False(ch.Configuration.AutoRead);
+           Assert.True(ch.WriteOutbound(Unpooled.Empty));
+           Assert.True(readHandler.ReadIssued);
+        }
+
+        class ReadRegisterHandler : ChannelHandlerAdapter
+        {
+            public bool ReadIssued { get; private set; }
+
+            public override void Read(IChannelHandlerContext context)
+            {
+                this.ReadIssued = true;
+                base.Read(context);
+            }
+        }
+
+        class ActivatingHandler : ChannelHandlerAdapter
+        {
+            bool dropChannelActive;
+
+            public ActivatingHandler(bool dropChannelActive)
+            {
+                this.dropChannelActive = dropChannelActive;
+            }
+
+            public override void ChannelActive(IChannelHandlerContext context)
+            {
+                if (!dropChannelActive)
+                {
+                    context.FireChannelActive();
+                }
+            }
         }
     }
 }

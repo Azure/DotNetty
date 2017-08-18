@@ -56,7 +56,7 @@ namespace DotNetty.Buffers
             }
             DEFAULT_MAX_ORDER = defaultMaxOrder;
 
-            // Determine reasonable default for nHeapArena and nDirectArena.
+            // todo: Determine reasonable default for heapArenaCount
             // Assuming each arena has 3 chunks, the pool should not consume more than 50% of max memory.
 
             // Use 2 * cores by default to reduce contention as we use 2 * cores for the number of EventLoops
@@ -124,18 +124,31 @@ namespace DotNetty.Buffers
         {
         }
 
-        public PooledByteBufferAllocator(int nHeapArena, int pageSize, int maxOrder)
-            : this(nHeapArena, pageSize, maxOrder,
+        public PooledByteBufferAllocator(int heapArenaCount, int pageSize, int maxOrder)
+            : this(heapArenaCount, pageSize, maxOrder,
                 DEFAULT_TINY_CACHE_SIZE, DEFAULT_SMALL_CACHE_SIZE, DEFAULT_NORMAL_CACHE_SIZE)
         {
         }
 
-        public PooledByteBufferAllocator(int nHeapArena, int pageSize, int maxOrder,
+        public PooledByteBufferAllocator(int heapArenaCount, int pageSize, int maxOrder,
             int tinyCacheSize, int smallCacheSize, int normalCacheSize)
+            : this(heapArenaCount, pageSize, maxOrder,
+                tinyCacheSize, smallCacheSize, normalCacheSize, int.MaxValue)
         {
-            Contract.Requires(nHeapArena >= 0);
+        }
 
-            //super(preferDirect);
+        public PooledByteBufferAllocator(long maxMemory)
+            : this(DEFAULT_NUM_HEAP_ARENA, DEFAULT_PAGE_SIZE, DEFAULT_MAX_ORDER, DEFAULT_TINY_CACHE_SIZE,
+                  DEFAULT_SMALL_CACHE_SIZE, DEFAULT_NORMAL_CACHE_SIZE,
+                  Math.Max(1, (int)Math.Min(maxMemory / DEFAULT_NUM_HEAP_ARENA / (DEFAULT_PAGE_SIZE << DEFAULT_MAX_ORDER), int.MaxValue)))
+        {
+        }
+
+        public PooledByteBufferAllocator(int heapArenaCount, int pageSize, int maxOrder,
+            int tinyCacheSize, int smallCacheSize, int normalCacheSize, int maxChunkCountPerArena)
+        {
+            Contract.Requires(heapArenaCount >= 0);
+
             this.threadCache = new PoolThreadLocalCache(this);
             this.tinyCacheSize = tinyCacheSize;
             this.smallCacheSize = smallCacheSize;
@@ -144,13 +157,13 @@ namespace DotNetty.Buffers
 
             int pageShifts = ValidateAndCalculatePageShifts(pageSize);
 
-            if (nHeapArena > 0)
+            if (heapArenaCount > 0)
             {
-                this.heapArenas = NewArenaArray<byte[]>(nHeapArena);
+                this.heapArenas = NewArenaArray<byte[]>(heapArenaCount);
                 var metrics = new List<IPoolArenaMetric>(this.heapArenas.Length);
                 for (int i = 0; i < this.heapArenas.Length; i++)
                 {
-                    var arena = new HeapArena(this, pageSize, maxOrder, pageShifts, chunkSize);
+                    var arena = new HeapArena(this, pageSize, maxOrder, pageShifts, chunkSize, maxChunkCountPerArena);
                     this.heapArenas[i] = arena;
                     metrics.Add(arena);
                 }

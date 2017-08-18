@@ -82,6 +82,10 @@ namespace DotNetty.Transport.Channels.Embedded
         ///     The <see cref="IChannelHandler" />s that will be added to the <see cref="IChannelPipeline" />
         /// </param>
         public EmbeddedChannel(IChannelId id, bool hasDisconnect, params IChannelHandler[] handlers)
+            : this(id, hasDisconnect, true, handlers)
+        { }
+
+        public EmbeddedChannel(IChannelId id, bool hasDisconnect, bool start, params IChannelHandler[] handlers)
             : base(null, id)
         {
             this.Metadata = hasDisconnect ? METADATA_DISCONNECT : METADATA_NO_DISCONNECT;
@@ -105,9 +109,17 @@ namespace DotNetty.Transport.Channels.Embedded
                 }
             }));
 
+            if (start)
+            {
+                this.Start();
+            }
+        }
+
+        public void Start()
+        {
             Task future = this.loop.RegisterAsync(this);
             Debug.Assert(future.IsCompleted);
-            p.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
+            this.Pipeline.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
         }
 
         protected sealed override DefaultChannelPipeline NewChannelPipeline() => new EmbeddedChannelPipeline(this);
@@ -292,7 +304,6 @@ namespace DotNetty.Transport.Channels.Embedded
                     // The write may be delayed to run later by runPendingTasks()
                     future.ContinueWith(t => this.RecordException(t));
                 }
-                Debug.Assert(future.IsCompleted);
                 if (future.Exception != null)
                 {
                     this.RecordException(future.Exception);
@@ -313,7 +324,7 @@ namespace DotNetty.Transport.Channels.Embedded
                     this.RecordException(future.Exception);
                     break;
                 default:
-                    break;  
+                    break;
             }
         }
 
@@ -351,7 +362,7 @@ namespace DotNetty.Transport.Channels.Embedded
          */
         bool Finish(bool releaseAll)
         {
-            this.CloseAsync();
+            this.CloseSafe();
             try
             {
                 this.CheckException();

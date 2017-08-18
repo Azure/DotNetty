@@ -185,7 +185,7 @@ namespace DotNetty.Transport.Bootstrapping
                 }
                 catch (Exception ex)
                 {
-                    channel.CloseAsync();
+                    channel.CloseSafe();
                     promise.TrySetException(ex);
                 }
             });
@@ -198,20 +198,7 @@ namespace DotNetty.Transport.Bootstrapping
             p.AddLast(null, (string)null, this.Handler());
 
             ICollection<ChannelOptionValue> options = this.Options;
-            foreach (ChannelOptionValue e in options)
-            {
-                try
-                {
-                    if (!e.Set(channel.Configuration))
-                    {
-                        Logger.Warn("Unknown channel option: " + e);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("Failed to set a channel option: " + channel, ex);
-                }
-            }
+            SetChannelOptions(channel, options, Logger);
 
             ICollection<AttributeValue> attrs = this.Attributes;
             foreach (AttributeValue e in attrs)

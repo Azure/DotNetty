@@ -47,7 +47,7 @@ namespace DotNetty.Common.Utilities
             for (; i < 16; i++)
             {
                 var buf = new StringBuilder(2);
-                char c = (char)('a' + i - 10);
+                char c = (char)('A' + i - 10);
                 buf.Append('0');
                 buf.Append(c);
                 Byte2HexPad[i] = buf.ToString();

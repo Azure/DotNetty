@@ -11,6 +11,7 @@ namespace DotNetty.Buffers
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     ///     Abstract base class implementation of a <see cref="IByteBuffer" />
@@ -57,6 +58,7 @@ namespace DotNetty.Buffers
             {
                 throw new IndexOutOfRangeException($"ReaderIndex: {readerIndex} (expected: 0 <= readerIndex <= writerIndex({this.WriterIndex})");
             }
+
             this.ReaderIndex = readerIndex;
             return this;
         }
@@ -276,6 +278,19 @@ namespace DotNetty.Buffers
             }
         }
 
+        public virtual int GetMedium(int index)
+        {
+            this.CheckIndex(index, 3);
+            return this._GetMedium(index);
+        }
+
+        public virtual int GetUnsignedMedium(int index)
+        {
+            return this.GetMedium(index).ToUnsignedMediumInt();
+        }
+
+        protected abstract int _GetMedium(int index);
+
         public virtual int GetInt(int index)
         {
             this.CheckIndex(index, 4);
@@ -301,6 +316,8 @@ namespace DotNetty.Buffers
         protected abstract long _GetLong(int index);
 
         public virtual char GetChar(int index) => Convert.ToChar(this.GetShort(index));
+
+        public virtual float GetFloat(int index) => ByteBufferUtil.Int32BitsToSingle(this.GetInt(index));
 
         public virtual double GetDouble(int index) => BitConverter.Int64BitsToDouble(this.GetLong(index));
 
@@ -386,9 +403,24 @@ namespace DotNetty.Buffers
 
         protected abstract void _SetLong(int index, long value);
 
+        public virtual IByteBuffer SetMedium(int index, int value)
+        {
+            this.CheckIndex(index, 3);
+            this._SetMedium(index, value);
+            return this;
+        }
+
+        protected abstract void _SetMedium(int index, int value);
+
         public virtual IByteBuffer SetChar(int index, char value)
         {
             this.SetShort(index, value);
+            return this;
+        }
+
+        public virtual IByteBuffer SetFloat(int index, float value)
+        {
+            this.SetInt(index, ByteBufferUtil.SingleToInt32Bits(value));
             return this;
         }
 
@@ -432,6 +464,33 @@ namespace DotNetty.Buffers
 
         public abstract Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
 
+        public virtual IByteBuffer SetZero(int index, int length)
+        {
+            if (length == 0)
+            {
+                return this;
+            }
+
+            this.CheckIndex(index, length);
+
+            int longCount = length.RightUShift(3);
+            int byteCount = length & 7;
+
+            for (int i = longCount; i > 0; i--)
+            {
+                this._SetLong(index, 0);
+                index += 8;
+            }
+
+            for (int i = byteCount; i > 0; i--)
+            {
+                this._SetByte(index, 0);
+                index++;
+            }
+
+            return this;
+        }
+
         public virtual bool ReadBoolean() => this.ReadByte() != 0;
 
         public virtual byte ReadByte()
@@ -467,6 +526,17 @@ namespace DotNetty.Buffers
             return v;
         }
 
+        public virtual int ReadMedium()
+        {
+            this.CheckReadableBytes(3);
+            int v = this._GetMedium(this.ReaderIndex);
+            this.ReaderIndex += 3;
+            return v;
+        }
+        public virtual int ReadUnsignedMedium()
+        {
+            return this.ReadMedium().ToUnsignedMediumInt();
+        }
         public virtual uint ReadUnsignedInt()
         {
             unchecked
@@ -484,6 +554,8 @@ namespace DotNetty.Buffers
         }
 
         public virtual char ReadChar() => (char)this.ReadShort();
+
+        public virtual float ReadFloat() => ByteBufferUtil.Int32BitsToSingle(this.ReadInt());
 
         public virtual double ReadDouble() => BitConverter.Int64BitsToDouble(this.ReadLong());
 
@@ -588,6 +660,21 @@ namespace DotNetty.Buffers
             return this;
         }
 
+        public IByteBuffer WriteUnsignedMedium(int value)
+        {
+            this.WriteMedium(value.ToUnsignedMediumInt());
+            return this;
+        }
+
+        public virtual IByteBuffer WriteMedium(int value)
+        {
+            this.EnsureAccessible();
+            this.EnsureWritable(3);
+            this._SetMedium(this.WriterIndex, value);
+            this.WriterIndex += 3;
+            return this;
+        }
+
         public virtual IByteBuffer WriteInt(int value)
         {
             this.EnsureAccessible();
@@ -618,6 +705,12 @@ namespace DotNetty.Buffers
         public virtual IByteBuffer WriteChar(char value)
         {
             this.WriteShort(value);
+            return this;
+        }
+
+        public virtual IByteBuffer WriteFloat(float value)
+        {
+            this.WriteInt(ByteBufferUtil.SingleToInt32Bits(value));
             return this;
         }
 
@@ -696,6 +789,15 @@ namespace DotNetty.Buffers
         }
 
         public Task WriteBytesAsync(Stream stream, int length) => this.WriteBytesAsync(stream, length, CancellationToken.None);
+
+        public virtual IByteBuffer WriteZero(int length)
+        {
+            this.EnsureAccessible();
+            this.EnsureWritable(length);
+            this.SetZero(this.WriterIndex, length);
+            this.WriterIndex += length;
+            return this;
+        }
 
         public abstract bool HasArray { get; }
 
@@ -859,7 +961,7 @@ namespace DotNetty.Buffers
 
         /// <summary>
         ///     Throws a <see cref="IndexOutOfRangeException" /> if the current <see cref="ReadableBytes" /> of this buffer
-        ///     is less than <see cref="minimumReadableBytes" />.
+        ///     is less than <paramref name="minimumReadableBytes" />.
         /// </summary>
         protected void CheckReadableBytes(int minimumReadableBytes)
         {
@@ -872,6 +974,15 @@ namespace DotNetty.Buffers
             if (this.ReaderIndex > this.WriterIndex - minimumReadableBytes)
             {
                 throw new IndexOutOfRangeException($"readerIndex({this.ReaderIndex}) + length({minimumReadableBytes}) exceeds writerIndex({this.WriterIndex}): {this}");
+            }
+        }
+
+        protected void CheckNewCapacity(int newCapacity)
+        {
+            this.EnsureAccessible();
+            if (newCapacity < 0 || newCapacity > this.MaxCapacity)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newCapacity), $"newCapacity: {newCapacity} (expected: 0-{this.MaxCapacity})");
             }
         }
 
