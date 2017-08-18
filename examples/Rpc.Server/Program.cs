@@ -2,7 +2,6 @@
 
 namespace Rpc.Server
 {
-    using System;
     using DotNetty.Common.Internal.Logging;
     using Microsoft.Extensions.Logging.Console;
 
@@ -15,7 +14,6 @@ namespace Rpc.Server
             string serverAddress = "0.0.0.0:9008";
             var server = new DotNetty.Rpc.Server.RpcServer(serverAddress);
             server.StartAsync().Wait();
-            Console.ReadKey();
         }
     }
 }
