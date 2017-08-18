@@ -12,7 +12,7 @@ namespace Rpc.Server
         {
             InternalLoggerFactory.DefaultFactory.AddProvider(new ConsoleLoggerProvider((s, level) => true, false));
 
-            string serverAddress = "127.0.0.1:9008";
+            string serverAddress = "0.0.0.0:9008";
             var server = new DotNetty.Rpc.Server.RpcServer(serverAddress);
             server.StartAsync().Wait();
             Console.ReadKey();
