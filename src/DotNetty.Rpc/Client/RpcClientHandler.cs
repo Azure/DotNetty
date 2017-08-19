@@ -64,7 +64,24 @@
 
             this.pendingRpc.TryAdd(request.RequestId, context);
 
-            this.channel.WriteAndFlushAsync(request);
+            this.channel.WriteAndFlushAsync(request).ContinueWith(n =>
+            {
+                if (n.IsFaulted)
+                {
+                    if (n.Exception != null)
+                    {
+                        var exception = n.Exception.InnerException as AggregateException;
+                        if (exception != null)
+                        {
+                            Logger.Error(exception.InnerException);
+                        }
+                        else
+                        {
+                            Logger.Error(n.Exception.InnerException);
+                        }
+                    }
+                }
+            });
 
             return tcs.Task;
         }
@@ -77,7 +94,7 @@
             if (requestContext != null)
             {
                 this.pendingRpc.TryRemove(requestId, out requestContext);
-                requestContext.TaskCompletionSource.SetException(new TimeOutException("Get RpcResponse TimeOut"));
+                requestContext.TaskCompletionSource.SetException(new Handlers.TimeoutException("Get RpcResponse TimeOut"));
             }
         }
 

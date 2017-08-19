@@ -35,7 +35,7 @@
                     }
 
                     IChannelHandlerContext ctx = state.Item1;
-                    await WriteAndFlushAsync(ctx, rpcResponse);
+                    WriteAndFlushAsync(ctx, rpcResponse);
                 },
                 Tuple.Create(context, request),
                 default(CancellationToken),
@@ -49,20 +49,26 @@
         /// <param name="ctx"></param>
         /// <param name="rpcResponse"></param>
         /// <returns></returns>
-        static async Task WriteAndFlushAsync(IChannelHandlerContext ctx, RpcResponse rpcResponse)
+        static void WriteAndFlushAsync(IChannelHandlerContext ctx, RpcResponse rpcResponse)
         {
-            try
+            ctx.WriteAndFlushAsync(rpcResponse).ContinueWith(n =>
             {
-                await ctx.WriteAndFlushAsync(rpcResponse);
-            }
-            catch (AggregateException ex)
-            {
-                Logger.Error(ex.InnerException);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex);
-            }
+                if (n.IsFaulted)
+                {
+                    if (n.Exception != null)
+                    {
+                        var exception = n.Exception.InnerException as AggregateException;
+                        if (exception != null)
+                        {
+                            Logger.Error(exception.InnerException);
+                        }
+                        else
+                        {
+                            Logger.Error(n.Exception.InnerException);
+                        }
+                    }
+                }
+            });
         }
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
@@ -79,7 +85,8 @@
                         RequestId = deserializeException.RequestId,
                         Error = string.Format("DeserializeException,RpcMessage:{0}", deserializeException.RpcMessage)
                     };
-                    context.WriteAndFlushAsync(rpcResponse);
+                    Logger.Warn($"decoderException {rpcResponse.RequestId}");
+                    WriteAndFlushAsync(context, rpcResponse);
                 }
                 else
                 {

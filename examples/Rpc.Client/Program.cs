@@ -11,9 +11,12 @@ namespace Rpc.Client
     using Newtonsoft.Json;
     using Rpc.Models;
     using Rpc.Models.Test;
+    using DotNetty.Handlers;
 
     public class Program
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance("Program");
+
         public static void Main(string[] args)
         {
             InternalLoggerFactory.DefaultFactory.AddProvider(new ConsoleLoggerProvider((s, level) => true, false));
@@ -35,7 +38,7 @@ namespace Rpc.Client
 
         public static void Test()
         {
-            string serverAddress = "127.0.0.1:9008";
+            string serverAddress = "192.168.139.132:9008";
 
             var sw = new Stopwatch();
             sw.Start();
@@ -51,6 +54,17 @@ namespace Rpc.Client
                 Task<CityInfo> task = client.SendRequest(query);
                 task.ContinueWith(n =>
                 {
+                    if (n.IsFaulted)
+                    {
+                        if (n.Exception != null)
+                        {
+                            var exception = n.Exception.InnerException as TimeoutException;
+                            if (exception == null)
+                            {
+                                Logger.Error(n.Exception.InnerException);
+                            }
+                        }
+                    }
                     cde.Signal();
                 });
             });
