@@ -33,12 +33,36 @@
                     {
                         rpcResponse.Error = ex.Message;
                     }
-                    await state.Item1.WriteAndFlushAsync(rpcResponse);
+
+                    IChannelHandlerContext ctx = state.Item1;
+                    await WriteAndFlushAsync(ctx, rpcResponse);
                 },
                 Tuple.Create(context, request),
                 default(CancellationToken),
                 TaskCreationOptions.DenyChildAttach,
                 TaskScheduler.Default);
+        }
+
+        /// <summary>
+        /// WriteAndFlushAsync
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="rpcResponse"></param>
+        /// <returns></returns>
+        static async Task WriteAndFlushAsync(IChannelHandlerContext ctx, RpcResponse rpcResponse)
+        {
+            try
+            {
+                await ctx.WriteAndFlushAsync(rpcResponse);
+            }
+            catch (AggregateException ex)
+            {
+                Logger.Error(ex.InnerException);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex);
+            }
         }
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
