@@ -54,7 +54,7 @@ namespace DotNetty.Rpc.Client
             {
                 if (!this.emptyEvent.Wait(ConnectTimeout))
                 {
-                    throw new TimeoutException("Channel Connect TimeOut");
+                    throw new Handlers.TimeoutException("Channel Connect TimeOut");
                 }
             }
             if (this.clientRpcHandler == null)
