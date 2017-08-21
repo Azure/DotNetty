@@ -166,6 +166,7 @@ namespace SocketAsyncServer
             {
                 if (flag == -1)
                 {
+                    Console.WriteLine("Client connection Close");
                     operation.Channel.socket.Close();
                 }
                 else

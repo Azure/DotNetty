@@ -18,18 +18,12 @@ namespace SocketAsyncServer
         private Socket listenSocket;
 
         /// <summary>
-        /// The total number of clients connected to the server.
-        /// </summary>
-        private int numConnectedSockets;
-
-        /// <summary>
         /// Create an uninitialized server instance.  
         /// To start the server listening for connection requests
         /// call the Init method followed by Start method.
         /// </summary>
         internal SocketListener()
         {
-            this.numConnectedSockets = 0;
         }
 
         /// <summary>
@@ -51,8 +45,7 @@ namespace SocketAsyncServer
             {
                 try
                 {
-                    Interlocked.Increment(ref this.numConnectedSockets);
-                    Console.WriteLine("Client connection accepted. There are {0} clients connected to the server", this.numConnectedSockets);
+                    Console.WriteLine("Client connection accepted");
 
                     var socketChannel = new SocketChannel(s);
                     var readEventArgs = new SocketChannelAsyncOperation(socketChannel, true);
