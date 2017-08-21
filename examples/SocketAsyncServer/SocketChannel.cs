@@ -29,7 +29,7 @@ namespace SocketAsyncServer
 
         public EventLoop()
         {
-            var thread = new Thread(Start) {IsBackground = true};
+            var thread = new Thread(this.Start) {IsBackground = true};
 
 
             thread.Start();
@@ -59,10 +59,7 @@ namespace SocketAsyncServer
             }
         }
 
-        public void Append(StateActionWithContextTaskQueueNode task)
-        {
-            Queue.TryAdd(task);
-        }
+        public void Append(StateActionWithContextTaskQueueNode task) => Queue.TryAdd(task);
     }
 
     /// <summary>
@@ -70,13 +67,13 @@ namespace SocketAsyncServer
     /// </summary>
     public sealed class SocketChannel : IDisposable
     {
-        private readonly Socket _socket;
+        private readonly Socket socket;
 
         private const int MaxSize = 99999;
         private const int PreReadSize = 1024;
-        private byte[] _array = new byte[MaxSize];
+        private byte[] array = new byte[MaxSize];
 
-        private int _writerIndex = 0;
+        private int writerIndex = 0;
 
         private readonly EventLoop _eventLoop = new EventLoop();
 
@@ -86,7 +83,7 @@ namespace SocketAsyncServer
         /// <param name="socket">Socket to accept incoming data.</param>
         internal SocketChannel(Socket socket)
         {
-            this._socket = socket;
+            this.socket = socket;
         }
 
         /// <summary>
@@ -135,13 +132,13 @@ namespace SocketAsyncServer
                 while (true)
                 {
                     SocketError errorCode;
-                    if (_writerIndex + PreReadSize > MaxSize)
+                    if (this.writerIndex + PreReadSize > MaxSize)
                     {
-                        _array = new byte[MaxSize];
-                        _writerIndex = 0;
+                        this.array = new byte[MaxSize];
+                        this.writerIndex = 0;
                     }
 
-                    int received = _socket.Receive(_array, _writerIndex, PreReadSize, SocketFlags.None, out errorCode);
+                    int received = this.socket.Receive(this.array, this.writerIndex, PreReadSize, SocketFlags.None, out errorCode);
                     if (errorCode == SocketError.Success)
                     {
                         if (received == 0)
@@ -162,26 +159,26 @@ namespace SocketAsyncServer
                         throw new SocketException((int)errorCode);
                     }
 
-                    _writerIndex += received;
+                    this.writerIndex += received;
                 }
             }
             finally
             {
                 if (flag == -1)
                 {
-                    operation.Channel._socket.Close();
+                    operation.Channel.socket.Close();
                 }
                 else
                 {
-                    ScheduleSocketRead();
+                    this.ScheduleSocketRead();
                 }
             }
         }
 
         private void ScheduleSocketRead()
         {
-            SocketChannelAsyncOperation operation = new SocketChannelAsyncOperation(this, true);
-            var pending = operation.Channel._socket.ReceiveAsync(operation);
+            var operation = new SocketChannelAsyncOperation(this, true);
+            bool pending = operation.Channel.socket.ReceiveAsync(operation);
             if (!pending)
             {
                 operation.Channel.ProcessReceive(operation);
@@ -195,7 +192,7 @@ namespace SocketAsyncServer
         {
             try
             {
-                this._socket.Shutdown(SocketShutdown.Send);
+                this.socket.Shutdown(SocketShutdown.Send);
             }
             catch (Exception)
             {
@@ -203,7 +200,7 @@ namespace SocketAsyncServer
             }
             finally
             {
-                this._socket.Close();
+                this.socket.Close();
             }
         }
     }

@@ -1,14 +1,11 @@
 using System;
-using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
-using System.Text;
 
 namespace SocketAsyncServer
 {
     /// <summary>
-    /// Based on example from http://msdn2.microsoft.com/en-us/library/system.net.sockets.socketasynceventargs.aspx
     /// Implements the connection logic for the socket server.  
     /// After accepting a connection, all data read from the client is sent back. 
     /// The read and echo back to the client pattern is continued until the client disconnects.
@@ -18,12 +15,12 @@ namespace SocketAsyncServer
         /// <summary>
         /// The socket used to listen for incoming connection requests.
         /// </summary>
-        private Socket _listenSocket;
+        private Socket listenSocket;
 
         /// <summary>
         /// The total number of clients connected to the server.
         /// </summary>
-        private Int32 _numConnectedSockets;
+        private int numConnectedSockets;
 
         /// <summary>
         /// Create an uninitialized server instance.  
@@ -32,7 +29,7 @@ namespace SocketAsyncServer
         /// </summary>
         internal SocketListener()
         {
-            _numConnectedSockets = 0;
+            this.numConnectedSockets = 0;
         }
 
         /// <summary>
@@ -41,10 +38,7 @@ namespace SocketAsyncServer
         /// </summary>
         /// <param name="sender">Object who raised the event.</param>
         /// <param name="e">SocketAsyncEventArg associated with the completed accept operation.</param>
-        private void OnAcceptCompleted(object sender, SocketAsyncEventArgs e)
-        {
-            this.ProcessAccept(e);
-        }
+        private void OnAcceptCompleted(object sender, SocketAsyncEventArgs e) => this.ProcessAccept(e);
 
         /// <summary>
         /// Process the accept for the socket listener.
@@ -57,11 +51,11 @@ namespace SocketAsyncServer
             {
                 try
                 {
-                    Interlocked.Increment(ref this._numConnectedSockets);
-                    Console.WriteLine("Client connection accepted. There are {0} clients connected to the server", this._numConnectedSockets);
+                    Interlocked.Increment(ref this.numConnectedSockets);
+                    Console.WriteLine("Client connection accepted. There are {0} clients connected to the server", this.numConnectedSockets);
 
                     var socketChannel = new SocketChannel(s);
-                    SocketChannelAsyncOperation readEventArgs = new SocketChannelAsyncOperation(socketChannel, true);
+                    var readEventArgs = new SocketChannelAsyncOperation(socketChannel, true);
                     socketChannel.ProcessReceive(readEventArgs);
                 }
                 catch (SocketException ex)
@@ -82,20 +76,20 @@ namespace SocketAsyncServer
         /// Starts the server listening for incoming connection requests.
         /// </summary>
         /// <param name="port">Port where the server will listen for connection requests.</param>
-        internal void Start(Int32 port)
+        internal void Start(int port)
         {
             // Get endpoint for the listener.
-            IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, port);
+            var localEndPoint = new IPEndPoint(IPAddress.Any, port);
 
             // Create the socket which listens for incoming connections.
-            this._listenSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            _listenSocket.Blocking = false;
-            _listenSocket.NoDelay = true;
+            this.listenSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            this.listenSocket.Blocking = false;
+            this.listenSocket.NoDelay = true;
 
-            this._listenSocket.Bind(localEndPoint);
+            this.listenSocket.Bind(localEndPoint);
 
             // Start the server.
-            this._listenSocket.Listen(1024);
+            this.listenSocket.Listen(1024);
 
             // Post accepts on the listening socket.
             this.StartAccept(null);
@@ -111,7 +105,7 @@ namespace SocketAsyncServer
             if (acceptEventArg == null)
             {
                 acceptEventArg = new SocketAsyncEventArgs();
-                acceptEventArg.Completed += OnAcceptCompleted;
+                acceptEventArg.Completed += this.OnAcceptCompleted;
             }
             else
             {
@@ -119,7 +113,7 @@ namespace SocketAsyncServer
                 acceptEventArg.AcceptSocket = null;
             }
 
-            if (!this._listenSocket.AcceptAsync(acceptEventArg))
+            if (!this.listenSocket.AcceptAsync(acceptEventArg))
             {
                 this.ProcessAccept(acceptEventArg);
             }
@@ -128,9 +122,6 @@ namespace SocketAsyncServer
         /// <summary>
         /// Stop the server.
         /// </summary>
-        internal void Stop()
-        {
-            this._listenSocket.Close();
-        }
+        internal void Stop() => this.listenSocket.Close();
     }
 }

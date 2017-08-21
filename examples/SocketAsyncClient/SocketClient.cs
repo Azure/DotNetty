@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -22,7 +21,7 @@ namespace SocketAsyncClient
         /// <summary>
         /// Flag for connected socket.
         /// </summary>
-        private Boolean connected = false;
+        private bool connected = false;
 
         /// <summary>
         /// Listener endpoint.
@@ -41,13 +40,13 @@ namespace SocketAsyncClient
         /// </summary>
         /// <param name="ip">Name of the host where the listener is running.</param>
         /// <param name="port">Number of the TCP port from the listener.</param>
-        internal SocketClient(String ip, Int32 port)
+        internal SocketClient(string ip, int port)
         {
             // Instantiates the endpoint and socket.
             this.hostEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
             this.clientSocket = new Socket(this.hostEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            clientSocket.Blocking = false;
-            clientSocket.NoDelay = true;
+            this.clientSocket.Blocking = false;
+            this.clientSocket.NoDelay = true;
         }
 
         /// <summary>
@@ -56,19 +55,19 @@ namespace SocketAsyncClient
         /// <returns>True if connection has succeded, else false.</returns>
         internal void Connect()
         {
-            SocketAsyncEventArgs connectArgs = new SocketAsyncEventArgs();
+            var connectArgs = new SocketAsyncEventArgs();
 
             connectArgs.UserToken = this.clientSocket;
             connectArgs.RemoteEndPoint = this.hostEndPoint;
-            connectArgs.Completed += new EventHandler<SocketAsyncEventArgs>(OnConnect);
+            connectArgs.Completed += new EventHandler<SocketAsyncEventArgs>(this.OnConnect);
 
-            clientSocket.ConnectAsync(connectArgs);
+            this.clientSocket.ConnectAsync(connectArgs);
             autoConnectEvent.WaitOne();
 
             SocketError errorCode = connectArgs.SocketError;
             if (errorCode != SocketError.Success)
             {
-                throw new SocketException((Int32)errorCode);
+                throw new SocketException((int)errorCode);
             }
         }
 
@@ -86,25 +85,25 @@ namespace SocketAsyncClient
         /// </summary>
         /// <param name="message">Message to send.</param>
         /// <returns>Message sent by the host.</returns>
-        internal void Send(String message)
+        internal void Send(string message)
         {
             if (this.connected)
             {
-                List<ArraySegment<byte>> nioBuffers = new List<ArraySegment<byte>>();
+                var nioBuffers = new List<ArraySegment<byte>>();
                 for (int i = 0; i < 4000; i++)
                 {
                     nioBuffers.Add(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)));
                 }
 
                 SocketError errorCode;
-                long localWrittenBytes = clientSocket.Send(nioBuffers, SocketFlags.None, out errorCode);
+                long localWrittenBytes = this.clientSocket.Send(nioBuffers, SocketFlags.None, out errorCode);
                 if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
                 {
                     throw new SocketException((int)errorCode);
                 }
                 if (errorCode == SocketError.WouldBlock)
                 {
-                    clientSocket.SendAsync(nioBuffers, SocketFlags.None);
+                    this.clientSocket.SendAsync(nioBuffers, SocketFlags.None);
                     Console.WriteLine("WouldBlock");
                 }
                 else
@@ -114,7 +113,7 @@ namespace SocketAsyncClient
             }
             else
             {
-                throw new SocketException((Int32)SocketError.NotConnected);
+                throw new SocketException((int)SocketError.NotConnected);
             }
         }
 

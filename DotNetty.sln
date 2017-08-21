@@ -97,11 +97,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Rpc", "src\DotNett
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpc.Models", "examples\Rpc.Models\Rpc.Models.csproj", "{264FC0AE-5C61-4C19-930F-3130D7526D26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rpc.Services", "examples\Rpc.Services\Rpc.Services.csproj", "{F22E6E68-19B2-4531-A018-E8E5520DE642}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpc.Services", "examples\Rpc.Services\Rpc.Services.csproj", "{F22E6E68-19B2-4531-A018-E8E5520DE642}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rpc.Server", "examples\Rpc.Server\Rpc.Server.csproj", "{7C203C52-CDED-4967-A90C-769F67541790}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpc.Server", "examples\Rpc.Server\Rpc.Server.csproj", "{7C203C52-CDED-4967-A90C-769F67541790}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rpc.Client", "examples\Rpc.Client\Rpc.Client.csproj", "{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpc.Client", "examples\Rpc.Client\Rpc.Client.csproj", "{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketAsyncClient", "examples\SocketAsyncClient\SocketAsyncClient.csproj", "{BEDEEBF9-B9F6-4877-BA13-66037465ECA5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketAsyncServer", "examples\SocketAsyncServer\SocketAsyncServer.csproj", "{193D89E1-40A3-4F06-8FB6-405B49ECF9AC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -273,6 +277,14 @@ Global
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEDEEBF9-B9F6-4877-BA13-66037465ECA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEDEEBF9-B9F6-4877-BA13-66037465ECA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEDEEBF9-B9F6-4877-BA13-66037465ECA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEDEEBF9-B9F6-4877-BA13-66037465ECA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{193D89E1-40A3-4F06-8FB6-405B49ECF9AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{193D89E1-40A3-4F06-8FB6-405B49ECF9AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{193D89E1-40A3-4F06-8FB6-405B49ECF9AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{193D89E1-40A3-4F06-8FB6-405B49ECF9AC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -319,6 +331,8 @@ Global
 		{F22E6E68-19B2-4531-A018-E8E5520DE642} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
 		{7C203C52-CDED-4967-A90C-769F67541790} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
+		{BEDEEBF9-B9F6-4877-BA13-66037465ECA5} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
+		{193D89E1-40A3-4F06-8FB6-405B49ECF9AC} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1C23B2EE-37C5-4411-A1E3-B37B38AA4D71}
