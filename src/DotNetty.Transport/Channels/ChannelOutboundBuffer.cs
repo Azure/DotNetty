@@ -323,7 +323,7 @@ namespace DotNetty.Transport.Channels
         ///Refer to {@link NioSocketChannel#doWrite(ChannelOutboundBuffer)} for an example.
         ///</p>
         ///
-        public List<ArraySegment<byte>> GetNioBuffers()
+        public List<ArraySegment<byte>> GetSharedBufferList()
         {
             long nioBufferSize = 0;
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
