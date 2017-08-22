@@ -183,8 +183,8 @@ namespace DotNetty.Transport.Channels.Sockets
                     try
                     {
                         connectedSocket = operation.AcceptSocket;
-                        operation.Validate();
                         operation.AcceptSocket = null;
+                        operation.Validate();
 
                         var message = this.PrepareChannel(connectedSocket);
                         

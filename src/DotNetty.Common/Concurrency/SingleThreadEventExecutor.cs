@@ -424,11 +424,8 @@ namespace DotNetty.Common.Concurrency
                         PreciseTimeSpan wakeupTimeout = nextScheduledTask.Deadline - PreciseTimeSpan.FromStart;
                         if (wakeupTimeout.Ticks > 0)
                         {
-                            if (this.emptyEvent.Wait(wakeupTimeout.ToTimeSpan()))
-                            {
-                                // woken up before the next scheduled task was due
-                                this.taskQueue.TryDequeue(out task);
-                            }
+                            double timeout = wakeupTimeout.ToTimeSpan().TotalMilliseconds;
+                            this.emptyEvent.Wait((int)Math.Min(timeout, int.MaxValue - 1));
                         }
                     }
                     else
