@@ -392,7 +392,7 @@ namespace DotNetty.Transport.Channels.Embedded
 
         static bool ReleaseAll(Queue<object> queue)
         {
-            if (queue.Count > 0)
+            if (queue != null && queue.Count > 0)
             {
                 for (;;)
                 {

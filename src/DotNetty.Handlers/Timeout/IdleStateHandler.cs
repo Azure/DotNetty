@@ -9,6 +9,7 @@ namespace DotNetty.Handlers.Timeout
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// Triggers an <see cref="IdleStateEvent"/> when a <see cref="IChannel"/> has not performed
@@ -41,6 +42,7 @@ namespace DotNetty.Handlers.Timeout
     ///             specified period of time.  Specify <code>0</code> to disable.</td>
     ///     </tr>
     /// </table>
+    /// </para>
     /// 
     /// <para>
     /// 
@@ -53,7 +55,7 @@ namespace DotNetty.Handlers.Timeout
     /// <c>
     /// var bootstrap = new <see cref="DotNetty.Transport.Bootstrapping.ServerBootstrap"/>();
     ///
-    /// bootstrap.ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
+    /// bootstrap.ChildHandler(new ActionChannelInitializer&lt;ISocketChannel&gt;(channel =>
     /// {
     ///     IChannelPipeline pipeline = channel.Pipeline;
     ///     
@@ -85,6 +87,7 @@ namespace DotNetty.Handlers.Timeout
     /// }
     /// </c>
     /// </example>
+    /// </para>
     /// 
     /// <seealso cref="ReadTimeoutHandler"/>
     /// <seealso cref="WriteTimeoutHandler"/>
@@ -95,35 +98,52 @@ namespace DotNetty.Handlers.Timeout
 
         readonly Action<Task> writeListener;
 
+        readonly bool observeOutput;
         readonly TimeSpan readerIdleTime;
         readonly TimeSpan writerIdleTime;
         readonly TimeSpan allIdleTime;
 
-        volatile IScheduledTask readerIdleTimeout;
+        IScheduledTask readerIdleTimeout;
         TimeSpan lastReadTime;
         bool firstReaderIdleEvent = true;
 
-        volatile IScheduledTask writerIdleTimeout;
+        IScheduledTask writerIdleTimeout;
         TimeSpan lastWriteTime;
         bool firstWriterIdleEvent = true;
 
-        volatile IScheduledTask allIdleTimeout;
+        IScheduledTask allIdleTimeout;
         bool firstAllIdleEvent = true;
 
-        volatile int state;
         // 0 - none, 1 - initialized, 2 - destroyed
-        volatile bool reading;
+        byte state;
+        bool reading;
 
-        static readonly Action<object, object> ReadTimeoutAction = HandleReadTimeout;
-        static readonly Action<object, object> WriteTimeoutAction = HandleWriteTimeout;
-        static readonly Action<object, object> AllTimeoutAction = HandleAllTimeout;
+        TimeSpan lastChangeCheckTimeStamp;
+        int lastMessageHashCode;
+        long lastPendingWriteBytes;
+
+        static readonly Action<object, object> ReadTimeoutAction = WrapperTimeoutHandler(HandleReadTimeout);
+        static readonly Action<object, object> WriteTimeoutAction = WrapperTimeoutHandler(HandleWriteTimeout);
+        static readonly Action<object, object> AllTimeoutAction = WrapperTimeoutHandler(HandleAllTimeout);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Handlers.Timeout.IdleStateHandler"/> class.
+        /// Initializes a new instance firing <see cref="IdleStateEvent"/>s.
         /// </summary>
-        /// <param name="readerIdleTimeSeconds">Reader idle time seconds.</param>
-        /// <param name="writerIdleTimeSeconds">Writer idle time seconds.</param>
-        /// <param name="allIdleTimeSeconds">All idle time seconds.</param>
+        /// <param name="readerIdleTimeSeconds">
+        ///     an <see cref="IdleStateEvent"/> whose state is <see cref="IdleState.ReaderIdle"/>
+        ///     will be triggered when no read was performed for the specified
+        ///     period of time.  Specify <code>0</code> to disable.
+        /// </param>
+        /// <param name="writerIdleTimeSeconds">
+        ///     an <see cref="IdleStateEvent"/> whose state is <see cref="IdleState.WriterIdle"/>
+        ///     will be triggered when no write was performed for the specified
+        ///     period of time.  Specify <code>0</code> to disable.
+        /// </param>
+        /// <param name="allIdleTimeSeconds">
+        ///     an <see cref="IdleStateEvent"/> whose state is <see cref="IdleState.AllIdle"/>
+        ///     will be triggered when neither read nor write was performed for
+        ///     the specified period of time.  Specify <code>0</code> to disable.
+        /// </param>
         public IdleStateHandler(
             int readerIdleTimeSeconds,
             int writerIdleTimeSeconds,
@@ -135,28 +155,55 @@ namespace DotNetty.Handlers.Timeout
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DotNetty.Handlers.Timeout.IdleStateHandler"/> class.
+        /// <see cref="IdleStateHandler.IdleStateHandler(bool, TimeSpan, TimeSpan, TimeSpan)"/>
         /// </summary>
-        /// <param name="readerIdleTime">Reader idle time.</param>
-        /// <param name="writerIdleTime">Writer idle time.</param>
-        /// <param name="allIdleTime">All idle time.</param>
         public IdleStateHandler(TimeSpan readerIdleTime, TimeSpan writerIdleTime, TimeSpan allIdleTime)
+            : this(false, readerIdleTime, writerIdleTime, allIdleTime)
         {
-            this.readerIdleTime = readerIdleTime != TimeSpan.Zero
+        }
+
+        /// <summary>
+        /// Initializes a new instance firing <see cref="IdleStateEvent"/>s.
+        /// </summary>
+        /// <param name="observeOutput">
+        ///     whether or not the consumption of <code>bytes</code> should be taken into
+        ///     consideration when assessing write idleness. The default is <code>false</code>.
+        /// </param>
+        /// <param name="readerIdleTime">
+        ///     an <see cref="IdleStateEvent"/> whose state is <see cref="IdleState.ReaderIdle"/>
+        ///     will be triggered when no read was performed for the specified
+        ///     period of time.  Specify <see cref="TimeSpan.Zero"/> to disable.
+        /// </param>
+        /// <param name="writerIdleTime">
+        ///     an <see cref="IdleStateEvent"/> whose state is <see cref="IdleState.WriterIdle"/>
+        ///     will be triggered when no write was performed for the specified
+        ///     period of time.  Specify <see cref="TimeSpan.Zero"/> to disable.
+        /// </param>
+        /// <param name="allIdleTime">
+        ///     an <see cref="IdleStateEvent"/> whose state is <see cref="IdleState.AllIdle"/>
+        ///     will be triggered when neither read nor write was performed for
+        ///     the specified period of time.  Specify <see cref="TimeSpan.Zero"/> to disable.
+        /// </param>
+        public IdleStateHandler(bool observeOutput,
+            TimeSpan readerIdleTime, TimeSpan writerIdleTime, TimeSpan allIdleTime)
+        {
+            this.observeOutput = observeOutput;
+
+            this.readerIdleTime = readerIdleTime > TimeSpan.Zero
                 ? TimeUtil.Max(readerIdleTime, IdleStateHandler.MinTimeout)
                 : TimeSpan.Zero;
 
-            this.writerIdleTime = writerIdleTime != TimeSpan.Zero
+            this.writerIdleTime = writerIdleTime > TimeSpan.Zero
                 ? TimeUtil.Max(writerIdleTime, IdleStateHandler.MinTimeout)
                 : TimeSpan.Zero;
 
-            this.allIdleTime = allIdleTime != TimeSpan.Zero
+            this.allIdleTime = allIdleTime > TimeSpan.Zero
                 ? TimeUtil.Max(allIdleTime, IdleStateHandler.MinTimeout)
                 : TimeSpan.Zero;
 
             this.writeListener = new Action<Task>(antecedent =>
                 {
-                    this.lastWriteTime = TimeUtil.GetSystemTime();
+                    this.lastWriteTime = this.Ticks();
                     this.firstWriterIdleEvent = this.firstAllIdleEvent = true;
                 });
         }
@@ -192,7 +239,7 @@ namespace DotNetty.Handlers.Timeout
         {
             if (context.Channel.Active && context.Channel.Registered)
             {
-                // channelActvie() event has been fired already, which means this.channelActive() will
+                // channelActive() event has been fired already, which means this.channelActive() will
                 // not be invoked. We have to initialize here instead.
                 this.Initialize(context);
             }
@@ -247,9 +294,9 @@ namespace DotNetty.Handlers.Timeout
 
         public override void ChannelReadComplete(IChannelHandlerContext context)
         {
-            if (this.readerIdleTime.Ticks > 0 || this.allIdleTime.Ticks > 0)
+            if ((this.readerIdleTime.Ticks > 0 || this.allIdleTime.Ticks > 0) && reading)
             {
-                this.lastReadTime = TimeUtil.GetSystemTime();
+                this.lastReadTime = this.Ticks();
                 this.reading = false;
             }
 
@@ -261,7 +308,7 @@ namespace DotNetty.Handlers.Timeout
             if (this.writerIdleTime.Ticks > 0 || this.allIdleTime.Ticks > 0)
             {
                 Task task = context.WriteAsync(message);
-                task.ContinueWith(this.writeListener);
+                task.ContinueWith(this.writeListener, TaskContinuationOptions.ExecuteSynchronously);
 
                 return task;
             }
@@ -281,27 +328,47 @@ namespace DotNetty.Handlers.Timeout
             }
 
             this.state = 1;
+            this.InitOutputChanged(context);
 
-            IEventExecutor executor = context.Executor;
-
-            this.lastReadTime = this.lastWriteTime = TimeUtil.GetSystemTime();
+            this.lastReadTime = this.lastWriteTime = this.Ticks();
             if (this.readerIdleTime.Ticks > 0)
             {
-                this.readerIdleTimeout = executor.Schedule(ReadTimeoutAction, this, context, 
+                this.readerIdleTimeout = this.Schedule(context, ReadTimeoutAction, this, context, 
                     this.readerIdleTime);
             }
 
             if (this.writerIdleTime.Ticks > 0)
             {
-                this.writerIdleTimeout = executor.Schedule(WriteTimeoutAction, this, context, 
+                this.writerIdleTimeout = this.Schedule(context, WriteTimeoutAction, this, context, 
                     this.writerIdleTime);
             }
 
             if (this.allIdleTime.Ticks > 0)
             {
-                this.allIdleTimeout = executor.Schedule(AllTimeoutAction, this, context, 
+                this.allIdleTimeout = this.Schedule(context, AllTimeoutAction, this, context, 
                     this.allIdleTime);
             }
+        }
+
+        /// <summary>
+        /// This method is visible for testing!
+        /// </summary>
+        /// <returns></returns>
+        internal virtual TimeSpan Ticks() => TimeUtil.GetSystemTime();
+
+        /// <summary>
+        /// This method is visible for testing!
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="task"></param>
+        /// <param name="context"></param>
+        /// <param name="state"></param>
+        /// <param name="delay"></param>
+        /// <returns></returns>
+        internal virtual IScheduledTask Schedule(IChannelHandlerContext ctx, Action<object, object> task,
+            object context, object state, TimeSpan delay)
+        {
+            return ctx.Executor.Schedule(task, context, state, delay);
         }
 
         void Destroy()
@@ -333,48 +400,142 @@ namespace DotNetty.Handlers.Timeout
         /// </summary>
         /// <param name="context">Context.</param>
         /// <param name="stateEvent">Evt.</param>
-        protected void ChannelIdle(IChannelHandlerContext context, IdleStateEvent stateEvent)
+        protected virtual void ChannelIdle(IChannelHandlerContext context, IdleStateEvent stateEvent)
         {
             context.FireUserEventTriggered(stateEvent);
         }
 
-        static void HandleReadTimeout(object handler, object ctx)
+        /// <summary>
+        /// Returns a <see cref="IdleStateEvent"/>.
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="first"></param>
+        /// <returns></returns>
+        protected virtual IdleStateEvent NewIdleStateEvent(IdleState state, bool first)
         {
-            var self = (IdleStateHandler)handler; // instead of this
-            var context = (IChannelHandlerContext)ctx;
-
-            if (!context.Channel.Open)
+            switch (state)
             {
-                return;
+                case IdleState.AllIdle:
+                    return first ? IdleStateEvent.FirstAllIdleStateEvent : IdleStateEvent.AllIdleStateEvent;
+                case IdleState.ReaderIdle:
+                    return first ? IdleStateEvent.FirstReaderIdleStateEvent : IdleStateEvent.ReaderIdleStateEvent;
+                case IdleState.WriterIdle:
+                    return first ? IdleStateEvent.FirstWriterIdleStateEvent : IdleStateEvent.WriterIdleStateEvent;
+                default:
+                    throw new ArgumentException("Unhandled: state=" + state + ", first=" + first);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="HasOutputChanged(IChannelHandlerContext, bool)"/>
+        /// </summary>
+        /// <param name="ctx"></param>
+        private void InitOutputChanged(IChannelHandlerContext ctx)
+        {
+            if (observeOutput)
+            {
+                ChannelOutboundBuffer buf = ctx.Channel.Unsafe.OutboundBuffer;
+
+                if (buf != null)
+                {
+                    lastMessageHashCode = RuntimeHelpers.GetHashCode(buf.Current);
+                    lastPendingWriteBytes = buf.TotalPendingWriteBytes();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns <code>true</code> if and only if the <see cref="IdleStateHandler.IdleStateHandler(bool, TimeSpan, TimeSpan, TimeSpan)"/>
+        /// was constructed
+        /// with <code>observeOutput</code> enabled and there has been an observed change in the
+        /// <see cref="ChannelOutboundBuffer"/> between two consecutive calls of this method.
+        /// https://github.com/netty/netty/issues/6150
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="first"></param>
+        /// <returns></returns>
+        private bool HasOutputChanged(IChannelHandlerContext ctx, bool first)
+        {
+            if (observeOutput)
+            {
+
+                // We can take this shortcut if the ChannelPromises that got passed into write()
+                // appear to complete. It indicates "change" on message level and we simply assume
+                // that there's change happening on byte level. If the user doesn't observe channel
+                // writability events then they'll eventually OOME and there's clearly a different
+                // problem and idleness is least of their concerns.
+                if (lastChangeCheckTimeStamp != lastWriteTime)
+                {
+                    lastChangeCheckTimeStamp = lastWriteTime;
+
+                    // But this applies only if it's the non-first call.
+                    if (!first)
+                    {
+                        return true;
+                    }
+                }
+
+                ChannelOutboundBuffer buf = ctx.Channel.Unsafe.OutboundBuffer;
+
+                if (buf != null)
+                {
+                    int messageHashCode = RuntimeHelpers.GetHashCode(buf.Current);
+                    long pendingWriteBytes = buf.TotalPendingWriteBytes();
+
+                    if (messageHashCode != lastMessageHashCode || pendingWriteBytes != lastPendingWriteBytes)
+                    {
+                        lastMessageHashCode = messageHashCode;
+                        lastPendingWriteBytes = pendingWriteBytes;
+
+                        if (!first)
+                        {
+                            return true;
+                        }
+                    }
+                }
             }
 
+            return false;
+        }
+
+        static Action<object, object> WrapperTimeoutHandler(Action<IdleStateHandler, IChannelHandlerContext> action)
+        {
+            return (handler, ctx) =>
+            {
+                var self = (IdleStateHandler)handler; // instead of this
+                var context = (IChannelHandlerContext)ctx;
+
+                if (!context.Channel.Open)
+                {
+                    return;
+                }
+
+                action(self, context);
+            };
+        }
+
+        static void HandleReadTimeout(IdleStateHandler self, IChannelHandlerContext context)
+        {
             TimeSpan nextDelay = self.readerIdleTime;
 
             if (!self.reading)
             {
-                nextDelay -= TimeUtil.GetSystemTime() - self.lastReadTime;
+                nextDelay -= self.Ticks() - self.lastReadTime;
             }
 
             if (nextDelay.Ticks <= 0)
             {
                 // Reader is idle - set a new timeout and notify the callback.
                 self.readerIdleTimeout = 
-                    context.Executor.Schedule(ReadTimeoutAction, self, context, 
+                    self.Schedule(context, ReadTimeoutAction, self, context, 
                         self.readerIdleTime);
+
+                bool first = self.firstReaderIdleEvent;
+                self.firstReaderIdleEvent = false;
 
                 try
                 {
-                    IdleStateEvent stateEvent;
-                    if (self.firstReaderIdleEvent)
-                    {
-                        self.firstReaderIdleEvent = false;
-                        stateEvent = IdleStateEvent.FirstReaderIdleStateEvent;
-                    }
-                    else
-                    {
-                        stateEvent = IdleStateEvent.ReaderIdleStateEvent;
-                    }
-
+                    IdleStateEvent stateEvent = self.NewIdleStateEvent(IdleState.ReaderIdle, first);
                     self.ChannelIdle(context, stateEvent);
                 }
                 catch (Exception ex)
@@ -384,42 +545,34 @@ namespace DotNetty.Handlers.Timeout
             }
             else
             {
-                self.readerIdleTimeout = context.Executor.Schedule(ReadTimeoutAction, self, context, 
+                // Read occurred before the timeout - set a new timeout with shorter delay.
+                self.readerIdleTimeout = self.Schedule(context, ReadTimeoutAction, self, context, 
                     nextDelay);
             }
         }
 
-        static void HandleWriteTimeout(object handler, object ctx)
+        static void HandleWriteTimeout(IdleStateHandler self, IChannelHandlerContext context)
         {
-            var self = (IdleStateHandler)handler;
-            var context = (IChannelHandlerContext)ctx;
-
-            if (!context.Channel.Open)
-            {
-                return;
-            }
-
             TimeSpan lastWriteTime = self.lastWriteTime;
-            TimeSpan nextDelay = self.writerIdleTime - (TimeUtil.GetSystemTime() - lastWriteTime);
+            TimeSpan nextDelay = self.writerIdleTime - (self.Ticks() - lastWriteTime);
 
             if (nextDelay.Ticks <= 0)
             {
-                self.writerIdleTimeout = context.Executor.Schedule(WriteTimeoutAction, self, context,
+                // Writer is idle - set a new timeout and notify the callback.
+                self.writerIdleTimeout = self.Schedule(context, WriteTimeoutAction, self, context,
                     self.writerIdleTime);
+
+                bool first = self.firstWriterIdleEvent;
+                self.firstWriterIdleEvent = false;
 
                 try
                 {
-                    IdleStateEvent stateEvent;
-                    if (self.firstWriterIdleEvent)
+                    if (self.HasOutputChanged(context, first))
                     {
-                        self.firstWriterIdleEvent = false;
-                        stateEvent = IdleStateEvent.FirstWriterIdleStateEvent;
-                    }
-                    else
-                    {
-                        stateEvent = IdleStateEvent.WriterIdleStateEvent;
+                        return;
                     }
 
+                    IdleStateEvent stateEvent = self.NewIdleStateEvent(IdleState.WriterIdle, first);
                     self.ChannelIdle(context, stateEvent);
                 }
                 catch (Exception ex)
@@ -429,44 +582,37 @@ namespace DotNetty.Handlers.Timeout
             }
             else
             {
-                self.writerIdleTimeout = context.Executor.Schedule(WriteTimeoutAction, self, context, nextDelay);
+                // Write occurred before the timeout - set a new timeout with shorter delay.
+                self.writerIdleTimeout = self.Schedule(context, WriteTimeoutAction, self, context, nextDelay);
             }
         }
            
-        static void HandleAllTimeout(object handler, object ctx)
+        static void HandleAllTimeout(IdleStateHandler self, IChannelHandlerContext context)
         {
-            var self = (IdleStateHandler)handler;
-            var context = (IChannelHandlerContext)ctx;
-
-            if (!context.Channel.Open)
-            {
-                return;
-            }
-
             TimeSpan nextDelay = self.allIdleTime;
             if (!self.reading)
             {
-                nextDelay -= TimeUtil.GetSystemTime() - TimeUtil.Max(self.lastReadTime, self.lastWriteTime);
+                nextDelay -= self.Ticks() - TimeUtil.Max(self.lastReadTime, self.lastWriteTime);
             }
 
             if (nextDelay.Ticks <= 0)
             {
-                self.allIdleTimeout = context.Executor.Schedule(AllTimeoutAction, self, context, 
+                // Both reader and writer are idle - set a new timeout and
+                // notify the callback.
+                self.allIdleTimeout = self.Schedule(context, AllTimeoutAction, self, context, 
                     self.allIdleTime);
+
+                bool first = self.firstAllIdleEvent;
+                self.firstAllIdleEvent = false;
 
                 try
                 {
-                    IdleStateEvent stateEvent;
-                    if (self.firstAllIdleEvent)
+                    if (self.HasOutputChanged(context, first))
                     {
-                        self.firstAllIdleEvent = false;
-                        stateEvent = IdleStateEvent.FirstAllIdleStateEvent;
-                    }
-                    else
-                    {
-                        stateEvent = IdleStateEvent.AllIdleStateEvent;
+                        return;
                     }
 
+                    IdleStateEvent stateEvent = self.NewIdleStateEvent(IdleState.AllIdle, first);
                     self.ChannelIdle(context, stateEvent);
                 }
                 catch (Exception ex)
@@ -478,7 +624,7 @@ namespace DotNetty.Handlers.Timeout
             {
                 // Either read or write occurred before the timeout - set a new
                 // timeout with shorter delay.
-                self.allIdleTimeout = context.Executor.Schedule(AllTimeoutAction, self, context, nextDelay);
+                self.allIdleTimeout = self.Schedule(context, AllTimeoutAction, self, context, nextDelay);
             }
         }
     }
