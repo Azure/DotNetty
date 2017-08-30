@@ -75,11 +75,13 @@ namespace SocketAsyncClient
 
         private void OnConnect(object sender, SocketAsyncEventArgs e)
         {
-            // Signals the end of connection.
-            autoConnectEvent.Set();
 
             // Set the flag for socket connected.
             this.connected = (e.SocketError == SocketError.Success);
+
+            // Signals the end of connection.
+            autoConnectEvent.Set();
+
         }
 
         bool isContinue = true;
@@ -110,7 +112,7 @@ namespace SocketAsyncClient
                 if (errorCode == SocketError.WouldBlock)
                 {
                     this.isContinue = false;
-                    Console.WriteLine(message);
+                    Console.WriteLine($"localWrittenBytes {localWrittenBytes} {message}");
                     var sendArgs = new SocketAsyncEventArgs();
                     sendArgs.BufferList = nioBuffers;
                     sendArgs.Completed += this.SendArgs_Completed;
