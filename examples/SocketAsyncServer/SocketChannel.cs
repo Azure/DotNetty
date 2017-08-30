@@ -5,6 +5,7 @@ using System.Threading;
 
 namespace SocketAsyncServer
 {
+    using System.Text;
 
     public sealed class StateActionWithContextTaskQueueNode 
     {
@@ -69,12 +70,6 @@ namespace SocketAsyncServer
     {
         private readonly Socket socket;
 
-        private const int MaxSize = 99999;
-        private const int PreReadSize = 1024;
-        private byte[] array = new byte[MaxSize];
-
-        private int writerIndex = 0;
-
         private readonly EventLoop _eventLoop = new EventLoop();
 
         /// <summary>
@@ -132,13 +127,9 @@ namespace SocketAsyncServer
                 while (true)
                 {
                     SocketError errorCode;
-                    if (this.writerIndex + PreReadSize > MaxSize)
-                    {
-                        this.array = new byte[MaxSize];
-                        this.writerIndex = 0;
-                    }
+                    var array = new byte[257];
 
-                    int received = this.socket.Receive(this.array, this.writerIndex, PreReadSize, SocketFlags.None, out errorCode);
+                    int received = this.socket.Receive(array, 0, array.Length, SocketFlags.None, out errorCode);
                     if (errorCode == SocketError.Success)
                     {
                         if (received == 0)
@@ -159,7 +150,10 @@ namespace SocketAsyncServer
                         throw new SocketException((int)errorCode);
                     }
 
-                    this.writerIndex += received;
+                    if (received > 0)
+                    {
+                        Console.WriteLine(Encoding.UTF8.GetString(array));
+                    }
                 }
             }
             finally

@@ -324,7 +324,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                 }
 #endif
-
+                Console.WriteLine($"--{pending}---");
                 if (!pending)
                 {
                     ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);

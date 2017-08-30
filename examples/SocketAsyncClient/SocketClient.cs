@@ -21,7 +21,7 @@ namespace SocketAsyncClient
         /// <summary>
         /// Flag for connected socket.
         /// </summary>
-        private bool connected = false;
+        private volatile bool connected = false;
 
         /// <summary>
         /// Listener endpoint.
@@ -67,6 +67,8 @@ namespace SocketAsyncClient
             SocketError errorCode = connectArgs.SocketError;
             if (errorCode != SocketError.Success)
             {
+                Console.WriteLine($"SocketError {errorCode}");
+
                 throw new SocketException((int)errorCode);
             }
         }
@@ -80,6 +82,8 @@ namespace SocketAsyncClient
             this.connected = (e.SocketError == SocketError.Success);
         }
 
+        bool isContinue = true;
+
         /// <summary>
         /// Exchange a message with the host.
         /// </summary>
@@ -87,13 +91,15 @@ namespace SocketAsyncClient
         /// <returns>Message sent by the host.</returns>
         internal void Send(string message)
         {
+            if (!this.isContinue)
+            {
+                Console.WriteLine($"isContinue {this.isContinue}");
+                return;
+            }
             if (this.connected)
             {
                 var nioBuffers = new List<ArraySegment<byte>>();
-                for (int i = 0; i < 4000; i++)
-                {
-                    nioBuffers.Add(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)));
-                }
+                nioBuffers.Add(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)));
 
                 SocketError errorCode;
                 long localWrittenBytes = this.clientSocket.Send(nioBuffers, SocketFlags.None, out errorCode);
@@ -103,8 +109,20 @@ namespace SocketAsyncClient
                 }
                 if (errorCode == SocketError.WouldBlock)
                 {
-                    this.clientSocket.SendAsync(nioBuffers, SocketFlags.None);
-                    Console.WriteLine("WouldBlock");
+                    this.isContinue = false;
+                    Console.WriteLine(message);
+                    var sendArgs = new SocketAsyncEventArgs();
+                    sendArgs.BufferList = nioBuffers;
+                    sendArgs.Completed += this.SendArgs_Completed;
+                    bool pending = this.clientSocket.SendAsync(sendArgs);
+                    if (!pending)
+                    {
+                        Console.WriteLine($"pending false BytesTransferred {sendArgs.BytesTransferred}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"pending true");
+                    }
                 }
                 else
                 {
@@ -115,6 +133,12 @@ namespace SocketAsyncClient
             {
                 throw new SocketException((int)SocketError.NotConnected);
             }
+        }
+
+        private void SendArgs_Completed(object sender, SocketAsyncEventArgs e)
+        {
+            Console.WriteLine($"pending true BytesTransferred {e.BytesTransferred}");
+            e.BufferList = null;
         }
 
         #region IDisposable Members

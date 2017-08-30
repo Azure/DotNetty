@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using DotNetty.Buffers;
     using DotNetty.Common;
@@ -312,7 +313,9 @@ namespace DotNetty.Transport.Channels
         // Clear all ByteBuffer from the array so these can be GC'ed.
         // See https://github.com/netty/netty/issues/3837
         void ClearNioBuffers() => NioBuffers.Value.Clear();
-        
+
+        static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
         ///
         ///Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
         ///{@link #nioBufferCount()} and {@link #nioBufferSize()} will return the number of NIO buffers in the returned
@@ -329,7 +332,13 @@ namespace DotNetty.Transport.Channels
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
             List<ArraySegment<byte>> nioBuffers = NioBuffers.Get(threadLocalMap);
             Entry entry = this.flushedEntry;
-            while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer) {
+            while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer)
+            {
+                if (IsLinux && nioBufferSize >= 100000)
+                {
+                    break;
+                }
+
                 if (!entry.Cancelled)
                 {
                     var buf = (IByteBuffer)entry.Message;

@@ -26,6 +26,7 @@ namespace Rpc.Client
                 while (true)
                 {
                     Test();
+                    Console.ReadLine();
                 }
             }
             catch (Exception ex)
@@ -38,13 +39,13 @@ namespace Rpc.Client
 
         public static void Test()
         {
-            string serverAddress = "10.1.4.204:9008";
+            string serverAddress = "127.0.0.1:9008";
 
             var sw = new Stopwatch();
             sw.Start();
             int count = 10000;
             var cde = new CountdownEvent(count);
-            Parallel.For(0, count, (i) =>
+            for (int i = 0; i < count; i++)
             {
                 NettyClient client = NettyClientFactory.Get(serverAddress);
                 var query = new TestCityQuery
@@ -67,7 +68,7 @@ namespace Rpc.Client
                     }
                     cde.Signal();
                 });
-            });
+            }
 
             cde.Wait();
             sw.Stop();

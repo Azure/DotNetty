@@ -5,8 +5,12 @@ namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
@@ -325,12 +329,27 @@ namespace DotNetty.Transport.Channels.Sockets
                         break;
                 }
 
+                Interlocked.Add(ref this.i, nioBuffers.Count / 2);
+
+                Console.WriteLine($"--{this.i} {this.GetStateFlags()}---");
+
+                this.FormatByteBuffer(nioBuffers);
+                if (this.i == 10000)
+                {
+                    File.WriteAllText("temp.txt", this.sb.ToString());
+                }
+
                 if (!done)
                 {
+                    Console.WriteLine($"--!done writtenBytes{writtenBytes} {nioBuffers.Sum(n => n.Count)}---");
+
                     SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(nioBuffers);
 
                     // Release the fully written buffers, and update the indexes of the partially written buffer.
-                    input.RemoveBytes(writtenBytes);
+                    if (writtenBytes != 0)
+                    {
+                        input.RemoveBytes(writtenBytes);
+                    }
 
                     // Did not write all buffers completely.
                     this.IncompleteWrite(setOpWrite, asyncOperation);
@@ -338,9 +357,39 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
 
                 // Release the fully written buffers, and update the indexes of the partially written buffer.
-                input.RemoveBytes(writtenBytes);
+                if (writtenBytes != 0)
+                {
+                    input.RemoveBytes(writtenBytes);
+                }
             }
         }
+
+        /// <summary>
+        ///     Generates the default log message of the specified event whose argument is a  <see cref="IByteBuffer" />.
+        /// </summary>
+        void FormatByteBuffer(List<ArraySegment<byte>> nioBuffers)
+        {
+            foreach (ArraySegment<byte> nioBuffer in nioBuffers)
+            {
+                IByteBuffer msg = Unpooled.Buffer(nioBuffer.Count);
+                msg.WriteBytes(nioBuffer.Array, nioBuffer.Offset, nioBuffer.Count);
+                int length = msg.ReadableBytes;
+                if (length > 0)
+                {
+                    int rows = length / 16 + (length % 15 == 0 ? 0 : 1) + 4;
+                    var buf = new StringBuilder(2 + 10 + 1 + 2 + rows * 80);
+
+                    buf.Append(": ").Append(length).Append('B').Append('\n');
+                    ByteBufferUtil.AppendPrettyHexDump(buf, msg);
+
+                    this.sb.Append(buf);
+                }
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        int i = 0;
 
         protected override IChannelUnsafe NewUnsafe() => new TcpSocketChannelUnsafe(this);
 

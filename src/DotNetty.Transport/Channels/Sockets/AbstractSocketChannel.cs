@@ -132,6 +132,11 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected bool IsInState(StateFlags stateToCheck) => (this.state & stateToCheck) == stateToCheck;
 
+        protected StateFlags GetStateFlags()
+        {
+            return this.state;
+        }
+
         protected SocketChannelAsyncOperation ReadOperation => this.readOperation ?? (this.readOperation = new SocketChannelAsyncOperation(this, true));
 
         SocketChannelAsyncOperation WriteOperation => this.writeOperation ?? (this.writeOperation = new SocketChannelAsyncOperation(this, false));
@@ -398,8 +403,14 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public void FinishWrite(SocketChannelAsyncOperation operation)
             {
+                Console.WriteLine($"--{this.Channel.state} ---");
+
                 bool resetWritePending = this.Channel.TryResetState(StateFlags.WriteScheduled);
 
+                Console.WriteLine($"--{this.Channel.state} ---");
+                Console.WriteLine($"--resetWritePending {resetWritePending} ---");
+
+ 
                 Contract.Assert(resetWritePending);
 
                 ChannelOutboundBuffer input = this.OutboundBuffer;
