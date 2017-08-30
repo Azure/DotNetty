@@ -333,11 +333,11 @@ namespace DotNetty.Transport.Channels.Sockets
 
                 Console.WriteLine($"--{this.i} {this.GetStateFlags()}---");
 
-                this.FormatByteBuffer(nioBuffers);
-                if (this.i == 10000)
-                {
-                    File.WriteAllText("temp.txt", this.sb.ToString());
-                }
+                //this.FormatByteBuffer(nioBuffers);
+                //if (this.i == 10000)
+                //{
+                //    File.WriteAllText("temp.txt", this.sb.ToString());
+                //}
 
                 if (!done)
                 {
