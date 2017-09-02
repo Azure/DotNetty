@@ -20,14 +20,11 @@ namespace SocketAsyncClient
                     {
                         sa.Send($"App的开发无外乎从网络端获取数据显示在屏幕上，数据做些缓存或者持久化，所以网络层极为重要。原来只是把AFNetwork二次封装了一下，使得调用变得很简单，并没有深层次的考虑一些问题。{i:00000}");
                     }
-
-                    Console.WriteLine("Press any key to terminate the client process...");
-                    Console.ReadLine();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine("ERROR: " + ex.Message);
             }
         }
     }

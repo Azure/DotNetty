@@ -8,6 +8,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.InteropServices;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
@@ -42,11 +43,16 @@ namespace DotNetty.Transport.Channels.Sockets
         TaskCompletionSource connectPromise;
         IScheduledTask connectCancellationTask;
 
+        static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
         protected AbstractSocketChannel(IChannel parent, Socket socket)
             : base(parent)
         {
             this.Socket = socket;
             this.state = StateFlags.Open;
+
+            if (IsLinux)
+                return;
 
             try
             {
@@ -131,11 +137,6 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         protected bool IsInState(StateFlags stateToCheck) => (this.state & stateToCheck) == stateToCheck;
-
-        protected StateFlags GetStateFlags()
-        {
-            return this.state;
-        }
 
         protected SocketChannelAsyncOperation ReadOperation => this.readOperation ?? (this.readOperation = new SocketChannelAsyncOperation(this, true));
 
@@ -403,14 +404,8 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public void FinishWrite(SocketChannelAsyncOperation operation)
             {
-                Console.WriteLine($"--{this.Channel.state} ---");
-
                 bool resetWritePending = this.Channel.TryResetState(StateFlags.WriteScheduled);
 
-                Console.WriteLine($"--{this.Channel.state} ---");
-                Console.WriteLine($"--resetWritePending {resetWritePending} ---");
-
- 
                 Contract.Assert(resetWritePending);
 
                 ChannelOutboundBuffer input = this.OutboundBuffer;

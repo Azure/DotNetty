@@ -67,7 +67,6 @@ namespace SocketAsyncClient
             SocketError errorCode = connectArgs.SocketError;
             if (errorCode != SocketError.Success)
             {
-                Console.WriteLine($"SocketError {errorCode}");
 
                 throw new SocketException((int)errorCode);
             }
@@ -95,7 +94,7 @@ namespace SocketAsyncClient
         {
             if (!this.isContinue)
             {
-                Console.WriteLine($"isContinue {this.isContinue}");
+                System.Diagnostics.Debug.WriteLine($"isContinue {this.isContinue}");
                 return;
             }
             if (this.connected)
@@ -112,23 +111,23 @@ namespace SocketAsyncClient
                 if (errorCode == SocketError.WouldBlock)
                 {
                     this.isContinue = false;
-                    Console.WriteLine($"localWrittenBytes {localWrittenBytes} {message}");
+                    System.Diagnostics.Debug.WriteLine($"localWrittenBytes {localWrittenBytes} {message}");
                     var sendArgs = new SocketAsyncEventArgs();
                     sendArgs.BufferList = nioBuffers;
                     sendArgs.Completed += this.SendArgs_Completed;
                     bool pending = this.clientSocket.SendAsync(sendArgs);
                     if (!pending)
                     {
-                        Console.WriteLine($"pending false BytesTransferred {sendArgs.BytesTransferred}");
+                        System.Diagnostics.Debug.WriteLine($"pending false BytesTransferred {sendArgs.BytesTransferred}");
                     }
                     else
                     {
-                        Console.WriteLine($"pending true");
+                        System.Diagnostics.Debug.WriteLine($"pending true");
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"{nioBuffers.Sum(n => n.Array.Length)} {localWrittenBytes}");
+                    System.Diagnostics.Debug.WriteLine($"{nioBuffers.Sum(n => n.Array.Length)} {localWrittenBytes}");
                 }
             }
             else
@@ -139,7 +138,7 @@ namespace SocketAsyncClient
 
         private void SendArgs_Completed(object sender, SocketAsyncEventArgs e)
         {
-            Console.WriteLine($"pending true BytesTransferred {e.BytesTransferred}");
+            System.Diagnostics.Debug.WriteLine($"pending true BytesTransferred {e.BytesTransferred}");
             e.BufferList = null;
         }
 

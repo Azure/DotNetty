@@ -2,8 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
     using DotNetty.Rpc.Exceptions;
@@ -32,20 +30,18 @@
 
             input.ReadBytes(data);
 
-            T obj = Activator.CreateInstance<T>();
+            T obj;
             try
             {
                 obj = SerializationUtil.Deserialize<T>(data);
             }
             catch (Exception)
             {
-                File.WriteAllText("temp.txt", Encoding.UTF8.GetString(data));
-
-                //JObject rpcRequest = SerializationUtil.SafeDeserialize(data);
-                //string requestId = Convert.ToString(rpcRequest["RequestId"]);
-                //if (string.IsNullOrEmpty(requestId))
-                //    throw;
-                //throw new DeserializeException(requestId, rpcRequest.ToString());
+                JObject rpcRequest = SerializationUtil.SafeDeserialize(data);
+                string requestId = Convert.ToString(rpcRequest["RequestId"]);
+                if (string.IsNullOrEmpty(requestId))
+                    throw;
+                throw new DeserializeException(requestId, rpcRequest.ToString());
             }
             output.Add(obj);
         }
