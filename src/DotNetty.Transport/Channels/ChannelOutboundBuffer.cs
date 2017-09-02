@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using DotNetty.Buffers;
     using DotNetty.Common;
@@ -329,6 +330,7 @@ namespace DotNetty.Transport.Channels
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
             List<ArraySegment<byte>> nioBuffers = NioBuffers.Get(threadLocalMap);
             Entry entry = this.flushedEntry;
+            int i = 0;
             while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer) {
                 if (!entry.Cancelled)
                 {
@@ -358,6 +360,11 @@ namespace DotNetty.Transport.Channels
                         {
                             //noinspection ConstantValueVariableUse
                             entry.Count = count = buf.IoBufferCount;
+                        }
+                        i += count;
+                        if (i >= 1024 && Util.IsLinux)
+                        {
+                            break;
                         }
                         if (count == 1)
                         {

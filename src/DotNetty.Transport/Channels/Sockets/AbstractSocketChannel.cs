@@ -43,15 +43,13 @@ namespace DotNetty.Transport.Channels.Sockets
         TaskCompletionSource connectPromise;
         IScheduledTask connectCancellationTask;
 
-        static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-
         protected AbstractSocketChannel(IChannel parent, Socket socket)
             : base(parent)
         {
             this.Socket = socket;
             this.state = StateFlags.Open;
 
-            if (IsLinux)
+            if (Util.IsLinux)
                 return;
 
             try
