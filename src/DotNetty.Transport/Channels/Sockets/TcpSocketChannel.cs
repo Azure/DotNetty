@@ -251,29 +251,23 @@ namespace DotNetty.Transport.Channels.Sockets
             List<ArraySegment<byte>> nioBuffers = null;
             try
             {
-
-                while (true)
+                int size = input.Count;
+                if (size == 0)
                 {
-                    int size = input.Count;
-                    if (size == 0)
-                    {
-                        break;
-                    }
+                    return;
+                }
 
-                    nioBuffers = input.GetSharedBufferList();
-                    int nioBufferCnt = nioBuffers.Count;
-                    if (nioBufferCnt == 0)
-                    {
-                        this.WriteByteBuffers(input);
-                        return;
-                    }
-                    else
-                    {
-                        ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
-                        SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
-                        this.IncompleteWrite(true, asyncOperation);
-                        break;
-                    }
+                nioBuffers = input.GetSharedBufferList();
+                int nioBufferCnt = nioBuffers.Count;
+                if (nioBufferCnt == 0)
+                {
+                    this.WriteByteBuffers(input);
+                }
+                else
+                {
+                    ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
+                    this.IncompleteWrite(true, asyncOperation);
                 }
             }
             finally
