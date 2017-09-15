@@ -6,18 +6,19 @@ namespace DotNetty.Buffers
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Linq;
     using System.Text;
+    using DotNetty.Common.Utilities;
 
     sealed class PoolChunkList<T> : IPoolChunkListMetric
     {
-        static readonly IEnumerable<IPoolChunkMetric> EMPTY_METRICS = Enumerable.Empty<IPoolChunkMetric>();
+        readonly PoolArena<T> arena;
         readonly PoolChunkList<T> nextList;
         readonly int minUsage;
         readonly int maxUsage;
         readonly int maxCapacity;
-
         PoolChunk<T> head;
 
         // This is only update once when create the linked like list of PoolChunkList in PoolArena constructor.
@@ -26,10 +27,10 @@ namespace DotNetty.Buffers
         // TODO: Test if adding padding helps under contention
         //private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
 
-        public PoolChunkList(PoolChunkList<T> nextList, int minUsage, int maxUsage, int chunkSize)
+        public PoolChunkList(PoolArena<T> arena, PoolChunkList<T> nextList, int minUsage, int maxUsage, int chunkSize)
         {
             Contract.Assert(minUsage <= maxUsage);
-
+            this.arena = arena;
             this.nextList = nextList;
             this.minUsage = minUsage;
             this.maxUsage = maxUsage;
@@ -56,10 +57,10 @@ namespace DotNetty.Buffers
             return (int)(chunkSize * (100L - minUsage) / 100L);
         }
 
-        internal void PrevList(PoolChunkList<T> prevList)
+        internal void PrevList(PoolChunkList<T> list)
         {
-            Contract.Requires(this.prevList == null);
-            this.prevList = prevList;
+            Debug.Assert(this.prevList == null);
+            this.prevList = list;
         }
 
         internal bool Allocate(PooledByteBuffer<T> buf, int reqCapacity, int normCapacity)
@@ -130,7 +131,7 @@ namespace DotNetty.Buffers
             {
                 // There is no previous PoolChunkList so return false which result in having the PoolChunk destroyed and
                 // all memory associated with the PoolChunk will be released.
-                Contract.Assert(chunk.Usage == 0);
+                Debug.Assert(chunk.Usage == 0);
                 return false;
             }
             return this.prevList.Move(chunk);
@@ -192,39 +193,58 @@ namespace DotNetty.Buffers
 
         static int MinUsage0(int value) => Math.Max(1, value);
 
-        public IEnumerator<IPoolChunkMetric> GetEnumerator() => this.head == null ? EMPTY_METRICS.GetEnumerator() : this.GetEnumeratorInternal();
+        public IEnumerator<IPoolChunkMetric> GetEnumerator() => 
+            this.head == null ? Enumerable.Empty<IPoolChunkMetric>().GetEnumerator() : this.GetEnumeratorInternal();
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
         IEnumerator<IPoolChunkMetric> GetEnumeratorInternal()
         {
-            for (PoolChunk<T> cur = this.head; cur != null;)
+            lock (this.arena)
             {
-                yield return cur;
-                cur = cur.Next;
+                for (PoolChunk<T> cur = this.head; cur != null;)
+                {
+                    yield return cur;
+                    cur = cur.Next;
+                }
             }
         }
 
         public override string ToString()
         {
-            if (this.head == null)
-            {
-                return "none";
-            }
-
             var buf = new StringBuilder();
-            for (PoolChunk<T> cur = this.head;;)
+            lock (this.arena)
             {
-                buf.Append(cur);
-                cur = cur.Next;
-                if (cur == null)
+                if (this.head == null)
                 {
-                    break;
+                    return "none";
                 }
-                buf.Append(Environment.NewLine); // todo: StringUtil.NEWLINE
+
+                for (PoolChunk<T> cur = this.head; ;)
+                {
+                    buf.Append(cur);
+                    cur = cur.Next;
+                    if (cur == null)
+                    {
+                        break;
+                    }
+                    buf.Append(StringUtil.Newline);
+                }
             }
 
             return buf.ToString();
+        }
+
+        internal void Destroy(PoolArena<T> poolArena)
+        {
+            PoolChunk<T> chunk = this.head;
+            while (chunk != null)
+            {
+                poolArena.DestroyChunk(chunk);
+                chunk = chunk.Next;
+            }
+
+            this.head = null;
         }
     }
 }

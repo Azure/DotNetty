@@ -15,9 +15,9 @@ namespace DotNetty.Buffers
     ///     Inspired by the Netty ByteBuffer implementation
     ///     (https://github.com/netty/netty/blob/master/buffer/src/main/java/io/netty/buffer/ByteBuf.java)
     ///     Provides circular-buffer-esque security around a byte array, allowing reads and writes to occur independently.
-    ///     In general, the <see cref="IByteBuffer" /> guarantees:
-    ///     /// <see cref="ReaderIndex" /> LESS THAN OR EQUAL TO <see cref="WriterIndex" /> LESS THAN OR EQUAL TO
-    ///     <see cref="Capacity" />.
+    ///     In general, the <see cref="T:DotNetty.Buffers.IByteBuffer" /> guarantees:
+    ///     /// <see cref="P:DotNetty.Buffers.IByteBuffer.ReaderIndex" /> LESS THAN OR EQUAL TO <see cref="P:DotNetty.Buffers.IByteBuffer.WriterIndex" /> LESS THAN OR EQUAL TO
+    ///     <see cref="P:DotNetty.Buffers.IByteBuffer.Capacity" />.
     /// </summary>
     public interface IByteBuffer : IReferenceCounted, IComparable<IByteBuffer>, IEquatable<IByteBuffer>
     {
@@ -216,6 +216,17 @@ namespace DotNetty.Buffers
         short GetShort(int index);
 
         /// <summary>
+        ///     Gets a short at the specified absolute <paramref name="index" /> in this buffer 
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        short GetShortLE(int index);
+
+        /// <summary>
         ///     Gets an ushort at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
@@ -225,6 +236,17 @@ namespace DotNetty.Buffers
         ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         ushort GetUnsignedShort(int index);
+
+        /// <summary>
+        ///     Gets an ushort at the specified absolute <paramref name="index" /> in this buffer 
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        ushort GetUnsignedShortLE(int index);
 
         /// <summary>
         ///     Gets an integer at the specified absolute <paramref name="index" /> in this buffer.
@@ -238,6 +260,17 @@ namespace DotNetty.Buffers
         int GetInt(int index);
 
         /// <summary>
+        ///     Gets an integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetIntLE(int index);
+
+        /// <summary>
         ///     Gets an unsigned integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
@@ -247,6 +280,17 @@ namespace DotNetty.Buffers
         ///     <c>index + 4</c> greater than <see cref="Capacity" />
         /// </exception>
         uint GetUnsignedInt(int index);
+
+        /// <summary>
+        ///     Gets an unsigned integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        uint GetUnsignedIntLE(int index);
 
         /// <summary>
         ///     Gets a long integer at the specified absolute <paramref name="index" /> in this buffer.
@@ -260,15 +304,37 @@ namespace DotNetty.Buffers
         long GetLong(int index);
 
         /// <summary>
+        ///     Gets a long integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> or 
+        ///     <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
+        /// </exception>
+        long GetLongLE(int index);
+
+        /// <summary>
         ///     Gets a 24-bit medium integer at the specified absolute index in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <param name="index"/>  is less than <c>0</c> or
         ///     <c>index + 3</c> greater than <see cref="Capacity" />
         /// </exception>
         int GetMedium(int index);
+
+        /// <summary>
+        ///     Gets a 24-bit medium integer at the specified absolute index in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <param name="index"/> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetMediumLE(int index);
 
         /// <summary>
         ///     Gets an unsigned 24-bit medium integer at the specified absolute index in this buffer.
@@ -276,10 +342,21 @@ namespace DotNetty.Buffers
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <param name="index"/> is less than <c>0</c> or
         ///     <c>index + 3</c> greater than <see cref="Capacity" />
         /// </exception>
         int GetUnsignedMedium(int index);
+
+        /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the specified absolute index in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <param name="index"/> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetUnsignedMediumLE(int index);
 
         /// <summary>
         ///     Gets a char at the specified absolute <paramref name="index" /> in this buffer.
@@ -304,6 +381,17 @@ namespace DotNetty.Buffers
         float GetFloat(int index);
 
         /// <summary>
+        ///     Gets a float at the specified absolute <paramref name="index"/> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index"/> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        float GetFloatLE(int index);
+
+        /// <summary>
         ///     Gets a double at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
@@ -313,6 +401,17 @@ namespace DotNetty.Buffers
         ///     <c>index + 8</c> greater than <see cref="Capacity" />
         /// </exception>
         double GetDouble(int index);
+
+        /// <summary>
+        ///     Gets a double at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
+        /// </exception>
+        double GetDoubleLE(int index);
 
         /// <summary>
         ///     Transfers this buffers data to the specified <paramref name="destination" /> buffer starting at the specified
@@ -413,6 +512,17 @@ namespace DotNetty.Buffers
         IByteBuffer SetShort(int index, int value);
 
         /// <summary>
+        ///     Sets the specified short at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetShortLE(int index, int value);
+
+        /// <summary>
         ///     Sets the specified unsigned short at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
@@ -421,6 +531,17 @@ namespace DotNetty.Buffers
         ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetUnsignedShort(int index, ushort value);
+
+        /// <summary>
+        ///     Sets the specified unsigned short at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetUnsignedShortLE(int index, ushort value);
 
         /// <summary>
         ///     Sets the specified integer at the specified absolute <paramref name="index" /> in this buffer.
@@ -433,6 +554,17 @@ namespace DotNetty.Buffers
         IByteBuffer SetInt(int index, int value);
 
         /// <summary>
+        ///     Sets the specified integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetIntLE(int index, int value);
+
+        /// <summary>
         ///     Sets the specified unsigned integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
@@ -443,15 +575,37 @@ namespace DotNetty.Buffers
         IByteBuffer SetUnsignedInt(int index, uint value);
 
         /// <summary>
-        ///     Sets the specified 24-bit medium integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified unsigned integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> or 
+        ///     <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetUnsignedIntLE(int index, uint value);
+
+        /// <summary>
+        ///     Sets the specified 24-bit medium integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     Note that the most significant byte is ignored in the specified value.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 3</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetMedium(int index, int value);
+
+        /// <summary>
+        ///     Sets the specified 24-bit medium integer at the specified absolute <paramref name="index" /> in this buffer.
+        ///     Note that the most significant byte is ignored in the specified value.
+        ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetMediumLE(int index, int value);
 
         /// <summary>
         ///     Sets the specified long integer at the specified absolute <paramref name="index" /> in this buffer.
@@ -462,6 +616,17 @@ namespace DotNetty.Buffers
         ///     <c>index + 8</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetLong(int index, long value);
+
+        /// <summary>
+        ///     Sets the specified long integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> or 
+        ///     <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetLongLE(int index, long value);
 
         /// <summary>
         ///     Sets the specified UTF-16 char at the specified absolute <paramref name="index" /> in this buffer.
@@ -492,6 +657,28 @@ namespace DotNetty.Buffers
         ///     <c>index + 4</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetFloat(int index, float value);
+
+        /// <summary>
+        ///     Sets the specified float at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetDoubleLE(int index, double value);
+
+        /// <summary>
+        ///     Sets the specified float at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetFloatLE(int index, float value);
 
         /// <summary>
         ///     Transfers the <paramref name="src" /> byte buffer's contents starting at the specified absolute <paramref name="index" />.
@@ -591,11 +778,25 @@ namespace DotNetty.Buffers
         short ReadShort();
 
         /// <summary>
+        ///     Gets a short at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and increases 
+        ///     the <see cref="ReaderIndex" /> by <c>2</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>2</c></exception>
+        short ReadShortLE();
+
+        /// <summary>
         ///     Gets a 24-bit medium integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
         ///     by <c>3</c> in this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
         int ReadMedium();
+
+        /// <summary>
+        ///     Gets a 24-bit medium integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and 
+        ///     increases the <see cref="ReaderIndex" /> by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadMediumLE();
 
         /// <summary>
         ///     Gets an unsigned 24-bit medium integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
@@ -605,11 +806,25 @@ namespace DotNetty.Buffers
         int ReadUnsignedMedium();
 
         /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order 
+        ///     and increases the <see cref="ReaderIndex" /> by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadUnsignedMediumLE();
+
+        /// <summary>
         ///     Gets an unsigned short at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
         ///     by <c>2</c> in this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>2</c></exception>
         ushort ReadUnsignedShort();
+
+        /// <summary>
+        ///     Gets an unsigned short at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and 
+        ///     increases the <see cref="ReaderIndex" /> by <c>2</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>2</c></exception>
+        ushort ReadUnsignedShortLE();
 
         /// <summary>
         ///     Gets an integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
@@ -619,13 +834,39 @@ namespace DotNetty.Buffers
         int ReadInt();
 
         /// <summary>
+        ///     Gets an integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and increases 
+        ///     the <see cref="ReaderIndex" />  by <c>4</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        int ReadIntLE();
+
+        /// <summary>
         ///     Gets an unsigned integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
         ///     by <c>4</c> in this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
         uint ReadUnsignedInt();
 
+        /// <summary>
+        ///     Gets an unsigned integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and
+        ///     increases the <see cref="ReaderIndex" /> by <c>4</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        uint ReadUnsignedIntLE();
+
+        /// <summary>
+        ///     Gets an long at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" /> 
+        ///     by <c>8</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
         long ReadLong();
+
+        /// <summary>
+        ///     Gets an long at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and
+        ///     increases the <see cref="ReaderIndex" /> by <c>8</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        long ReadLongLE();
 
         /// <summary>
         ///     Gets a 2-byte UTF-16 character at the current <see cref="ReaderIndex" /> and increases the
@@ -644,12 +885,26 @@ namespace DotNetty.Buffers
         double ReadDouble();
 
         /// <summary>
+        ///     Gets an 8-byte Decimaling integer at the current <see cref="ReaderIndex" /> and increases the
+        ///     <see cref="ReaderIndex" /> by <c>8</c> in this buffer in Little Endian Byte Order.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>8</c></exception>
+        double ReadDoubleLE();
+
+        /// <summary>
         ///     Gets an 4-byte Decimaling integer at the current <see cref="ReaderIndex" /> and increases the
         ///     <see cref="ReaderIndex" />
         ///     by <c>4</c> in this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
         float ReadFloat();
+
+        /// <summary>
+        ///     Gets an 4-byte Decimaling integer at the current <see cref="ReaderIndex" /> and increases the
+        ///     <see cref="ReaderIndex" /> by <c>4</c> in this buffer in Little Endian Byte Order.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        float ReadFloatLE();
 
         /// <summary>
         ///     Reads <paramref name="length" /> bytes from this buffer into a new destination buffer.
@@ -692,23 +947,33 @@ namespace DotNetty.Buffers
 
         IByteBuffer WriteShort(int value);
 
+        IByteBuffer WriteShortLE(int value);
+
         IByteBuffer WriteUnsignedShort(ushort value);
+
+        IByteBuffer WriteUnsignedShortLE(ushort value);
+
+        IByteBuffer WriteMedium(int value);
+
+        IByteBuffer WriteMediumLE(int value);
 
         IByteBuffer WriteInt(int value);
 
-        IByteBuffer WriteUnsignedInt(uint value);
+        IByteBuffer WriteIntLE(int value);
 
         IByteBuffer WriteLong(long value);
+
+        IByteBuffer WriteLongLE(long value);
 
         IByteBuffer WriteChar(char value);
 
         IByteBuffer WriteDouble(double value);
 
+        IByteBuffer WriteDoubleLE(double value);
+
         IByteBuffer WriteFloat(float value);
 
-        IByteBuffer WriteUnsignedMedium(int value);
-
-        IByteBuffer WriteMedium(int value);
+        IByteBuffer WriteFloatLE(float value);
 
         IByteBuffer WriteBytes(IByteBuffer src);
 
@@ -816,42 +1081,56 @@ namespace DotNetty.Buffers
         byte[] Array { get; }
 
         /// <summary>
-        ///     Converts the readable contents of the buffer into an array.
-        ///     Does not affect the <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of the <see cref="IByteBuffer" />
-        /// </summary>
-        byte[] ToArray();
-
-        /// <summary>
         ///     Creates a deep clone of the existing byte array and returns it
         /// </summary>
         IByteBuffer Duplicate();
+
+        IByteBuffer RetainedDuplicate();
 
         /// <summary>
         ///     Unwraps a nested buffer
         /// </summary>
         IByteBuffer Unwrap();
 
-        ByteOrder Order { get; }
-
-        IByteBuffer WithOrder(ByteOrder order);
-
+        /// <summary>
+        ///     Returns a copy of this buffer's readable bytes. Modifying the content of the 
+        ///     returned buffer or this buffer does not affect each other at all.This method is 
+        ///     identical to {@code buf.copy(buf.readerIndex(), buf.readableBytes())}.
+        ///     This method does not modify {@code readerIndex} or {@code writerIndex} of this buffer.
+        ///</summary>
         IByteBuffer Copy();
 
         IByteBuffer Copy(int index, int length);
 
         IByteBuffer Slice();
 
+        IByteBuffer RetainedSlice();
+
         IByteBuffer Slice(int index, int length);
+
+        IByteBuffer RetainedSlice(int index, int length);
 
         int ArrayOffset { get; }
 
         IByteBuffer ReadSlice(int length);
+
+        IByteBuffer ReadRetainedSlice(int length);
 
         Task WriteBytesAsync(Stream stream, int length);
 
         Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
 
         IByteBuffer WriteZero(int length);
+
+        int IndexOf(int fromIndex, int toIndex, byte value);
+
+        int BytesBefore(byte value);
+
+        int BytesBefore(int length, byte value);
+
+        int BytesBefore(int index, int length, byte value);
+
+        string ToString();
 
         string ToString(Encoding encoding);
 

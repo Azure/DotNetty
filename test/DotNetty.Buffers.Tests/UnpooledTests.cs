@@ -11,14 +11,48 @@ namespace DotNetty.Buffers.Tests
     /// <summary>
     /// Tests channel buffers
     /// </summary>
-    public class UnpooledTest
+    public class UnpooledTests : IDisposable
     {
         static readonly IByteBuffer[] EmptyByteBuffer = new IByteBuffer[0];
         static readonly byte[][] EmptyBytes2D = new byte[0][];
         static readonly byte[] EmptyBytes = { };
 
+        readonly Queue<IByteBuffer> freeLaterQueue;
+
+        public UnpooledTests()
+        {
+            this.freeLaterQueue = new Queue<IByteBuffer>();
+        }
+
+        IByteBuffer FreeLater(IByteBuffer buf)
+        {
+            this.freeLaterQueue.Enqueue(buf);
+            return buf;
+        }
+
+        public void Dispose()
+        {
+            for (; ; )
+            {
+                IByteBuffer buf = null;
+                if (this.freeLaterQueue.Count > 0)
+                {
+                    buf = this.freeLaterQueue.Dequeue();
+                }
+                if (buf == null)
+                {
+                    break;
+                }
+
+                if (buf.ReferenceCount > 0)
+                {
+                    buf.Release(buf.ReferenceCount);
+                }
+            }
+        }
+
         [Fact]
-        public void TestCompositeWrappedBuffer()
+        public void CompositeWrappedBuffer()
         {
             IByteBuffer header = Buffer(12);
             IByteBuffer payload = Buffer(512);
@@ -38,7 +72,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestHashCode()
+        public void HashCode()
         {
             var map = new Dictionary<byte[], int>();
             map.Add(EmptyBytes, 1);
@@ -48,6 +82,7 @@ namespace DotNetty.Buffers.Tests
             map.Add(new byte[] { 1, 2 }, 994);
             map.Add(new byte[] { 0, 1, 2, 3, 4, 5 }, 63504931);
             map.Add(new byte[] { 6, 7, 8, 9, 0, 1 }, unchecked((int)97180294697L));
+            map.Add(new byte[] { 255, 255, 255, 0xE1 }, 1);
 
             foreach (KeyValuePair<byte[], int> e in map)
             {
@@ -58,13 +93,11 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestEquals()
+        public void Equals()
         {
-            IByteBuffer a, b;
-
             // Different length.
-            a = WrappedBuffer(new byte[] { 1 });
-            b = WrappedBuffer(new byte[] { 1, 2 });
+            IByteBuffer a = WrappedBuffer(new byte[] { 1 });
+            IByteBuffer b = WrappedBuffer(new byte[] { 1, 2 });
             Assert.False(ByteBufferUtil.Equals(a, b));
             a.Release();
             b.Release();
@@ -127,7 +160,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestCompare()
+        public void Compare()
         {
             IList<IByteBuffer> expected = new List<IByteBuffer>();
             expected.Add(WrappedBuffer(new byte[] { 1 }));
@@ -181,7 +214,7 @@ namespace DotNetty.Buffers.Tests
             AssertSameAndRelease(Empty, WrappedBuffer(EmptyBytes2D));
             AssertSameAndRelease(Empty, WrappedBuffer(new[] { EmptyBytes }));
             AssertSameAndRelease(Empty, WrappedBuffer(EmptyByteBuffer));
-            AssertSameAndRelease(Empty, WrappedBuffer(new IByteBuffer[] { Buffer(0) }));
+            AssertSameAndRelease(Empty, WrappedBuffer(new [] { Buffer(0) }));
             AssertSameAndRelease(Empty, WrappedBuffer(Buffer(0), Buffer(0)));
             AssertSameAndRelease(Empty, CopiedBuffer(EmptyBytes));
             AssertSameAndRelease(Empty, CopiedBuffer(new byte[8], 0, 0));
@@ -190,44 +223,28 @@ namespace DotNetty.Buffers.Tests
             Assert.Same(Empty, CopiedBuffer(EmptyBytes2D));
             AssertSameAndRelease(Empty, CopiedBuffer(new[] { EmptyBytes }));
             AssertSameAndRelease(Empty, CopiedBuffer(EmptyByteBuffer));
-            AssertSameAndRelease(Empty, CopiedBuffer(new IByteBuffer[] { Buffer(0) }));
+            AssertSameAndRelease(Empty, CopiedBuffer(new [] { Buffer(0) }));
             AssertSameAndRelease(Empty, CopiedBuffer(Buffer(0), Buffer(0)));
         }
 
-        static void AssertSameAndRelease(IByteBuffer expected, IByteBuffer actual)
-        {
-            Assert.Same(expected, actual);
-            expected.Release();
-            actual.Release();
-        }
-
-        static void AssertEqualAndRelease(IByteBuffer expected, IByteBuffer actual)
-        {
-            Assert.Equal(expected, actual);
-            expected.Release();
-            actual.Release();
-        }
-
         [Fact]
-        public void TestCompare2()
+        public void Compare2()
         {
-            IByteBuffer expected = WrappedBuffer(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF });
-            IByteBuffer actual = WrappedBuffer(new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            Assert.True(ByteBufferUtil.Compare(expected, actual) > 0);
-            expected.Release();
-            actual.Release();
+            Assert.True(ByteBufferUtil.Compare(
+                    WrappedBuffer(new[] { (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF }),
+                    WrappedBuffer(new [] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00 }))
+                > 0);
 
-            expected = WrappedBuffer(new byte[] { 0xFF });
-            actual = WrappedBuffer(new byte[] { 0x00 });
-            Assert.True(ByteBufferUtil.Compare(expected, actual) > 0);
-            expected.Release();
-            actual.Release();
+            Assert.True(ByteBufferUtil.Compare(
+                    WrappedBuffer(new [] { (byte)0xFF }),
+                    WrappedBuffer(new [] { (byte)0x00 }))
+                > 0);
         }
 
         [Fact]
         public void ShouldAllowEmptyBufferToCreateCompositeBuffer()
         {
-            IByteBuffer buf = WrappedBuffer(Empty, WrappedBuffer(new byte[16]).WithOrder(ByteOrder.LittleEndian), Empty);
+            IByteBuffer buf = WrappedBuffer(Empty, WrappedBuffer(new byte[16]), Empty);
             try
             {
                 Assert.Equal(16, buf.Capacity);
@@ -239,27 +256,36 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestWrappedBuffer()
+        public void WrappedBuffers()
         {
-            AssertEqualAndRelease(
+            Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
                 WrappedBuffer(new byte[][] { new byte[] { 1, 2, 3 } }));
 
-            AssertEqualAndRelease(
+            Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
-                WrappedBuffer(new byte[] { 1 }, new byte[] { 2 }, new byte[] { 3 }));
+                this.FreeLater(WrappedBuffer(
+                    new byte[] { 1 }, 
+                    new byte[] { 2 }, 
+                    new byte[] { 3 })));
 
-            AssertEqualAndRelease(WrappedBuffer(new byte[] { 1, 2, 3 }),
-                WrappedBuffer(new IByteBuffer[] { WrappedBuffer(new byte[] { 1, 2, 3 }) }));
-
-            AssertEqualAndRelease(
+            Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
-                WrappedBuffer(WrappedBuffer(new byte[] { 1 }),
-                    WrappedBuffer(new byte[] { 2 }), WrappedBuffer(new byte[] { 3 })));
+                WrappedBuffer(new []
+                {
+                    WrappedBuffer(new byte[] { 1, 2, 3 })
+                }));
+
+            Assert.Equal(
+                WrappedBuffer(new byte[] { 1, 2, 3 }),
+                this.FreeLater(WrappedBuffer(
+                    WrappedBuffer(new byte[] { 1 }),
+                    WrappedBuffer(new byte[] { 2 }), 
+                    WrappedBuffer(new byte[] { 3 }))));
         }
 
         [Fact]
-        public void TestSingleWrappedByteBufReleased()
+        public void SingleWrappedByteBufReleased()
         {
             IByteBuffer buf = Buffer(12).WriteByte(0);
             IByteBuffer wrapped = WrappedBuffer(buf);
@@ -268,7 +294,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestSingleUnReadableWrappedByteBufReleased()
+        public void SingleUnReadableWrappedByteBufReleased()
         {
             IByteBuffer buf = Buffer(12);
             IByteBuffer wrapped = WrappedBuffer(buf);
@@ -277,7 +303,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestMultiByteBufReleased()
+        public void MultiByteBufReleased()
         {
             IByteBuffer buf1 = Buffer(12).WriteByte(0);
             IByteBuffer buf2 = Buffer(12).WriteByte(0);
@@ -288,7 +314,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestMultiUnReadableByteBufReleased()
+        public void MultiUnReadableByteBufReleased()
         {
             IByteBuffer buf1 = Buffer(12);
             IByteBuffer buf2 = Buffer(12);
@@ -299,24 +325,33 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestCopiedBuffer()
+        public void CopiedBuffers()
         {
-            AssertEqualAndRelease(WrappedBuffer(new byte[] { 1, 2, 3 }),
+            Assert.Equal(
+                WrappedBuffer(new byte[] { 1, 2, 3 }),
                 CopiedBuffer(new byte[][] { new byte[] { 1, 2, 3 } }));
 
-            AssertEqualAndRelease(WrappedBuffer(new byte[] { 1, 2, 3 }),
-                CopiedBuffer(new byte[] { 1 }, new byte[] { 2 }, new byte[] { 3 }));
+            Assert.Equal(
+                WrappedBuffer(new byte[] { 1, 2, 3 }),
+                CopiedBuffer(
+                    new byte[] { 1 }, 
+                    new byte[] { 2 }, 
+                    new byte[] { 3 }));
 
-            AssertEqualAndRelease(WrappedBuffer(new byte[] { 1, 2, 3 }),
-                CopiedBuffer(new IByteBuffer[] { WrappedBuffer(new byte[] { 1, 2, 3 }) }));
+            Assert.Equal(
+                WrappedBuffer(new byte[] { 1, 2, 3 }),
+                CopiedBuffer(new [] { WrappedBuffer(new byte[] { 1, 2, 3 }) }));
 
-            AssertEqualAndRelease(WrappedBuffer(new byte[] { 1, 2, 3 }),
-                CopiedBuffer(WrappedBuffer(new byte[] { 1 }),
-                    WrappedBuffer(new byte[] { 2 }), WrappedBuffer(new byte[] { 3 })));
+            Assert.Equal(
+                WrappedBuffer(new byte[] { 1, 2, 3 }),
+                CopiedBuffer(
+                    WrappedBuffer(new byte[] { 1 }),
+                    WrappedBuffer(new byte[] { 2 }), 
+                    WrappedBuffer(new byte[] { 3 })));
         }
 
         [Fact]
-        public void TestHexDump()
+        public void HexDump()
         {
             Assert.Equal("", ByteBufferUtil.HexDump(Empty));
 
@@ -329,87 +364,76 @@ namespace DotNetty.Buffers.Tests
                 0x90, 0xAB, 0xCD, 0xEF
             });
             Assert.Equal("1234567890abcdef", ByteBufferUtil.HexDump(buffer));
-            buffer.Release();
         }
 
         [Fact]
-        public void TestSwapMedium()
-        {
-            Assert.Equal(0x563412, ByteBufferUtil.SwapMedium(0x123456));
-            Assert.Equal(0x80, ByteBufferUtil.SwapMedium(0x800000));
-        }
-
-        [Fact]
-        public void TestWrapSingleInt()
+        public void WrapSingleInt()
         {
             IByteBuffer buffer = CopyInt(42);
             Assert.Equal(4, buffer.Capacity);
             Assert.Equal(42, buffer.ReadInt());
             Assert.False(buffer.IsReadable());
-            buffer.Release();
         }
 
         [Fact]
-        public void TestWrapInt()
+        public void WrapInt()
         {
             IByteBuffer buffer = CopyInt(1, 4);
             Assert.Equal(8, buffer.Capacity);
             Assert.Equal(1, buffer.ReadInt());
             Assert.Equal(4, buffer.ReadInt());
             Assert.False(buffer.IsReadable());
-            buffer.Release();
-
-            buffer = CopyInt(null);
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
-
-            buffer = CopyInt(new int[] { });
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
+            
+            Assert.Equal(0, CopyInt(null).Capacity);
+            Assert.Equal(0, CopyInt(new int[] { }).Capacity);
         }
 
         [Fact]
-        public void TestWrapSingleShort()
+        public void WrapSingleShort()
         {
             IByteBuffer buffer = CopyShort(42);
             Assert.Equal(2, buffer.Capacity);
             Assert.Equal(42, buffer.ReadShort());
             Assert.False(buffer.IsReadable());
-            buffer.Release();
         }
 
         [Fact]
-        public void TestWrapShortFromShortArray()
+        public void WrapShortFromShortArray()
+        {
+            IByteBuffer buffer = CopyShort((short)1, (short)4);
+            Assert.Equal(4, buffer.Capacity);
+            Assert.Equal(1, buffer.ReadShort());
+            Assert.Equal(4, buffer.ReadShort());
+            Assert.False(buffer.IsReadable());
+
+            Assert.Equal(0, CopyShort(default(short[])).Capacity);
+            Assert.Equal(0, CopyShort(new short[] { }).Capacity);
+        }
+
+        [Fact]
+        public void WrapShortFromIntArray()
         {
             IByteBuffer buffer = CopyShort(1, 4);
             Assert.Equal(4, buffer.Capacity);
             Assert.Equal(1, buffer.ReadShort());
             Assert.Equal(4, buffer.ReadShort());
             Assert.False(buffer.IsReadable());
-            buffer.Release();
 
-
-            buffer = CopyShort(null);
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
-
-            buffer = CopyShort(new short[] { });
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
+            Assert.Equal(0, CopyShort(default(int[])).Capacity);
+            Assert.Equal(0, CopyShort(new int[] { }).Capacity);
         }
 
         [Fact]
-        public void TestWrapSingleMedium()
+        public void WrapSingleMedium()
         {
             IByteBuffer buffer = CopyMedium(42);
             Assert.Equal(3, buffer.Capacity);
             Assert.Equal(42, buffer.ReadMedium());
             Assert.False(buffer.IsReadable());
-            buffer.Release();
         }
 
         [Fact]
-        public void TestWrapMedium()
+        public void WrapMedium()
         {
             IByteBuffer buffer = CopyMedium(1, 4);
             Assert.Equal(6, buffer.Capacity);
@@ -418,17 +442,12 @@ namespace DotNetty.Buffers.Tests
             Assert.False(buffer.IsReadable());
             buffer.Release();
 
-            buffer = CopyMedium(null);
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
-
-            buffer = CopyMedium(new int[] { });
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
+            Assert.Equal(0, CopyMedium(null).Capacity);
+            Assert.Equal(0, CopyMedium(new int[] { }).Capacity);
         }
 
         [Fact]
-        public void TestWrapSingleLong()
+        public void WrapSingleLong()
         {
             IByteBuffer buffer = CopyLong(42);
             Assert.Equal(8, buffer.Capacity);
@@ -438,7 +457,7 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void TestWrapLong()
+        public void WrapLong()
         {
             IByteBuffer buffer = CopyLong(1, 4);
             Assert.Equal(16, buffer.Capacity);
@@ -447,28 +466,22 @@ namespace DotNetty.Buffers.Tests
             Assert.False(buffer.IsReadable());
             buffer.Release();
 
-            buffer = CopyLong(null);
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
-
-            buffer = CopyLong(new long[] { });
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
+            Assert.Equal(0, CopyLong(null).Capacity);
+            Assert.Equal(0, CopyLong(new long[] { }).Capacity);
         }
 
         [Fact]
-        public void TestWrapSingleFloat()
+        public void WrapSingleFloat()
         {
             IEqualityComparer<float> comparer = new ApproximateComparer(0.01);
             IByteBuffer buffer = CopyFloat(42);
             Assert.Equal(4, buffer.Capacity);
             Assert.Equal(42, buffer.ReadFloat(), comparer);
             Assert.False(buffer.IsReadable());
-            buffer.Release();
         }
 
         [Fact]
-        public void TestWrapFloat()
+        public void WrapFloat()
         {
             IEqualityComparer<float> comparer = new ApproximateComparer(0.01);
             IByteBuffer buffer = CopyFloat(1, 4);
@@ -476,30 +489,23 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(1, buffer.ReadFloat(), comparer);
             Assert.Equal(4, buffer.ReadFloat(), comparer);
             Assert.False(buffer.IsReadable());
-            buffer.Release();
 
-            buffer = CopyFloat(null);
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
-
-            buffer = CopyFloat(new float[] { });
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
+            Assert.Equal(0, CopyFloat(null).Capacity);
+            Assert.Equal(0, CopyFloat(new float[] { }).Capacity);
         }
 
         [Fact]
-        public void TestWrapSingleDouble()
+        public void WrapSingleDouble()
         {
             IEqualityComparer<double> comparer = new ApproximateComparer(0.01);
             IByteBuffer buffer = CopyDouble(42);
             Assert.Equal(8, buffer.Capacity);
             Assert.Equal(42, buffer.ReadDouble(), comparer);
             Assert.False(buffer.IsReadable());
-            buffer.Release();
         }
 
         [Fact]
-        public void TestWrapDouble()
+        public void WrapDouble()
         {
             IEqualityComparer<double> comparer = new ApproximateComparer(0.01);
             IByteBuffer buffer = CopyDouble(1, 4);
@@ -508,72 +514,32 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(4, buffer.ReadDouble(), comparer);
             Assert.False(buffer.IsReadable());
 
-            buffer = CopyDouble(null);
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
-
-            buffer = CopyDouble(new double[] { });
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
+            Assert.Equal(0, CopyDouble(null).Capacity);
+            Assert.Equal(0, CopyDouble(new double[] { }).Capacity);
         }
 
         [Fact]
-        public void TestWrapBoolean()
+        public void WrapBoolean()
         {
             IByteBuffer buffer = CopyBoolean(true, false);
             Assert.Equal(2, buffer.Capacity);
             Assert.True(buffer.ReadBoolean());
             Assert.False(buffer.ReadBoolean());
             Assert.False(buffer.IsReadable());
-            buffer.Release();
 
-            buffer = CopyBoolean(null);
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
-
-            buffer = CopyBoolean(new bool[] { });
-            Assert.Equal(0, buffer.Capacity);
-            buffer.Release();
+            Assert.Equal(0, CopyBoolean(null).Capacity);
+            Assert.Equal(0, CopyBoolean(new bool[] { }).Capacity);
         }
 
         [Fact]
         public void SkipBytesNegativeLength()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                IByteBuffer buf = Buffer(8);
-                try
-                {
-                    buf.SkipBytes(-1);
-                }
-                finally
-                {
-                    buf.Release();
-                }
-            });
+            IByteBuffer buf = this.FreeLater(Buffer(8));
+            Assert.Throws<ArgumentOutOfRangeException>(() => buf.SkipBytes(-1));
         }
 
         [Fact]
-        public void TestInconsistentOrder()
-        {
-            Assert.Throws<ArgumentException>(() =>
-            {
-                IByteBuffer buf = WrappedBuffer(new byte[] { 1 }).WithOrder(ByteOrder.BigEndian);
-                IByteBuffer buf1 = WrappedBuffer(new byte[] { 2, 3 }).WithOrder(ByteOrder.LittleEndian);
-                try
-                {
-                    CopiedBuffer(buf, buf1);
-                }
-                finally
-                {
-                    buf.Release();
-                    buf1.Release();
-                }
-            });
-        }
-
-        [Fact]
-        public void TestWrapByteBufArrayStartsWithNonReadable()
+        public void WrapByteBufArrayStartsWithNonReadable()
         {
             IByteBuffer buffer1 = Buffer(8);
             IByteBuffer buffer2 = Buffer(8).WriteZero(8); // Ensure the IByteBuffer is readable.
@@ -589,7 +555,15 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(0, buffer4.ReferenceCount);
             Assert.Equal(0, wrapped.ReferenceCount);
         }
+
+        static void AssertSameAndRelease(IByteBuffer expected, IByteBuffer actual)
+        {
+            Assert.Same(expected, actual);
+            expected.Release();
+            actual.Release();
+        }
     }
+
     public class ApproximateComparer : IEqualityComparer<double>, IEqualityComparer<float>
     {
         public double MarginOfError { get; }

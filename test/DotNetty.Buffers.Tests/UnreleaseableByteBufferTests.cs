@@ -3,7 +3,7 @@ namespace DotNetty.Buffers.Tests
 {
     using Xunit;
 
-    public class UnreleaseableByteBufferTest
+    public class UnreleaseableByteBufferTests
     {
         [Fact]
         public void CantRelease()

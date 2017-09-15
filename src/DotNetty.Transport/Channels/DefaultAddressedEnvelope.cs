@@ -40,25 +40,25 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public IReferenceCounted Retain()
+        public virtual IReferenceCounted Retain()
         {
             ReferenceCountUtil.Retain(this.Content);
             return this;
         }
 
-        public IReferenceCounted Retain(int increment)
+        public virtual IReferenceCounted Retain(int increment)
         {
             ReferenceCountUtil.Retain(this.Content, increment);
             return this;
         }
 
-        public IReferenceCounted Touch()
+        public virtual IReferenceCounted Touch()
         {
             ReferenceCountUtil.Touch(this.Content);
             return this;
         }
 
-        public IReferenceCounted Touch(object hint)
+        public virtual IReferenceCounted Touch(object hint)
         {
             ReferenceCountUtil.Touch(this.Content, hint);
             return this;

@@ -131,14 +131,14 @@ namespace DotNetty.Common
 
         public int FutureListenerStackDepth
         {
-            get { return this.futureListenerStackDepth; }
-            set { this.futureListenerStackDepth = value; }
+            get => this.futureListenerStackDepth;
+            set => this.futureListenerStackDepth = value;
         }
 
         public int LocalChannelReaderStackDepth
         {
-            get { return this.localChannelReaderStackDepth; }
-            set { this.localChannelReaderStackDepth = value; }
+            get => this.localChannelReaderStackDepth;
+            set => this.localChannelReaderStackDepth = value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -149,9 +149,8 @@ namespace DotNetty.Common
         }
 
         /**
-     * @return {@code true} if and only if a new thread-local variable has been created
-     */
-
+          * @return {@code true} if and only if a new thread-local variable has been created
+         */
         public bool SetIndexedVariable(int index, object value)
         {
             object[] lookup = this.indexedVariables;

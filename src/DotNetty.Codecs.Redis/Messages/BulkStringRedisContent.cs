@@ -12,17 +12,7 @@ namespace DotNetty.Codecs.Redis.Messages
         {
         }
 
-        public override IByteBufferHolder Copy()
-        {
-            IByteBuffer buffer = this.Content.Copy();
-            return new BulkStringRedisContent(buffer);
-        }
-
-        public override IByteBufferHolder Duplicate()
-        {
-            IByteBuffer buffer = this.Content.Duplicate();
-            return new BulkStringRedisContent(buffer);
-        }
+        public override IByteBufferHolder Replace(IByteBuffer content) => new BulkStringRedisContent(content);
 
         public override string ToString() => $"{nameof(BulkStringRedisContent)}[content={this.Content}]";
     }

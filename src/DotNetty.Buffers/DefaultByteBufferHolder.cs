@@ -6,59 +6,69 @@ namespace DotNetty.Buffers
     using System.Diagnostics.Contracts;
     using DotNetty.Common;
 
-    public abstract class DefaultByteBufferHolder : IByteBufferHolder
+    public class DefaultByteBufferHolder : IByteBufferHolder
     {
-        readonly IByteBuffer buffer;
+        readonly IByteBuffer data;
 
-        protected DefaultByteBufferHolder(IByteBuffer buffer)
+        public DefaultByteBufferHolder(IByteBuffer data)
         {
-            Contract.Requires(buffer != null);
+            Contract.Requires(data != null);
 
-            this.buffer = buffer;
+            this.data = data;
         }
 
         public IByteBuffer Content
         {
             get
             {
-                if (this.buffer.ReferenceCount <= 0)
+                if (this.data.ReferenceCount <= 0)
                 {
-                    throw new IllegalReferenceCountException(this.buffer.ReferenceCount);
+                    throw new IllegalReferenceCountException(this.data.ReferenceCount);
                 }
 
-                return this.buffer;
+                return this.data;
             }
         }
 
-        public virtual int ReferenceCount => this.buffer.ReferenceCount;
+        public IByteBufferHolder Copy() => this.Replace(this.data.Copy());
 
-        public virtual IReferenceCounted Retain()
+        public IByteBufferHolder Duplicate() => this.Replace(this.data.Duplicate());
+
+        public IByteBufferHolder RetainedDuplicate() => this.Replace(this.data.RetainedDuplicate());
+
+        public virtual IByteBufferHolder Replace(IByteBuffer content) => new DefaultByteBufferHolder(content);
+
+        public virtual int ReferenceCount => this.data.ReferenceCount;
+
+        public IReferenceCounted Retain()
         {
-            this.buffer.Retain();
+            this.data.Retain();
             return this;
         }
 
-        public virtual IReferenceCounted Retain(int increment)
+        public IReferenceCounted Retain(int increment)
         {
-            this.buffer.Retain(increment);
+            this.data.Retain(increment);
             return this;
         }
 
-        public virtual IReferenceCounted Touch()
+        public IReferenceCounted Touch()
         {
-            this.buffer.Touch();
+            this.data.Touch();
             return this;
         }
 
-        public virtual IReferenceCounted Touch(object hint)
+        public IReferenceCounted Touch(object hint)
         {
-            this.buffer.Touch(hint);
+            this.data.Touch(hint);
             return this;
         }
 
-        public virtual bool Release() => this.buffer.Release();
+        public bool Release() => this.data.Release();
 
-        public virtual bool Release(int decrement) => this.buffer.Release(decrement);
+        public bool Release(int decrement) => this.data.Release(decrement);
+
+        protected string ContentToString() => this.data.ToString();
 
         public override bool Equals(object obj)
         {
@@ -67,18 +77,14 @@ namespace DotNetty.Buffers
                 return true;
             }
 
-            if (obj is DefaultByteBufferHolder)
+            if (obj is IByteBufferHolder holder)
             {
-                return this.buffer.Equals(((DefaultByteBufferHolder)obj).buffer);
+                return this.data.Equals(holder.Content);
             }
 
             return false;
         }
 
-        public override int GetHashCode() => this.buffer.GetHashCode();
-
-        public abstract IByteBufferHolder Copy();
-
-        public abstract IByteBufferHolder Duplicate();
+        public override int GetHashCode() => this.data.GetHashCode();
     }
 }

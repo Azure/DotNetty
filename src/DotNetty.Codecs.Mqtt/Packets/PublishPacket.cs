@@ -63,20 +63,18 @@ namespace DotNetty.Codecs.Mqtt.Packets
 
         IByteBuffer IByteBufferHolder.Content => this.Payload;
 
-        public IByteBufferHolder Copy()
+        public IByteBufferHolder Copy() => this.Replace(this.Payload.Copy());
+
+        public IByteBufferHolder Replace(IByteBuffer content)
         {
             var result = new PublishPacket(this.qos, this.duplicate, this.retainRequested);
             result.TopicName = this.TopicName;
-            result.Payload = this.Payload.Copy();
+            result.Payload = content;
             return result;
         }
 
-        IByteBufferHolder IByteBufferHolder.Duplicate()
-        {
-            var result = new PublishPacket(this.qos, this.duplicate, this.retainRequested);
-            result.TopicName = this.TopicName;
-            result.Payload = this.Payload.Duplicate();
-            return result;
-        }
+        IByteBufferHolder IByteBufferHolder.Duplicate() => this.Replace(this.Payload.Duplicate());
+
+        public IByteBufferHolder RetainedDuplicate() => this.Replace(this.Payload.RetainedDuplicate());
     }
 }

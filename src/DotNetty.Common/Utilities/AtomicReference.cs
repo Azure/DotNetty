@@ -34,14 +34,14 @@ namespace DotNetty.Common.Utilities
         /// </summary>
         public T Value
         {
-            get { return Volatile.Read(ref this.atomicValue); }
-            set { Volatile.Write(ref this.atomicValue, value); }
+            get => Volatile.Read(ref this.atomicValue);
+            set => Volatile.Write(ref this.atomicValue, value);
         }
 
         /// <summary>
-        ///     If <see cref="Value" /> equals <see cref="expected" />, then set the Value to
-        ///     <see cref="newValue" />.
-        ///     Returns true if <see cref="newValue" /> was set, false otherwise.
+        ///     If <see cref="Value" /> equals <paramref name="expected"/>, then set the Value to
+        ///     <paramref name="newValue"/>
+        ///     Returns true if  <paramref name="newValue"/> was set, false otherwise.
         /// </summary>
         public bool CompareAndSet(T expected, T newValue) => Interlocked.CompareExchange(ref this.atomicValue, newValue, expected) == expected;
 

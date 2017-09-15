@@ -19,10 +19,6 @@ namespace DotNetty.Codecs.Redis.Messages
 
         public bool IsNull => false;
 
-        public override IByteBufferHolder Copy() => new FullBulkStringRedisMessage(this.Content.Copy());
-
-        public override IByteBufferHolder Duplicate() => new FullBulkStringRedisMessage(this.Content.Duplicate());
-
         public override string ToString() => $"{nameof(FullBulkStringRedisMessage)}[content={this.Content}]";
 
         sealed class NullOrEmptyFullBulkStringRedisMessage : IFullBulkStringRedisMessage
@@ -48,6 +44,10 @@ namespace DotNetty.Codecs.Redis.Messages
 
             public IByteBufferHolder Duplicate() => this;
 
+            public IByteBufferHolder RetainedDuplicate() => this;
+
+            public IByteBufferHolder Replace(IByteBuffer content) => this;
+
             public IReferenceCounted Touch() => this;
 
             public IReferenceCounted Touch(object hint) => this;
@@ -60,5 +60,8 @@ namespace DotNetty.Codecs.Redis.Messages
 
             public bool Release(int decrement) => false;
         }
+
+        public override IByteBufferHolder Replace(IByteBuffer content) => new FullBulkStringRedisMessage(content);
+
     }
 }

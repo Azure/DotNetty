@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.10
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{F5B1CA65-5852-41C6-9D6F-184A3889237B}"
 	ProjectSection(SolutionItems) = preProject
@@ -57,8 +57,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Tests", "te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Handlers.Tests", "test\DotNetty.Handlers.Tests\DotNetty.Handlers.Tests.csproj", "{D0DBB346-BDDA-4E28-A335-6D3E1F9902DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Microbench", "test\DotNetty.Microbench\DotNetty.Microbench.csproj", "{5C3A8F6C-0F37-41A4-9A40-91FECE9C6022}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Tests.End2End", "test\DotNetty.Tests.End2End\DotNetty.Tests.End2End.csproj", "{5D5A3137-F118-4F6C-ABE7-2523184A3A2D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Transport.Tests", "test\DotNetty.Transport.Tests\DotNetty.Transport.Tests.csproj", "{BDA099C5-E435-49DF-9922-58D63E11B764}"
@@ -92,6 +90,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telnet.Client", "examples\Telnet.Client\Telnet.Client.csproj", "{F2490822-51F7-4B65-8B21-EE0082B76745}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telnet.Server", "examples\Telnet.Server\Telnet.Server.csproj", "{07C97A77-61B6-4BB5-9436-3A7FC379B75E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Microbench", "test\DotNetty.Microbench\DotNetty.Microbench.csproj", "{7155D1E6-00CE-4081-B922-E6C5524EE600}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -171,10 +171,6 @@ Global
 		{D0DBB346-BDDA-4E28-A335-6D3E1F9902DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0DBB346-BDDA-4E28-A335-6D3E1F9902DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0DBB346-BDDA-4E28-A335-6D3E1F9902DF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5C3A8F6C-0F37-41A4-9A40-91FECE9C6022}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5C3A8F6C-0F37-41A4-9A40-91FECE9C6022}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5C3A8F6C-0F37-41A4-9A40-91FECE9C6022}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5C3A8F6C-0F37-41A4-9A40-91FECE9C6022}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5D5A3137-F118-4F6C-ABE7-2523184A3A2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5D5A3137-F118-4F6C-ABE7-2523184A3A2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D5A3137-F118-4F6C-ABE7-2523184A3A2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -243,6 +239,10 @@ Global
 		{07C97A77-61B6-4BB5-9436-3A7FC379B75E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07C97A77-61B6-4BB5-9436-3A7FC379B75E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07C97A77-61B6-4BB5-9436-3A7FC379B75E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7155D1E6-00CE-4081-B922-E6C5524EE600}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7155D1E6-00CE-4081-B922-E6C5524EE600}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7155D1E6-00CE-4081-B922-E6C5524EE600}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7155D1E6-00CE-4081-B922-E6C5524EE600}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -266,7 +266,6 @@ Global
 		{08C19033-23B2-47D7-8332-86273AE287BC} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
 		{CE97D2EC-3EA9-4FEC-B304-F57646DB54FD} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
 		{D0DBB346-BDDA-4E28-A335-6D3E1F9902DF} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
-		{5C3A8F6C-0F37-41A4-9A40-91FECE9C6022} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
 		{5D5A3137-F118-4F6C-ABE7-2523184A3A2D} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
 		{BDA099C5-E435-49DF-9922-58D63E11B764} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
 		{3DA49C12-3614-40F5-B5CE-8B95F872EFC1} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
@@ -284,5 +283,9 @@ Global
 		{E2BEAAAE-497B-49F4-AD27-03BE20924311} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
 		{F2490822-51F7-4B65-8B21-EE0082B76745} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
 		{07C97A77-61B6-4BB5-9436-3A7FC379B75E} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
+		{7155D1E6-00CE-4081-B922-E6C5524EE600} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1FBD8DF1-D90A-4F21-8EB6-DA17B9431FE3}
 	EndGlobalSection
 EndGlobal

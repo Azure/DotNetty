@@ -148,20 +148,26 @@ namespace DotNetty.Codecs
                     {
                         throw new ArgumentException("length of object does not fit into one byte: " + length);
                     }
-                    output.Add(context.Allocator.Buffer(1).WithOrder(this.byteOrder).WriteByte((byte)length));
+                    output.Add(context.Allocator.Buffer(1).WriteByte((byte)length));
                     break;
                 case 2:
                     if (length >= 65536)
                     {
                         throw new ArgumentException("length of object does not fit into a short integer: " + length);
                     }
-                    output.Add(context.Allocator.Buffer(2).WithOrder(this.byteOrder).WriteShort((short)length));
+                    output.Add(this.byteOrder == ByteOrder.BigEndian 
+                        ? context.Allocator.Buffer(2).WriteShort((short)length) 
+                        : context.Allocator.Buffer(2).WriteShortLE((short)length));
                     break;
                 case 4:
-                    output.Add(context.Allocator.Buffer(4).WithOrder(this.byteOrder).WriteInt(length));
+                    output.Add(this.byteOrder == ByteOrder.BigEndian
+                        ? context.Allocator.Buffer(4).WriteInt((short)length)
+                        : context.Allocator.Buffer(4).WriteIntLE((short)length));
                     break;
                 case 8:
-                    output.Add(context.Allocator.Buffer(8).WithOrder(this.byteOrder).WriteLong(length));
+                    output.Add(this.byteOrder == ByteOrder.BigEndian
+                        ? context.Allocator.Buffer(8).WriteLong((short)length)
+                        : context.Allocator.Buffer(8).WriteLongLE((short)length));
                     break;
                 default:
                     throw new Exception("Unknown length field length");

@@ -396,11 +396,10 @@ namespace DotNetty.Codecs
         /// <param name="buffer">The buffer we'll be extracting the frame length from.</param>
         /// <param name="offset">The offset from the absolute <see cref="IByteBuffer.ReaderIndex" />.</param>
         /// <param name="length">The length of the framelenght field. Expected: 1, 2, 3, 4, or 8.</param>
-        /// <param name="order">The preferred <see cref="ByteOrder" /> of <see cref="buffer" />.</param>
+        /// <param name="order">The preferred <see cref="ByteOrder" /> of buffer.</param>
         /// <returns>A long integer that represents the unadjusted length of the next frame.</returns>
         protected long GetUnadjustedFrameLength(IByteBuffer buffer, int offset, int length, ByteOrder order)
         {
-            buffer = buffer.WithOrder(order);
             long frameLength;
             switch (length)
             {
@@ -408,13 +407,13 @@ namespace DotNetty.Codecs
                     frameLength = buffer.GetByte(offset);
                     break;
                 case 2:
-                    frameLength = buffer.GetShort(offset);
+                    frameLength = this.byteOrder == ByteOrder.BigEndian ? buffer.GetShort(offset) : buffer.GetShortLE(offset);
                     break;
                 case 4:
-                    frameLength = buffer.GetInt(offset);
+                    frameLength = this.byteOrder == ByteOrder.BigEndian ? buffer.GetInt(offset) : buffer.GetIntLE(offset);
                     break;
                 case 8:
-                    frameLength = buffer.GetLong(offset);
+                    frameLength = this.byteOrder == ByteOrder.BigEndian ? buffer.GetLong(offset) : buffer.GetLongLE(offset);
                     break;
                 default:
                     throw new DecoderException("unsupported lengthFieldLength: " + this.lengthFieldLength + " (expected: 1, 2, 3, 4, or 8)");

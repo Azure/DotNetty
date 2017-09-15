@@ -360,18 +360,18 @@ namespace DotNetty.Common.Internal.Logging
         bool IsEnabled(InternalLogLevel level);
 
         /// <summary>
-        ///     Log a message object at a specified <see cref="level" />.
+        ///     Log a message object at a specified <see cref="InternalLogLevel" />.
         /// </summary>
         /// <param name="level">log level</param>
         /// <param name="msg">the message object to be logged</param>
         void Log(InternalLogLevel level, string msg);
 
         /// <summary>
-        ///     Log a message at a specified <see cref="level" /> according to the specified format and
+        ///     Log a message at a specified <see cref="InternalLogLevel" /> according to the specified format and
         ///     argument.
         ///     <p>
         ///         This form avoids superfluous object creation when the logger is disabled
-        ///         for the specified <see cref="level" />.
+        ///         for the specified <see cref="InternalLogLevel" />.
         ///     </p>
         /// </summary>
         /// <param name="level">log level</param>
@@ -380,11 +380,11 @@ namespace DotNetty.Common.Internal.Logging
         void Log(InternalLogLevel level, string format, object arg);
 
         /// <summary>
-        ///     Log a message at a specified <see cref="level" /> according to the specified format and
+        ///     Log a message at a specified <see cref="InternalLogLevel" /> according to the specified format and
         ///     arguments.
         ///     <p>
         ///         This form avoids superfluous object creation when the logger is disabled
-        ///         for the specified <see cref="level" />.
+        ///         for the specified <see cref="InternalLogLevel" />.
         ///     </p>
         /// </summary>
         /// <param name="level">log level</param>
@@ -412,7 +412,7 @@ namespace DotNetty.Common.Internal.Logging
         void Log(InternalLogLevel level, string format, params object[] arguments);
 
         /// <summary>
-        ///     Log an exception at the specified <see cref="level" /> with an
+        ///     Log an exception at the specified <see cref="InternalLogLevel" /> with an
         ///     accompanying message.
         /// </summary>
         /// <param name="level">log level</param>
@@ -421,7 +421,7 @@ namespace DotNetty.Common.Internal.Logging
         void Log(InternalLogLevel level, string msg, Exception t);
 
         /// <summary>
-        ///     Log an exception at the specified <see cref="level" />.
+        ///     Log an exception at the specified <see cref="InternalLogLevel" />.
         /// </summary>
         /// <param name="level">log level</param>
         /// <param name="t">the exception to log</param>

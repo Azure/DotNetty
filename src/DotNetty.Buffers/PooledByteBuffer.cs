@@ -4,7 +4,7 @@
 namespace DotNetty.Buffers
 {
     using System;
-    using System.Diagnostics.Contracts;
+    using System.Diagnostics;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
@@ -27,18 +27,15 @@ namespace DotNetty.Buffers
             this.recyclerHandle = recyclerHandle;
         }
 
-        internal void Init(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache)
-        {
+        internal void Init(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache) =>
             this.Init0(chunk, handle, offset, length, maxLength, cache);
-            this.DiscardMarkers();
-        }
 
         internal void InitUnpooled(PoolChunk<T> chunk, int length) => this.Init0(chunk, 0, 0, length, length, null);
 
         void Init0(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache)
         {
-            Contract.Assert(handle >= 0);
-            Contract.Assert(chunk != null);
+            Debug.Assert(handle >= 0);
+            Debug.Assert(chunk != null);
 
             this.Chunk = chunk;
             this.Memory = chunk.Memory;
@@ -48,7 +45,17 @@ namespace DotNetty.Buffers
             this.Offset = offset;
             this.Length = length;
             this.MaxLength = maxLength;
-            this.SetIndex(0, 0);
+        }
+
+        /**
+          * Method must be called before reuse this {@link PooledByteBufAllocator}
+          */
+        internal void Reuse(int maxCapacity)
+        {
+            this.SetMaxCapacity(maxCapacity);
+            this.SetReferenceCount(1);
+            this.SetIndex0(0, 0);
+            this.DiscardMarks();
         }
 
         public override int Capacity => this.Length;
@@ -110,11 +117,19 @@ namespace DotNetty.Buffers
 
         public sealed override IByteBufferAllocator Allocator => this.allocator;
 
-        public sealed override ByteOrder Order => ByteOrder.BigEndian;
-
         public sealed override IByteBuffer Unwrap() => null;
 
-        protected sealed override void Deallocate()
+        public sealed override IByteBuffer RetainedDuplicate() => PooledDuplicatedByteBuffer.NewInstance(this, this, this.ReaderIndex, this.WriterIndex);
+
+        public sealed override IByteBuffer RetainedSlice()
+        {
+            int index = this.ReaderIndex;
+            return this.RetainedSlice(index, this.WriterIndex - index);
+        }
+
+        public sealed override IByteBuffer RetainedSlice(int index, int length) => PooledSlicedByteBuffer.NewInstance(this, this, index, length);
+
+        protected internal sealed override void Deallocate()
         {
             if (this.Handle >= 0)
             {
@@ -123,7 +138,6 @@ namespace DotNetty.Buffers
                 this.Memory = default(T);
                 this.Chunk.Arena.Free(this.Chunk, handle, this.MaxLength, this.Cache);
                 this.Chunk = null;
-                this.allocator = null;
                 this.Recycle();
             }
         }
