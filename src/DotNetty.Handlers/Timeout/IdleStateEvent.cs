@@ -6,7 +6,7 @@ namespace DotNetty.Handlers.Timeout
     /// <summary>
     /// A user event triggered by <see cref="IdleStateHandler"/> when a <see cref="DotNetty.Transport.Channels.IChannel"/> is idle.
     /// </summary>
-    public sealed class IdleStateEvent
+    public class IdleStateEvent
     {
         public static readonly IdleStateEvent FirstReaderIdleStateEvent = new IdleStateEvent(IdleState.ReaderIdle, true);
         public static readonly IdleStateEvent ReaderIdleStateEvent = new IdleStateEvent(IdleState.ReaderIdle, false);
@@ -15,7 +15,12 @@ namespace DotNetty.Handlers.Timeout
         public static readonly IdleStateEvent FirstAllIdleStateEvent = new IdleStateEvent(IdleState.AllIdle, true);
         public static readonly IdleStateEvent AllIdleStateEvent = new IdleStateEvent(IdleState.AllIdle, false);
 
-        IdleStateEvent(IdleState state, bool first)
+        /// <summary>
+        /// Constructor for sub-classes.
+        /// </summary>
+        /// <param name="state">the <see cref="IdleStateEvent"/> which triggered the event.</param>
+        /// <param name="first"><code>true</code> if its the first idle event for the <see cref="IdleStateEvent"/>.</param>
+        protected IdleStateEvent(IdleState state, bool first)
         {
             this.State = state;
             this.First = first;
