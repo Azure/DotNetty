@@ -86,6 +86,8 @@ namespace DotNetty.Transport.Channels
         /// <inheritdoc />
         IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
 
+        public Task RegisterAsync(IChannel channel) => this.GetNext().RegisterAsync(channel);
+
         /// <inheritdoc />
         public Task ShutdownGracefullyAsync()
         {

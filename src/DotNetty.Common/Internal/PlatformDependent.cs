@@ -17,6 +17,8 @@ namespace DotNetty.Common.Internal
 
         public static IQueue<T> NewMpscQueue<T>() where T : class => new CompatibleConcurrentQueue<T>();
 
+        public static ILinkedQueue<T> SpscLinkedQueue<T>() where T : class => new SpscLinkedQueue<T>();
+
         public static Random GetThreadLocalRandom() => ThreadLocalRandom.Value;
 
         public static unsafe void CopyMemory(byte[] src, int srcIndex, byte[] dst, int dstIndex, int length)
