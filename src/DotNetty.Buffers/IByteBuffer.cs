@@ -483,6 +483,9 @@ namespace DotNetty.Buffers
         /// </exception>
         IByteBuffer GetBytes(int index, Stream destination, int length);
 
+
+        ICharSequence GetCharSequence(int index, int length, Encoding encoding);
+
         /// <summary>
         ///     Gets a string with the given length at the given index.
         /// </summary>
@@ -781,6 +784,8 @@ namespace DotNetty.Buffers
         /// </exception>
         IByteBuffer SetZero(int index, int length);
 
+        int SetCharSequence(int index, ICharSequence sequence, Encoding encoding);
+
         /// <summary>
         ///     Writes the specified string at the current writer index and increases
         ///     the  writer index by the written bytes.
@@ -972,6 +977,8 @@ namespace DotNetty.Buffers
         IByteBuffer ReadBytes(byte[] destination, int dstIndex, int length);
 
         IByteBuffer ReadBytes(Stream destination, int length);
+
+        ICharSequence ReadCharSequence(int length, Encoding encoding);
 
         /// <summary>
         ///     Gets a string with the given length at the current reader index
@@ -1185,6 +1192,8 @@ namespace DotNetty.Buffers
         Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
 
         IByteBuffer WriteZero(int length);
+
+        int WriteCharSequence(ICharSequence sequence, Encoding encoding);
 
         int WriteString(string value, Encoding encoding);
 

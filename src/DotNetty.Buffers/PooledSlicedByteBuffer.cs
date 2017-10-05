@@ -41,7 +41,7 @@ namespace DotNetty.Buffers
 
         public override int Capacity => this.MaxCapacity;
 
-        public override IByteBuffer AdjustCapacity(int newCapacity) =>throw new NotSupportedException("sliced buffer");
+        public override IByteBuffer AdjustCapacity(int newCapacity) => throw new NotSupportedException("sliced buffer");
 
         public override int ArrayOffset => this.Idx(this.Unwrap().ArrayOffset);
 

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{F5B1CA65-5852-41C6-9D6F-184A3889237B}"
 	ProjectSection(SolutionItems) = preProject
@@ -95,7 +95,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Microbench", "test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Transport.Libuv", "src\DotNetty.Transport.Libuv\DotNetty.Transport.Libuv.csproj", "{9FE6A783-C20D-4097-9988-4178E2C4CE75}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetty.Transport.Libuv.Tests", "test\DotNetty.Transport.Libuv.Tests\DotNetty.Transport.Libuv.Tests.csproj", "{1012C962-7F6D-4EC5-A0EC-0741A95BAD6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Transport.Libuv.Tests", "test\DotNetty.Transport.Libuv.Tests\DotNetty.Transport.Libuv.Tests.csproj", "{1012C962-7F6D-4EC5-A0EC-0741A95BAD6B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpServer", "examples\HttpServer\HttpServer.csproj", "{A7CACAE7-66E7-43DA-948B-28EB0DDDB582}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Http", "src\DotNetty.Codecs.Http\DotNetty.Codecs.Http.csproj", "{5F68A5B1-7907-4B16-8AFE-326E9DD7D65B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Codecs.Http.Tests", "test\DotNetty.Codecs.Http.Tests\DotNetty.Codecs.Http.Tests.csproj", "{16C89E7C-1575-4685-8DFA-8E7E2C6101BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -255,6 +261,18 @@ Global
 		{1012C962-7F6D-4EC5-A0EC-0741A95BAD6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1012C962-7F6D-4EC5-A0EC-0741A95BAD6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1012C962-7F6D-4EC5-A0EC-0741A95BAD6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7CACAE7-66E7-43DA-948B-28EB0DDDB582}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7CACAE7-66E7-43DA-948B-28EB0DDDB582}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7CACAE7-66E7-43DA-948B-28EB0DDDB582}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7CACAE7-66E7-43DA-948B-28EB0DDDB582}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F68A5B1-7907-4B16-8AFE-326E9DD7D65B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F68A5B1-7907-4B16-8AFE-326E9DD7D65B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F68A5B1-7907-4B16-8AFE-326E9DD7D65B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F68A5B1-7907-4B16-8AFE-326E9DD7D65B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16C89E7C-1575-4685-8DFA-8E7E2C6101BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16C89E7C-1575-4685-8DFA-8E7E2C6101BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16C89E7C-1575-4685-8DFA-8E7E2C6101BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16C89E7C-1575-4685-8DFA-8E7E2C6101BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -298,9 +316,12 @@ Global
 		{7155D1E6-00CE-4081-B922-E6C5524EE600} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
 		{9FE6A783-C20D-4097-9988-4178E2C4CE75} = {126EA539-4B28-4B07-8B5D-D1D7F794D189}
 		{1012C962-7F6D-4EC5-A0EC-0741A95BAD6B} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
+		{A7CACAE7-66E7-43DA-948B-28EB0DDDB582} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
+		{5F68A5B1-7907-4B16-8AFE-326E9DD7D65B} = {126EA539-4B28-4B07-8B5D-D1D7F794D189}
+		{16C89E7C-1575-4685-8DFA-8E7E2C6101BF} = {541093F6-616E-43D9-B671-FCD1F9C0A181}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {1FBD8DF1-D90A-4F21-8EB6-DA17B9431FE3}
 		{9FE6A783-C20D-4097-9988-4178E2C4CE75} = {126EA539-4B28-4B07-8B5D-D1D7F794D189}
+		SolutionGuid = {1FBD8DF1-D90A-4F21-8EB6-DA17B9431FE3}
 	EndGlobalSection
 EndGlobal

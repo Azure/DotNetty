@@ -77,14 +77,14 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                         result = this.sequenceEqual;
                     }
                 }
-                finally 
+                finally
                 {
                     this.resetEvent.Reset();
                     this.sequenceEqual = false;
                 }
 
                 return result;
-            } 
+            }
         }
 
         static readonly byte[] Data = { 0, 1, 2, 3 };
@@ -171,7 +171,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                 this.Output.WriteLine($"Unicast server binding to:({addressFamily}){address}");
                 Task<IChannel> task = serverBootstrap.BindAsync(address, IPEndPoint.MinPort);
 
-                Assert.True(task.Wait(TimeSpan.FromMilliseconds(DefaultTimeOutInMilliseconds * 5)), 
+                Assert.True(task.Wait(TimeSpan.FromMilliseconds(DefaultTimeOutInMilliseconds * 5)),
                     $"Unicast server binding to:({addressFamily}){address} timed out!");
 
                 serverChannel = (SocketDatagramChannel)task.Result;
@@ -190,7 +190,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                     }));
 
                 var clientEndPoint = new IPEndPoint(
-                    addressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 
+                    addressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any,
                     IPEndPoint.MinPort);
 
                 clientBootstrap

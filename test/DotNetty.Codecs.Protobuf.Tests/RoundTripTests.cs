@@ -3,7 +3,6 @@
 
 namespace DotNetty.Codecs.Protobuf.Tests
 {
-    using System;
     using System.Collections.Generic;
     using DotNetty.Buffers;
     using DotNetty.Transport.Channels.Embedded;

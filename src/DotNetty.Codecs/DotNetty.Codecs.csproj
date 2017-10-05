@@ -29,6 +29,9 @@
     <Compile Include="..\shared\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="1.3.1" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj" />
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj" />
     <ProjectReference Include="..\DotNetty.Transport\DotNetty.Transport.csproj" />

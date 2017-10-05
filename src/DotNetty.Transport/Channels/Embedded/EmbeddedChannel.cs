@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Diagnostics.Contracts;
     using System.Net;
     using System.Runtime.ExceptionServices;
     using System.Threading.Tasks;
@@ -85,15 +86,30 @@ namespace DotNetty.Transport.Channels.Embedded
             : this(id, hasDisconnect, true, handlers)
         { }
 
-        public EmbeddedChannel(IChannelId id, bool hasDisconnect, bool start, params IChannelHandler[] handlers)
+        public EmbeddedChannel(IChannelId id, bool hasDisconnect, bool register, params IChannelHandler[] handlers)
             : base(null, id)
         {
-            this.Metadata = hasDisconnect ? METADATA_DISCONNECT : METADATA_NO_DISCONNECT;
+            this.Metadata = GetMetadata(hasDisconnect);
             this.Configuration = new DefaultChannelConfiguration(this);
-            if (handlers == null)
-            {
-                throw new ArgumentNullException(nameof(handlers));
-            }
+            this.Setup(register, handlers);
+        }
+
+        public EmbeddedChannel(IChannelId id, bool hasDisconnect, IChannelConfiguration config, 
+            params IChannelHandler[] handlers)
+            : base(null, id)
+        {
+            Contract.Requires(config != null);
+
+            this.Metadata = GetMetadata(hasDisconnect);
+            this.Configuration = config;
+            this.Setup(true, handlers);
+        }
+
+        static ChannelMetadata GetMetadata(bool hasDisconnect) => hasDisconnect ? METADATA_DISCONNECT : METADATA_NO_DISCONNECT;
+
+        void Setup(bool register, params IChannelHandler[] handlers)
+        {
+            Contract.Requires(handlers != null);
 
             IChannelPipeline p = this.Pipeline;
             p.AddLast(new ActionChannelInitializer<IChannel>(channel =>
@@ -104,18 +120,20 @@ namespace DotNetty.Transport.Channels.Embedded
                     if (h == null)
                     {
                         break;
+                        
                     }
                     pipeline.AddLast(h);
                 }
             }));
 
-            if (start)
+            if (register)
             {
-                this.Start();
+                Task future = this.loop.RegisterAsync(this);
+                Debug.Assert(future.IsCompleted);
             }
         }
 
-        public void Start()
+        public void Register()
         {
             Task future = this.loop.RegisterAsync(this);
             Debug.Assert(future.IsCompleted);

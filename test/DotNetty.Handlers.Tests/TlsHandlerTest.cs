@@ -298,14 +298,14 @@ namespace DotNetty.Handlers.Tests
         public void NoAutoReadHandshakeProgresses(bool dropChannelActive)
         {
             var readHandler = new ReadRegisterHandler();
-            EmbeddedChannel ch = new EmbeddedChannel(EmbeddedChannelId.Instance, false, false,
+            var ch = new EmbeddedChannel(EmbeddedChannelId.Instance, false, false,
                readHandler,
                TlsHandler.Client("dotnetty.com"),
                new ActivatingHandler(dropChannelActive)
            );
 
            ch.Configuration.AutoRead = false;
-           ch.Start();
+           ch.Register();
            Assert.False(ch.Configuration.AutoRead);
            Assert.True(ch.WriteOutbound(Unpooled.Empty));
            Assert.True(readHandler.ReadIssued);

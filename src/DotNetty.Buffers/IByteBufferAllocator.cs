@@ -4,7 +4,7 @@
 namespace DotNetty.Buffers
 {
     /// <summary>
-    ///     Thread-safe interface for allocating <see cref="IByteBuffer" /> instances for use inside Helios reactive I/O
+    ///     Thread-safe interface for allocating <see cref="IByteBuffer" />/.
     /// </summary>
     public interface IByteBufferAllocator
     {

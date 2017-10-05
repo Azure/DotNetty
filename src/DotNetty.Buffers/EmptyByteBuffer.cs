@@ -156,6 +156,12 @@ namespace DotNetty.Buffers
 
         public IByteBuffer GetBytes(int index, Stream destination, int length) => this.CheckIndex(index, length);
 
+        public ICharSequence GetCharSequence(int index, int length, Encoding encoding)
+        {
+            this.CheckIndex(index, length);
+            return null;
+        }
+
         public string GetString(int index, int length, Encoding encoding)
         {
             this.CheckIndex(index, length);
@@ -218,6 +224,8 @@ namespace DotNetty.Buffers
 
         public IByteBuffer SetZero(int index, int length) => this.CheckIndex(index, length);
 
+        public int SetCharSequence(int index, ICharSequence sequence, Encoding encoding) => throw new IndexOutOfRangeException();
+
         public int SetString(int index, string value, Encoding encoding) => throw new IndexOutOfRangeException();
 
         public bool ReadBoolean() => throw new IndexOutOfRangeException();
@@ -275,6 +283,12 @@ namespace DotNetty.Buffers
         public IByteBuffer ReadBytes(byte[] destination, int dstIndex, int length) => this.CheckLength(length);
 
         public IByteBuffer ReadBytes(Stream destination, int length) => this.CheckLength(length);
+
+        public ICharSequence ReadCharSequence(int length, Encoding encoding)
+        {
+            this.CheckLength(length);
+            return null;
+        }
 
         public string ReadString(int length, Encoding encoding)
         {
@@ -337,6 +351,8 @@ namespace DotNetty.Buffers
         public IByteBuffer WriteBytes(byte[] src, int srcIndex, int length) => this.CheckLength(length);
 
         public IByteBuffer WriteZero(int length) => this.CheckLength(length);
+
+        public int WriteCharSequence(ICharSequence sequence, Encoding encoding) => throw new IndexOutOfRangeException();
 
         public int WriteString(string value, Encoding encoding) => throw new IndexOutOfRangeException();
 

@@ -2263,6 +2263,17 @@ namespace DotNetty.Buffers.Tests
         public void SetBytesAfterRelease3() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().SetBytes(0, this.ReleaseLater(Unpooled.Buffer()), 0, 1));
 
         [Fact]
+        public void SetUsAsciiCharSequenceAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.SetCharSequenceAfterRelease0(Encoding.ASCII));
+
+        [Fact]
+        public void SetUtf8CharSequenceAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.SetCharSequenceAfterRelease0(Encoding.UTF8));
+
+        [Fact]
+        public void SetUtf16CharSequenceAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.SetCharSequenceAfterRelease0(Encoding.Unicode));
+
+        void SetCharSequenceAfterRelease0(Encoding encoding) => this.ReleasedBuffer().SetCharSequence(0, new StringCharSequence("x"), encoding);
+
+        [Fact]
         public void SetUsAsciiStringAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.SetStringAfterRelease0(Encoding.ASCII));
 
         [Fact]
@@ -2415,6 +2426,17 @@ namespace DotNetty.Buffers.Tests
         public void WriteZeroAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.ReleasedBuffer().WriteZero(1));
 
         [Fact]
+        public void WriteUsAsciiCharSequenceAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.WriteCharSequenceAfterRelease0(Encoding.ASCII));
+
+        [Fact]
+        public void WriteUtf8CharSequenceAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.WriteCharSequenceAfterRelease0(Encoding.UTF8));
+
+        [Fact]
+        public void WriteUtf16CharSequenceAfterRelease() => Assert.Throws<IllegalReferenceCountException>(() => this.WriteCharSequenceAfterRelease0(Encoding.Unicode));
+
+        void WriteCharSequenceAfterRelease0(Encoding encoding) => this.ReleasedBuffer().WriteCharSequence(new StringCharSequence("x"), encoding);
+
+        [Fact]
         public void WriteUsAsciiStringAfterRelease()  => Assert.Throws<IllegalReferenceCountException>(() => this.WriteStringAfterRelease0(Encoding.ASCII));
 
         [Fact]
@@ -2514,6 +2536,54 @@ namespace DotNetty.Buffers.Tests
             }
         }
 
+
+        [Fact]
+        public virtual void WriteUsAsciiCharSequenceExpand() => this.WriteCharSequenceExpand(Encoding.ASCII);
+
+        [Fact]
+        public virtual void WriteUtf8CharSequenceExpand() => this.WriteCharSequenceExpand(Encoding.UTF8);
+
+        [Fact]
+        public virtual void WriteUtf16CharSequenceExpand() => this.WriteCharSequenceExpand(Encoding.Unicode);
+
+        void WriteCharSequenceExpand(Encoding encoding)
+        {
+            IByteBuffer buf = this.NewBuffer(1);
+            try
+            {
+                int writerIndex = buf.Capacity - 1;
+                buf.SetWriterIndex(writerIndex);
+                int written = buf.WriteCharSequence(new StringCharSequence("AB"), encoding);
+                Assert.Equal(writerIndex, buf.WriterIndex - written);
+            }
+            finally
+            {
+                buf.Release();
+            }
+        }
+
+        [Fact]
+        public void SetUsAsciiCharSequenceNoExpand() => Assert.Throws<IndexOutOfRangeException>(() => this.SetCharSequenceNoExpand(Encoding.ASCII));
+
+        [Fact]
+        public void SetUtf8CharSequenceNoExpand() => Assert.Throws<IndexOutOfRangeException>(() => this.SetCharSequenceNoExpand(Encoding.UTF8));
+
+        [Fact]
+        public void SetUtf16CharSequenceNoExpand() => Assert.Throws<IndexOutOfRangeException>(() => this.SetCharSequenceNoExpand(Encoding.Unicode));
+
+        void SetCharSequenceNoExpand(Encoding encoding)
+        {
+            IByteBuffer buf = this.NewBuffer(1);
+            try
+            {
+                buf.SetCharSequence(0, new StringCharSequence("AB"), encoding);
+            }
+            finally
+            {
+                buf.Release();
+            }
+        }
+
         [Fact]
         public void SetUsAsciiStringNoExpand() => Assert.Throws<IndexOutOfRangeException>(() => this.SetStringNoExpand(Encoding.ASCII));
 
@@ -2534,6 +2604,24 @@ namespace DotNetty.Buffers.Tests
             {
                 buf.Release();
             }
+        }
+
+        [Fact]
+        public void SetUsAsciiCharSequence() => this.SetGetCharSequence(Encoding.ASCII);
+
+        [Fact]
+        public void SetUtf8CharSequence() => this.SetGetCharSequence(Encoding.UTF8);
+
+        [Fact]
+        public void SetUtf16CharSequence() => this.SetGetCharSequence(Encoding.Unicode);
+
+        void SetGetCharSequence(Encoding encoding)
+        {
+            IByteBuffer buf = this.NewBuffer(16);
+            var sequence = new StringCharSequence("AB");
+            int bytes = buf.SetCharSequence(1, sequence, encoding);
+            Assert.Equal(sequence, buf.GetCharSequence(1, bytes, encoding));
+            buf.Release();
         }
 
         [Fact]

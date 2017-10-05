@@ -20,7 +20,7 @@ namespace DotNetty.Common.Utilities
             return this.RetainCore(increment);
         }
 
-        IReferenceCounted RetainCore(int increment)
+        protected virtual IReferenceCounted RetainCore(int increment)
         {
             while (true)
             {

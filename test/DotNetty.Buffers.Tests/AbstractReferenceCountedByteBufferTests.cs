@@ -128,9 +128,9 @@ namespace DotNetty.Buffers.Tests
 
             public override bool HasMemoryAddress => throw new NotSupportedException();
 
-            public override ref byte GetPinnableMemoryAddress() => throw new NotSupportedException();
-
             public override IntPtr AddressOfPinnedMemory() => throw new NotSupportedException();
+
+            public override ref byte GetPinnableMemoryAddress() => throw new NotSupportedException();
 
             public override IByteBuffer Unwrap() => throw new NotSupportedException();
 

@@ -59,7 +59,11 @@ namespace DotNetty.Buffers
             this.DiscardMarks();
         }
 
-        public override int Capacity => this.Length;
+        public override int Capacity
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this.Length;
+        }
 
         public sealed override IByteBuffer AdjustCapacity(int newCapacity)
         {
