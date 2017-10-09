@@ -103,6 +103,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpc.Server", "examples\Rpc.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rpc.Client", "examples\Rpc.Client\Rpc.Client.csproj", "{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetty.Transport.Libuv", "src\DotNetty.Transport.Libuv\DotNetty.Transport.Libuv.csproj", "{BD6A9B60-7B8C-4699-A5B3-1EBBCE620FC1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -273,6 +275,10 @@ Global
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD6A9B60-7B8C-4699-A5B3-1EBBCE620FC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD6A9B60-7B8C-4699-A5B3-1EBBCE620FC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD6A9B60-7B8C-4699-A5B3-1EBBCE620FC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD6A9B60-7B8C-4699-A5B3-1EBBCE620FC1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -319,6 +325,7 @@ Global
 		{F22E6E68-19B2-4531-A018-E8E5520DE642} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
 		{7C203C52-CDED-4967-A90C-769F67541790} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
 		{7AECA244-5BF1-4105-A4E4-CDD13013C4DD} = {F716F1EF-81EF-4020-914A-5422A13A9E13}
+		{BD6A9B60-7B8C-4699-A5B3-1EBBCE620FC1} = {126EA539-4B28-4B07-8B5D-D1D7F794D189}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1C23B2EE-37C5-4411-A1E3-B37B38AA4D71}
