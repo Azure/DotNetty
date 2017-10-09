@@ -27,6 +27,9 @@
     <Compile Include="..\shared\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.4.0" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">

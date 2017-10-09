@@ -62,7 +62,9 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.WorkerGroup = new MultithreadEventLoopGroup();
 
             Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-            this.message = Unpooled.Buffer().WriteInt(3).WriteBytes(iso.GetBytes("ABC")).ToArray();
+            IByteBuffer buf = Unpooled.Buffer().WriteInt(3).WriteBytes(iso.GetBytes("ABC"));
+            this.message = new byte[buf.ReadableBytes];
+            buf.GetBytes(buf.ReaderIndex, this.message);
 
             this.inboundThroughputCounter = context.GetCounter(InboundThroughputCounterName);
             var counterHandler = new CounterHandlerInbound(this.inboundThroughputCounter);

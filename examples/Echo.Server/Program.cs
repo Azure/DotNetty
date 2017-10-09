@@ -13,6 +13,7 @@ namespace Echo.Server
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
+    using DotNetty.Transport.Libuv;
     using Examples.Common;
 
     class Program
@@ -21,8 +22,21 @@ namespace Echo.Server
         {
             ExampleHelper.SetConsoleLogger();
 
-            var bossGroup = new MultithreadEventLoopGroup(1);
-            var workerGroup = new MultithreadEventLoopGroup();
+            IEventLoopGroup bossGroup;
+            IEventLoopGroup workerGroup;
+
+            if (ServerSettings.UseLibuv)
+            {
+                var dispatcher = new DispatcherEventLoop();
+                bossGroup = new MultithreadEventLoopGroup(_ => dispatcher, 1);
+                workerGroup = new WorkerEventLoopGroup(dispatcher);
+            }
+            else
+            {
+                bossGroup = new MultithreadEventLoopGroup(1);
+                workerGroup = new MultithreadEventLoopGroup();
+            }
+
             X509Certificate2 tlsCertificate = null;
             if (ServerSettings.IsSsl)
             {
@@ -32,11 +46,21 @@ namespace Echo.Server
             {
                 var bootstrap = new ServerBootstrap();
                 bootstrap
-                    .Group(bossGroup, workerGroup)
-                    .Channel<TcpServerSocketChannel>()
+                    .Group(bossGroup, workerGroup);
+
+                if (ServerSettings.UseLibuv)
+                {
+                    bootstrap.Channel<TcpServerChannel>();
+                }
+                else
+                {
+                    bootstrap.Channel<TcpServerSocketChannel>();
+                }
+
+                bootstrap
                     .Option(ChannelOption.SoBacklog, 100)
                     .Handler(new LoggingHandler("SRV-LSTN"))
-                    .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
+                    .ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
                         if (tlsCertificate != null)

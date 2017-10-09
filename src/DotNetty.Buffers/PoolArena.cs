@@ -5,10 +5,11 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
-    using System.Runtime.CompilerServices;
     using System.Text;
     using System.Threading;
+    using DotNetty.Common.Internal;
     using DotNetty.Common.Utilities;
 
     enum SizeClass
@@ -20,12 +21,11 @@ namespace DotNetty.Buffers
 
     abstract class PoolArena<T> : IPoolArenaMetric
     {
-        internal static readonly int NumTinySubpagePools = 512 >> 4;
+        internal const int NumTinySubpagePools = 512 >> 4;
 
         internal readonly PooledByteBufferAllocator Parent;
 
         readonly int maxOrder;
-        readonly int maxChunkCount;
         internal readonly int PageSize;
         internal readonly int PageShifts;
         internal readonly int ChunkSize;
@@ -41,21 +41,22 @@ namespace DotNetty.Buffers
         readonly PoolChunkList<T> q075;
         readonly PoolChunkList<T> q100;
 
-        readonly List<IPoolChunkListMetric> chunkListMetrics;
-
-        int chunkCount;
+        readonly IReadOnlyList<IPoolChunkListMetric> chunkListMetrics;
 
         // Metrics for allocations and deallocations
-        long allocationsTiny;
-        long allocationsSmall;
         long allocationsNormal;
+
         // We need to use the LongCounter here as this is not guarded via synchronized block.
+        long allocationsTiny;
+
+        long allocationsSmall;
         long allocationsHuge;
         long activeBytesHuge;
 
         long deallocationsTiny;
         long deallocationsSmall;
         long deallocationsNormal;
+
         // We need to use the LongCounter here as this is not guarded via synchronized block.
         long deallocationsHuge;
 
@@ -65,14 +66,18 @@ namespace DotNetty.Buffers
         // TODO: Test if adding padding helps under contention
         //private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
 
-        protected PoolArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize, int maxChunkCount)
+        protected PoolArena(
+            PooledByteBufferAllocator parent,
+            int pageSize,
+            int maxOrder,
+            int pageShifts,
+            int chunkSize)
         {
             this.Parent = parent;
             this.PageSize = pageSize;
             this.maxOrder = maxOrder;
             this.PageShifts = pageShifts;
             this.ChunkSize = chunkSize;
-            this.maxChunkCount = maxChunkCount;
             this.SubpageOverflowMask = ~(pageSize - 1);
             this.tinySubpagePools = this.NewSubpagePoolArray(NumTinySubpagePools);
             for (int i = 0; i < this.tinySubpagePools.Length; i++)
@@ -87,12 +92,12 @@ namespace DotNetty.Buffers
                 this.smallSubpagePools[i] = this.NewSubpagePoolHead(pageSize);
             }
 
-            this.q100 = new PoolChunkList<T>(null, 100, int.MaxValue, chunkSize);
-            this.q075 = new PoolChunkList<T>(this.q100, 75, 100, chunkSize);
-            this.q050 = new PoolChunkList<T>(this.q075, 50, 100, chunkSize);
-            this.q025 = new PoolChunkList<T>(this.q050, 25, 75, chunkSize);
-            this.q000 = new PoolChunkList<T>(this.q025, 1, 50, chunkSize);
-            this.qInit = new PoolChunkList<T>(this.q000, int.MinValue, 25, chunkSize);
+            this.q100 = new PoolChunkList<T>(this, null, 100, int.MaxValue, chunkSize);
+            this.q075 = new PoolChunkList<T>(this, this.q100, 75, 100, chunkSize);
+            this.q050 = new PoolChunkList<T>(this, this.q075, 50, 100, chunkSize);
+            this.q025 = new PoolChunkList<T>(this, this.q050, 25, 75, chunkSize);
+            this.q000 = new PoolChunkList<T>(this, this.q025, 1, 50, chunkSize);
+            this.qInit = new PoolChunkList<T>(this, this.q000, int.MinValue, 25, chunkSize);
 
             this.q100.PrevList(this.q075);
             this.q075.PrevList(this.q050);
@@ -110,12 +115,6 @@ namespace DotNetty.Buffers
             metrics.Add(this.q100);
             this.chunkListMetrics = metrics;
         }
-
-        public int NumThreadCaches => Volatile.Read(ref this.numThreadCaches);
-
-        public void RegisterThreadCache() => Interlocked.Increment(ref this.numThreadCaches);
-
-        public void DeregisterThreadCache() => Interlocked.Decrement(ref this.numThreadCaches);
 
         PoolSubpage<T> NewSubpagePoolHead(int pageSize)
         {
@@ -187,32 +186,30 @@ namespace DotNetty.Buffers
 
                 PoolSubpage<T> head = table[tableIdx];
 
-                /**
-                 * Synchronize on the head. This is needed as {@link PoolSubpage#allocate()} and
-                 * {@link PoolSubpage#free(int)} may modify the doubly linked list as well.
-                 */
+                //
+                //  Synchronize on the head. This is needed as {@link PoolSubpage#allocate()} and
+                // {@link PoolSubpage#free(int)} may modify the doubly linked list as well.
+                // 
                 lock (head)
                 {
                     PoolSubpage<T> s = head.Next;
                     if (s != head)
                     {
-                        Contract.Assert(s.DoNotDestroy && s.ElemSize == normCapacity);
+                        Debug.Assert(s.DoNotDestroy && s.ElemSize == normCapacity);
                         long handle = s.Allocate();
-                        Contract.Assert(handle >= 0);
+                        Debug.Assert(handle >= 0);
                         s.Chunk.InitBufWithSubpage(buf, handle, reqCapacity);
-
-                        if (tiny)
-                        {
-                            ++this.allocationsTiny;
-                        }
-                        else
-                        {
-                            ++this.allocationsSmall;
-                        }
+                        this.IncTinySmallAllocation(tiny);
                         return;
                     }
                 }
-                this.AllocateNormal(buf, reqCapacity, normCapacity);
+
+                lock (this)
+                {
+                    this.AllocateNormal(buf, reqCapacity, normCapacity);
+                }
+
+                this.IncTinySmallAllocation(tiny);
                 return;
             }
             if (normCapacity <= this.ChunkSize)
@@ -222,7 +219,12 @@ namespace DotNetty.Buffers
                     // was able to allocate out of the cache so move on
                     return;
                 }
-                this.AllocateNormal(buf, reqCapacity, normCapacity);
+
+                lock (this)
+                {
+                    this.AllocateNormal(buf, reqCapacity, normCapacity);
+                    this.allocationsNormal++;
+                }
             }
             else
             {
@@ -233,38 +235,36 @@ namespace DotNetty.Buffers
 
         void AllocateNormal(PooledByteBuffer<T> buf, int reqCapacity, int normCapacity)
         {
-            lock (this)
+            if (this.q050.Allocate(buf, reqCapacity, normCapacity) || this.q025.Allocate(buf, reqCapacity, normCapacity)
+                || this.q000.Allocate(buf, reqCapacity, normCapacity) || this.qInit.Allocate(buf, reqCapacity, normCapacity)
+                || this.q075.Allocate(buf, reqCapacity, normCapacity))
             {
-                if (this.q050.Allocate(buf, reqCapacity, normCapacity) || this.q025.Allocate(buf, reqCapacity, normCapacity)
-                    || this.q000.Allocate(buf, reqCapacity, normCapacity) || this.qInit.Allocate(buf, reqCapacity, normCapacity)
-                    || this.q075.Allocate(buf, reqCapacity, normCapacity))
-                {
-                    ++this.allocationsNormal;
-                    return;
-                }
-
-                if (this.chunkCount < this.maxChunkCount)
-                {
-                    // Add a new chunk.
-                    PoolChunk<T> c = this.NewChunk(this.PageSize, this.maxOrder, this.PageShifts, this.ChunkSize);
-                    this.chunkCount++;
-                    long handle = c.Allocate(normCapacity);
-                    ++this.allocationsNormal;
-                    Contract.Assert(handle > 0);
-                    c.InitBuf(buf, handle, reqCapacity);
-                    this.qInit.Add(c);
-                    return;
-                }
+                return;
             }
 
-            PoolChunk<T> chunk = this.NewUnpooledChunk(reqCapacity, false);
-            buf.InitUnpooled(chunk, reqCapacity);
-            Interlocked.Increment(ref this.allocationsNormal);
+            // Add a new chunk.
+            PoolChunk<T> c = this.NewChunk(this.PageSize, this.maxOrder, this.PageShifts, this.ChunkSize);
+            long handle = c.Allocate(normCapacity);
+            Debug.Assert(handle > 0);
+            c.InitBuf(buf, handle, reqCapacity);
+            this.qInit.Add(c);
+        }
+
+        void IncTinySmallAllocation(bool tiny)
+        {
+            if (tiny)
+            {
+                Interlocked.Increment(ref this.allocationsTiny);
+            }
+            else
+            {
+                Interlocked.Increment(ref this.allocationsSmall);
+            }
         }
 
         void AllocateHuge(PooledByteBuffer<T> buf, int reqCapacity)
         {
-            PoolChunk<T> chunk = this.NewUnpooledChunk(reqCapacity, true);
+            PoolChunk<T> chunk = this.NewUnpooledChunk(reqCapacity);
             Interlocked.Add(ref this.activeBytesHuge, chunk.ChunkSize);
             buf.InitUnpooled(chunk, reqCapacity);
             Interlocked.Increment(ref this.allocationsHuge);
@@ -276,29 +276,19 @@ namespace DotNetty.Buffers
             {
                 int size = chunk.ChunkSize;
                 this.DestroyChunk(chunk);
-                switch (chunk.Origin)
-                {
-                    case PoolChunk<T>.PoolChunkOrigin.UnpooledNormal:
-                        Interlocked.Decrement(ref this.deallocationsNormal);
-                        break;
-                    case PoolChunk<T>.PoolChunkOrigin.UnpooledHuge:
-                        Interlocked.Add(ref this.activeBytesHuge, -size);
-                        Interlocked.Decrement(ref this.deallocationsHuge);
-                        break;
-                    default:
-                        throw new InvalidOperationException("Unsupported PoolChunk.Origin: " + chunk.Origin);
-                }
+                Interlocked.Add(ref this.activeBytesHuge, -size);
+                Interlocked.Increment(ref this.deallocationsHuge);
             }
             else
             {
-                SizeClass sc = this.SizeClass(normCapacity);
-                if (cache != null && cache.Add(this, chunk, handle, normCapacity, sc))
+                SizeClass sizeClass = this.SizeClass(normCapacity);
+                if (cache != null && cache.Add(this, chunk, handle, normCapacity, sizeClass))
                 {
                     // cached so not free it.
                     return;
                 }
 
-                this.FreeChunk(chunk, handle, sc);
+                this.FreeChunk(chunk, handle, sizeClass);
             }
         }
 
@@ -308,12 +298,13 @@ namespace DotNetty.Buffers
             {
                 return Buffers.SizeClass.Normal;
             }
+
             return IsTiny(normCapacity) ? Buffers.SizeClass.Tiny : Buffers.SizeClass.Small;
         }
 
         internal void FreeChunk(PoolChunk<T> chunk, long handle, SizeClass sizeClass)
         {
-            bool mustDestroyChunk;
+            bool destroyChunk;
             lock (this)
             {
                 switch (sizeClass)
@@ -330,9 +321,9 @@ namespace DotNetty.Buffers
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-                mustDestroyChunk = !chunk.Parent.Free(chunk, handle);
+                destroyChunk = !chunk.Parent.Free(chunk, handle);
             }
-            if (mustDestroyChunk)
+            if (destroyChunk)
             {
                 // destroyChunk not need to be called while holding the synchronized lock.
                 this.DestroyChunk(chunk);
@@ -366,7 +357,7 @@ namespace DotNetty.Buffers
 
         internal int NormalizeCapacity(int reqCapacity)
         {
-            Contract.Requires(reqCapacity >= 0);
+            Contract.Requires(reqCapacity >= 0 && reqCapacity >= this.ChunkSize);
 
             if (reqCapacity >= this.ChunkSize)
             {
@@ -455,6 +446,12 @@ namespace DotNetty.Buffers
             }
         }
 
+        internal void IncrementNumThreadCaches() => Interlocked.Increment(ref this.numThreadCaches);
+
+        internal void DecrementNumThreadCaches() => Interlocked.Decrement(ref this.numThreadCaches);
+
+        public int NumThreadCaches => Volatile.Read(ref this.numThreadCaches);
+
         public int NumTinySubpages => this.tinySubpagePools.Length;
 
         public int NumSmallSubpages => this.smallSubpagePools.Length;
@@ -470,15 +467,14 @@ namespace DotNetty.Buffers
         static List<IPoolSubpageMetric> SubPageMetricList(PoolSubpage<T>[] pages)
         {
             var metrics = new List<IPoolSubpageMetric>();
-            for (int i = 1; i < pages.Length; i++)
+            foreach (PoolSubpage<T> head in pages)
             {
-                PoolSubpage<T> head = pages[i];
                 if (head.Next == head)
                 {
                     continue;
                 }
                 PoolSubpage<T> s = head.Next;
-                for (;;)
+                for (; ;)
                 {
                     metrics.Add(s);
                     s = s.Next;
@@ -491,27 +487,63 @@ namespace DotNetty.Buffers
             return metrics;
         }
 
-        public long NumAllocations => this.allocationsTiny + this.allocationsSmall + this.allocationsNormal + this.NumHugeAllocations;
+        public long NumAllocations
+        {
+            get
+            {
+                long allocsNormal;
+                lock (this)
+                {
+                    allocsNormal = this.allocationsNormal;
+                }
 
-        public long NumTinyAllocations => this.allocationsTiny;
+                return this.NumTinyAllocations + this.NumSmallAllocations + allocsNormal + this.NumHugeAllocations;
+            }
+        }
 
-        public long NumSmallAllocations => this.allocationsSmall;
+        public long NumTinyAllocations => Volatile.Read(ref this.allocationsTiny);
 
-        public long NumNormalAllocations => this.allocationsNormal;
+        public long NumSmallAllocations => Volatile.Read(ref this.allocationsSmall);
 
-        public long NumDeallocations => this.deallocationsTiny + this.deallocationsSmall + this.deallocationsNormal + this.NumHugeDeallocations;
+        public long NumNormalAllocations => Volatile.Read(ref this.allocationsNormal);
 
-        public long NumTinyDeallocations => this.deallocationsTiny;
+        public long NumDeallocations
+        {
+            get
+            {
+                long deallocs;
+                lock (this)
+                {
+                    deallocs = this.deallocationsTiny + this.deallocationsSmall + this.deallocationsNormal;
+                }
 
-        public long NumSmallDeallocations => this.deallocationsSmall;
+                return deallocs + this.NumHugeDeallocations;
+            }
+        }
 
-        public long NumNormalDeallocations => this.deallocationsNormal;
+        public long NumTinyDeallocations => Volatile.Read(ref this.deallocationsTiny);
+
+        public long NumSmallDeallocations => Volatile.Read(ref this.deallocationsSmall);
+
+        public long NumNormalDeallocations => Volatile.Read(ref this.deallocationsNormal);
 
         public long NumHugeAllocations => Volatile.Read(ref this.allocationsHuge);
 
         public long NumHugeDeallocations => Volatile.Read(ref this.deallocationsHuge);
 
-        public long NumActiveAllocations => Math.Max(this.NumAllocations - this.NumDeallocations, 0);
+        public long NumActiveAllocations
+        {
+            get
+            {
+                long val = this.NumTinyAllocations + this.NumSmallAllocations + this.NumHugeAllocations
+                    - this.NumHugeDeallocations;
+                lock(this)
+                {
+                    val += this.allocationsNormal - (this.deallocationsTiny + this.deallocationsSmall + this.deallocationsNormal);
+                }
+                return Math.Max(val, 0);
+            }
+        }
 
         public long NumActiveTinyAllocations => Math.Max(this.NumTinyAllocations - this.NumTinyDeallocations, 0);
 
@@ -524,7 +556,7 @@ namespace DotNetty.Buffers
                 long val;
                 lock (this)
                 {
-                    val = this.NumNormalAllocations - this.NumNormalDeallocations;
+                    val = this.allocationsNormal - this.deallocationsNormal;
                 }
                 return Math.Max(val, 0);
             }
@@ -539,9 +571,9 @@ namespace DotNetty.Buffers
                 long val = Volatile.Read(ref this.activeBytesHuge);
                 lock (this)
                 {
-                    for (int i = 0; i < this.chunkListMetrics.Count; i++)
+                    foreach (IPoolChunkListMetric t in this.chunkListMetrics)
                     {
-                        foreach (IPoolChunkMetric m in this.chunkListMetrics[i])
+                        foreach (IPoolChunkMetric m in t)
                         {
                             val += m.ChunkSize;
                         }
@@ -553,109 +585,117 @@ namespace DotNetty.Buffers
 
         protected abstract PoolChunk<T> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize);
 
-        protected abstract PoolChunk<T> NewUnpooledChunk(int capacity, bool huge);
+        protected abstract PoolChunk<T> NewUnpooledChunk(int capacity);
 
         protected abstract PooledByteBuffer<T> NewByteBuf(int maxCapacity);
 
         protected abstract void MemoryCopy(T src, int srcOffset, T dst, int dstOffset, int length);
 
-        protected abstract void DestroyChunk(PoolChunk<T> chunk);
+        protected internal abstract void DestroyChunk(PoolChunk<T> chunk);
 
         public override string ToString()
         {
-            lock (this)
+            StringBuilder buf = new StringBuilder()
+                .Append("Chunk(s) at 0~25%:")
+                .Append(StringUtil.Newline)
+                .Append(this.qInit)
+                .Append(StringUtil.Newline)
+                .Append("Chunk(s) at 0~50%:")
+                .Append(StringUtil.Newline)
+                .Append(this.q000)
+                .Append(StringUtil.Newline)
+                .Append("Chunk(s) at 25~75%:")
+                .Append(StringUtil.Newline)
+                .Append(this.q025)
+                .Append(StringUtil.Newline)
+                .Append("Chunk(s) at 50~100%:")
+                .Append(StringUtil.Newline)
+                .Append(this.q050)
+                .Append(StringUtil.Newline)
+                .Append("Chunk(s) at 75~100%:")
+                .Append(StringUtil.Newline)
+                .Append(this.q075)
+                .Append(StringUtil.Newline)
+                .Append("Chunk(s) at 100%:")
+                .Append(StringUtil.Newline)
+                .Append(this.q100)
+                .Append(StringUtil.Newline)
+                .Append("tiny subpages:");
+            AppendPoolSubPages(buf, this.tinySubpagePools);
+            buf.Append(StringUtil.Newline)
+                .Append("small subpages:");
+            AppendPoolSubPages(buf, this.smallSubpagePools);
+            buf.Append(StringUtil.Newline);
+
+            return buf.ToString();
+        }
+
+        static void AppendPoolSubPages(StringBuilder buf, PoolSubpage<T>[] subpages)
+        {
+            for (int i = 0; i < subpages.Length; i++)
             {
-                StringBuilder buf = new StringBuilder()
-                    .Append("Chunk(s) at 0~25%:")
-                    .Append(StringUtil.Newline)
-                    .Append(this.qInit)
-                    .Append(StringUtil.Newline)
-                    .Append("Chunk(s) at 0~50%:")
-                    .Append(StringUtil.Newline)
-                    .Append(this.q000)
-                    .Append(StringUtil.Newline)
-                    .Append("Chunk(s) at 25~75%:")
-                    .Append(StringUtil.Newline)
-                    .Append(this.q025)
-                    .Append(StringUtil.Newline)
-                    .Append("Chunk(s) at 50~100%:")
-                    .Append(StringUtil.Newline)
-                    .Append(this.q050)
-                    .Append(StringUtil.Newline)
-                    .Append("Chunk(s) at 75~100%:")
-                    .Append(StringUtil.Newline)
-                    .Append(this.q075)
-                    .Append(StringUtil.Newline)
-                    .Append("Chunk(s) at 100%:")
-                    .Append(StringUtil.Newline)
-                    .Append(this.q100)
-                    .Append(StringUtil.Newline)
-                    .Append("tiny subpages:");
-                for (int i = 1; i < this.tinySubpagePools.Length; i++)
+                PoolSubpage<T> head = subpages[i];
+                if (head.Next == head)
                 {
-                    PoolSubpage<T> head = this.tinySubpagePools[i];
-                    if (head.Next == head)
-                    {
-                        continue;
-                    }
-
-                    buf.Append(StringUtil.Newline)
-                        .Append(i)
-                        .Append(": ");
-                    PoolSubpage<T> s = head.Next;
-                    for (;;)
-                    {
-                        buf.Append(s);
-                        s = s.Next;
-                        if (s == head)
-                        {
-                            break;
-                        }
-                    }
+                    continue;
                 }
+
                 buf.Append(StringUtil.Newline)
-                    .Append("small subpages:");
-                for (int i = 1; i < this.smallSubpagePools.Length; i++)
+                    .Append(i)
+                    .Append(": ");
+                PoolSubpage<T> s = head.Next;
+                for (;;)
                 {
-                    PoolSubpage<T> head = this.smallSubpagePools[i];
-                    if (head.Next == head)
+                    buf.Append(s);
+                    s = s.Next;
+                    if (s == head)
                     {
-                        continue;
-                    }
-
-                    buf.Append(StringUtil.Newline)
-                        .Append(i)
-                        .Append(": ");
-                    PoolSubpage<T> s = head.Next;
-                    for (;;)
-                    {
-                        buf.Append(s);
-                        s = s.Next;
-                        if (s == head)
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
-                buf.Append(StringUtil.Newline);
+            }
+        }
 
-                return buf.ToString();
+        ~PoolArena()
+        {
+            DestroyPoolSubPages(this.smallSubpagePools);
+            DestroyPoolSubPages(this.tinySubpagePools);
+            this.DestroyPoolChunkLists(this.qInit, this.q000, this.q025, this.q050, this.q075, this.q100);
+        }
+
+        static void DestroyPoolSubPages(PoolSubpage<T>[] pages)
+        {
+            foreach (PoolSubpage<T> page in pages)
+            {
+                page.Destroy();
+            }
+        }
+
+        void DestroyPoolChunkLists(params PoolChunkList<T>[] chunkLists)
+        {
+            foreach (PoolChunkList<T> chunkList in chunkLists)
+            {
+                chunkList.Destroy(this);
             }
         }
     }
 
     sealed class HeapArena : PoolArena<byte[]>
     {
-        public HeapArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize, int maxChunkCount)
-            : base(parent, pageSize, maxOrder, pageShifts, chunkSize, maxChunkCount)
+        public HeapArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize)
+            : base(parent, pageSize, maxOrder, pageShifts, chunkSize)
         {
         }
 
-        protected override PoolChunk<byte[]> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize) => new PoolChunk<byte[]>(this, new byte[chunkSize], pageSize, maxOrder, pageShifts, chunkSize);
+        static byte[] NewByteArray(int size) => new byte[size];
 
-        protected override PoolChunk<byte[]> NewUnpooledChunk(int capacity, bool huge) => new PoolChunk<byte[]>(this, new byte[capacity], capacity, huge);
+        protected override PoolChunk<byte[]> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize) => 
+            new PoolChunk<byte[]>(this, NewByteArray(chunkSize), pageSize, maxOrder, pageShifts, chunkSize, 0);
 
-        protected override void DestroyChunk(PoolChunk<byte[]> chunk)
+        protected override PoolChunk<byte[]> NewUnpooledChunk(int capacity) => 
+            new PoolChunk<byte[]>(this, NewByteArray(capacity), capacity, 0);
+
+        protected internal override void DestroyChunk(PoolChunk<byte[]> chunk)
         {
             // Rely on GC.
         }
@@ -669,7 +709,7 @@ namespace DotNetty.Buffers
                 return;
             }
 
-            Array.Copy(src, srcOffset, dst, dstOffset, length);
+            PlatformDependent.CopyMemory(src, srcOffset, dst, dstOffset, length);
         }
     }
 }

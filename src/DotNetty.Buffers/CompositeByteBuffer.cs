@@ -4,17 +4,22 @@
 namespace DotNetty.Buffers
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Diagnostics.Contracts;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
+    using DotNetty.Common.Internal;
     using DotNetty.Common.Utilities;
 
-    public sealed class CompositeByteBuffer : AbstractReferenceCountedByteBuffer
+    public class CompositeByteBuffer : AbstractReferenceCountedByteBuffer, IEnumerable<IByteBuffer>
     {
+        static readonly IList<IByteBuffer> EmptyList = new ReadOnlyCollection<IByteBuffer>(new IByteBuffer[0]);
+
         class ComponentEntry
         {
             public readonly IByteBuffer Buffer;
@@ -32,11 +37,7 @@ namespace DotNetty.Buffers
         }
 
         static readonly ArraySegment<byte> EmptyNioBuffer = Unpooled.Empty.GetIoBuffer();
-
-        readonly IResourceLeak leak;
-        readonly IByteBufferAllocator allocator;
-        readonly List<ComponentEntry> components = new List<ComponentEntry>();
-        readonly int maxNumComponents;
+        readonly List<ComponentEntry> components;
 
         bool freed;
 
@@ -46,38 +47,29 @@ namespace DotNetty.Buffers
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
 
-            this.allocator = allocator;
-            this.maxNumComponents = maxNumComponents;
-            this.leak = LeakDetector.Open(this);
+            this.Allocator = allocator;
+            this.MaxNumComponents = maxNumComponents;
+            this.components = NewList(maxNumComponents);
         }
 
         public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, params IByteBuffer[] buffers)
-            : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
+            : this(allocator, maxNumComponents, buffers, 0, buffers.Length)
         {
-            Contract.Requires(allocator != null);
-            Contract.Requires(maxNumComponents >= 2);
-
-            this.allocator = allocator;
-            this.maxNumComponents = maxNumComponents;
-
-            this.AddComponents0(0, buffers);
-            this.ConsolidateIfNeeded();
-            this.SetIndex(0, this.Capacity);
-            this.leak = LeakDetector.Open(this);
         }
 
-        public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, IByteBuffer[] buffers, int offset, int length)
+        internal CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, IByteBuffer[] buffers, int offset, int length)
             : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
         {
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
 
-            this.allocator = allocator;
-            this.maxNumComponents = maxNumComponents;
-            this.AddComponents0(0, buffers, offset, length);
+            this.Allocator = allocator;
+            this.MaxNumComponents = maxNumComponents;
+            this.components = NewList(maxNumComponents);
+
+            this.AddComponents0(false, 0, buffers, offset, length);
             this.ConsolidateIfNeeded();
-            this.SetIndex(0, this.Capacity);
-            this.leak = LeakDetector.Open(this);
+            this.SetIndex0(0, GetCapacity(this.components));
         }
 
         public CompositeByteBuffer(
@@ -87,12 +79,25 @@ namespace DotNetty.Buffers
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
 
-            this.allocator = allocator;
-            this.maxNumComponents = maxNumComponents;
-            this.AddComponents0(0, buffers);
+            this.Allocator = allocator;
+            this.MaxNumComponents = maxNumComponents;
+
+            this.components = NewList(maxNumComponents);
+
+            this.AddComponents0(false, 0, buffers);
             this.ConsolidateIfNeeded();
-            this.SetIndex(0, this.Capacity);
-            this.leak = LeakDetector.Open(this);
+            this.SetIndex0(0, GetCapacity(this.components));
+        }
+
+        static List<ComponentEntry> NewList(int maxNumComponents) =>
+            new List<ComponentEntry>(Math.Min(AbstractByteBufferAllocator.DefaultMaxComponents, maxNumComponents));
+
+        // Special constructor used by WrappedCompositeByteBuf
+        internal CompositeByteBuffer(IByteBufferAllocator allocator) : base(int.MaxValue)
+        {
+            this.Allocator = allocator;
+            this.MaxNumComponents = 0;
+            this.components = new List<ComponentEntry>(0);
         }
 
         /// <summary>
@@ -101,12 +106,7 @@ namespace DotNetty.Buffers
         ///     If you need to have it increased you need to handle it by your own.
         ///     @param buffer the {@link IByteBuffer} to add
         /// </summary>
-        public CompositeByteBuffer AddComponent(IByteBuffer buffer)
-        {
-            this.AddComponent0(this.components.Count, buffer);
-            this.ConsolidateIfNeeded();
-            return this;
-        }
+        public virtual CompositeByteBuffer AddComponent(IByteBuffer buffer) => this.AddComponent(false, buffer);
 
         /// <summary>
         ///     Add the given {@link IByteBuffer}s.
@@ -114,12 +114,7 @@ namespace DotNetty.Buffers
         ///     If you need to have it increased you need to handle it by your own.
         ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
-        public CompositeByteBuffer AddComponents(params IByteBuffer[] buffers)
-        {
-            this.AddComponents0(this.components.Count, buffers);
-            this.ConsolidateIfNeeded();
-            return this;
-        }
+        public virtual CompositeByteBuffer AddComponents(params IByteBuffer[] buffers) => this.AddComponents(false, buffers);
 
         /// <summary>
         ///     Add the given {@link IByteBuffer}s.
@@ -127,12 +122,7 @@ namespace DotNetty.Buffers
         ///     If you need to have it increased you need to handle it by your own.
         ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
-        public CompositeByteBuffer AddComponents(IEnumerable<IByteBuffer> buffers)
-        {
-            this.AddComponents0(this.components.Count, buffers);
-            this.ConsolidateIfNeeded();
-            return this;
-        }
+        public virtual CompositeByteBuffer AddComponents(IEnumerable<IByteBuffer> buffers) => this.AddComponents(false, buffers);
 
         /// <summary>
         ///     Add the given {@link IByteBuffer} on the specific index.
@@ -141,46 +131,86 @@ namespace DotNetty.Buffers
         ///     @param cIndex the index on which the {@link IByteBuffer} will be added
         ///     @param buffer the {@link IByteBuffer} to add
         /// </summary>
-        public CompositeByteBuffer AddComponent(int cIndex, IByteBuffer buffer)
+        public virtual CompositeByteBuffer AddComponent(int cIndex, IByteBuffer buffer) => this.AddComponent(false, cIndex, buffer);
+
+        public virtual CompositeByteBuffer AddComponent(bool increaseWriterIndex, IByteBuffer buffer)
         {
-            this.AddComponent0(cIndex, buffer);
+            Contract.Requires(buffer != null);
+            this.AddComponent0(increaseWriterIndex, this.components.Count, buffer);
             this.ConsolidateIfNeeded();
             return this;
         }
 
-        int AddComponent0(int cIndex, IByteBuffer buffer)
+        public virtual CompositeByteBuffer AddComponents(bool increaseWriterIndex, params IByteBuffer[] buffers)
+        {
+            this.AddComponents0(increaseWriterIndex, this.components.Count, buffers, 0, buffers.Length);
+            this.ConsolidateIfNeeded();
+            return this;
+        }
+
+        public virtual CompositeByteBuffer AddComponents(bool increaseWriterIndex, IEnumerable<IByteBuffer> buffers)
+        {
+            this.AddComponents0(increaseWriterIndex, this.components.Count, buffers);
+            this.ConsolidateIfNeeded();
+            return this;
+        }
+
+        public virtual CompositeByteBuffer AddComponent(bool increaseWriterIndex, int cIndex, IByteBuffer buffer)
         {
             Contract.Requires(buffer != null);
+            this.AddComponent0(increaseWriterIndex, cIndex, buffer);
+            this.ConsolidateIfNeeded();
+            return this;
+        }
 
-            this.CheckComponentIndex(cIndex);
-
-            int readableBytes = buffer.ReadableBytes;
-
-            // No need to consolidate - just add a component to the list.
-            var c = new ComponentEntry(buffer.WithOrder(ByteOrder.BigEndian).Slice());
-            if (cIndex == this.components.Count)
+        int AddComponent0(bool increaseWriterIndex, int cIndex, IByteBuffer buffer)
+        {
+            bool wasAdded = false;
+            try
             {
-                this.components.Add(c);
-                if (cIndex == 0)
+                this.CheckComponentIndex(cIndex);
+
+                int readableBytes = buffer.ReadableBytes;
+
+                // No need to consolidate - just add a component to the list.
+                var c = new ComponentEntry(buffer.Slice());
+                if (cIndex == this.components.Count)
                 {
-                    c.EndOffset = readableBytes;
+                    this.components.Add(c);
+                    wasAdded = true;
+                    if (cIndex == 0)
+                    {
+                        c.EndOffset = readableBytes;
+                    }
+                    else
+                    {
+                        ComponentEntry prev = this.components[cIndex - 1];
+                        c.Offset = prev.EndOffset;
+                        c.EndOffset = c.Offset + readableBytes;
+                    }
                 }
                 else
                 {
-                    ComponentEntry prev = this.components[cIndex - 1];
-                    c.Offset = prev.EndOffset;
-                    c.EndOffset = c.Offset + readableBytes;
+                    this.components.Insert(cIndex, c);
+                    wasAdded = true;
+                    if (readableBytes != 0)
+                    {
+                        this.UpdateComponentOffsets(cIndex);
+                    }
                 }
-            }
-            else
-            {
-                this.components.Insert(cIndex, c);
-                if (readableBytes != 0)
+                if (increaseWriterIndex)
                 {
-                    this.UpdateComponentOffsets(cIndex);
+                    this.SetWriterIndex(this.WriterIndex + buffer.ReadableBytes);
+                }
+                return cIndex;
+            }
+            finally
+            {
+                if (!wasAdded)
+                {
+                    buffer.Release();
                 }
             }
-            return cIndex;
         }
 
         /// <summary>
@@ -190,47 +220,23 @@ namespace DotNetty.Buffers
         ///     @param cIndex the index on which the {@link IByteBuffer} will be added.
         ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
-        public CompositeByteBuffer AddComponents(int cIndex, params IByteBuffer[] buffers)
+        public virtual CompositeByteBuffer AddComponents(int cIndex, params IByteBuffer[] buffers)
         {
-            this.AddComponents0(cIndex, buffers);
+            this.AddComponents0(false, cIndex, buffers, 0, buffers.Length);
             this.ConsolidateIfNeeded();
             return this;
         }
 
-        void AddComponents0(int cIndex, IEnumerable<IByteBuffer> buffers)
+        int AddComponents0(bool increaseWriterIndex, int cIndex, IByteBuffer[] buffers, int offset, int len)
         {
             Contract.Requires(buffers != null);
-
-            this.CheckComponentIndex(cIndex);
-
-            // No need for consolidation
-            foreach (IByteBuffer b in buffers)
-            {
-                if (b == null)
-                {
-                    break;
-                }
-                this.AddComponent0(cIndex, b);
-                cIndex++;
-                int size = this.components.Count;
-                if (cIndex > size)
-                {
-                    cIndex = size;
-                }
-            }
-        }
-
-        int AddComponents0(int cIndex, IByteBuffer[] buffers, int offset, int length)
-        {
-            Contract.Requires(buffers != null);
-
             int i = offset;
             try
             {
                 this.CheckComponentIndex(cIndex);
 
                 // No need for consolidation
-                while (i < length)
+                while (i < len)
                 {
                     // Increment i now to prepare for the next iteration and prevent a duplicate release (addComponent0
                     // will release if an exception occurs, and we also release in the finally block here).
@@ -239,21 +245,19 @@ namespace DotNetty.Buffers
                     {
                         break;
                     }
-
-                    cIndex = this.AddComponent0(cIndex, b) + 1;
+                    cIndex = this.AddComponent0(increaseWriterIndex, cIndex, b) + 1;
                     int size = this.components.Count;
                     if (cIndex > size)
                     {
                         cIndex = size;
                     }
-
                 }
 
                 return cIndex;
             }
             finally
             {
-                for (; i < length; ++i)
+                for (; i < len; ++i)
                 {
                     IByteBuffer b = buffers[i];
                     if (b != null)
@@ -267,10 +271,8 @@ namespace DotNetty.Buffers
                             // ignore
                         }
                     }
-
                 }
             }
-
         }
 
         /// <summary>
@@ -280,11 +282,25 @@ namespace DotNetty.Buffers
         ///     @param cIndex the index on which the {@link IByteBuffer} will be added.
         ///     @param buffers the {@link IByteBuffer}s to add
         /// </summary>
-        public CompositeByteBuffer AddComponents(int cIndex, IEnumerable<IByteBuffer> buffers)
+        public virtual CompositeByteBuffer AddComponents(int cIndex, IEnumerable<IByteBuffer> buffers)
         {
-            this.AddComponents0(cIndex, buffers);
+            this.AddComponents0(false, cIndex, buffers);
             this.ConsolidateIfNeeded();
             return this;
+        }
+
+        int AddComponents0(bool increaseIndex, int cIndex, IEnumerable<IByteBuffer> buffers)
+        {
+            Contract.Requires(buffers != null);
+
+            if (buffers is IByteBuffer buffer)
+            {
+                // If buffers also implements ByteBuf (e.g. CompositeByteBuf), it has to go to addComponent(ByteBuf).
+                return this.AddComponent0(increaseIndex, cIndex, buffer);
+            }
+
+            IByteBuffer[] array = buffers.ToArray();
+            return this.AddComponents0(increaseIndex, cIndex, array, 0, array.Length);
         }
 
         /// <summary>
@@ -296,7 +312,7 @@ namespace DotNetty.Buffers
             // Consolidate if the number of components will exceed the allowed maximum by the current
             // operation.
             int numComponents = this.components.Count;
-            if (numComponents > this.maxNumComponents)
+            if (numComponents > this.MaxNumComponents)
             {
                 int capacity = this.components[numComponents - 1].EndOffset;
 
@@ -364,7 +380,7 @@ namespace DotNetty.Buffers
         ///     Remove the {@link IByteBuffer} from the given index.
         ///     @param cIndex the index on from which the {@link IByteBuffer} will be remove
         /// </summary>
-        public CompositeByteBuffer RemoveComponent(int cIndex)
+        public virtual CompositeByteBuffer RemoveComponent(int cIndex)
         {
             this.CheckComponentIndex(cIndex);
             ComponentEntry comp = this.components[cIndex];
@@ -383,7 +399,7 @@ namespace DotNetty.Buffers
         ///     @param cIndex the index on which the {@link IByteBuffer}s will be started to removed
         ///     @param numComponents the number of components to remove
         /// </summary>
-        public CompositeByteBuffer RemoveComponents(int cIndex, int numComponents)
+        public virtual CompositeByteBuffer RemoveComponents(int cIndex, int numComponents)
         {
             this.CheckComponentIndex(cIndex, numComponents);
 
@@ -408,7 +424,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public IEnumerator<IByteBuffer> GetEnumerator()
+        public virtual IEnumerator<IByteBuffer> GetEnumerator()
         {
             this.EnsureAccessible();
             foreach (ComponentEntry c in this.components)
@@ -417,15 +433,17 @@ namespace DotNetty.Buffers
             }
         }
 
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
         /// <summary>
         ///     Same with {@link #slice(int, int)} except that this method returns a list.
         /// </summary>
-        public IList<IByteBuffer> Decompose(int offset, int length)
+        public virtual IList<IByteBuffer> Decompose(int offset, int length)
         {
             this.CheckIndex(offset, length);
             if (length == 0)
             {
-                return new ReadOnlyCollection<IByteBuffer>(new IByteBuffer[0]); // todo: optimize
+                return EmptyList;
             }
 
             int componentId = this.ToComponentIndex(offset);
@@ -517,7 +535,8 @@ namespace DotNetty.Buffers
             foreach (ArraySegment<byte> buf in buffers)
             {
                 Contract.Assert(merged.Length - offset >= buf.Count);
-                System.Array.Copy(buf.Array, buf.Offset, merged, offset, buf.Count);
+
+                PlatformDependent.CopyMemory(buf.Array, buf.Offset, merged, offset, buf.Count);
                 offset += buf.Count;
             }
 
@@ -608,17 +627,17 @@ namespace DotNetty.Buffers
             }
         }
 
-        public override int Capacity
+        public override int Capacity => GetCapacity(this.components);
+
+        static int GetCapacity(List<ComponentEntry> components)
         {
-            get
+            int numComponents = components.Count;
+            if (numComponents == 0)
             {
-                int numComponents = this.components.Count;
-                if (numComponents == 0)
-                {
-                    return 0;
-                }
-                return this.components[numComponents - 1].EndOffset;
+                return 0;
             }
+
+            return components[numComponents - 1].EndOffset;
         }
 
         public override IByteBuffer AdjustCapacity(int newCapacity)
@@ -631,11 +650,11 @@ namespace DotNetty.Buffers
                 int paddingLength = newCapacity - oldCapacity;
                 IByteBuffer padding;
                 int nComponents = this.components.Count;
-                if (nComponents < this.maxNumComponents)
+                if (nComponents < this.MaxNumComponents)
                 {
                     padding = this.AllocateBuffer(paddingLength);
                     padding.SetIndex(0, paddingLength);
-                    this.AddComponent0(this.components.Count, padding);
+                    this.AddComponent0(false, this.components.Count, padding);
                 }
                 else
                 {
@@ -643,7 +662,7 @@ namespace DotNetty.Buffers
                     padding.SetIndex(0, paddingLength);
                     // FIXME: No need to create a padding buffer and consolidate.
                     // Just create a big single buffer and put the current content there.
-                    this.AddComponent0(this.components.Count, padding);
+                    this.AddComponent0(false, this.components.Count, padding);
                     this.ConsolidateIfNeeded();
                 }
             }
@@ -680,24 +699,22 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public override IByteBufferAllocator Allocator => this.allocator;
-
-        public override ByteOrder Order => ByteOrder.BigEndian;
+        public override IByteBufferAllocator Allocator { get; }
 
         /// <summary>
         ///     Return the current number of {@link IByteBuffer}'s that are composed in this instance
         /// </summary>
-        public int NumComponents => this.components.Count;
+        public virtual int NumComponents => this.components.Count;
 
         /// <summary>
         ///     Return the max number of {@link IByteBuffer}'s that are composed in this instance
         /// </summary>
-        public int MaxNumComponents => this.maxNumComponents;
+        public virtual int MaxNumComponents { get; }
 
         /// <summary>
         ///     Return the index for the given offset
         /// </summary>
-        public int ToComponentIndex(int offset)
+        public virtual int ToComponentIndex(int offset)
         {
             this.CheckIndex(offset);
 
@@ -722,86 +739,104 @@ namespace DotNetty.Buffers
             throw new Exception("should not reach here");
         }
 
-        public int ToByteIndex(int cIndex)
+        public virtual int ToByteIndex(int cIndex)
         {
             this.CheckComponentIndex(cIndex);
             return this.components[cIndex].Offset;
         }
 
-        public override byte GetByte(int index) => this._GetByte(index);
-
-        protected override byte _GetByte(int index)
+        protected internal override byte _GetByte(int index)
         {
             ComponentEntry c = this.FindComponent(index);
             return c.Buffer.GetByte(index - c.Offset);
         }
 
-        protected override short _GetShort(int index)
+        protected internal override short _GetShort(int index)
         {
             ComponentEntry c = this.FindComponent(index);
             if (index + 2 <= c.EndOffset)
             {
                 return c.Buffer.GetShort(index - c.Offset);
             }
-            else if (this.Order == ByteOrder.BigEndian)
-            {
-                return (short)(this._GetByte(index) << 8 | this._GetByte(index + 1));
-            }
-            else
-            {
-                return (short)(this._GetByte(index) | this._GetByte(index + 1) << 8);
-            }
+
+            return (short)(this._GetByte(index) << 8 | this._GetByte(index + 1));
         }
 
-        protected override int _GetInt(int index)
+        protected internal override short _GetShortLE(int index)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 2 <= c.EndOffset)
+            {
+                return c.Buffer.GetShortLE(index - c.Offset);
+            }
+
+            return (short)(this._GetByte(index) << 8 | this._GetByte(index + 1));
+        }
+
+        protected internal override int _GetUnsignedMedium(int index)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 3 <= c.EndOffset)
+            {
+                return c.Buffer.GetUnsignedMedium(index - c.Offset);
+            }
+
+            return (this._GetShort(index) & 0xffff) << 8 | this._GetByte(index + 2);
+        }
+
+        protected internal override int _GetUnsignedMediumLE(int index)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 3 <= c.EndOffset)
+            {
+                return c.Buffer.GetUnsignedMediumLE(index - c.Offset);
+            }
+
+            return (this._GetShortLE(index) & 0xffff) << 8 | this._GetByte(index + 2);
+        }
+
+        protected internal override int _GetInt(int index)
         {
             ComponentEntry c = this.FindComponent(index);
             if (index + 4 <= c.EndOffset)
             {
                 return c.Buffer.GetInt(index - c.Offset);
             }
-            else if (this.Order == ByteOrder.BigEndian)
-            {
-                return this._GetShort(index) << 16 | (ushort)this._GetShort(index + 2);
-            }
-            else
-            {
-                return (ushort)this._GetShort(index) | this._GetShort(index + 2) << 16;
-            }
+
+            return this._GetShort(index) << 16 | (ushort)this._GetShort(index + 2);
         }
 
-        protected override int _GetMedium(int index)
+        protected internal override int _GetIntLE(int index)
         {
             ComponentEntry c = this.FindComponent(index);
-            if (index + 3 <= c.EndOffset)
+            if (index + 4 <= c.EndOffset)
             {
-                return c.Buffer.GetMedium(index - c.Offset);
+                return c.Buffer.GetIntLE(index - c.Offset);
             }
-            else if (this.Order == ByteOrder.BigEndian)
-            {
-                return this._GetShort(index) << 8 | this._GetByte(index + 2);
-            }
-            else
-            {
-                return (ushort)this._GetShort(index) | (sbyte)this._GetByte(index + 2) << 16;
-            }
+
+            return (this._GetShortLE(index) << 16 | (ushort)this._GetShortLE(index + 2));
         }
 
-        protected override long _GetLong(int index)
+        protected internal override long _GetLong(int index)
         {
             ComponentEntry c = this.FindComponent(index);
             if (index + 8 <= c.EndOffset)
             {
                 return c.Buffer.GetLong(index - c.Offset);
             }
-            else if (this.Order == ByteOrder.BigEndian)
+
+            return (long)this._GetInt(index) << 32 | (uint)this._GetInt(index + 4);
+        }
+
+        protected internal override long _GetLongLE(int index)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 8 <= c.EndOffset)
             {
-                return (long)this._GetInt(index) << 32 | (uint)this._GetInt(index + 4);
+                return c.Buffer.GetLongLE(index - c.Offset);
             }
-            else
-            {
-                return (uint)this._GetInt(index) | (((long)this._GetInt(index + 4)) << 32);
-            }
+
+            return (this._GetIntLE(index) << 32 | this._GetIntLE(index + 4));
         }
 
         public override IByteBuffer GetBytes(int index, byte[] dst, int dstIndex, int length)
@@ -875,88 +910,121 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public override IByteBuffer SetByte(int index, int value)
+        protected internal override void _SetByte(int index, int value)
         {
             ComponentEntry c = this.FindComponent(index);
             c.Buffer.SetByte(index - c.Offset, value);
-            return this;
         }
 
-        protected override void _SetByte(int index, int value) => this.SetByte(index, value);
-
-        protected override void _SetShort(int index, int value)
+        protected internal override void _SetShort(int index, int value)
         {
             ComponentEntry c = this.FindComponent(index);
             if (index + 2 <= c.EndOffset)
             {
                 c.Buffer.SetShort(index - c.Offset, value);
             }
-            else if (this.Order == ByteOrder.BigEndian)
+            else
             {
                 this._SetByte(index, (byte)((uint)value >> 8));
                 this._SetByte(index + 1, (byte)value);
             }
+        }
+
+        protected internal override void _SetShortLE(int index, int value)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 2 <= c.EndOffset)
+            {
+                c.Buffer.SetShortLE(index - c.Offset, value);
+            }
             else
             {
-                this._SetByte(index, (byte)value);
-                this._SetByte(index + 1, (byte)((uint)value >> 8));
+                this._SetByte(index, (byte)(value.RightUShift(8)));
+                this._SetByte(index + 1, (byte)value);
             }
         }
 
-        protected override void _SetMedium(int index, int value)
+        protected internal override void _SetMedium(int index, int value)
         {
             ComponentEntry c = this.FindComponent(index);
             if (index + 3 <= c.EndOffset)
             {
                 c.Buffer.SetMedium(index - c.Offset, value);
             }
-            else if (this.Order == ByteOrder.BigEndian)
+            else
             {
                 this._SetShort(index, (short)(value >> 8));
                 this._SetByte(index + 2, (byte)value);
             }
+        }
+
+        protected internal override void _SetMediumLE(int index, int value)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 3 <= c.EndOffset)
+            {
+                c.Buffer.SetMediumLE(index - c.Offset, value);
+            }
             else
             {
-                this._SetShort(index, (short)value);
-                this._SetByte(index + 2, (byte)(value.RightUShift(16)));
+                this._SetShortLE(index, (short)(value >> 8));
+                this._SetByte(index + 2, (byte)value);
             }
         }
 
-        protected override void _SetInt(int index, int value)
+        protected internal override void _SetInt(int index, int value)
         {
             ComponentEntry c = this.FindComponent(index);
             if (index + 4 <= c.EndOffset)
             {
                 c.Buffer.SetInt(index - c.Offset, value);
             }
-            else if (this.Order == ByteOrder.BigEndian)
+            else
             {
                 this._SetShort(index, (short)((uint)value >> 16));
                 this._SetShort(index + 2, (short)value);
             }
+        }
+
+        protected internal override void _SetIntLE(int index, int value)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 4 <= c.EndOffset)
+            {
+                c.Buffer.SetIntLE(index - c.Offset, value);
+            }
             else
             {
-                this._SetShort(index, (short)value);
-                this._SetShort(index + 2, (short)((uint)value >> 16));
+                this._SetShortLE(index, (short)value.RightUShift(16));
+                this._SetShortLE(index + 2, (short)value);
             }
         }
 
-        protected override void _SetLong(int index, long value)
+        protected internal override void _SetLong(int index, long value)
         {
             ComponentEntry c = this.FindComponent(index);
             if (index + 8 <= c.EndOffset)
             {
                 c.Buffer.SetLong(index - c.Offset, value);
             }
-            else if (this.Order == ByteOrder.BigEndian)
+            else
             {
                 this._SetInt(index, (int)((ulong)value >> 32));
                 this._SetInt(index + 4, (int)value);
             }
+        }
+
+        protected internal override void _SetLongLE(int index, long value)
+        {
+            ComponentEntry c = this.FindComponent(index);
+            if (index + 8 <= c.EndOffset)
+            {
+                c.Buffer.SetLongLE(index - c.Offset, value);
+            }
             else
             {
-                this._SetInt(index, (int)value);
-                this._SetInt(index + 4, (int)((ulong)value >> 32));
+                this._SetIntLE(index, (int)value.RightUShift(32));
+                this._SetIntLE(index + 4, (int)value);
             }
         }
 
@@ -1118,21 +1186,21 @@ namespace DotNetty.Buffers
         ///     @param cIndex the index for which the {@link IByteBuffer} should be returned
         ///     @return buffer the {@link IByteBuffer} on the specified index
         /// </summary>
-        public IByteBuffer this[int cIndex] => this.InternalComponent(cIndex).Duplicate();
+        public virtual IByteBuffer this[int cIndex] => this.InternalComponent(cIndex).Duplicate();
 
         /// <summary>
         ///     Return the {@link IByteBuffer} on the specified index
         ///     @param offset the offset for which the {@link IByteBuffer} should be returned
         ///     @return the {@link IByteBuffer} on the specified index
         /// </summary>
-        public IByteBuffer ComponentAtOffset(int offset) => this.InternalComponentAtOffset(offset).Duplicate();
+        public virtual IByteBuffer ComponentAtOffset(int offset) => this.InternalComponentAtOffset(offset).Duplicate();
 
         /// <summary>
         ///     Return the internal {@link IByteBuffer} on the specified index. Note that updating the indexes of the returned
         ///     buffer will lead to an undefined behavior of this buffer.
         ///     @param cIndex the index for which the {@link IByteBuffer} should be returned
         /// </summary>
-        public IByteBuffer InternalComponent(int cIndex)
+        public virtual IByteBuffer InternalComponent(int cIndex)
         {
             this.CheckComponentIndex(cIndex);
             return this.components[cIndex].Buffer;
@@ -1143,7 +1211,7 @@ namespace DotNetty.Buffers
         ///     buffer will lead to an undefined behavior of this buffer.
         ///     @param offset the offset for which the {@link IByteBuffer} should be returned
         /// </summary>
-        public IByteBuffer InternalComponentAtOffset(int offset) => this.FindComponent(offset).Buffer;
+        public virtual IByteBuffer InternalComponentAtOffset(int offset) => this.FindComponent(offset).Buffer;
 
         ComponentEntry FindComponent(int offset)
         {
@@ -1174,7 +1242,7 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Consolidate the composed {@link IByteBuffer}s
         /// </summary>
-        public CompositeByteBuffer Consolidate()
+        public virtual CompositeByteBuffer Consolidate()
         {
             this.EnsureAccessible();
             int numComponents = this.NumComponents;
@@ -1206,7 +1274,7 @@ namespace DotNetty.Buffers
         ///     @param cIndex the index on which to start to compose
         ///     @param numComponents the number of components to compose
         /// </summary>
-        public CompositeByteBuffer Consolidate(int cIndex, int numComponents)
+        public virtual CompositeByteBuffer Consolidate(int cIndex, int numComponents)
         {
             this.CheckComponentIndex(cIndex, numComponents);
             if (numComponents <= 1)
@@ -1227,8 +1295,8 @@ namespace DotNetty.Buffers
                 c.FreeIfNecessary();
             }
 
-            this.components.RemoveRange(cIndex + 1, endCIndex - cIndex);
-            this.components[cIndex] = new ComponentEntry(consolidated);
+            this.components.RemoveRange(cIndex, numComponents);
+            this.components.Insert(cIndex,new ComponentEntry(consolidated));
             this.UpdateComponentOffsets(cIndex);
             return this;
         }
@@ -1236,7 +1304,7 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Discard all {@link IByteBuffer}s which are read.
         /// </summary>
-        public CompositeByteBuffer DiscardReadComponents()
+        public virtual CompositeByteBuffer DiscardReadComponents()
         {
             this.EnsureAccessible();
             int readerIndex = this.ReaderIndex;
@@ -1337,21 +1405,13 @@ namespace DotNetty.Buffers
             return $"{result}, components={this.components.Count})";
         }
 
-        public override IReferenceCounted Touch()
-        {
-            this.leak?.Record();
-            return this;
-        }
+        public override IReferenceCounted Touch() => this;
 
-        public override IReferenceCounted Touch(object hint)
-        {
-            this.leak?.Record(hint);
-            return this;
-        }
+        public override IReferenceCounted Touch(object hint) => this;
 
         public override IByteBuffer DiscardSomeReadBytes() => this.DiscardReadComponents();
 
-        protected override void Deallocate()
+        protected internal override void Deallocate()
         {
             if (this.freed)
             {
@@ -1366,8 +1426,6 @@ namespace DotNetty.Buffers
             {
                 this.components[i].FreeIfNecessary();
             }
-
-            this.leak?.Close();
         }
 
         public override IByteBuffer Unwrap() => null;

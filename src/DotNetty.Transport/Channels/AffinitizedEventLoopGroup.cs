@@ -28,6 +28,8 @@ namespace DotNetty.Transport.Channels
 
         IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
 
+        public Task RegisterAsync(IChannel channel) => this.GetNext().RegisterAsync(channel);
+
         /// <summary>
         /// If running in a context of an existing <see cref="IEventLoop"/>, this <see cref="IEventLoop"/> is returned.
         /// Otherwise, <see cref="IEventLoop"/> is retrieved from underlying <see cref="IEventLoopGroup"/>.

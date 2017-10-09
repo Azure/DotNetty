@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
 
+    /// <inheritdoc />
     /// <summary>
     ///     Exception thrown during instances where a reference count is used incorrectly
     /// </summary>

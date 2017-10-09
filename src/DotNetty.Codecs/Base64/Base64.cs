@@ -167,7 +167,7 @@ namespace DotNetty.Codecs.Base64
             int remainderLength = length % 3;
             int outLength = length / 3 * 4 + (remainderLength > 0 ? 4 : 0);
             outLength += breakLines ? outLength / MAX_LINE_LENGTH : 0;
-            IByteBuffer dest = allocator.Buffer(outLength).WithOrder(src.Order);
+            IByteBuffer dest = allocator.Buffer(outLength);
             int destLength = 0;
             int destIndex = dest.WriterIndex;
 
@@ -329,7 +329,7 @@ namespace DotNetty.Codecs.Base64
             }
 
             int outLength = length * 3 / 4;
-            IByteBuffer dest = allocator.Buffer(outLength).WithOrder(src.Order);
+            IByteBuffer dest = allocator.Buffer(outLength);
             int charCount = 0;
             int destIndex = dest.WriterIndex;
 

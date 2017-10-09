@@ -14,8 +14,20 @@ namespace DotNetty.Buffers
 
         IByteBuffer Buffer(int initialCapacity, int maxCapacity);
 
+        IByteBuffer HeapBuffer();
+
+        IByteBuffer HeapBuffer(int initialCapacity);
+
+        IByteBuffer HeapBuffer(int initialCapacity, int maxCapacity);
+
         CompositeByteBuffer CompositeBuffer();
 
         CompositeByteBuffer CompositeBuffer(int maxComponents);
+
+        CompositeByteBuffer CompositeHeapBuffer();
+
+        CompositeByteBuffer CompositeHeapBuffer(int maxComponents);
+
+        int CalculateNewCapacity(int minNewCapacity, int maxCapacity);
     }
 }
