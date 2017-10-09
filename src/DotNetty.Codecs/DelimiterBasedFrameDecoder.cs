@@ -150,7 +150,7 @@ namespace DotNetty.Codecs
         ///     the <see cref="DotNetty.Buffers.IByteBuffer" /> which represent the frame or null if no frame could be
         ///     created.
         /// </returns>
-        protected object Decode(IChannelHandlerContext ctx, IByteBuffer buffer)
+        protected virtual object Decode(IChannelHandlerContext ctx, IByteBuffer buffer)
         {
             if (this.lineBasedDecoder != null)
             {
