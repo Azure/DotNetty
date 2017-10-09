@@ -3,6 +3,7 @@
 namespace Rpc.Server
 {
     using System;
+    using System.Runtime.CompilerServices;
     using DotNetty.Common.Internal.Logging;
     using Microsoft.Extensions.Logging.Console;
 
