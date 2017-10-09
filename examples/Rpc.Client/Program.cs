@@ -39,7 +39,7 @@ namespace Rpc.Client
 
         public static void Test()
         {
-            string serverAddress = "127.0.0.1:9008";
+            string serverAddress = "10.1.4.204:9008";
 
             var sw = new Stopwatch();
             sw.Start();
