@@ -66,7 +66,7 @@ namespace DotNetty.Buffers
             // deallocation needs to be synchronized on the PoolArena.
             // See https://github.com/netty/netty/issues/3888
             int defaultMinNumArena = Environment.ProcessorCount * 2;
-            DefaultNumHeapArena = Math.Max(0, SystemPropertyUtil.GetInt("dotNetty.allocator.numHeapArenas", defaultMinNumArena));
+            DefaultNumHeapArena = Math.Max(0, SystemPropertyUtil.GetInt("io.netty.allocator.numHeapArenas", defaultMinNumArena));
 
             // cache sizes
             DefaultTinyCacheSize = SystemPropertyUtil.GetInt("io.netty.allocator.tinyCacheSize", 512);
