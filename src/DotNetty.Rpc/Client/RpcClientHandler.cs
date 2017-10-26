@@ -64,7 +64,7 @@
             }
         }
 
-        public async Task<RpcResponse> SendRequest(RpcRequest request, int timeout = 10000)
+        public Task<RpcResponse> SendRequest(RpcRequest request, int timeout = 10000)
         {
             var tcs = new TaskCompletionSource<RpcResponse>();
 
@@ -74,9 +74,9 @@
 
             this.pendingRpc.TryAdd(request.RequestId, context);
 
-            await this.channel.WriteAndFlushAsync(request);
+            this.channel.WriteAndFlushAsync(request);
 
-            return await tcs.Task;
+            return tcs.Task;
         }
 
         void GetRpcResponseTimeOut(object n)
