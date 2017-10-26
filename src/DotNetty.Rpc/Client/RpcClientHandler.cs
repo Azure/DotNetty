@@ -8,7 +8,6 @@
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Timeout;
-    using DotNetty.Rpc.Exceptions;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Transport.Channels;
 
