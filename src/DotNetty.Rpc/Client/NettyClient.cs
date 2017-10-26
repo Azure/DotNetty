@@ -48,13 +48,20 @@ namespace DotNetty.Rpc.Client
             this.DoConnect(socketAddress);
         }
 
+        int requestId = 1;
+
+        int RequestId
+        {
+            get { return Interlocked.Increment(ref this.requestId); }
+        }
+
         public async Task<T> SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
         {
             this.WaitConnect();
 
             var rpcRequest = new RpcRequest
             {
-                RequestId = Guid.NewGuid().ToString(),
+                RequestId = this.RequestId.ToString(),
                 Message = request
             };
             RpcResponse rpcReponse = await this.clientRpcHandler.SendRequest(rpcRequest, timeout);
