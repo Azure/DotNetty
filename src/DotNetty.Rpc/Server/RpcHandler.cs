@@ -5,6 +5,7 @@
     using System.Threading.Tasks;
     using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Handlers.Timeout;
     using DotNetty.Rpc.Exceptions;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Rpc.Service;
@@ -25,13 +26,21 @@
                     {
                         RequestId = state.Item2.RequestId
                     };
-                    try
+
+                    if (request.RequestId == "-1")
                     {
-                        rpcResponse.Result = await ServiceBus.Instance.Publish(state.Item2.Message);
+                        rpcResponse.Result = "pong";
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        rpcResponse.Error = ex.Message;
+                        try
+                        {
+                            rpcResponse.Result = await ServiceBus.Instance.Publish(state.Item2.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            rpcResponse.Error = ex.Message;
+                        }
                     }
 
                     IChannelHandlerContext ctx = state.Item1;
@@ -55,20 +64,33 @@
             {
                 if (n.IsFaulted)
                 {
-                    if (n.Exception != null)
-                    {
-                        var exception = n.Exception.InnerException as AggregateException;
-                        if (exception != null)
-                        {
-                            Logger.Error(exception.InnerException);
-                        }
-                        else
-                        {
-                            Logger.Error(n.Exception.InnerException);
-                        }
-                    }
+                    Logger.Error(n.Exception);
                 }
             });
+        }
+
+        public override void UserEventTriggered(IChannelHandlerContext context, object evt)
+        {
+            if (evt is IdleStateEvent)
+            {
+                var e = (IdleStateEvent)evt;
+                if (e.State == IdleState.ReaderIdle)
+                {
+                    if (Logger.DebugEnabled)
+                    {
+                        Logger.Debug("ReaderIdle context.CloseAsync");
+                    }
+                    context.CloseAsync();
+                }
+                else if (e.State == IdleState.WriterIdle)
+                {
+                    if (Logger.DebugEnabled)
+                    {
+                        Logger.Debug("WriterIdle context.CloseAsync");
+                    }
+                    context.CloseAsync();
+                }
+            }
         }
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)

@@ -7,6 +7,7 @@
     using DotNetty.Codecs;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Handlers.Timeout;
     using DotNetty.Rpc.Exceptions;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Transport.Channels;
@@ -44,13 +45,23 @@
         {
             var response = (RpcResponse)message;
             string requestId = response.RequestId;
-            RequestContext requestContext;
-            this.pendingRpc.TryGetValue(requestId, out requestContext);
-            if (requestContext != null)
+            if (requestId == "-1")
             {
-                this.pendingRpc.TryRemove(requestId,out requestContext);
-                requestContext.TaskCompletionSource.SetResult(response);
-                requestContext.TimeOutTimer.Cancel();
+                if (Logger.DebugEnabled)
+                {
+                    Logger.Debug("get server response pong");
+                }
+            }
+            else
+            {
+                RequestContext requestContext;
+                this.pendingRpc.TryGetValue(requestId, out requestContext);
+                if (requestContext != null)
+                {
+                    this.pendingRpc.TryRemove(requestId, out requestContext);
+                    requestContext.TaskCompletionSource.SetResult(response);
+                    requestContext.TimeOutTimer.Cancel();
+                }
             }
         }
 
@@ -68,18 +79,7 @@
             {
                 if (n.IsFaulted)
                 {
-                    if (n.Exception != null)
-                    {
-                        var exception = n.Exception.InnerException as AggregateException;
-                        if (exception != null)
-                        {
-                            Logger.Error(exception.InnerException);
-                        }
-                        else
-                        {
-                            Logger.Error(n.Exception.InnerException);
-                        }
-                    }
+                    Logger.Error(n.Exception);
                 }
             });
 
@@ -95,6 +95,36 @@
             {
                 this.pendingRpc.TryRemove(requestId, out requestContext);
                 requestContext.TaskCompletionSource.SetException(new Handlers.TimeoutException("Get RpcResponse TimeOut"));
+            }
+        }
+
+        public override void UserEventTriggered(IChannelHandlerContext context, object evt)
+        {
+            if (evt is IdleStateEvent)
+            {
+                var e = (IdleStateEvent)evt;
+                if (e.State == IdleState.ReaderIdle)
+                {
+                    if (Logger.DebugEnabled)
+                    {
+                        Logger.Debug("ReaderIdle context.CloseAsync");
+                    }
+
+                    context.CloseAsync();
+                }
+                else if (e.State == IdleState.WriterIdle)
+                {
+                    if (Logger.DebugEnabled)
+                    {
+                        Logger.Debug("WriterIdle send request ping");
+                    }
+
+                    context.WriteAndFlushAsync(new RpcRequest
+                    {
+                        RequestId = "-1",
+                        Message = "ping"
+                    });
+                }
             }
         }
 
@@ -119,11 +149,13 @@
                 }
                 else
                 {
+                    context.CloseAsync();
                     Logger.Error(exception);
                 }
             }
             else
             {
+                context.CloseAsync();
                 Logger.Error(exception);
             }
         }

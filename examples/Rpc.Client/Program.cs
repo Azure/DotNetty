@@ -57,14 +57,7 @@ namespace Rpc.Client
                 {
                     if (n.IsFaulted)
                     {
-                        if (n.Exception != null)
-                        {
-                            var exception = n.Exception.InnerException as TimeoutException;
-                            if (exception == null)
-                            {
-                                Logger.Error(n.Exception.InnerException);
-                            }
-                        }
+                        Logger.Error(n.Exception);
                     }
                     cde.Signal();
                 });
