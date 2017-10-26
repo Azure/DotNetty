@@ -43,12 +43,23 @@
                     }
 
                     IChannelHandlerContext ctx = state.Item1;
-                    await ctx.WriteAndFlushAsync(rpcResponse);
+                    WriteAndFlushAsync(ctx, rpcResponse);
                 },
                 Tuple.Create(context, request),
                 default(CancellationToken),
                 TaskCreationOptions.DenyChildAttach,
                 TaskScheduler.Default);
+        }
+
+        /// <summary>
+        /// WriteAndFlushAsync
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="rpcResponse"></param>
+        /// <returns></returns>
+        static void WriteAndFlushAsync(IChannelHandlerContext ctx, RpcResponse rpcResponse)
+        {
+            ctx.WriteAndFlushAsync(rpcResponse);
         }
 
         public override void UserEventTriggered(IChannelHandlerContext context, object evt)
