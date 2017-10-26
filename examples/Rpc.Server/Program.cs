@@ -11,9 +11,10 @@ namespace Rpc.Server
     {
         public static void Main(string[] args)
         {
+            Environment.SetEnvironmentVariable("io.netty.leakDetection.level", "Disabled");
+
             InternalLoggerFactory.DefaultFactory.AddProvider(new ConsoleLoggerProvider((s, level) => true, false));
 
-            //Environment.SetEnvironmentVariable("io.netty.leakDetection.level", "Advanced");
             string serverAddress = "0.0.0.0:9008";
             var server = new DotNetty.Rpc.Server.RpcServer(serverAddress);
             server.StartAsync().Wait();

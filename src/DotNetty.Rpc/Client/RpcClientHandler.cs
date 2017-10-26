@@ -40,7 +40,7 @@
             this.channel = context.Channel;
         }
 
-        
+
         public override void ChannelRead(IChannelHandlerContext ctx, object message)
         {
             var response = (RpcResponse)message;
@@ -130,34 +130,9 @@
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
-            var decoderException = exception as DecoderException;
-            if (decoderException != null)
-            {
-                Exception ex = decoderException.GetBaseException();
-                var deserializeException = ex as DeserializeException;
-                if (deserializeException != null)
-                {
-                    string requestId = deserializeException.RequestId;
-                    RequestContext requestContext;
-                    this.pendingRpc.TryGetValue(requestId, out requestContext);
-                    if (requestContext != null)
-                    {
-                        this.pendingRpc.TryRemove(requestId, out requestContext);
-                        requestContext.TaskCompletionSource.SetException(deserializeException);
-                        requestContext.TimeOutTimer.Cancel();
-                    }
-                }
-                else
-                {
-                    context.CloseAsync();
-                    Logger.Error(exception);
-                }
-            }
-            else
-            {
-                context.CloseAsync();
-                Logger.Error(exception);
-            }
+            Logger.Error(exception);
+
+            context.CloseAsync();
         }
     }
 }

@@ -95,32 +95,9 @@
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {
-            var decoderException = exception as DecoderException;
-            if (decoderException != null)
-            {
-                Exception ex = decoderException.GetBaseException();
-                var deserializeException = ex as DeserializeException;
-                if (deserializeException != null)
-                {
-                    var rpcResponse = new RpcResponse
-                    {
-                        RequestId = deserializeException.RequestId,
-                        Error = string.Format("DeserializeException,RpcMessage:{0}", deserializeException.RpcMessage)
-                    };
-                    Logger.Warn($"decoderException {rpcResponse.RequestId}");
-                    WriteAndFlushAsync(context, rpcResponse);
-                }
-                else
-                {
-                    context.CloseAsync();
-                    Logger.Error(exception);
-                }
-            }
-            else
-            {
-                context.CloseAsync();
-                Logger.Error(exception);
-            }
+            Logger.Error(exception);
+
+            context.CloseAsync();
         }
     }
 }
