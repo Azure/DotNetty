@@ -6,7 +6,6 @@
     using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Handlers.Timeout;
-    using DotNetty.Rpc.Exceptions;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Rpc.Service;
     using DotNetty.Transport.Channels;
