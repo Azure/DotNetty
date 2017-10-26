@@ -7,6 +7,7 @@ namespace DotNetty.Rpc.Client
     using System.Threading;
     using DotNetty.Codecs;
     using DotNetty.Common.Internal.Logging;
+    using DotNetty.Handlers.Timeout;
     using DotNetty.Rpc.Protocol;
     using DotNetty.Rpc.Service;
     using DotNetty.Transport.Bootstrapping;
@@ -40,6 +41,7 @@ namespace DotNetty.Rpc.Client
                     pipeline.AddLast(new RpcDecoder<RpcResponse>());
                     pipeline.AddLast(new RpcEncoder<RpcRequest>());
 
+                    pipeline.AddLast(new IdleStateHandler(60, 60, 60));
                     pipeline.AddLast(new ReconnectHandler(this.DoConnect));
 
                     pipeline.AddLast(new RpcClientHandler());

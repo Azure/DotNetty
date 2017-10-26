@@ -41,6 +41,7 @@
                         pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 0));
                         pipeline.AddLast(new RpcDecoder<RpcRequest>());
                         pipeline.AddLast(new RpcEncoder<RpcResponse>());
+                        pipeline.AddLast(new IdleStateHandler(60, 60, 60));
                         pipeline.AddLast(new RpcHandler());
                     }));
 
