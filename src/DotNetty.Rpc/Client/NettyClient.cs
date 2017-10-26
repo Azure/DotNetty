@@ -50,17 +50,7 @@ namespace DotNetty.Rpc.Client
 
         public async Task<T> SendRequest<T>(AbsMessage<T> request, int timeout = 10000) where T : IResult
         {
-            if (this.clientRpcHandler == null || !this.clientRpcHandler.GetChannel().Active)
-            {
-                if (!this.emptyEvent.Wait(ConnectTimeout))
-                {
-                    throw new Handlers.TimeoutException("Channel Connect TimeOut");
-                }
-            }
-            if (this.clientRpcHandler == null)
-            {
-                throw new Exception("ClientRpcHandler Null");
-            }
+            this.WaitConnect();
 
             var rpcRequest = new RpcRequest
             {
@@ -73,6 +63,21 @@ namespace DotNetty.Rpc.Client
                 throw new Exception(rpcReponse.Error);
             }
             return (T)rpcReponse.Result;
+        }
+
+        void WaitConnect()
+        {
+            if (this.clientRpcHandler == null || !this.clientRpcHandler.GetChannel().Active)
+            {
+                if (!this.emptyEvent.Wait(ConnectTimeout))
+                {
+                    throw new Handlers.TimeoutException("Channel Connect TimeOut");
+                }
+            }
+            if (this.clientRpcHandler == null)
+            {
+                throw new Exception("ClientRpcHandler Null");
+            }
         }
 
         private Task DoConnect(EndPoint socketAddress)
@@ -108,17 +113,11 @@ namespace DotNetty.Rpc.Client
 
         public void Close()
         {
-            this.emptyEvent.Wait();
-            if (this.clientRpcHandler == null)
-            {
-                Logger.Error("ClientRpcHandler Null");
-            }
-            else
-            {
-                this.closed = true;
-                IChannel channel0 = this.clientRpcHandler.GetChannel();
-                channel0.CloseAsync();
-            }
+            this.WaitConnect();
+
+            this.closed = true;
+            IChannel channel0 = this.clientRpcHandler.GetChannel();
+            channel0.CloseAsync();
         }
     }
 }

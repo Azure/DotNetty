@@ -1,40 +1,45 @@
-﻿using System;
-
-namespace DotNetty.Rpc.Client
+﻿namespace DotNetty.Rpc.Client
 {
+    using System;
     using System.Collections.Concurrent;
     using System.Net;
-    using System.Threading;
 
     public class NettyClientFactory
     {
-        private static readonly ConcurrentDictionary<string, NettyClient> ServiceClientMap = new ConcurrentDictionary<string, NettyClient>();
-        private static readonly ConcurrentDictionary<string, object> ServiceClientLockMap = new ConcurrentDictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, Lazy<NettyClient>> ServiceClientMap = new ConcurrentDictionary<string, Lazy<NettyClient>>();
 
         public static NettyClient Get(string serverAddress)
         {
-            NettyClient client;
-            ServiceClientMap.TryGetValue(serverAddress, out client);
-            if (client != null && !client.IsClosed)
-                return client;
-
-            object locker = ServiceClientLockMap.GetOrAdd(serverAddress, new object());
-            lock (locker)
+            Lazy<NettyClient> oldlazyClient;
+            if (ServiceClientMap.TryGetValue(serverAddress, out oldlazyClient))
             {
-                ServiceClientMap.TryGetValue(serverAddress, out client);
-                if (client != null && !client.IsClosed)
+                NettyClient client = oldlazyClient.Value;
+                if (!client.IsClosed)
+                {
                     return client;
+                }
+            }
 
-                client = new NettyClient();
+            var newlazyClient = new Lazy<NettyClient>(() =>
+            {
+                var nettyClient = new NettyClient();
                 string[] array = serverAddress.Split(':');
                 string host = array[0];
                 int port = Convert.ToInt32(array[1]);
                 EndPoint remotePeer = new IPEndPoint(IPAddress.Parse(host).MapToIPv6(), port);
-                client.Connect(remotePeer);
+                nettyClient.Connect(remotePeer);
+                return nettyClient;
+            });
 
-                ServiceClientMap.TryAdd(serverAddress, client);
-                return client;
+            if (oldlazyClient == null)
+            {
+                ServiceClientMap.TryAdd(serverAddress, newlazyClient);
             }
+            else
+            {
+                ServiceClientMap.TryUpdate(serverAddress, newlazyClient, oldlazyClient);
+            }
+            return newlazyClient.Value;
         }
 
         public static bool Exist(string serverAddress) => ServiceClientMap.ContainsKey(serverAddress);
