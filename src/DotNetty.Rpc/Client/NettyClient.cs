@@ -36,12 +36,10 @@ namespace DotNetty.Rpc.Client
                 .Handler(new ActionChannelInitializer<ISocketChannel>(c =>
                 {
                     IChannelPipeline pipeline = c.Pipeline;
+                    pipeline.AddLast(new IdleStateHandler(60, 60, 60));
                     pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 0));
-
                     pipeline.AddLast(new RpcDecoder<RpcResponse>());
                     pipeline.AddLast(new RpcEncoder<RpcRequest>());
-
-                    pipeline.AddLast(new IdleStateHandler(60, 60, 60));
                     pipeline.AddLast(new ReconnectHandler(this.DoConnect));
 
                     pipeline.AddLast(new RpcClientHandler());
