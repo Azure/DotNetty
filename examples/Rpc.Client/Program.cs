@@ -28,7 +28,7 @@ namespace Rpc.Client
                 while (true)
                 {
                     Test();
-                    //Console.ReadLine();
+                    Console.ReadLine();
                 }
             }
             catch (Exception ex)
