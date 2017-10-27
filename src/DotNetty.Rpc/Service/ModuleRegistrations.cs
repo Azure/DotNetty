@@ -61,7 +61,7 @@
 
                 return isAssignableFrom;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
