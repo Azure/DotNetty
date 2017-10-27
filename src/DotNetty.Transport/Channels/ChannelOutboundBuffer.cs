@@ -362,7 +362,7 @@ namespace DotNetty.Transport.Channels
                             entry.Count = count = buf.IoBufferCount;
                         }
                         i += count;
-                        if (i >= 1024 && Util.IsLinux)
+                        if (i > 1024 && Util.IsLinux)
                         {
                             break;
                         }
