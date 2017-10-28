@@ -4,12 +4,15 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Runtime.InteropServices;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
 
     static class Util
     {
+        public static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
         static readonly IInternalLogger Log = InternalLoggerFactory.GetInstance<IChannel>();
 
         /// <summary>

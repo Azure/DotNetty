@@ -306,29 +306,7 @@ namespace DotNetty.Transport.Channels.Sockets
             // Did not write completely.
             if (scheduleAsync)
             {
-                this.SetState(StateFlags.WriteScheduled);
-                bool pending;
-
-#if NETSTANDARD1_3
-                pending = this.Socket.SendAsync(operation);
-#else
-                if (ExecutionContext.IsFlowSuppressed())
-                {
-                    pending = this.Socket.SendAsync(operation);
-                }
-                else
-                {
-                    using (ExecutionContext.SuppressFlow())
-                    {
-                        pending = this.Socket.SendAsync(operation);
-                    }
-                }
-#endif
-
-                if (!pending)
-                {
-                    ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
-                }
+                this.IncompleteWrite0(operation);
             }
             else
             {

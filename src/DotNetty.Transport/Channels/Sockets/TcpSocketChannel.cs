@@ -5,6 +5,7 @@ namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -245,8 +246,83 @@ namespace DotNetty.Transport.Channels.Sockets
         //    return region.transferTo(javaChannel(), position);
         //}
 
+        void Write(ChannelOutboundBuffer input)
+        {
+            while (true)
+            {
+                int size = input.Count;
+                if (size == 0)
+                {
+                    break;
+                }
+
+                List<ArraySegment<byte>> nioBuffers = input.GetSharedBufferList();
+                int nioBufferCnt = nioBuffers.Count;
+                if (nioBufferCnt == 0)
+                {
+                    this.WriteByteBuffers(input);
+                    return;
+                }
+                else
+                {
+                    ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
+                    bool flag = this.IncompleteWrite0(asyncOperation);
+                    if (flag)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        void WriteByteBuffers(ChannelOutboundBuffer input)
+        {
+            while (true)
+            {
+                object msg = input.Current;
+                if (msg == null)
+                {
+                    // Wrote all messages.
+                    break;
+                }
+
+                var buf = msg as IByteBuffer;
+                if (buf != null)
+                {
+                    int readableBytes = buf.ReadableBytes;
+                    if (readableBytes == 0)
+                    {
+                        input.Remove();
+                        continue;
+                    }
+
+                    var nioBuffers = new List<ArraySegment<byte>>();
+                    ArraySegment<byte> nioBuffer = buf.GetIoBuffer();
+                    nioBuffers.Add(nioBuffer);
+
+                    ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
+                    this.IncompleteWrite0(asyncOperation);
+                    break;
+                }
+                else
+                {
+                    // Should not reach here.
+                    throw new InvalidOperationException();
+                }
+            }
+        }
+
         protected override void DoWrite(ChannelOutboundBuffer input)
         {
+            if (Util.IsLinux)
+            {
+                //- https://github.com/dotnet/corefx/issues/23672
+                this.Write(input);
+                return;
+            }
+
             List<ArraySegment<byte>> sharedBufferList = null;
             try
             {
@@ -329,7 +405,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
 
                     if (!done)
-                    {
+                    {                                 
                         ArraySegment<byte>[] copiedBuffers = sharedBufferList.ToArray(); // copying buffers to
                         SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
 
