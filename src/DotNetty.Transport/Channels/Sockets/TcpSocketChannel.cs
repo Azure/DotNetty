@@ -248,77 +248,69 @@ namespace DotNetty.Transport.Channels.Sockets
 
         void Write(ChannelOutboundBuffer input)
         {
-            List<ArraySegment<byte>> nioBuffers = null;
-            try
+            while (true)
             {
                 int size = input.Count;
                 if (size == 0)
                 {
-                    return;
+                    break;
                 }
 
-                nioBuffers = input.GetSharedBufferList();
+                List<ArraySegment<byte>> nioBuffers = input.GetSharedBufferList();
                 int nioBufferCnt = nioBuffers.Count;
                 if (nioBufferCnt == 0)
                 {
                     this.WriteByteBuffers(input);
+                    return;
                 }
                 else
                 {
                     ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
                     SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
-                    this.IncompleteWrite(true, asyncOperation);
+                    bool flag = this.IncompleteWrite0(asyncOperation);
+                    if (flag)
+                    {
+                        break;
+                    }
                 }
-            }
-            finally
-            {
-                nioBuffers?.Clear();
             }
         }
 
         void WriteByteBuffers(ChannelOutboundBuffer input)
         {
-            List<ArraySegment<byte>> nioBuffers = null;
-            try
+            while (true)
             {
-                while (true)
+                object msg = input.Current;
+                if (msg == null)
                 {
-                    object msg = input.Current;
-                    if (msg == null)
-                    {
-                        // Wrote all messages.
-                        break;
-                    }
-
-                    var buf = msg as IByteBuffer;
-                    if (buf != null)
-                    {
-                        int readableBytes = buf.ReadableBytes;
-                        if (readableBytes == 0)
-                        {
-                            input.Remove();
-                            continue;
-                        }
-
-                        nioBuffers = new List<ArraySegment<byte>>();
-                        ArraySegment<byte> nioBuffer = buf.GetIoBuffer();
-                        nioBuffers.Add(nioBuffer);
-
-                        ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
-                        SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
-                        this.IncompleteWrite(true, asyncOperation);
-                        break;
-                    }
-                    else
-                    {
-                        // Should not reach here.
-                        throw new InvalidOperationException();
-                    }
+                    // Wrote all messages.
+                    break;
                 }
-            }
-            finally
-            {
-                nioBuffers?.Clear();
+
+                var buf = msg as IByteBuffer;
+                if (buf != null)
+                {
+                    int readableBytes = buf.ReadableBytes;
+                    if (readableBytes == 0)
+                    {
+                        input.Remove();
+                        continue;
+                    }
+
+                    var nioBuffers = new List<ArraySegment<byte>>();
+                    ArraySegment<byte> nioBuffer = buf.GetIoBuffer();
+                    nioBuffers.Add(nioBuffer);
+
+                    ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
+                    this.IncompleteWrite0(asyncOperation);
+                    break;
+                }
+                else
+                {
+                    // Should not reach here.
+                    throw new InvalidOperationException();
+                }
             }
         }
 

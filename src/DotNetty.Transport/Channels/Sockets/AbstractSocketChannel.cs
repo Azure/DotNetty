@@ -433,7 +433,7 @@ namespace DotNetty.Transport.Channels.Sockets
             bool IsFlushPending() => this.Channel.IsInState(StateFlags.WriteScheduled);
         }
 
-        protected void IncompleteWrite0(SocketChannelAsyncOperation operation)
+        protected bool IncompleteWrite0(SocketChannelAsyncOperation operation)
         {
             this.SetState(StateFlags.WriteScheduled);
             bool pending;
@@ -458,6 +458,7 @@ namespace DotNetty.Transport.Channels.Sockets
             {
                 ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
             }
+            return pending;
         }
 
         protected override bool IsCompatible(IEventLoop eventLoop) => true;
