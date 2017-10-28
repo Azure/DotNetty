@@ -4,10 +4,14 @@
 namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.InteropServices;
+    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
@@ -240,6 +244,8 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected abstract class AbstractSocketUnsafe : AbstractUnsafe, ISocketChannelUnsafe
         {
+            static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractSocketUnsafe>();
+
             protected AbstractSocketUnsafe(AbstractSocketChannel channel)
                 : base(channel)
             {
@@ -425,6 +431,34 @@ namespace DotNetty.Transport.Channels.Sockets
             }
 
             bool IsFlushPending() => this.Channel.IsInState(StateFlags.WriteScheduled);
+        }
+
+        protected bool IncompleteWrite0(SocketChannelAsyncOperation operation)
+        {
+            this.SetState(StateFlags.WriteScheduled);
+            bool pending;
+
+#if NETSTANDARD1_3
+            pending = this.Socket.SendAsync(operation);
+#else
+                if (ExecutionContext.IsFlowSuppressed())
+                {
+                    pending = this.Socket.SendAsync(operation);
+                }
+                else
+                {
+                    using (ExecutionContext.SuppressFlow())
+                    {
+                        pending = this.Socket.SendAsync(operation);
+                    }
+                }
+#endif
+
+            if (!pending)
+            {
+                ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
+            }
+            return pending;
         }
 
         protected override bool IsCompatible(IEventLoop eventLoop) => true;

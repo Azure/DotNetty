@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using DotNetty.Buffers;
     using DotNetty.Common;
@@ -236,10 +237,10 @@ namespace DotNetty.Transport.Channels
                 ReferenceCountUtil.SafeRelease(msg);
 
                 Util.SafeSetFailure(promise, cause, Logger);
-                if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
-                {
-                    Logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
-                }
+                //if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
+                //{
+                //    Logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
+                //}
                 this.DecrementPendingOutboundBytes(size, false, notifyWritability);
             }
 
@@ -329,6 +330,7 @@ namespace DotNetty.Transport.Channels
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
             List<ArraySegment<byte>> nioBuffers = NioBuffers.Get(threadLocalMap);
             Entry entry = this.flushedEntry;
+            int i = 0;
             while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer) {
                 if (!entry.Cancelled)
                 {
@@ -358,6 +360,12 @@ namespace DotNetty.Transport.Channels
                         {
                             //noinspection ConstantValueVariableUse
                             entry.Count = count = buf.IoBufferCount;
+                        }
+                        i += count;
+                        if (i > 1024 && Util.IsLinux)
+                        {
+                            //- https://github.com/dotnet/corefx/issues/23416
+                            break;
                         }
                         if (count == 1)
                         {
@@ -607,10 +615,10 @@ namespace DotNetty.Transport.Channels
                     {
                         ReferenceCountUtil.SafeRelease(e.Message);
                         Util.SafeSetFailure(e.Promise, cause, Logger);
-                        if (e.Promise != TaskCompletionSource.Void && !e.Promise.TrySetException(cause))
-                        {
-                            Logger.Warn($"Failed to mark a promise as failure because it's done already: {e.Promise}", cause);
-                        }
+                        //if (e.Promise != TaskCompletionSource.Void && !e.Promise.TrySetException(cause))
+                        //{
+                        //    Logger.Warn($"Failed to mark a promise as failure because it's done already: {e.Promise}", cause);
+                        //}
                     }
                     e = e.RecycleAndGetNext();
                 }

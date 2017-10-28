@@ -214,7 +214,7 @@ namespace DotNetty.Buffers.Tests
             AssertSameAndRelease(Empty, WrappedBuffer(EmptyBytes2D));
             AssertSameAndRelease(Empty, WrappedBuffer(new[] { EmptyBytes }));
             AssertSameAndRelease(Empty, WrappedBuffer(EmptyByteBuffer));
-            AssertSameAndRelease(Empty, WrappedBuffer(new [] { Buffer(0) }));
+            AssertSameAndRelease(Empty, WrappedBuffer(new[] { Buffer(0) }));
             AssertSameAndRelease(Empty, WrappedBuffer(Buffer(0), Buffer(0)));
             AssertSameAndRelease(Empty, CopiedBuffer(EmptyBytes));
             AssertSameAndRelease(Empty, CopiedBuffer(new byte[8], 0, 0));
@@ -223,7 +223,7 @@ namespace DotNetty.Buffers.Tests
             Assert.Same(Empty, CopiedBuffer(EmptyBytes2D));
             AssertSameAndRelease(Empty, CopiedBuffer(new[] { EmptyBytes }));
             AssertSameAndRelease(Empty, CopiedBuffer(EmptyByteBuffer));
-            AssertSameAndRelease(Empty, CopiedBuffer(new [] { Buffer(0) }));
+            AssertSameAndRelease(Empty, CopiedBuffer(new[] { Buffer(0) }));
             AssertSameAndRelease(Empty, CopiedBuffer(Buffer(0), Buffer(0)));
         }
 
@@ -232,12 +232,12 @@ namespace DotNetty.Buffers.Tests
         {
             Assert.True(ByteBufferUtil.Compare(
                     WrappedBuffer(new[] { (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF }),
-                    WrappedBuffer(new [] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00 }))
+                    WrappedBuffer(new[] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00 }))
                 > 0);
 
             Assert.True(ByteBufferUtil.Compare(
-                    WrappedBuffer(new [] { (byte)0xFF }),
-                    WrappedBuffer(new [] { (byte)0x00 }))
+                    WrappedBuffer(new[] { (byte)0xFF }),
+                    WrappedBuffer(new[] { (byte)0x00 }))
                 > 0);
         }
 
@@ -265,13 +265,13 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
                 this.FreeLater(WrappedBuffer(
-                    new byte[] { 1 }, 
-                    new byte[] { 2 }, 
+                    new byte[] { 1 },
+                    new byte[] { 2 },
                     new byte[] { 3 })));
 
             Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
-                WrappedBuffer(new []
+                WrappedBuffer(new[]
                 {
                     WrappedBuffer(new byte[] { 1, 2, 3 })
                 }));
@@ -280,7 +280,7 @@ namespace DotNetty.Buffers.Tests
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
                 this.FreeLater(WrappedBuffer(
                     WrappedBuffer(new byte[] { 1 }),
-                    WrappedBuffer(new byte[] { 2 }), 
+                    WrappedBuffer(new byte[] { 2 }),
                     WrappedBuffer(new byte[] { 3 }))));
         }
 
@@ -334,19 +334,19 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
                 CopiedBuffer(
-                    new byte[] { 1 }, 
-                    new byte[] { 2 }, 
+                    new byte[] { 1 },
+                    new byte[] { 2 },
                     new byte[] { 3 }));
 
             Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
-                CopiedBuffer(new [] { WrappedBuffer(new byte[] { 1, 2, 3 }) }));
+                CopiedBuffer(new[] { WrappedBuffer(new byte[] { 1, 2, 3 }) }));
 
             Assert.Equal(
                 WrappedBuffer(new byte[] { 1, 2, 3 }),
                 CopiedBuffer(
                     WrappedBuffer(new byte[] { 1 }),
-                    WrappedBuffer(new byte[] { 2 }), 
+                    WrappedBuffer(new byte[] { 2 }),
                     WrappedBuffer(new byte[] { 3 })));
         }
 
@@ -383,7 +383,7 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(1, buffer.ReadInt());
             Assert.Equal(4, buffer.ReadInt());
             Assert.False(buffer.IsReadable());
-            
+
             Assert.Equal(0, CopyInt(null).Capacity);
             Assert.Equal(0, CopyInt(new int[] { }).Capacity);
         }
