@@ -364,6 +364,7 @@ namespace DotNetty.Transport.Channels
                         i += count;
                         if (i > 1024 && Util.IsLinux)
                         {
+                            //- https://github.com/dotnet/corefx/issues/23416
                             break;
                         }
                         if (count == 1)

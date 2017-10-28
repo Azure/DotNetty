@@ -318,6 +318,7 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             if (Util.IsLinux)
             {
+                //- https://github.com/dotnet/corefx/issues/23672
                 this.Write(input);
                 return;
             }
