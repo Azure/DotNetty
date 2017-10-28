@@ -21,7 +21,6 @@ namespace Echo.Server
         static async Task RunServerAsync()
         {
             ExampleHelper.SetConsoleLogger();
-            Environment.SetEnvironmentVariable("io.netty.leakDetection.level", "Advanced");
 
             IEventLoopGroup bossGroup;
             IEventLoopGroup workerGroup;
@@ -60,7 +59,7 @@ namespace Echo.Server
 
                 bootstrap
                     .Option(ChannelOption.SoBacklog, 100)
-                    //.Handler(new LoggingHandler("SRV-LSTN"))
+                    .Handler(new LoggingHandler("SRV-LSTN"))
                     .ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
@@ -68,7 +67,7 @@ namespace Echo.Server
                         {
                             pipeline.AddLast("tls", TlsHandler.Server(tlsCertificate));
                         }
-                        //pipeline.AddLast(new LoggingHandler("SRV-CONN"));
+                        pipeline.AddLast(new LoggingHandler("SRV-CONN"));
                         pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
                         pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 

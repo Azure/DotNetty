@@ -47,7 +47,7 @@ namespace Echo.Client
                         {
                             pipeline.AddLast("tls", new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)));
                         }
-                        //pipeline.AddLast(new LoggingHandler());
+                        pipeline.AddLast(new LoggingHandler());
                         pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
                         pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
