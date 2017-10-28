@@ -5,9 +5,9 @@
     "args": [],
     "tasks": [
         {
-            "taskName": "build",
+            "taskName": "msbuild",
             "args": [
-                "${workspaceRoot}/examples/Rpc.Server/Rpc.Server.csproj"
+                "dotnetty.sln"
             ],
             "isBuildCommand": true,
             "problemMatcher": "$msCompile"

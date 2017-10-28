@@ -4,7 +4,9 @@
 namespace Echo.Client
 {
     using System;
+    using System.Diagnostics;
     using System.Text;
+    using System.Threading;
     using DotNetty.Buffers;
     using DotNetty.Transport.Channels;
     using Examples.Common;
@@ -12,6 +14,8 @@ namespace Echo.Client
     public class EchoClientHandler : ChannelHandlerAdapter
     {
         readonly IByteBuffer initialMessage;
+        int i = 0;
+        readonly Stopwatch sw = new Stopwatch();
 
         public EchoClientHandler()
         {
@@ -20,14 +24,25 @@ namespace Echo.Client
             this.initialMessage.WriteBytes(messageBytes);
         }
 
-        public override void ChannelActive(IChannelHandlerContext context) => context.WriteAndFlushAsync(this.initialMessage);
+        public override void ChannelActive(IChannelHandlerContext context)
+        {
+            this.sw.Start();
+            context.WriteAndFlushAsync(this.initialMessage);
+        }
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
             var byteBuffer = message as IByteBuffer;
             if (byteBuffer != null)
             {
-                Console.WriteLine("Received from server: " + byteBuffer.ToString(Encoding.UTF8));
+                if (Interlocked.Increment(ref this.i) % 10000 == 0)
+                {
+                    this.sw.Stop();
+
+                    Console.WriteLine(this.sw.ElapsedMilliseconds);
+
+                    this.sw.Restart();
+                }
             }
             context.WriteAsync(message);
         }
