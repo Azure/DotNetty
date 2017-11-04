@@ -17,13 +17,17 @@ namespace DotNetty.Transport.Libuv.Native
 
         INativeUnsafe nativeUnsafe;
         uv_buf_t[] bufs;
+        int bufferCount;
+        GCHandle bufsPin;
 
-        public WriteRequest(ThreadLocalPool.Handle recyclerHandle) 
+        public WriteRequest(ThreadLocalPool.Handle recyclerHandle)
             : base(uv_req_type.UV_WRITE, 0)
         {
             this.recyclerHandle = recyclerHandle;
             this.handles = new List<GCHandle>();
-            this.bufs = new uv_buf_t[1];
+            this.bufferCount = 32; // Default to 32 slots
+            this.bufs = new uv_buf_t[this.bufferCount];
+            this.bufsPin = GCHandle.Alloc(this.bufs, GCHandleType.Pinned);
         }
 
         internal void Prepare(INativeUnsafe channelUnsafe, List<ArraySegment<byte>> nioBuffers)
@@ -41,7 +45,12 @@ namespace DotNetty.Transport.Libuv.Native
             {
                 if (this.bufs.Length < nioBuffers.Count)
                 {
+                    if (this.bufsPin.IsAllocated)
+                    {
+                        this.bufsPin.Free();
+                    }
                     this.bufs = new uv_buf_t[nioBuffers.Count];
+                    this.bufsPin = GCHandle.Alloc(this.bufs, GCHandleType.Pinned);
                 }
 
                 for (int i = 0; i < nioBuffers.Count; i++)
@@ -52,15 +61,15 @@ namespace DotNetty.Transport.Libuv.Native
                     this.bufs[i] = new uv_buf_t(arrayHandle + nioBuffers[i].Offset, nioBuffers[i].Count);
                     this.handles.Add(handle);
                 }
-
-                GCHandle bufArray = GCHandle.Alloc(this.bufs, GCHandleType.Pinned);
-                this.handles.Add(bufArray);
             }
 
+            this.bufferCount = nioBuffers.Count;
             this.nativeUnsafe = channelUnsafe;
         }
 
         internal ref uv_buf_t[] Bufs => ref this.bufs;
+
+        internal ref int BufferCount => ref this.bufferCount;
 
         internal OperationException Error { get; private set; }
 
@@ -75,6 +84,7 @@ namespace DotNetty.Transport.Libuv.Native
 
         void ReleaseHandles()
         {
+            this.bufferCount = 0;
             if (this.handles.Count == 0)
             {
                 return;
@@ -88,6 +98,15 @@ namespace DotNetty.Transport.Libuv.Native
                 }
             }
             this.handles.Clear();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (this.bufsPin.IsAllocated)
+            {
+                this.bufsPin.Free();
+            }
+            base.Dispose(disposing);
         }
 
         void OnWriteCallback(int status)
