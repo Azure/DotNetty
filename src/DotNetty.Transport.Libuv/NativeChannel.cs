@@ -206,7 +206,7 @@ namespace DotNetty.Transport.Libuv
                 if (allocHandle.LastBytesRead <= 0)
                 {
                     // nothing was read -> release the buffer.
-                    buffer.Release();
+                    buffer.SafeRelease();
                 }
                 else
                 {
@@ -251,7 +251,8 @@ namespace DotNetty.Transport.Libuv
                     if (writeRequest.Error != null)
                     {
                         ChannelOutboundBuffer input = this.OutboundBuffer;
-                        input.FailFlushed(writeRequest.Error, true);
+                        input?.FailFlushed(writeRequest.Error, true);
+                        this.Channel.Pipeline.FireExceptionCaught(writeRequest.Error);
                     }
                 }
                 finally 

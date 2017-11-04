@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Libuv.Native
     using System;
     using System.Diagnostics.Contracts;
     using System.Net;
+    using DotNetty.Buffers;
     using DotNetty.Common.Internal;
 
     sealed class Tcp : TcpHandle
@@ -55,21 +56,27 @@ namespace DotNetty.Transport.Libuv.Native
             var tcp = GetTarget<Tcp>(handle);
             int status = (int)nread.ToInt64();
 
+            OperationException error = null;
+            if (status < 0 && status != (int)uv_err_code.UV_EOF)
+            {
+                error = NativeMethods.CreateError((uv_err_code)status);
+            }
+
             ReadOperation operation = tcp.pendingReads.Poll();
             if (operation == null)
             {
-                // This happens when the client connection dropped out
-                // just before the read callback is invoked
-                Logger.Warn("Channel read operation completed prematurely.");
-                return;
-            }
-
-            OperationException error = null;
-            if (status < 0)
-            {
-                if (status != (int)uv_err_code.UV_EOF)
+                if (error != null)
                 {
-                    error = NativeMethods.CreateError((uv_err_code)status);
+                    // It is possible if the client connection resets  
+                    // causing errors where there are no pending read
+                    // operations, in this case we just notify the channel
+                    // for errors
+                    operation = new ReadOperation(tcp.unsafeChannel, Unpooled.Empty);
+                }
+                else
+                {
+                    Logger.Warn("Channel read operation completed prematurely.");
+                    return;
                 }
             }
 
@@ -89,12 +96,11 @@ namespace DotNetty.Transport.Libuv.Native
             int result;
             try
             {
-                uv_buf_t[] bufs = request.Bufs;
                 result = NativeMethods.uv_write(
                     request.Handle,
                     this.Handle,
-                    bufs,
-                    bufs.Length,
+                    request.Bufs,
+                    request.BufferCount,
                     WriteRequest.WriteCallback);
             }
             catch
