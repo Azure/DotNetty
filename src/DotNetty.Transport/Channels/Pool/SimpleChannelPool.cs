@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels.Pool
     using System.IO;
     using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Bootstrapping;
@@ -21,12 +22,10 @@ namespace DotNetty.Transport.Channels.Pool
 public class SimpleChannelPool : IChannelPool 
 {
     static readonly AttributeKey<SimpleChannelPool> PoolKey = AttributeKey<SimpleChannelPool>.NewInstance("channelPool");
-    
-    
-    static readonly IllegalStateException FULL_EXCEPTION = ThrowableUtil.unknownStackTrace(
-            new IllegalStateException("ChannelPool full"), SimpleChannelPool.class, "releaseAndOffer(...)");
 
-    readonly Deque<Channel> deque = PlatformDependent.newConcurrentDeque();
+    static readonly InvalidOperationException FullException = new InvalidOperationException("ChannelPool full");
+
+    readonly IQueue<IChannel> deque = PlatformDependent.NewMpscQueue<IChannel>();
     readonly bool lastRecentUsed;
 
     /**
@@ -99,7 +98,6 @@ public class SimpleChannelPool : IChannelPool
         Contract.Assert(channel.EventLoop.InEventLoop);
         this.Handler.ChannelCreated(channel);
     }
-    
 
     /**
      * Returns the {@link Bootstrap} this pool will use to open new connections.
@@ -130,72 +128,66 @@ public class SimpleChannelPool : IChannelPool
      */
     protected bool ReleaseHealthCheck { get; }
 
+    public Task<IChannel> AquireAsync()
+    {
+        var promise = new TaskCompletionSource<IChannel>();
+        this.AcquireHealthyFromPoolOrNew(promise);
+        return promise.Task;
+    }
+
     /**
      * Tries to retrieve healthy channel from the pool if any or creates a new channel otherwise.
      * @param promise the promise to provide acquire result.
      * @return future for acquiring a channel.
      */
-    public Task<IChannel> AquireAsync() 
+    async void AcquireHealthyFromPoolOrNew(TaskCompletionSource<IChannel> promise)
     {
-        try 
+        try
         {
-           var ch = this.PollChannel();
+           var channel = this.PollChannel();
 
-           if (ch == null) 
+           if (channel == null) 
            {
                 // No Channel left in the pool bootstrap a new Channel
                 Bootstrap bs = this.Bootstrap.Clone();
                 bs.Attribute(PoolKey, this);
-                return this.ConnectChannel(bs);
+               try
+               {
+                   channel = await this.ConnectChannel(bs);
+                   if (!promise.TrySetResult(channel))
+                   {
+                       this.ReleaseAsync(channel);
+                   }
+               }
+               catch (Exception e)
+               {
+                   promise.TrySetException(e);
+               }
+                
+                return;
            }
             
-            var loop = ch.EventLoop;
+            var loop = channel.EventLoop;
             if (loop.InEventLoop) 
             {
-                return this.DoHealthCheck(ch);
+                this.DoHealthCheck(channel, promise);
             } 
             else 
             {
-                var tcs = new TaskCompletionSource<IChannel>();
-                loop.Execute(this.RunDoHealthCheck, Tuple.Create(ch, tcs));
-                return tcs.Task;
+                loop.Execute(this.DoHealthCheck, channel, promise);
             }
         } 
         catch (Exception ex)
         {
-            return TaskEx.FromException<IChannel>(ex);
+            promise.TrySetException(ex);
         }
     }
 
-    void RunDoHealthCheck(object state)
-    {
-        var tuple = state as Tuple<IChannel, TaskCompletionSource<IChannel>>;
-        var channel = tuple.Item1;
-        var tcs = tuple.Item2;
-        this.DoHealthCheck(channel).ContinueWith(
-            t =>
-            {
-                switch (t.Status)
-                {
-                    case TaskStatus.RanToCompletion:
-                        tcs.TrySetResult(t.Result);
-                        break;
-                    case TaskStatus.Faulted:
-                        tcs.TrySetException(t.Exception);
-                        break;
-                    case TaskStatus.Canceled:
-                        tcs.TrySetCanceled();
-                        break;
-                    default:
-                        throw new InvalidOperationException();
-                }
-            });
-    }
+    void DoHealthCheck(object channel, object promise) => this.DoHealthCheck((IChannel)channel, (TaskCompletionSource<IChannel>)promise);
 
-    async Task<IChannel> DoHealthCheck(IChannel channel) 
+    async void DoHealthCheck(IChannel channel, TaskCompletionSource<IChannel> promise) 
     {
         Contract.Assert(channel.EventLoop.InEventLoop);
-
         try
         {
             if (await this.HealthCheck.IsHealthyAsync(channel))
@@ -204,27 +196,25 @@ public class SimpleChannelPool : IChannelPool
                 {
                     channel.GetAttribute(PoolKey).Set(this);
                     this.Handler.ChannelAquired(channel);
-                    return channel;
+                    promise.TrySetResult(channel);
                 } 
-                catch 
+                catch (Exception ex)
                 {
-                    CloseChannel(channel);
-                    throw;
+                    CloseAndFail(channel, ex, promise);
                 }
             }
             else
             {
                 CloseChannel(channel);
-                return await this.AquireAsync();
+                this.AcquireHealthyFromPoolOrNew(promise);
             }
         }
         catch
         {
             CloseChannel(channel);
-            return await this.AquireAsync();
+            this.AcquireHealthyFromPoolOrNew(promise);
         }
     }
-
 
     /**
      * Bootstrap a new {@link Channel}. The default implementation uses {@link Bootstrap#connect()}, sub-classes may
@@ -237,38 +227,37 @@ public class SimpleChannelPool : IChannelPool
     public Task ReleaseAsync(IChannel channel) 
     {
         Contract.Requires(channel != null);
+        var promise = new TaskCompletionSource();
         try 
         {
             var loop = channel.EventLoop;
             if (loop.InEventLoop) 
             {
-                doReleaseChannel(channel);
-            } else {
-                loop.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        doReleaseChannel(channel, promise);
-                    }
-                });
+                this.DoReleaseChannel(channel, promise);
+            } 
+            else 
+            {
+                loop.Execute(this.DoReleaseChannel, channel, promise);
             }
-        } catch (Throwable cause) {
-            closeAndFail(channel, cause, promise);
+        } 
+        catch (Exception ex) 
+        {
+            CloseAndFail(channel, ex, promise);
         }
-        return promise;
+        return promise.Task;
     }
+    
+    void DoReleaseChannel(object channel, object promise) => this.DoReleaseChannel((IChannel)channel, (TaskCompletionSource)promise);
 
-    void doReleaseChannel(IChannel channel) 
+    void DoReleaseChannel(IChannel channel, TaskCompletionSource promise) 
     {
         Contract.Assert(channel.EventLoop.InEventLoop);
 
         // Remove the POOL_KEY attribute from the Channel and check if it was acquired from this pool, if not fail.
-        if (channel.GetAttribute(PoolKey).GetAndSet(null) != this) 
+        if (channel.GetAttribute(PoolKey).GetAndSet(null) != this)
         {
-            closeAndFail(channel,
-                         // Better include a stacktrace here as this is an user error.
-                         new IllegalArgumentException(
-                                 "Channel " + channel + " was not acquired from this ChannelPool"),
-                         promise);
+            // Better include a stacktrace here as this is an user error.
+            CloseAndFail(channel, new ArgumentException($"Channel {channel} was not acquired from this ChannelPool"), promise);
         } 
         else 
         {
@@ -276,27 +265,17 @@ public class SimpleChannelPool : IChannelPool
             {
                 if (this.ReleaseHealthCheck) 
                 {
-                    doHealthCheckOnRelease(channel, promise);
-                } else {
-                    releaseAndOffer(channel, promise);
+                    this.DoHealthCheckOnRelease(channel, promise);
+                } 
+                else 
+                {
+                    this.ReleaseAndOffer(channel, promise);
                 }
-            } catch (Throwable cause) {
-                closeAndFail(channel, cause, promise);
+            } 
+            catch (Exception cause) 
+            {
+                CloseAndFail(channel, cause, promise);
             }
-        }
-    }
-
-    private void doHealthCheckOnRelease(final Channel channel, final Promise<Void> promise){
-        final Future<bool> f = healthCheck.isHealthy(channel);
-        if (f.isDone()) {
-            releaseAndOfferIfHealthy(channel, promise, f);
-        } else {
-            f.addListener(new FutureListener<bool>() {
-                @Override
-                public void operationComplete(Future<bool> future){
-                    releaseAndOfferIfHealthy(channel, promise, f);
-                }
-            });
         }
     }
 
@@ -307,36 +286,52 @@ public class SimpleChannelPool : IChannelPool
      * @param future the future that contains information fif channel is healthy or not.
      * @throws Exception in case when failed to notify handler about release operation.
      */
-    private void releaseAndOfferIfHealthy(IChannel channel, Promise<Void> promise, Future<bool> future)
+    async void DoHealthCheckOnRelease(IChannel channel, TaskCompletionSource promise) 
     {
-        if (future.getNow()) { //channel turns out to be healthy, offering and releasing it.
-            releaseAndOffer(channel, promise);
-        } else { //channel not healthy, just releasing it.
+        if (await this.HealthCheck.IsHealthyAsync(channel)) 
+        { 
+            //channel turns out to be healthy, offering and releasing it.
+            this.ReleaseAndOffer(channel, promise);
+        } 
+        else 
+        { 
+            //channel not healthy, just releasing it.
             this.Handler.ChannelReleased(channel);
-            promise.setSuccess(null);
+            promise.Complete();
         }
     }
 
-    private void releaseAndOffer(IChannel channel, Promise<Void> promise)
+    void ReleaseAndOffer(IChannel channel, TaskCompletionSource promise)
     {
-        if (offerChannel(channel)) {
+        if (this.OfferChannel(channel))
+        {
             this.Handler.ChannelReleased(channel);
-            promise.setSuccess(null);
-        } else {
-            closeAndFail(channel, FULL_EXCEPTION, promise);
+            promise.Complete();
+        } 
+        else 
+        {
+            CloseAndFail(channel, FullException, promise);
         }
     }
 
-    static void CloseChannel(IChannel channel) {
+    static void CloseChannel(IChannel channel) 
+    {
         channel.GetAttribute(PoolKey).GetAndSet(null);
         channel.CloseAsync();
     }
 
-    private static void closeAndFail(Channel channel, Throwable cause, Promise<?> promise) {
+    static void CloseAndFail(IChannel channel, Exception cause, TaskCompletionSource promise)
+    {
         CloseChannel(channel);
-        promise.tryFailure(cause);
+        promise.TrySetException(cause);
     }
-
+    
+    static void CloseAndFail<T>(IChannel channel, Exception cause, TaskCompletionSource<T> promise)
+    {
+        CloseChannel(channel);
+        promise.TrySetException(cause);
+    }
+    
     /**
      * Poll a {@link Channel} out of the internal storage to reuse it. This will return {@code null} if no
      * {@link Channel} is ready to be reused.
@@ -354,14 +349,17 @@ public class SimpleChannelPool : IChannelPool
      * Sub-classes may override {@link #pollChannel()} and {@link #offerChannel(Channel)}. Be aware that
      * implementations of these methods needs to be thread-safe!
      */
-    protected bool offerChannel(IChannel channel) {
-        return deque.offer(channel);
-    }
+    protected bool OfferChannel(IChannel channel)
+        => deque.offer(channel);
+    
 
-    public void Dispose() {
-        for (;;) {
+    public void Dispose() 
+    {
+        for (;;) 
+        {
             IChannel channel = this.PollChannel();
-            if (channel == null) {
+            if (channel == null) 
+            {
                 break;
             }
             channel.CloseAsync();
@@ -370,3 +368,6 @@ public class SimpleChannelPool : IChannelPool
 }
 
 }
+            
+            
+            
