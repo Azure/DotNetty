@@ -3,6 +3,8 @@
 
 namespace DotNetty.Common.Internal
 {
+    using System.Threading;
+
     public interface IQueue<T>
     {
         bool TryEnqueue(T item);
