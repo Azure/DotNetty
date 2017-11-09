@@ -208,6 +208,8 @@ namespace DotNetty.Transport.Channels
 
         public IChannel Channel => this.pipeline.Channel;
 
+        public IChannelPipeline Pipeline => this.pipeline;
+        
         public IByteBufferAllocator Allocator => this.Channel.Allocator;
 
         public abstract IChannelHandler Handler { get; }

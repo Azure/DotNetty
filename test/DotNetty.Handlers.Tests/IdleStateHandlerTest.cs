@@ -3,7 +3,6 @@
 
 namespace DotNetty.Handlers.Tests
 {
-    using System.Threading.Tasks;
     using DotNetty.Tests.Common;
     using Xunit;
     using Xunit.Abstractions;
