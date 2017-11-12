@@ -11,6 +11,7 @@ namespace DotNetty.Transport.Libuv.Native
     abstract unsafe class NativeRequest : IDisposable
     {
         protected static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<NativeRequest>();
+        protected internal IntPtr Handle;
 
         protected NativeRequest(uv_req_type requestType, int size)
         {
@@ -23,12 +24,6 @@ namespace DotNetty.Transport.Libuv.Native
 
             this.Handle = handle;
             this.RequestType = requestType;
-        }
-
-        protected internal IntPtr Handle
-        {
-            get;
-            protected set;
         }
 
         protected bool IsValid => this.Handle != IntPtr.Zero;

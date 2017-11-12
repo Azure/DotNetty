@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?><Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="NuGet">
     <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
@@ -8,7 +8,7 @@
     <Copyright>Copyright © Microsoft Corporation</Copyright>
     <AssemblyTitle>DotNetty: libuv transport model Experimental</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.4.5</VersionPrefix>
+    <VersionPrefix>0.4.7</VersionPrefix>
     <Authors>Microsoft Azure</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
