@@ -52,7 +52,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     //    key.interestOps(key.interestOps() & ~readInterestOp);
                     //    this.channel.Pipeline.FireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
                     //} else {
-                    this.CloseAsync();
+                    this.CloseSafe();
                     //}
                 }
             }
