@@ -663,7 +663,7 @@ namespace DotNetty.Transport.Channels
                 catch (Exception e)
                 {
                     this.InvokeLater(() => this.channel.pipeline.FireExceptionCaught(e));
-                    this.CloseAsync();
+                    this.CloseSafe();
                 }
             }
 
@@ -793,7 +793,7 @@ namespace DotNetty.Transport.Channels
                 {
                     return;
                 }
-                this.CloseAsync();
+                this.CloseSafe();
             }
 
             void InvokeLater(Action task)

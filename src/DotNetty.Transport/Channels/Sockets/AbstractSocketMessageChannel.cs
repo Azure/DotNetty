@@ -104,7 +104,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     {
                         if (ch.Open)
                         {
-                            this.CloseAsync();
+                            this.CloseSafe();
                         }
                     }
                 }
