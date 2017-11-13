@@ -96,6 +96,8 @@ namespace DotNetty.Handlers.Tests
             {
                 Assert.Equal(i, output.ReadByte());
             }
+            //waiting finish of ContinueWith for chDeny.ChannelRejected
+            Thread.Sleep(300);
             Assert.False(chDeny.Active);
             Assert.False(chDeny.Open);
             RuleBasedIPFilter allowHandler = new TestAllowFilter(filter0);
