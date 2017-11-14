@@ -651,10 +651,6 @@ namespace DotNetty.Buffers
 
         public int ArrayOffset => 0;
 
-        public bool HasMemoryAddress => false;
-
-        public unsafe byte* MemoryAddress => throw new NotSupportedException();
-
         public string ToString(Encoding encoding) => string.Empty;
 
         public string ToString(int index, int length, Encoding encoding)
