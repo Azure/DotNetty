@@ -1152,7 +1152,7 @@ namespace DotNetty.Buffers
         public override IByteBuffer Copy(int index, int length)
         {
             this.CheckIndex(index, length);
-            IByteBuffer dst = Unpooled.Buffer(length);
+            IByteBuffer dst = this.AllocateBuffer(length);
             if (length != 0)
             {
                 this.CopyTo(index, length, this.ToComponentIndex(index), dst);
