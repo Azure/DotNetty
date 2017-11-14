@@ -60,7 +60,7 @@ namespace DotNetty.Common.Internal
                 NetworkInterface iface = entry.Key;
                 IPAddress inetAddr = entry.Value;
                 // todo: netty has a check for whether interface is virtual but it always returns false. There is no equivalent in .NET
-                byte[] macAddr = iface.GetPhysicalAddress().GetAddressBytes();
+                byte[] macAddr = iface.GetPhysicalAddress()?.GetAddressBytes();
                 bool replace = false;
                 int res = CompareAddresses(bestMacAddr, macAddr);
                 if (res < 0)
