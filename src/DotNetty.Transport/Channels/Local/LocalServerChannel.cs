@@ -125,17 +125,10 @@ namespace DotNetty.Transport.Channels.Local
             {
                 this.acceptInProgress = false;
                 IChannelPipeline pipeline = this.Pipeline;
-
-                for (;;)
+                while (this.inboundBuffer.TryDequeue(out object m))
                 {
-                    if (!this.inboundBuffer.TryDequeue(out object m))
-                    {
-                        break;
-                    }
-
                     pipeline.FireChannelRead(m);
                 }
-
                 pipeline.FireChannelReadComplete();
             }
         }

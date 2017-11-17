@@ -35,15 +35,9 @@ namespace DotNetty.Transport.Channels
 
         protected override EndPoint RemoteAddressInternal => null;
 
-        protected override void DoDisconnect()
-        {
-            throw new NotSupportedException();
-        }
+        protected override void DoDisconnect() => throw new NotSupportedException();
 
-        protected override IChannelUnsafe NewUnsafe()
-        {
-            return new DefaultServerUnsafe(this);
-        }
+        protected override IChannelUnsafe NewUnsafe() => new DefaultServerUnsafe(this);
 
         protected override void DoWrite(ChannelOutboundBuffer buf) => throw new NotSupportedException();
 

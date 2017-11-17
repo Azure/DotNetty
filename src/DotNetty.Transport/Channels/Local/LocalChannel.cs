@@ -52,12 +52,11 @@ namespace DotNetty.Transport.Channels.Local
         {
         }
 
-        public LocalChannel(LocalServerChannel parent, LocalChannel peer)
+        internal LocalChannel(LocalServerChannel parent, LocalChannel peer)
             : base(parent)
         {
             //this.Configuration.Allocator(new PreferHeapByteBufAllocator(config.getAllocator()));
             this.peer = peer;
-
             if (parent != null)
             {
                 this.localAddress = parent.LocalAddress;
@@ -123,7 +122,7 @@ namespace DotNetty.Transport.Channels.Local
                 // order of events.
                 //
                 // See https://github.com/netty/netty/issues/2144
-                LocalChannel peer = this.peer;
+                var peer = this.peer;
                 this.registerInProgress = true;
                 this.state = State.Connected;
 
@@ -138,7 +137,7 @@ namespace DotNetty.Transport.Channels.Local
                     () =>
                     {
                         this.registerInProgress = false;
-                        TaskCompletionSource promise = peer.connectPromise;
+                        var promise = peer.connectPromise;
 
                         // Only trigger fireChannelActive() if the promise was not null and was not completed yet.
                         // connectPromise may be set to null if doClose() was called in the meantime.
@@ -162,8 +161,8 @@ namespace DotNetty.Transport.Channels.Local
 
         protected override void DoClose()
         {
-            LocalChannel peer = this.peer;
-            State oldState = this.state;
+            var peer = this.peer;
+            var oldState = this.state;
 
             try
             {
@@ -421,7 +420,7 @@ namespace DotNetty.Transport.Channels.Local
         {
             Contract.Assert(this.EventLoop == null || this.EventLoop.InEventLoop);
             this.readInProgress = false;
-            IQueue<object> inboundBuffer = this.inboundBuffer;
+            var inboundBuffer = this.inboundBuffer;
             while (inboundBuffer.TryDequeue(out object msg))
             {
                 ReferenceCountUtil.Release(msg);
@@ -510,7 +509,6 @@ namespace DotNetty.Transport.Channels.Local
                 }
 
                 IChannel boundChannel = LocalChannelRegistry.Get(remoteAddress);
-
                 if (!(boundChannel is LocalServerChannel))
                 {
                     Exception cause = new ConnectException($"connection refused: {remoteAddress}", null);
@@ -519,10 +517,7 @@ namespace DotNetty.Transport.Channels.Local
                     return promise.Task;
                 }
 
-                var serverChannel = (LocalServerChannel)boundChannel;
-                this.localChannel.peer = serverChannel.Serve(this.localChannel);
-
-                promise.Complete();
+                this.localChannel.peer = ((LocalServerChannel)boundChannel).Serve(this.localChannel);
                 return promise.Task;
             }
         }
