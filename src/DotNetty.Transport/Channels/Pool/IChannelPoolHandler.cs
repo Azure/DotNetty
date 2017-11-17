@@ -22,7 +22,7 @@ namespace DotNetty.Transport.Channels.Pool
          *
          * This method will be called by the {@link EventLoop} of the {@link Channel}.
          */
-        void ChannelAquired(IChannel channel);
+        void ChannelAcquired(IChannel channel);
 
         /**
          * Called once a new {@link Channel} is created in the {@link ChannelPool}.

@@ -136,7 +136,7 @@ namespace DotNetty.Transport.Channels.Pool
          */
         protected bool ReleaseHealthCheck { get; }
 
-        public virtual Task<IChannel> AquireAsync()
+        public virtual Task<IChannel> AcquireAsync()
         {
             var promise = new TaskCompletionSource<IChannel>();
             this.Acquire(promise);
@@ -203,7 +203,7 @@ namespace DotNetty.Transport.Channels.Pool
                     try
                     {
                         channel.GetAttribute(PoolKey).Set(this);
-                        this.Handler.ChannelAquired(channel);
+                        this.Handler.ChannelAcquired(channel);
                         promise.TrySetResult(channel);
                     }
                     catch (Exception ex)

@@ -196,7 +196,7 @@ namespace DotNetty.Transport.Channels.Pool
             this.maxPendingAcquires = maxPendingAcquires;
         }
 
-        public override Task<IChannel> AquireAsync()
+        public override Task<IChannel> AcquireAsync()
         {
             var promise = new TaskCompletionSource<IChannel>();
             try
