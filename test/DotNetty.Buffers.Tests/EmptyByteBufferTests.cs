@@ -42,14 +42,5 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(0, empty.Array.Length);
             Assert.Equal(0, empty.ArrayOffset);
         }
-
-        [Fact]
-        public unsafe void MemoryAddress()
-        {
-            var empty = new EmptyByteBuffer(UnpooledByteBufferAllocator.Default);
-            Assert.False(empty.HasMemoryAddress);
-            byte* address;
-            Assert.Throws<NotSupportedException>(() => address = empty.MemoryAddress);
-        }
     }
 }

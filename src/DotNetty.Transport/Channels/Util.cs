@@ -54,5 +54,23 @@ namespace DotNetty.Transport.Channels
                 }
             }
         }
+
+        public static async void CloseSafe(this IChannelUnsafe u)
+        {
+            try
+            {
+                await u.CloseAsync();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            catch (Exception ex) 
+            {
+                if (Log.DebugEnabled)
+                {
+                    Log.Debug("Failed to close channel " + u + " cleanly.", ex);
+                }
+            }
+        }
     }
 }

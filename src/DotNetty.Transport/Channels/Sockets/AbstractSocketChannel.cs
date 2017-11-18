@@ -344,7 +344,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 // If a user cancelled the connection attempt, close the channel, which is followed by channelInactive().
                 if (!promiseSet)
                 {
-                    this.CloseAsync();
+                    this.CloseSafe();
                 }
             }
 
