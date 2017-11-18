@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels.Pool
     using System;
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
+    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
@@ -22,7 +23,7 @@ namespace DotNetty.Transport.Channels.Pool
 
         static readonly TimeoutException TimeoutException = new TimeoutException("Acquire operation took longer then configured maximum time");
 
-        static readonly InvalidOperationException PoolClosedOnReleaseException = new InvalidOperationException("FixedChannelPooled was closed");
+        internal static readonly InvalidOperationException PoolClosedOnReleaseException = new InvalidOperationException("FixedChannelPooled was closed");
 
         static readonly InvalidOperationException PoolClosedOnAcquireException = new InvalidOperationException("FixedChannelPooled was closed");
 
@@ -63,10 +64,6 @@ namespace DotNetty.Transport.Channels.Pool
          * @param maxConnections    the number of maximal active connections, once this is reached new tries to acquire
          *                          a {@link Channel} will be delayed until a connection is returned to the pool again.
          */
-        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, int maxConnections)
-            : this(bootstrap, handler, maxConnections, int.MaxValue)
-        {
-        }
 
         /**
          * Creates a new instance using the {@link ChannelHealthChecker#ACTIVE}.
@@ -79,8 +76,8 @@ namespace DotNetty.Transport.Channels.Pool
          * @param maxPendingAcquires    the maximum number of pending acquires. Once this is exceed acquire tries will
          *                              be failed.
          */
-        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, int maxConnections, int maxPendingAcquires)
-            : this(bootstrap, handler, ChannelActiveHealthChecker.Instance, AcquireTimeoutAction.None, -1, maxConnections, maxPendingAcquires)
+        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, int maxConnections, int maxPendingAcquires = int.MaxValue)
+            : this(bootstrap, handler, ChannelActiveHealthChecker.Instance, AcquireTimeoutAction.None, Timeout.InfiniteTimeSpan, maxConnections, maxPendingAcquires)
         {
         }
 
@@ -101,8 +98,8 @@ namespace DotNetty.Transport.Channels.Pool
          * @param maxPendingAcquires    the maximum number of pending acquires. Once this is exceed acquire tries will
          *                              be failed.
          */
-        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthCheck, AcquireTimeoutAction action, long acquireTimeoutMillis, int maxConnections, int maxPendingAcquires)
-            : this(bootstrap, handler, healthCheck, action, acquireTimeoutMillis, maxConnections, maxPendingAcquires, true)
+        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, AcquireTimeoutAction action, TimeSpan acquireTimeout, int maxConnections, int maxPendingAcquires)
+            : this(bootstrap, handler, healthChecker, action, acquireTimeout, maxConnections, maxPendingAcquires, true)
         {
         }
 
@@ -125,8 +122,8 @@ namespace DotNetty.Transport.Channels.Pool
          * @param releaseHealthCheck    will check channel health before offering back if this parameter set to
          *                              {@code true}.
          */
-        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthCheck, AcquireTimeoutAction action, long acquireTimeoutMillis, int maxConnections, int maxPendingAcquires, bool releaseHealthCheck)
-            : this(bootstrap, handler, healthCheck, action, acquireTimeoutMillis, maxConnections, maxPendingAcquires, releaseHealthCheck, true)
+        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, AcquireTimeoutAction action, TimeSpan acquireTimeout, int maxConnections, int maxPendingAcquires, bool releaseHealthCheck)
+            : this(bootstrap, handler, healthChecker, action, acquireTimeout, maxConnections, maxPendingAcquires, releaseHealthCheck, true)
         {
         }
 
@@ -150,8 +147,8 @@ namespace DotNetty.Transport.Channels.Pool
          *                              {@code true}.
          * @param lastRecentUsed        {@code true} {@link Channel} selection will be LIFO, if {@code false} FIFO.
          */
-        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthCheck, AcquireTimeoutAction action, long acquireTimeoutMillis, int maxConnections, int maxPendingAcquires, bool releaseHealthCheck, bool lastRecentUsed)
-            : base(bootstrap, handler, healthCheck, releaseHealthCheck, lastRecentUsed)
+        public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, AcquireTimeoutAction action, TimeSpan acquireTimeout, int maxConnections, int maxPendingAcquires, bool releaseHealthCheck, bool lastRecentUsed)
+            : base(bootstrap, handler, healthChecker, releaseHealthCheck, lastRecentUsed)
         {
             if (maxConnections < 1)
             {
@@ -162,29 +159,28 @@ namespace DotNetty.Transport.Channels.Pool
                 throw new ArgumentException($"maxPendingAcquires: {maxPendingAcquires} (expected: >= 1)");
             }
 
-            if (action == AcquireTimeoutAction.None && acquireTimeoutMillis == -1)
+            this.acquireTimeout = acquireTimeout;
+            if (action == AcquireTimeoutAction.None && acquireTimeout == Timeout.InfiniteTimeSpan)
             {
                 this.timeoutTask = null;
-                this.acquireTimeout = TimeSpan.Zero;
             }
-            else if (action == AcquireTimeoutAction.None && acquireTimeoutMillis != -1)
+            else if (action == AcquireTimeoutAction.None && acquireTimeout != Timeout.InfiniteTimeSpan)
             {
                 throw new ArgumentException("action");
             }
-            else if (action != AcquireTimeoutAction.None && acquireTimeoutMillis < 0)
+            else if (action != AcquireTimeoutAction.None && acquireTimeout < TimeSpan.Zero)
             {
-                throw new ArgumentException($"acquireTimeoutMillis: {acquireTimeoutMillis} (expected: >= 1)");
+                throw new ArgumentException($"acquireTimeoutMillis: {acquireTimeout} (expected: >= 1)");
             }
             else
             {
-                this.acquireTimeout = TimeSpan.FromMilliseconds(acquireTimeoutMillis);
                 switch (action)
                 {
                     case AcquireTimeoutAction.Fail:
-                        this.timeoutTask = new NewTimeoutTask(this);
+                        this.timeoutTask = new FailTimeoutTask(this);
                         break;
                     case AcquireTimeoutAction.New:
-                        this.timeoutTask = new FailTimeoutTask(this);
+                        this.timeoutTask = new NewTimeoutTask(this);
                         break;
                     default:
                         throw new ArgumentException("action");
@@ -270,38 +266,50 @@ namespace DotNetty.Transport.Channels.Pool
             }
         }
 
-        public override async Task ReleaseAsync(IChannel channel)
+        public override Task ReleaseAsync(IChannel channel)
         {
-            try
-            {
-                await base.ReleaseAsync(channel);
-
-                Contract.Assert(this.executor.InEventLoop);
-
-                if (this.closed)
+            var promise = new TaskCompletionSource();
+            base.ReleaseAsync(channel).ContinueWith(
+                t =>
                 {
-                    // Since the pool is closed, we have no choice but to close the channel
-                    channel.CloseAsync();
-                    throw PoolClosedOnReleaseException;
-                }
+                    IEventLoop loop = channel.EventLoop;
+                    var ex = t.Status == TaskStatus.RanToCompletion ? null : t.Exception.Flatten().InnerException;
+                    if (loop.InEventLoop)
+                    {
+                        this.DoReleaseChannel(channel, ex, promise);
+                    }
+                    else
+                    {
+                        loop.Execute(() => this.DoReleaseChannel(channel, ex, promise));
+                    }
+                });
 
-                this.DecrementAndRunTaskQueue();
+            return promise.Task;
+        }
+
+        void DoReleaseChannel(IChannel channel, Exception ex, TaskCompletionSource promise)
+        {
+            Contract.Assert(channel.EventLoop.InEventLoop);
+            if (this.closed)
+            {
+                // Since the pool is closed, we have no choice but to close the channel
+                channel.CloseAsync();
+                promise.SetException(PoolClosedOnReleaseException);
+                return;
             }
-            catch (Exception e)
-            {
-                if (this.closed)
-                {
-                    // Since the pool is closed, we have no choice but to close the channel
-                    channel.CloseAsync();
-                    throw PoolClosedOnReleaseException;
-                }
 
-                if (!(e is ArgumentException))
+            if (ex == null)
+            {
+                this.DecrementAndRunTaskQueue();
+                promise.Complete();
+            }
+            else
+            {
+                if (!(ex is ArgumentException))
                 {
                     this.DecrementAndRunTaskQueue();
                 }
-
-                throw;
+                promise.SetException(ex);
             }
         }
 
@@ -487,7 +495,7 @@ namespace DotNetty.Transport.Channels.Pool
                         this.pool.RunTaskQueue();
                     }
 
-                    this.originalPromise.TrySetException(future.Exception);
+                    this.originalPromise.TrySetException(future.Exception.Flatten().InnerException);
                 }
             }
 

@@ -24,8 +24,6 @@ namespace DotNetty.Transport.Channels.Pool
 
         static readonly InvalidOperationException FullException = new InvalidOperationException("ChannelPool full");
 
-        readonly Func<IChannel> pollImpl;
-
         readonly IDeque<IChannel> deque = PlatformDependent.NewDeque<IChannel>();
 
         readonly bool lastRecentUsed;
@@ -49,8 +47,8 @@ namespace DotNetty.Transport.Channels.Pool
          * @param healthCheck       the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is
          *                          still healthy when obtain from the {@link ChannelPool}
          */
-        public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthCheck)
-            : this(bootstrap, handler, healthCheck, true)
+        public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker)
+            : this(bootstrap, handler, healthChecker, true)
         {
         }
 
@@ -64,8 +62,8 @@ namespace DotNetty.Transport.Channels.Pool
          * @param releaseHealthCheck will check channel health before offering back if this parameter set to {@code true};
          *                           otherwise, channel health is only checked at acquisition time
          */
-        public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthCheck, bool releaseHealthCheck)
-            : this(bootstrap, handler, healthCheck, releaseHealthCheck, true)
+        public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, bool releaseHealthCheck)
+            : this(bootstrap, handler, healthChecker, releaseHealthCheck, true)
         {
         }
 
@@ -80,25 +78,20 @@ namespace DotNetty.Transport.Channels.Pool
          *                           otherwise, channel health is only checked at acquisition time
          * @param lastRecentUsed    {@code true} {@link Channel} selection will be LIFO, if {@code false} FIFO.
          */
-        public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthCheck, bool releaseHealthCheck, bool lastRecentUsed)
+        public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, bool releaseHealthCheck, bool lastRecentUsed)
         {
             Contract.Requires(handler != null);
-            Contract.Requires(healthCheck != null);
+            Contract.Requires(healthChecker != null);
             Contract.Requires(bootstrap != null);
 
             this.Handler = handler;
-            this.HealthCheck = healthCheck;
+            this.HealthChecker = healthChecker;
             this.ReleaseHealthCheck = releaseHealthCheck;
 
             // Clone the original Bootstrap as we want to set our own handler
             this.Bootstrap = bootstrap.Clone();
             this.Bootstrap.Handler(new ActionChannelInitializer<IChannel>(this.OnChannelInitializing));
             this.lastRecentUsed = lastRecentUsed;
-
-            this.pollImpl =
-                this.lastRecentUsed
-                    ? (Func<IChannel>)(() => this.deque.TryDequeueLast(out IChannel channel) ? channel : null)
-                    : (() => this.deque.TryDequeue(out IChannel channel) ? channel : null);
         }
 
         void OnChannelInitializing(IChannel channel)
@@ -112,21 +105,21 @@ namespace DotNetty.Transport.Channels.Pool
          *
          * @return the {@link Bootstrap} this pool will use to open new connections
          */
-        protected Bootstrap Bootstrap { get; }
+        internal Bootstrap Bootstrap { get; }
 
         /**
          * Returns the {@link IChannelPoolHandler} that will be notified for the different pool actions.
          *
          * @return the {@link IChannelPoolHandler} that will be notified for the different pool actions
          */
-        protected IChannelPoolHandler Handler { get; }
+        internal IChannelPoolHandler Handler { get; }
 
         /**
          * Returns the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is healthy.
          *
          * @return the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is healthy
          */
-        protected IChannelHealthChecker HealthCheck { get; }
+        internal IChannelHealthChecker HealthChecker { get; }
 
         /**
          * Indicates whether this pool will check the health of channels before offering them back into the pool.
@@ -134,7 +127,7 @@ namespace DotNetty.Transport.Channels.Pool
          * @return {@code true} if this pool will check the health of channels before offering them back into the pool, or
          * {@code false} if channel health is only checked at acquisition time
          */
-        protected bool ReleaseHealthCheck { get; }
+        internal bool ReleaseHealthCheck { get; }
 
         public virtual Task<IChannel> AcquireAsync()
         {
@@ -152,9 +145,7 @@ namespace DotNetty.Transport.Channels.Pool
         {
             try
             {
-                IChannel channel = this.PollChannel();
-
-                if (channel == null)
+                if (!this.TryPollChannel(out var channel))
                 {
                     // No Channel left in the pool bootstrap a new Channel
                     Bootstrap bs = this.Bootstrap.Clone();
@@ -198,7 +189,7 @@ namespace DotNetty.Transport.Channels.Pool
             Contract.Assert(channel.EventLoop.InEventLoop);
             try
             {
-                if (await this.HealthCheck.IsHealthyAsync(channel))
+                if (await this.HealthChecker.IsHealthyAsync(channel))
                 {
                     try
                     {
@@ -296,7 +287,7 @@ namespace DotNetty.Transport.Channels.Pool
          */
         async void DoHealthCheckOnRelease(IChannel channel, TaskCompletionSource promise)
         {
-            if (await this.HealthCheck.IsHealthyAsync(channel))
+            if (await this.HealthChecker.IsHealthyAsync(channel))
             {
                 //channel turns out to be healthy, offering and releasing it.
                 this.ReleaseAndOffer(channel, promise);
@@ -311,7 +302,7 @@ namespace DotNetty.Transport.Channels.Pool
 
         void ReleaseAndOffer(IChannel channel, TaskCompletionSource promise)
         {
-            if (this.OfferChannel(channel))
+            if (this.TryOfferChannel(channel))
             {
                 this.Handler.ChannelReleased(channel);
                 promise.Complete();
@@ -347,7 +338,10 @@ namespace DotNetty.Transport.Channels.Pool
          * Sub-classes may override {@link #pollChannel()} and {@link #offerChannel(Channel)}. Be aware that
          * implementations of these methods needs to be thread-safe!
          */
-        protected virtual IChannel PollChannel() => this.pollImpl();
+        protected virtual bool TryPollChannel(out IChannel channel)
+            => this.lastRecentUsed
+            ? this.deque.TryDequeueLast(out channel)
+            : this.deque.TryDequeue(out channel);
 
         /**
          * Offer a {@link Channel} back to the internal storage. This will return {@code true} if the {@link Channel}
@@ -356,17 +350,12 @@ namespace DotNetty.Transport.Channels.Pool
          * Sub-classes may override {@link #pollChannel()} and {@link #offerChannel(Channel)}. Be aware that
          * implementations of these methods needs to be thread-safe!
          */
-        protected virtual bool OfferChannel(IChannel channel) => this.deque.TryEnqueue(channel);
+        protected virtual bool TryOfferChannel(IChannel channel) => this.deque.TryEnqueue(channel);
 
         public virtual void Dispose()
         {
-            for (;;)
+            while (this.TryPollChannel(out var channel))
             {
-                IChannel channel = this.PollChannel();
-                if (channel == null)
-                {
-                    break;
-                }
                 channel.CloseAsync();
             }
         }
