@@ -5,8 +5,8 @@ namespace DotNetty.Buffers.Tests
 {
     public class UnpooledByteBufferAllocatorTests : AbstractByteBufferAllocatorTests
     {
-        protected override IByteBufferAllocator NewAllocator() => new UnpooledByteBufferAllocator();
+        protected override IByteBufferAllocator NewAllocator(bool preferDirect) => new UnpooledByteBufferAllocator(preferDirect);
 
-        protected override IByteBufferAllocator NewUnpooledAllocator() => new UnpooledByteBufferAllocator();
+        protected override IByteBufferAllocator NewUnpooledAllocator() => new UnpooledByteBufferAllocator(false);
     }
 }

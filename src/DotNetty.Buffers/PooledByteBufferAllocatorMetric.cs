@@ -18,6 +18,8 @@ namespace DotNetty.Buffers
 
         public IReadOnlyList<IPoolArenaMetric> HeapArenas() => this.allocator.HeapArenas();
 
+        public IReadOnlyList<IPoolArenaMetric> DirectArenas() => this.allocator.DirectArenas();
+
         public int TinyCacheSize => this.allocator.TinyCacheSize;
 
         public int SmallCacheSize => this.allocator.SmallCacheSize;
@@ -28,18 +30,27 @@ namespace DotNetty.Buffers
 
         public long UsedHeapMemory => this.allocator.UsedHeapMemory;
 
+        public long UsedDirectMemory => this.allocator.UsedDirectMemory;
+
         public int NumThreadLocalCaches()
         {
+            int total = 0;
             IReadOnlyList<IPoolArenaMetric> arenas = this.HeapArenas();
-            if (arenas == null)
+            if (arenas != null)
             {
-                return 0;
+                foreach (IPoolArenaMetric metric in arenas)
+                {
+                    total += metric.NumThreadCaches;
+                }
             }
 
-            int total = 0;
-            foreach (IPoolArenaMetric metric in arenas)
+            arenas = this.DirectArenas();
+            if (arenas != null)
             {
-                total += metric.NumThreadCaches;
+                foreach (IPoolArenaMetric metric in arenas)
+                {
+                    total += metric.NumThreadCaches;
+                }
             }
 
             return total;
@@ -50,7 +61,9 @@ namespace DotNetty.Buffers
             var sb = new StringBuilder(256);
             sb.Append(StringUtil.SimpleClassName(this))
                 .Append("(usedHeapMemory: ").Append(this.UsedHeapMemory)
+                .Append("; usedDirectMemory: ").Append(this.UsedDirectMemory)
                 .Append("; numHeapArenas: ").Append(this.HeapArenas().Count)
+                .Append("; numDirectArenas: ").Append(this.DirectArenas().Count)
                 .Append("; tinyCacheSize: ").Append(this.TinyCacheSize)
                 .Append("; smallCacheSize: ").Append(this.SmallCacheSize)
                 .Append("; normalCacheSize: ").Append(this.NormalCacheSize)

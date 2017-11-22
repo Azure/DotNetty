@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.Diagnostics;
+    using System.Runtime.CompilerServices;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
@@ -27,10 +28,10 @@ namespace DotNetty.Buffers
             this.recyclerHandle = recyclerHandle;
         }
 
-        internal void Init(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache) =>
+        internal virtual void Init(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache) =>
             this.Init0(chunk, handle, offset, length, maxLength, cache);
 
-        internal void InitUnpooled(PoolChunk<T> chunk, int length) => this.Init0(chunk, 0, 0, length, length, null);
+        internal virtual void InitUnpooled(PoolChunk<T> chunk, int length) => this.Init0(chunk, 0, 0, length, length, null);
 
         void Init0(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache)
         {
@@ -144,6 +145,7 @@ namespace DotNetty.Buffers
 
         void Recycle() => this.recyclerHandle.Release(this);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected int Idx(int index) => this.Offset + index;
     }
 }

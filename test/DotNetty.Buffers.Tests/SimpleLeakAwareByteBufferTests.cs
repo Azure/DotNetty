@@ -48,134 +48,76 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void WrapSlice()
-        {
-            IByteBuffer buf = null;
-
-            try
-            {
-                buf = this.NewBuffer(8).Slice();
-                Assert.IsType(this.ByteBufferType, buf);
-            }
-            finally
-            {
-                buf?.Release();
-            }
-        }
+        public void WrapSlice() => this.AssertWrapped(this.NewBuffer(8).Slice());
 
         [Fact]
-        public void WrapSlice2()
-        {
-            IByteBuffer buf = null;
-
-            try
-            {
-                buf = this.NewBuffer(8).Slice(0, 1);
-                Assert.IsType(this.ByteBufferType, buf);
-            }
-            finally
-            {
-                buf?.Release();
-            }
-        }
+        public void WrapSlice2() => this.AssertWrapped(this.NewBuffer(8).Slice(0, 1));
 
         [Fact]
         public void WrapReadSlice()
         {
-            IByteBuffer buf = null;
-
-            try
+            IByteBuffer buffer = this.NewBuffer(8);
+            if (buffer.IsReadable())
             {
-                buf = this.NewBuffer(8).ReadSlice(1);
-                Assert.IsType(this.ByteBufferType, buf);
+                this.AssertWrapped(buffer.ReadSlice(1));
             }
-            finally
+            else
             {
-                buf?.Release();
+                Assert.True(buffer.Release());
             }
         }
 
         [Fact]
         public void WrapRetainedSlice()
         {
-            IByteBuffer buf = null;
-            try
-            {
-                buf = this.NewBuffer(8).RetainedSlice();
-                Assert.IsType(this.ByteBufferType, buf);
-            }
-            finally
-            {
-                buf?.Release();
-            }
-
-            Assert.True(buf.Release());
+            IByteBuffer buffer = this.NewBuffer(8);
+            this.AssertWrapped(buffer.RetainedSlice());
+            Assert.True(buffer.Release());
         }
 
         [Fact]
         public void WrapRetainedSlice2()
         {
-            IByteBuffer buf = null;
-            try
+            IByteBuffer buffer = this.NewBuffer(8);
+            if (buffer.IsReadable())
             {
-                buf = this.NewBuffer(8).RetainedSlice(0, 1);
-                Assert.IsType(this.ByteBufferType, buf);
+                this.AssertWrapped(buffer.RetainedSlice(0, 1));
             }
-            finally
-            {
-                buf?.Release();
-            }
-
-            Assert.True(buf.Release());
+            Assert.True(buffer.Release());
         }
 
         [Fact]
         public void WrapReadRetainedSlice()
         {
-            IByteBuffer buf = null;
-            try
+            IByteBuffer buffer = this.NewBuffer(8);
+            if (buffer.IsReadable())
             {
-                buf = this.NewBuffer(8).ReadRetainedSlice(1);
-                Assert.IsType(this.ByteBufferType, buf);
+                this.AssertWrapped(buffer.ReadRetainedSlice(1));
             }
-            finally
-            {
-                buf?.Release();
-            }
-
-            Assert.True(buf.Release());
+            Assert.True(buffer.Release());
         }
 
         [Fact]
-        public void WrapDuplicate()
-        {
-            IByteBuffer buf = null;
-            try
-            {
-                buf = this.NewBuffer(8).Duplicate();
-                Assert.IsType(this.ByteBufferType, buf);
-            }
-            finally
-            {
-                buf?.Release();
-            }
-        }
+        public void WrapDuplicate() => this.AssertWrapped(this.NewBuffer(8).Duplicate());
 
         [Fact]
         public void WrapRetainedDuplicate()
         {
-            IByteBuffer buf = null;
+            IByteBuffer buffer = this.NewBuffer(8);
+            this.AssertWrapped(buffer.RetainedDuplicate());
+            Assert.True(buffer.Release());
+        }
+
+        protected void AssertWrapped(IByteBuffer buf)
+        {
             try
             {
-                buf = this.NewBuffer(8).RetainedDuplicate();
                 Assert.IsType(this.ByteBufferType, buf);
             }
             finally
             {
-                buf?.Release();
+                buf.Release();
             }
-
-            Assert.True(buf.Release());
         }
     }
 }

@@ -74,9 +74,13 @@ namespace DotNetty.Buffers
 
         public sealed override IByteBufferAllocator Allocator => this.Unwrap().Allocator;
 
+        public sealed override bool IsDirect => this.Unwrap().IsDirect;
+
         public override bool HasArray => this.Unwrap().HasArray;
 
         public override byte[] Array => this.Unwrap().Array;
+
+        public override bool HasMemoryAddress => this.Unwrap().HasMemoryAddress;
 
         public sealed override int IoBufferCount => this.Unwrap().IoBufferCount;
 

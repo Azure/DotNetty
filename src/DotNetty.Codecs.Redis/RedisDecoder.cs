@@ -333,7 +333,7 @@ namespace DotNetty.Codecs.Redis
                 return null;
             }
 
-            int lfIndex = byteBuffer.ForEachByte(ByteProcessor.FIND_LF);
+            int lfIndex = byteBuffer.ForEachByte(ByteProcessor.FindLF);
             if (lfIndex < 0)
             {
                 return null;
@@ -400,9 +400,9 @@ namespace DotNetty.Codecs.Redis
             return this.toPositiveLongProcessor.Content;
         }
 
-        class ToPositiveLongProcessor : ByteProcessor
+        class ToPositiveLongProcessor : IByteProcessor
         {
-            public override bool Process(byte value)
+            public bool Process(byte value)
             {
                 if (!char.IsDigit((char)value))
                 {

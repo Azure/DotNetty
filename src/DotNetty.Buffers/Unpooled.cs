@@ -20,10 +20,17 @@ namespace DotNetty.Buffers
 
         public static IByteBuffer Buffer() => Allocator.HeapBuffer();
 
+        public static IByteBuffer DirectBuffer() => Allocator.DirectBuffer();
+
         public static IByteBuffer Buffer(int initialCapacity) => Allocator.HeapBuffer(initialCapacity);
+
+        public static IByteBuffer DirectBuffer(int initialCapacity) => Allocator.DirectBuffer(initialCapacity);
 
         public static IByteBuffer Buffer(int initialCapacity, int maxCapacity) =>
             Allocator.HeapBuffer(initialCapacity, maxCapacity);
+
+        public static IByteBuffer DirectBuffer(int initialCapacity, int maxCapacity) =>
+            Allocator.DirectBuffer(initialCapacity, maxCapacity);
 
         /// <summary>
         ///     Creates a new big-endian buffer which wraps the specified array.
@@ -118,7 +125,7 @@ namespace DotNetty.Buffers
 
                     if (components.Count > 0)
                     {
-                        return new CompositeByteBuffer(Allocator, maxNumComponents, components);
+                        return new CompositeByteBuffer(Allocator, false, maxNumComponents, components);
                     }
                     break;
             }
@@ -151,7 +158,7 @@ namespace DotNetty.Buffers
                     {
                         IByteBuffer buf = buffers[i];
                         if (buf.IsReadable())
-                            return new CompositeByteBuffer(Allocator, maxNumComponents, buffers, i, buffers.Length);
+                            return new CompositeByteBuffer(Allocator, false, maxNumComponents, buffers, i, buffers.Length);
                         else
                             buf.Release();
                     }
@@ -163,7 +170,7 @@ namespace DotNetty.Buffers
 
         public static CompositeByteBuffer CompositeBuffer() => CompositeBuffer(AbstractByteBufferAllocator.DefaultMaxComponents);
 
-        public static CompositeByteBuffer CompositeBuffer(int maxNumComponents) => new CompositeByteBuffer(Allocator, maxNumComponents);
+        public static CompositeByteBuffer CompositeBuffer(int maxNumComponents) => new CompositeByteBuffer(Allocator, false, maxNumComponents);
 
         /// <summary>
         ///     Creates a new big-endian buffer whose content is a copy of the specified array

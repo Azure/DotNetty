@@ -12,6 +12,11 @@ namespace DotNetty.Buffers
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
+    /// Wraps another <see cref="IByteBuffer"/>.
+    /// 
+    /// It's important that the {@link #readerIndex()} and {@link #writerIndex()} will not do any adjustments on the
+    /// indices on the fly because of internal optimizations made by {@link ByteBufUtil#writeAscii(ByteBuf, CharSequence)}
+    /// and {@link ByteBufUtil#writeUtf8(ByteBuf, CharSequence)}.
     class WrappedByteBuffer : IByteBuffer
     {
         protected readonly IByteBuffer Buf;
@@ -22,6 +27,12 @@ namespace DotNetty.Buffers
 
             this.Buf = buf;
         }
+
+        public bool HasMemoryAddress => this.Buf.HasMemoryAddress;
+
+        public ref byte GetPinnableMemoryAddress() => ref this.Buf.GetPinnableMemoryAddress();
+
+        public IntPtr AddressOfPinnedMemory() => this.Buf.AddressOfPinnedMemory();
 
         public int Capacity => this.Buf.Capacity;
 
@@ -36,6 +47,8 @@ namespace DotNetty.Buffers
         public IByteBufferAllocator Allocator => this.Buf.Allocator;
 
         public IByteBuffer Unwrap() => this.Buf;
+
+        public bool IsDirect => this.Buf.IsDirect;
 
         public int ReaderIndex => this.Buf.ReaderIndex;
 
@@ -565,13 +578,13 @@ namespace DotNetty.Buffers
 
         public virtual int BytesBefore(int index, int length, byte value) => this.Buf.BytesBefore(index, length, value);
 
-        public virtual int ForEachByte(ByteProcessor processor) => this.Buf.ForEachByte(processor);
+        public virtual int ForEachByte(IByteProcessor processor) => this.Buf.ForEachByte(processor);
 
-        public virtual int ForEachByte(int index, int length, ByteProcessor processor) => this.Buf.ForEachByte(index, length, processor);
+        public virtual int ForEachByte(int index, int length, IByteProcessor processor) => this.Buf.ForEachByte(index, length, processor);
 
-        public virtual int ForEachByteDesc(ByteProcessor processor) => this.Buf.ForEachByteDesc(processor);
+        public virtual int ForEachByteDesc(IByteProcessor processor) => this.Buf.ForEachByteDesc(processor);
 
-        public virtual int ForEachByteDesc(int index, int length, ByteProcessor processor) => this.Buf.ForEachByteDesc(index, length, processor);
+        public virtual int ForEachByteDesc(int index, int length, IByteProcessor processor) => this.Buf.ForEachByteDesc(index, length, processor);
 
         public virtual IByteBuffer Copy() => this.Buf.Copy();
 

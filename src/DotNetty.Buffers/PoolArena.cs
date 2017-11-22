@@ -7,6 +7,8 @@ namespace DotNetty.Buffers
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
     using System.Text;
     using System.Threading;
     using DotNetty.Common.Internal;
@@ -125,6 +127,8 @@ namespace DotNetty.Buffers
         }
 
         PoolSubpage<T>[] NewSubpagePoolArray(int size) => new PoolSubpage<T>[size];
+
+        internal abstract bool IsDirect { get; }
 
         internal PooledByteBuffer<T> Allocate(PoolThreadCache<T> cache, int reqCapacity, int maxCapacity)
         {
@@ -474,7 +478,7 @@ namespace DotNetty.Buffers
                     continue;
                 }
                 PoolSubpage<T> s = head.Next;
-                for (; ;)
+                for (; ; )
                 {
                     metrics.Add(s);
                     s = s.Next;
@@ -537,7 +541,7 @@ namespace DotNetty.Buffers
             {
                 long val = this.NumTinyAllocations + this.NumSmallAllocations + this.NumHugeAllocations
                     - this.NumHugeDeallocations;
-                lock(this)
+                lock (this)
                 {
                     val += this.allocationsNormal - (this.deallocationsTiny + this.deallocationsSmall + this.deallocationsNormal);
                 }
@@ -644,7 +648,7 @@ namespace DotNetty.Buffers
                     .Append(i)
                     .Append(": ");
                 PoolSubpage<T> s = head.Next;
-                for (;;)
+                for (; ;)
                 {
                     buf.Append(s);
                     s = s.Next;
@@ -689,10 +693,12 @@ namespace DotNetty.Buffers
 
         static byte[] NewByteArray(int size) => new byte[size];
 
-        protected override PoolChunk<byte[]> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize) => 
+        internal override bool IsDirect => false;
+
+        protected override PoolChunk<byte[]> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize) =>
             new PoolChunk<byte[]>(this, NewByteArray(chunkSize), pageSize, maxOrder, pageShifts, chunkSize, 0);
 
-        protected override PoolChunk<byte[]> NewUnpooledChunk(int capacity) => 
+        protected override PoolChunk<byte[]> NewUnpooledChunk(int capacity) =>
             new PoolChunk<byte[]>(this, NewByteArray(capacity), capacity, 0);
 
         protected internal override void DestroyChunk(PoolChunk<byte[]> chunk)
@@ -700,7 +706,8 @@ namespace DotNetty.Buffers
             // Rely on GC.
         }
 
-        protected override PooledByteBuffer<byte[]> NewByteBuf(int maxCapacity) => PooledHeapByteBuffer.NewInstance(maxCapacity);
+        protected override PooledByteBuffer<byte[]> NewByteBuf(int maxCapacity) => 
+            PooledHeapByteBuffer.NewInstance(maxCapacity);
 
         protected override void MemoryCopy(byte[] src, int srcOffset, byte[] dst, int dstOffset, int length)
         {
@@ -710,6 +717,97 @@ namespace DotNetty.Buffers
             }
 
             PlatformDependent.CopyMemory(src, srcOffset, dst, dstOffset, length);
+        }
+    }
+
+    //TODO: Maybe use Memory or OwnedMemory as direct arena/byte buffer type parameter in NETStandard 2.0
+    sealed class DirectArena : PoolArena<byte[]>
+    {
+        readonly List<MemoryChunk> memoryChunks;
+
+        public DirectArena(PooledByteBufferAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize)
+            : base(parent, pageSize, maxOrder, pageShifts, chunkSize)
+        {
+            this.memoryChunks = new List<MemoryChunk>();
+        }
+
+        static MemoryChunk NewMemoryChunk(int size) => new MemoryChunk(size);
+
+        internal override bool IsDirect => true;
+
+        protected override PoolChunk<byte[]> NewChunk(int pageSize, int maxOrder, int pageShifts, int chunkSize)
+        {
+            MemoryChunk memoryChunk = NewMemoryChunk(chunkSize);
+            this.memoryChunks.Add(memoryChunk);
+            var chunk = new PoolChunk<byte[]>(this, memoryChunk.Bytes, pageSize, maxOrder, pageShifts, chunkSize, 0);
+            return chunk;
+        }
+
+        protected override PoolChunk<byte[]> NewUnpooledChunk(int capacity)
+        {
+            MemoryChunk memoryChunk = NewMemoryChunk(capacity);
+            this.memoryChunks.Add(memoryChunk);
+            var chunk = new PoolChunk<byte[]>(this, memoryChunk.Bytes, capacity, 0);
+            return chunk;
+        }
+
+        protected override PooledByteBuffer<byte[]> NewByteBuf(int maxCapacity) => 
+            PooledUnsafeDirectByteBuffer.NewInstance(maxCapacity);
+
+        protected override unsafe void MemoryCopy(byte[] src, int srcOffset, byte[] dst, int dstOffset, int length) =>
+                PlatformDependent.CopyMemory((byte*)Unsafe.AsPointer(ref src[srcOffset]), (byte*)Unsafe.AsPointer(ref dst[dstOffset]), length);
+
+        protected internal override void DestroyChunk(PoolChunk<byte[]> chunk)
+        {
+            for (int i = 0; i < this.memoryChunks.Count; i++)
+            {
+                MemoryChunk memoryChunk = this.memoryChunks[i];
+                if (ReferenceEquals(chunk.Memory, memoryChunk.Bytes))
+                {
+                    this.memoryChunks.Remove(memoryChunk);
+                    memoryChunk.Dispose();
+                    break;
+                }
+            }
+        }
+
+        sealed class MemoryChunk : IDisposable
+        {
+            internal byte[] Bytes;
+            GCHandle handle;
+
+            internal MemoryChunk(int size)
+            {
+                this.Bytes = new byte[size];
+                this.handle = GCHandle.Alloc(this.Bytes, GCHandleType.Pinned);
+            }
+
+            void Release()
+            {
+                if (this.handle.IsAllocated)
+                {
+                    try
+                    {
+                        this.handle.Free();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Free is not thread safe
+                    }
+                }
+                this.Bytes = null;
+            }
+
+            public void Dispose()
+            {
+                this.Release();
+                GC.SuppressFinalize(this);
+            }
+
+            ~MemoryChunk()
+            {
+                this.Release();
+            }
         }
     }
 }

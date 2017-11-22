@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoProperty
 namespace DotNetty.Buffers
 {
     using System;
@@ -12,6 +13,7 @@ namespace DotNetty.Buffers
 
     public class UnpooledHeapByteBuffer : AbstractReferenceCountedByteBuffer
     {
+        readonly IByteBufferAllocator allocator;
         byte[] array;
 
         protected internal UnpooledHeapByteBuffer(IByteBufferAllocator alloc, int initialCapacity, int maxCapacity)
@@ -20,7 +22,7 @@ namespace DotNetty.Buffers
             Contract.Requires(alloc != null);
             Contract.Requires(initialCapacity <= maxCapacity);
 
-            this.Allocator = alloc;
+            this.allocator = alloc;
             this.SetArray(this.NewArray(initialCapacity));
             this.SetIndex0(0, 0);
         }
@@ -36,7 +38,7 @@ namespace DotNetty.Buffers
                 throw new ArgumentException($"initialCapacity({initialArray.Length}) > maxCapacity({maxCapacity})");
             }
 
-            this.Allocator = alloc;
+            this.allocator = alloc;
             this.SetArray(initialArray);
             this.SetIndex0(0, initialArray.Length);
         }
@@ -52,7 +54,9 @@ namespace DotNetty.Buffers
 
         protected void SetArray(byte[] initialArray) => this.array = initialArray;
 
-        public override IByteBufferAllocator Allocator { get; }
+        public override IByteBufferAllocator Allocator => this.allocator;
+
+        public override bool IsDirect => false;
 
         public override int Capacity
         {
@@ -72,7 +76,7 @@ namespace DotNetty.Buffers
             if (newCapacity > oldCapacity)
             {
                 byte[] newArray = this.AllocateArray(newCapacity);
-                PlatformDependent.CopyMemory(this.array, 0, newArray, 0, this.array.Length);
+                PlatformDependent.CopyMemory(this.array, 0, newArray, 0, oldCapacity);
 
                 this.SetArray(newArray);
                 this.FreeArray(oldArray);
@@ -114,6 +118,16 @@ namespace DotNetty.Buffers
         }
 
         public override int ArrayOffset => 0;
+
+        public override bool HasMemoryAddress => true;
+
+        public override ref byte GetPinnableMemoryAddress()
+        {
+            this.EnsureAccessible();
+            return ref this.array[0];
+        }
+
+        public override IntPtr AddressOfPinnedMemory() => IntPtr.Zero;
 
         public override IByteBuffer GetBytes(int index, IByteBuffer dst, int dstIndex, int length)
         {

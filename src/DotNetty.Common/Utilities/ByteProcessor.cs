@@ -9,108 +9,101 @@ namespace DotNetty.Common.Utilities
     /// <summary>
     ///     Provides a mechanism to iterate over a collection of bytes.
     /// </summary>
-    public abstract class ByteProcessor
+    public interface IByteProcessor
     {
-        /// <summary>
-        ///     A <see cref="ByteProcessor" /> which finds the first appearance of a specific byte.
-        /// </summary>
-        public sealed class IndexOfProcessor : ByteProcessor
+        bool Process(byte value);
+    }
+
+    public sealed class IndexOfProcessor : IByteProcessor
+    {
+        readonly byte byteToFind;
+
+        public IndexOfProcessor(byte byteToFind)
         {
-            readonly byte byteToFind;
-
-            public IndexOfProcessor(byte byteToFind)
-            {
-                this.byteToFind = byteToFind;
-            }
-
-            public override bool Process(byte value) => value != this.byteToFind;
+            this.byteToFind = byteToFind;
         }
 
-        public sealed class IndexNotOfProcessor : ByteProcessor
+        public bool Process(byte value) => value != this.byteToFind;
+    }
+
+    public sealed class IndexNotOfProcessor : IByteProcessor
+    {
+        readonly byte byteToNotFind;
+
+        public IndexNotOfProcessor(byte byteToNotFind)
         {
-            readonly byte byteToNotFind;
-
-            public IndexNotOfProcessor(byte byteToNotFind)
-            {
-                this.byteToNotFind = byteToNotFind;
-            }
-
-            public override bool Process(byte value) => value == this.byteToNotFind;
+            this.byteToNotFind = byteToNotFind;
         }
 
-        public sealed class CustomProcessor : ByteProcessor
+        public bool Process(byte value) => value == this.byteToNotFind;
+    }
+
+    public sealed class ByteProcessor : IByteProcessor
+    {
+        readonly Func<byte, bool> customHandler;
+
+        public ByteProcessor(Func<byte, bool> customHandler)
         {
-            readonly Func<byte, bool> customHandler;
-
-            public CustomProcessor(Func<byte, bool> customHandler)
-            {
-                Contract.Assert(customHandler != null, "'customHandler' is required parameter.");
-                this.customHandler = customHandler;
-            }
-
-            public override bool Process(byte value) => this.customHandler(value);
+            Contract.Assert(customHandler != null, "'customHandler' is required parameter.");
+            this.customHandler = customHandler;
         }
+
+        public bool Process(byte value) => this.customHandler(value);
+
 
         /// <summary>
         ///     Aborts on a <c>NUL (0x00)</c>.
         /// </summary>
-        public static ByteProcessor FIND_NUL = new IndexOfProcessor(0);
+        public static IByteProcessor FindNul = new IndexOfProcessor(0);
 
         /// <summary>
         ///     Aborts on a non-{@code NUL (0x00)}.
         /// </summary>
-        public static ByteProcessor FIND_NON_NUL = new IndexNotOfProcessor(0);
+        public static IByteProcessor FindNonNul = new IndexNotOfProcessor(0);
 
         /// <summary>
         ///     Aborts on a {@code CR ('\r')}.
         /// </summary>
-        public static ByteProcessor FIND_CR = new IndexOfProcessor((byte)'\r');
+        public static IByteProcessor FindCR = new IndexOfProcessor((byte)'\r');
 
         /// <summary>
         ///     Aborts on a non-{@code CR ('\r')}.
         /// </summary>
-        public static ByteProcessor FIND_NON_CR = new IndexNotOfProcessor((byte)'\r');
+        public static IByteProcessor FindNonCR = new IndexNotOfProcessor((byte)'\r');
 
         /// <summary>
         ///     Aborts on a {@code LF ('\n')}.
         /// </summary>
-        public static ByteProcessor FIND_LF = new IndexOfProcessor((byte)'\n');
+        public static IByteProcessor FindLF = new IndexOfProcessor((byte)'\n');
 
         /// <summary>
         ///     Aborts on a non-{@code LF ('\n')}.
         /// </summary>
-        public static ByteProcessor FIND_NON_LF = new IndexNotOfProcessor((byte)'\n');
+        public static IByteProcessor FindNonLF = new IndexNotOfProcessor((byte)'\n');
 
         /// <summary>
         ///     Aborts on a {@code CR (';')}.
         /// </summary>
-        public static ByteProcessor FIND_SEMI_COLON = new IndexOfProcessor((byte)';');
+        public static IByteProcessor FindSemiCOLON = new IndexOfProcessor((byte)';');
 
         /// <summary>
         ///     Aborts on a {@code CR ('\r')} or a {@code LF ('\n')}.
         /// </summary>
-        public static ByteProcessor FIND_CRLF = new CustomProcessor(new Func<byte, bool>(value => value != '\r' && value != '\n'));
+        public static IByteProcessor FindCrlf = new ByteProcessor(new Func<byte, bool>(value => value != '\r' && value != '\n'));
 
         /// <summary>
         ///     Aborts on a byte which is neither a {@code CR ('\r')} nor a {@code LF ('\n')}.
         /// </summary>
-        public static ByteProcessor FIND_NON_CRLF = new CustomProcessor(new Func<byte, bool>(value => value == '\r' || value == '\n'));
+        public static IByteProcessor FindNonCrlf = new ByteProcessor(new Func<byte, bool>(value => value == '\r' || value == '\n'));
 
         /// <summary>
         ///     Aborts on a linear whitespace (a ({@code ' '} or a {@code '\t'}).
         /// </summary>
-        public static ByteProcessor FIND_LINEAR_WHITESPACE = new CustomProcessor(new Func<byte, bool>(value => value != ' ' && value != '\t'));
+        public static IByteProcessor FindLinearWhitespace = new ByteProcessor(new Func<byte, bool>(value => value != ' ' && value != '\t'));
 
         /// <summary>
         ///     Aborts on a byte which is not a linear whitespace (neither {@code ' '} nor {@code '\t'}).
         /// </summary>
-        public static ByteProcessor FIND_NON_LINEAR_WHITESPACE = new CustomProcessor(new Func<byte, bool>(value => value == ' ' || value == '\t'));
-
-        /*
-        * @return {@code true} if the processor wants to continue the loop and handle the next byte in the buffer.
-        *         {@code false} if the processor wants to stop handling bytes and abort the loop.
-        */
-
-        public abstract bool Process(byte value);
+        public static IByteProcessor FindNonLinearWhitespace = new ByteProcessor(new Func<byte, bool>(value => value == ' ' || value == '\t'));
     }
 }

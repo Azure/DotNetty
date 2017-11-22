@@ -28,13 +28,18 @@ namespace DotNetty.Buffers
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<PoolThreadCache<T>>();
 
         internal readonly PoolArena<T> HeapArena;
+        internal readonly PoolArena<T> DirectArena;
 
         // Hold the caches for the different size classes, which are tiny, small and normal.
         readonly MemoryRegionCache[] tinySubPageHeapCaches;
         readonly MemoryRegionCache[] smallSubPageHeapCaches;
+        readonly MemoryRegionCache[] tinySubPageDirectCaches;
+        readonly MemoryRegionCache[] smallSubPageDirectCaches;
         readonly MemoryRegionCache[] normalHeapCaches;
+        readonly MemoryRegionCache[] normalDirectCaches;
 
         // Used for bitshifting when calculate the index of normal caches later
+        readonly int numShiftsNormalDirect;
         readonly int numShiftsNormalHeap;
         readonly int freeSweepAllocationThreshold;
 
@@ -46,7 +51,7 @@ namespace DotNetty.Buffers
         // TODO: Test if adding padding helps under contention
         //private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
 
-        internal PoolThreadCache(PoolArena<T> heapArena,
+        internal PoolThreadCache(PoolArena<T> heapArena, PoolArena<T> directArena,
             int tinyCacheSize, int smallCacheSize, int normalCacheSize,
             int maxCachedBufferCapacity, int freeSweepAllocationThreshold)
         {
@@ -55,6 +60,28 @@ namespace DotNetty.Buffers
 
             this.freeSweepAllocationThreshold = freeSweepAllocationThreshold;
             this.HeapArena = heapArena;
+            this.DirectArena = directArena;
+            if (directArena != null)
+            {
+                this.tinySubPageDirectCaches = CreateSubPageCaches(
+                    tinyCacheSize, PoolArena<T>.NumTinySubpagePools, SizeClass.Tiny);
+                this.smallSubPageDirectCaches = CreateSubPageCaches(
+                    smallCacheSize, directArena.NumSmallSubpagePools, SizeClass.Small);
+
+                this.numShiftsNormalDirect = Log2(directArena.PageSize);
+                this.normalDirectCaches = CreateNormalCaches(
+                    normalCacheSize, maxCachedBufferCapacity, directArena);
+
+                directArena.IncrementNumThreadCaches();
+            }
+            else
+            {
+                // No directArea is configured so just null out all caches
+                this.tinySubPageDirectCaches = null;
+                this.smallSubPageDirectCaches = null;
+                this.normalDirectCaches = null;
+                this.numShiftsNormalDirect = -1;
+            }
             if (heapArena != null)
             {
                 // Create the caches for the heap allocations
@@ -79,7 +106,8 @@ namespace DotNetty.Buffers
             }
 
             // We only need to watch the thread when any cache is used.
-            if (this.tinySubPageHeapCaches != null || this.smallSubPageHeapCaches != null || this.normalHeapCaches != null)
+            if (this.tinySubPageDirectCaches != null || this.smallSubPageDirectCaches != null || this.normalDirectCaches != null
+                || this.tinySubPageHeapCaches != null || this.smallSubPageHeapCaches != null || this.normalHeapCaches != null)
             {
                 this.freeTask = this.Free0;
                 this.deathWatchThread = Thread.CurrentThread;
@@ -150,19 +178,19 @@ namespace DotNetty.Buffers
         /**
          * Try to allocate a tiny buffer out of the cache. Returns {@code true} if successful {@code false} otherwise
          */
-        internal bool AllocateTiny(PoolArena<T> area, PooledByteBuffer<T> buf, int reqCapacity, int normCapacity) => 
+        internal bool AllocateTiny(PoolArena<T> area, PooledByteBuffer<T> buf, int reqCapacity, int normCapacity) =>
             this.Allocate(this.CacheForTiny(area, normCapacity), buf, reqCapacity);
 
         /**
          * Try to allocate a small buffer out of the cache. Returns {@code true} if successful {@code false} otherwise
          */
-        internal bool AllocateSmall(PoolArena<T> area, PooledByteBuffer<T> buf, int reqCapacity, int normCapacity) => 
+        internal bool AllocateSmall(PoolArena<T> area, PooledByteBuffer<T> buf, int reqCapacity, int normCapacity) =>
             this.Allocate(this.CacheForSmall(area, normCapacity), buf, reqCapacity);
 
         /**
          * Try to allocate a small buffer out of the cache. Returns {@code true} if successful {@code false} otherwise
          */
-        internal bool AllocateNormal(PoolArena<T> area, PooledByteBuffer<T> buf, int reqCapacity, int normCapacity) => 
+        internal bool AllocateNormal(PoolArena<T> area, PooledByteBuffer<T> buf, int reqCapacity, int normCapacity) =>
             this.Allocate(this.CacheForNormal(area, normCapacity), buf, reqCapacity);
 
         bool Allocate(MemoryRegionCache cache, PooledByteBuffer<T> buf, int reqCapacity)
@@ -226,7 +254,10 @@ namespace DotNetty.Buffers
 
         void Free0()
         {
-            int numFreed = Free(this.tinySubPageHeapCaches) +
+            int numFreed = Free(this.tinySubPageDirectCaches) +
+                Free(this.smallSubPageDirectCaches) +
+                Free(this.normalDirectCaches) +
+                Free(this.tinySubPageHeapCaches) +
                 Free(this.smallSubPageHeapCaches) +
                 Free(this.normalHeapCaches);
 
@@ -235,6 +266,7 @@ namespace DotNetty.Buffers
                 Logger.Debug("Freed {} thread-local buffer(s) from thread: {}", numFreed, this.deathWatchThread.Name);
             }
 
+            this.DirectArena?.DecrementNumThreadCaches();
             this.HeapArena?.DecrementNumThreadCaches();
         }
 
@@ -264,6 +296,9 @@ namespace DotNetty.Buffers
 
         internal void Trim()
         {
+            Trim(this.tinySubPageDirectCaches);
+            Trim(this.smallSubPageDirectCaches);
+            Trim(this.normalDirectCaches);
             Trim(this.tinySubPageHeapCaches);
             Trim(this.smallSubPageHeapCaches);
             Trim(this.normalHeapCaches);
@@ -286,17 +321,22 @@ namespace DotNetty.Buffers
         MemoryRegionCache CacheForTiny(PoolArena<T> area, int normCapacity)
         {
             int idx = PoolArena<T>.TinyIdx(normCapacity);
-            return Cache(this.tinySubPageHeapCaches, idx);
+            return Cache(area.IsDirect ? this.tinySubPageDirectCaches : this.tinySubPageHeapCaches, idx);
         }
 
         MemoryRegionCache CacheForSmall(PoolArena<T> area, int normCapacity)
         {
             int idx = PoolArena<T>.SmallIdx(normCapacity);
-            return Cache(this.smallSubPageHeapCaches, idx);
+            return Cache(area.IsDirect ? this.smallSubPageDirectCaches : this.smallSubPageHeapCaches, idx);
         }
 
         MemoryRegionCache CacheForNormal(PoolArena<T> area, int normCapacity)
         {
+            if (area.IsDirect)
+            {
+                int idx = Log2(normCapacity >> this.numShiftsNormalDirect);
+                return Cache(this.normalDirectCaches, idx);
+            }
             int idx1 = Log2(normCapacity >> this.numShiftsNormalHeap);
             return Cache(this.normalHeapCaches, idx1);
         }
@@ -321,7 +361,7 @@ namespace DotNetty.Buffers
             }
 
             protected override void InitBuf(
-                PoolChunk<T> chunk, long handle, PooledByteBuffer<T> buf, int reqCapacity) => 
+                PoolChunk<T> chunk, long handle, PooledByteBuffer<T> buf, int reqCapacity) =>
                 chunk.InitBufWithSubpage(buf, handle, reqCapacity);
         }
 
@@ -336,7 +376,7 @@ namespace DotNetty.Buffers
             }
 
             protected override void InitBuf(
-                PoolChunk<T> chunk, long handle, PooledByteBuffer<T> buf, int reqCapacity) => 
+                PoolChunk<T> chunk, long handle, PooledByteBuffer<T> buf, int reqCapacity) =>
                 chunk.InitBuf(buf, handle, reqCapacity);
         }
 
