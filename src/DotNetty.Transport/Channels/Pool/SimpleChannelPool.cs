@@ -20,7 +20,7 @@ namespace DotNetty.Transport.Channels.Pool
  */
     public class SimpleChannelPool : IChannelPool
     {
-        static readonly AttributeKey<SimpleChannelPool> PoolKey = AttributeKey<SimpleChannelPool>.NewInstance("channelPool");
+        public static readonly AttributeKey<SimpleChannelPool> PoolKey = AttributeKey<SimpleChannelPool>.NewInstance("channelPool");
 
         static readonly InvalidOperationException FullException = new InvalidOperationException("ChannelPool full");
 
