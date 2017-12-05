@@ -325,15 +325,7 @@ namespace DotNetty.Common.Concurrency
 
             while (true)
             {
-                try
-                {
-                    task.Run();
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("A task raised an exception.", ex);
-                }
-
+                SafeExecute(task);
                 task = this.PollTask();
                 if (task == null)
                 {
@@ -357,14 +349,7 @@ namespace DotNetty.Common.Concurrency
             PreciseTimeSpan executionTime;
             while (true)
             {
-                try
-                {
-                    task.Run();
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("A task raised an exception.", ex);
-                }
+                SafeExecute(task);
 
                 runTasks++;
 

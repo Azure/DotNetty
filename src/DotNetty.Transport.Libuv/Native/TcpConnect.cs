@@ -3,7 +3,7 @@
 
 namespace DotNetty.Transport.Libuv.Native
 {
-    using System.Diagnostics.Contracts;
+    using System.Diagnostics;
     using System.Net;
 
     sealed class TcpConnect : ConnectRequest
@@ -12,8 +12,8 @@ namespace DotNetty.Transport.Libuv.Native
 
         public TcpConnect(INativeUnsafe nativeUnsafe, IPEndPoint remoteEndPoint)
         {
-            Contract.Requires(nativeUnsafe != null);
-            Contract.Requires(remoteEndPoint != null);
+            Debug.Assert(nativeUnsafe != null);
+            Debug.Assert(remoteEndPoint != null);
 
             NativeMethods.GetSocketAddress(remoteEndPoint, out sockaddr addr);
             int result = NativeMethods.uv_tcp_connect(
@@ -21,18 +21,11 @@ namespace DotNetty.Transport.Libuv.Native
                 nativeUnsafe.UnsafeHandle,
                 ref addr,
                 WatcherCallback);
-
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            NativeMethods.ThrowIfError(result);
 
             this.nativeUnsafe = nativeUnsafe;
         }
 
-        protected override void OnWatcherCallback()
-        {
-            this.nativeUnsafe.FinishConnect(this);
-        }
+        protected override void OnWatcherCallback() => this.nativeUnsafe.FinishConnect(this);
     }
 }

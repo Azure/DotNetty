@@ -4,8 +4,7 @@
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
-    using System.Diagnostics.Contracts;
-    using System.Net;
+    using System.Diagnostics;
 
     sealed class TcpListener : TcpHandle
     {
@@ -13,29 +12,17 @@ namespace DotNetty.Transport.Libuv.Native
 
         IServerNativeUnsafe nativeUnsafe;
 
-        public TcpListener(Loop loop) : base(loop)
+        public TcpListener(Loop loop, uint flags) : base(loop, flags)
         {
         }
 
-        public void Listen(IPEndPoint endPoint, IServerNativeUnsafe channel, int backlog, bool dualStack = false)
+        public void Listen(IServerNativeUnsafe channel, int backlog)
         {
-            Contract.Requires(channel != null);
-            Contract.Requires(backlog > 0);
+            Debug.Assert(channel != null && this.nativeUnsafe == null);
+            Debug.Assert(backlog > 0);
 
-            this.Validate();
-            NativeMethods.GetSocketAddress(endPoint, out sockaddr addr);
-
-            int result = NativeMethods.uv_tcp_bind(this.Handle, ref addr, (uint)(dualStack ? 1 : 0));
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
-
-            result = NativeMethods.uv_listen(this.Handle, backlog, ConnectionCallback);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            int result = NativeMethods.uv_listen(this.Handle, backlog, ConnectionCallback);
+            NativeMethods.ThrowIfError(result);
 
             this.nativeUnsafe = channel;
         }
@@ -54,6 +41,7 @@ namespace DotNetty.Transport.Libuv.Native
                 {
                     IntPtr loopHandle = ((uv_stream_t*)this.Handle)->loop;
                     var loop = GetTarget<Loop>(loopHandle);
+
                     client = new Tcp(loop);
                     int result = NativeMethods.uv_accept(this.Handle, client.Handle);
                     if (result < 0)

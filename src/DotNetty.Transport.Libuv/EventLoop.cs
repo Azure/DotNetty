@@ -6,9 +6,9 @@ namespace DotNetty.Transport.Libuv
     using System.Threading.Tasks;
     using DotNetty.Transport.Channels;
 
-    public sealed class EventLoop : LoopExecutor, IEventLoop
+    sealed class EventLoop : LoopExecutor, IEventLoop
     {
-        public EventLoop(IEventLoopGroup parent = null, string threadName = null)
+        public EventLoop(IEventLoopGroup parent, string threadName)
             : base(parent, threadName)
         {
             this.Start();

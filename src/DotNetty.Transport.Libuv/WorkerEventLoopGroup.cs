@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ForCanBeConvertedToForeach
 namespace DotNetty.Transport.Libuv
 {
     using System;
@@ -10,32 +11,35 @@ namespace DotNetty.Transport.Libuv
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Libuv.Native;
 
     public sealed class WorkerEventLoopGroup : IEventLoopGroup
     {
         static readonly int DefaultEventLoopThreadCount = Environment.ProcessorCount;
-        static readonly TimeSpan StartTimeout = TimeSpan.FromMilliseconds(10);
+        static readonly TimeSpan StartTimeout = TimeSpan.FromMilliseconds(500);
 
-        readonly IEventLoop[] eventLoops;
+        readonly WorkerEventLoop[] eventLoops;
         readonly DispatcherEventLoop dispatcherLoop;
         int requestId;
 
-        public WorkerEventLoopGroup(DispatcherEventLoop dispatcherLoop) 
-            : this(dispatcherLoop, DefaultEventLoopThreadCount)
+        public WorkerEventLoopGroup(DispatcherEventLoopGroup eventLoopGroup) 
+            : this(eventLoopGroup, DefaultEventLoopThreadCount)
         {
         }
 
-        public WorkerEventLoopGroup(DispatcherEventLoop dispatcherLoop, int eventLoopCount)
+        public WorkerEventLoopGroup(DispatcherEventLoopGroup eventLoopGroup, int eventLoopCount)
         {
-            Contract.Requires(dispatcherLoop != null);
+            Contract.Requires(eventLoopGroup != null);
 
-            this.dispatcherLoop = dispatcherLoop;
-            this.dispatcherLoop.PipeStartTask.Wait(StartTimeout);
+            this.dispatcherLoop = eventLoopGroup.Dispatcher;
             this.PipeName = this.dispatcherLoop.PipeName;
 
-            this.eventLoops = new IEventLoop[eventLoopCount];
+            // Wait until the pipe is listening to connect
+            this.dispatcherLoop.WaitForLoopRun(StartTimeout);
+
+            this.eventLoops = new WorkerEventLoop[eventLoopCount];
             var terminationTasks = new Task[eventLoopCount];
             for (int i = 0; i < eventLoopCount; i++)
             {
@@ -44,20 +48,21 @@ namespace DotNetty.Transport.Libuv
                 try
                 {
                     eventLoop = new WorkerEventLoop(this);
-                    eventLoop.StartAsync().Wait(StartTimeout);
-
-                    success = true;
+                    success = eventLoop.ConnectTask.Wait(StartTimeout);
+                    if (!success)
+                    {
+                        throw new TimeoutException($"Connect to dispatcher pipe {this.PipeName} timed out.");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    throw new InvalidOperationException("failed to create a child event loop.", ex);
+                    throw new InvalidOperationException($"Failed to create a child {nameof(WorkerEventLoop)}.", ex.Unwrap());
                 }
                 finally
                 {
                     if (!success)
                     {
-                        Task.WhenAll(this.eventLoops.Take(i).Select(loop => loop.ShutdownGracefullyAsync()))
-                            .Wait();
+                        Task.WhenAll(this.eventLoops.Take(i).Select(loop => loop.ShutdownGracefullyAsync())).Wait();
                     }
                 }
 
@@ -93,12 +98,13 @@ namespace DotNetty.Transport.Libuv
                 throw new ArgumentException($"{nameof(channel)} must be of {typeof(NativeChannel)}");
             }
 
-            IntPtr loopHandle = nativeChannel.GetLoopHandle();
-            foreach (IEventLoop loop in this.eventLoops)
+            NativeHandle handle = nativeChannel.GetHandle();
+            IntPtr loopHandle = handle.LoopHandle();
+            for (int i=0; i <this.eventLoops.Length; i++)
             {
-                if (((ILoopExecutor)loop).UnsafeLoop.Handle == loopHandle)
+                if (this.eventLoops[i].UnsafeLoop.Handle == loopHandle)
                 {
-                    return loop.RegisterAsync(nativeChannel);
+                    return this.eventLoops[i].RegisterAsync(nativeChannel);
                 }
             }
 
@@ -107,7 +113,7 @@ namespace DotNetty.Transport.Libuv
 
         public Task ShutdownGracefullyAsync()
         {
-            foreach (IEventLoop eventLoop in this.eventLoops)
+            foreach (WorkerEventLoop eventLoop in this.eventLoops)
             {
                 eventLoop.ShutdownGracefullyAsync();
             }
@@ -116,11 +122,10 @@ namespace DotNetty.Transport.Libuv
 
         public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
         {
-            foreach (IEventLoop eventLoop in this.eventLoops)
+            foreach (WorkerEventLoop eventLoop in this.eventLoops)
             {
                 eventLoop.ShutdownGracefullyAsync(quietPeriod, timeout);
             }
-
             return this.TerminationCompletion;
         }
     }
