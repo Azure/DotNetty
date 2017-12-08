@@ -166,8 +166,8 @@ namespace DotNetty.Codecs
                     break;
                 case 8:
                     output.Add(this.byteOrder == ByteOrder.BigEndian
-                        ? context.Allocator.Buffer(8).WriteLong((short)length)
-                        : context.Allocator.Buffer(8).WriteLongLE((short)length));
+                        ? context.Allocator.Buffer(8).WriteLong(length)
+                        : context.Allocator.Buffer(8).WriteLongLE(length));
                     break;
                 default:
                     throw new Exception("Unknown length field length");
