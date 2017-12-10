@@ -11,7 +11,7 @@ namespace DotNetty.Transport.Channels
 
     static class Util
     {
-        public static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        public static readonly bool IsLinux = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         static readonly IInternalLogger Log = InternalLoggerFactory.GetInstance<IChannel>();
 
