@@ -5,7 +5,7 @@ namespace DotNetty.Common.Internal
 {
     using System.Collections.Concurrent;
 
-    public sealed class CompatibleConcurrentQueue<T> : ConcurrentQueue<T>, IQueue<T>
+    public class CompatibleConcurrentQueue<T> : ConcurrentQueue<T>, IQueue<T>
     {
         public bool TryEnqueue(T element)
         {
