@@ -161,8 +161,8 @@ namespace DotNetty.Codecs
                     break;
                 case 4:
                     output.Add(this.byteOrder == ByteOrder.BigEndian
-                        ? context.Allocator.Buffer(4).WriteInt((short)length)
-                        : context.Allocator.Buffer(4).WriteIntLE((short)length));
+                        ? context.Allocator.Buffer(4).WriteInt(length)
+                        : context.Allocator.Buffer(4).WriteIntLE(length));
                     break;
                 case 8:
                     output.Add(this.byteOrder == ByteOrder.BigEndian
