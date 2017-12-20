@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoProperty
+// ReSharper disable ConvertToAutoPropertyWhenPossible
 namespace DotNetty.Buffers
 {
     using System;
@@ -17,6 +19,7 @@ namespace DotNetty.Buffers
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<PooledByteBufferAllocator>();
 
         public static readonly int DefaultNumHeapArena;
+        public static readonly int DefaultNumDirectArena;
 
         public static readonly int DefaultPageSize;
         public static readonly int DefaultMaxOrder; // 8192 << 11 = 16 MiB per chunk
@@ -67,6 +70,7 @@ namespace DotNetty.Buffers
             // See https://github.com/netty/netty/issues/3888
             int defaultMinNumArena = Environment.ProcessorCount * 2;
             DefaultNumHeapArena = Math.Max(0, SystemPropertyUtil.GetInt("io.netty.allocator.numHeapArenas", defaultMinNumArena));
+            DefaultNumDirectArena = Math.Max(0, SystemPropertyUtil.GetInt("io.netty.allocator.numDirectArenas", defaultMinNumArena));
 
             // cache sizes
             DefaultTinyCacheSize = SystemPropertyUtil.GetInt("io.netty.allocator.tinyCacheSize", 512);
@@ -84,6 +88,7 @@ namespace DotNetty.Buffers
             if (Logger.DebugEnabled)
             {
                 Logger.Debug("-Dio.netty.allocator.numHeapArenas: {}", DefaultNumHeapArena);
+                Logger.Debug("-Dio.netty.allocator.numDirectArenas: {}", DefaultNumDirectArena);
                 if (pageSizeFallbackCause == null)
                 {
                     Logger.Debug("-Dio.netty.allocator.pageSize: {}", DefaultPageSize);
@@ -108,35 +113,48 @@ namespace DotNetty.Buffers
                 Logger.Debug("-Dio.netty.allocator.cacheTrimInterval: {}", DefaultCacheTrimInterval);
             }
 
-            Default = new PooledByteBufferAllocator();
+            Default = new PooledByteBufferAllocator(PlatformDependent.DirectBufferPreferred);
         }
 
         public static readonly PooledByteBufferAllocator Default;
 
         readonly PoolArena<byte[]>[] heapArenas;
+        readonly PoolArena<byte[]>[] directArenas;
         readonly int tinyCacheSize;
         readonly int smallCacheSize;
         readonly int normalCacheSize;
         readonly IReadOnlyList<IPoolArenaMetric> heapArenaMetrics;
+        readonly IReadOnlyList<IPoolArenaMetric> directArenaMetrics;
         readonly PoolThreadLocalCache threadCache;
         readonly int chunkSize;
         readonly PooledByteBufferAllocatorMetric metric;
 
-        public PooledByteBufferAllocator()
-            : this(DefaultNumHeapArena, DefaultPageSize, DefaultMaxOrder)
+        public PooledByteBufferAllocator() : this(false)
         {
         }
 
-        public PooledByteBufferAllocator(int nHeapArena, int pageSize, int maxOrder)
-            : this(nHeapArena, pageSize, maxOrder,
+        public PooledByteBufferAllocator(bool preferDirect)
+            : this(preferDirect, DefaultNumHeapArena, DefaultNumDirectArena, DefaultPageSize, DefaultMaxOrder)
+        {
+        }
+
+        public PooledByteBufferAllocator(int nHeapArena, int nDirectArena, int pageSize, int maxOrder)
+            : this(false, nHeapArena, nDirectArena, pageSize, maxOrder)
+        {
+        }
+
+        public PooledByteBufferAllocator(bool preferDirect, int nHeapArena, int nDirectArena, int pageSize, int maxOrder)
+            : this(preferDirect, nHeapArena, nDirectArena, pageSize, maxOrder,
                 DefaultTinyCacheSize, DefaultSmallCacheSize, DefaultNormalCacheSize)
         {
         }
 
-        public PooledByteBufferAllocator(int nHeapArena, int pageSize, int maxOrder,
+        public PooledByteBufferAllocator(bool preferDirect, int nHeapArena, int nDirectArena, int pageSize, int maxOrder,
             int tinyCacheSize, int smallCacheSize, int normalCacheSize)
+            : base(preferDirect)
         {
             Contract.Requires(nHeapArena >= 0);
+            Contract.Requires(nDirectArena >= 0);
 
             this.threadCache = new PoolThreadLocalCache(this);
             this.tinyCacheSize = tinyCacheSize;
@@ -164,6 +182,24 @@ namespace DotNetty.Buffers
                 this.heapArenaMetrics = new IPoolArenaMetric[0];
             }
 
+            if (nDirectArena > 0)
+            {
+                this.directArenas = NewArenaArray<byte[]>(nDirectArena);
+                var metrics = new List<IPoolArenaMetric>(this.directArenas.Length);
+                for (int i = 0; i < this.directArenas.Length; i++)
+                {
+                    var arena = new DirectArena(this, pageSize, maxOrder, pageShifts, this.chunkSize);
+                    this.directArenas[i] = arena;
+                    metrics.Add(arena);
+                }
+                this.directArenaMetrics = metrics.AsReadOnly();
+            }
+            else
+            {
+                this.directArenas = null;
+                this.directArenaMetrics = new IPoolArenaMetric[0];
+            }
+
             this.metric = new PooledByteBufferAllocatorMetric(this);
         }
 
@@ -175,7 +211,7 @@ namespace DotNetty.Buffers
             Contract.Requires((pageSize & pageSize - 1) == 0, "Expected power of 2");
 
             // Logarithm base 2. At this point we know that pageSize is a power of two.
-            return (sizeof(int) * 8 - 1) -  pageSize.NumberOfLeadingZeros();
+            return (sizeof(int) * 8 - 1) - pageSize.NumberOfLeadingZeros();
         }
 
         static int ValidateAndCalculateChunkSize(int pageSize, int maxOrder)
@@ -213,6 +249,28 @@ namespace DotNetty.Buffers
             return ToLeakAwareBuffer(buf);
         }
 
+        protected override IByteBuffer NewDirectBuffer(int initialCapacity, int maxCapacity)
+        {
+            PoolThreadCache<byte[]> cache = this.threadCache.Value;
+            PoolArena<byte[]> directArena = cache.DirectArena;
+
+            IByteBuffer buf;
+            if (directArena != null)
+            {
+                buf = directArena.Allocate(cache, initialCapacity, maxCapacity);
+            }
+            else
+            {
+                buf = UnsafeByteBufferUtil.NewUnsafeDirectByteBuffer(this, initialCapacity, maxCapacity);
+            }
+
+            return ToLeakAwareBuffer(buf);
+        }
+
+        public static bool DefaultPreferDirect => PlatformDependent.DirectBufferPreferred;
+
+        public override bool IsDirectBufferPooled => this.heapArenas != null;
+
         sealed class PoolThreadLocalCache : FastThreadLocal<PoolThreadCache<byte[]>>
         {
             readonly PooledByteBufferAllocator owner;
@@ -227,8 +285,11 @@ namespace DotNetty.Buffers
                 lock (this)
                 {
                     PoolArena<byte[]> heapArena = this.LeastUsedArena(this.owner.heapArenas);
-                        return new PoolThreadCache<byte[]>(
-                            heapArena, this.owner.tinyCacheSize, this.owner.smallCacheSize, this.owner.normalCacheSize,
+                    PoolArena<byte[]> directArena = this.LeastUsedArena(this.owner.directArenas);
+
+                    return new PoolThreadCache<byte[]>(
+                            heapArena, directArena,
+                            this.owner.tinyCacheSize, this.owner.smallCacheSize, this.owner.normalCacheSize,
                             DefaultMaxCachedBufferCapacity, DefaultCacheTrimInterval);
                 }
             }
@@ -258,7 +319,8 @@ namespace DotNetty.Buffers
 
         internal IReadOnlyList<IPoolArenaMetric> HeapArenas() => this.heapArenaMetrics;
 
-        // ReSharper disable ConvertToAutoPropertyWhenPossible
+        internal IReadOnlyList<IPoolArenaMetric> DirectArenas() => this.directArenaMetrics;
+
         internal int TinyCacheSize => this.tinyCacheSize;
 
         internal int SmallCacheSize => this.smallCacheSize;
@@ -266,15 +328,14 @@ namespace DotNetty.Buffers
         internal int NormalCacheSize => this.normalCacheSize;
 
         internal int ChunkSize => this.chunkSize;
-        // ReSharper restore ConvertToAutoPropertyWhenPossible
 
-        // ReSharper disable ConvertToAutoProperty
         public PooledByteBufferAllocatorMetric Metric => this.metric;
-        // ReSharper restore ConvertToAutoProperty
 
         IByteBufferAllocatorMetric IByteBufferAllocatorMetricProvider.Metric => this.Metric;
-        
+
         internal long UsedHeapMemory => UsedMemory(this.heapArenas);
+
+        internal long UsedDirectMemory => UsedMemory(this.directArenas);
 
         static long UsedMemory(PoolArena<byte[]>[] arenas)
         {
@@ -310,6 +371,19 @@ namespace DotNetty.Buffers
             {
                 // ReSharper disable once PossibleNullReferenceException
                 foreach (PoolArena<byte[]> a in this.heapArenas)
+                {
+                    buf.Append(a);
+                }
+            }
+
+            int directArenasLen = this.directArenas?.Length ?? 0;
+            buf.Append(directArenasLen)
+                .Append(" direct arena(s):")
+                .Append(StringUtil.Newline);
+            if (directArenasLen > 0)
+            {
+                // ReSharper disable once PossibleNullReferenceException
+                foreach (PoolArena<byte[]> a in this.directArenas)
                 {
                     buf.Append(a);
                 }

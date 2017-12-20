@@ -10,14 +10,18 @@ namespace DotNetty.Buffers.Tests
     {
         protected abstract IByteBufferAllocator NewUnpooledAllocator();
 
+        protected override bool IsDirectExpected(bool preferDirect) => preferDirect;
+
         protected sealed override int DefaultMaxCapacity => AbstractByteBufferAllocator.DefaultMaxCapacity;
 
         protected sealed  override int DefaultMaxComponents =>  AbstractByteBufferAllocator.DefaultMaxComponents;
 
-        [Fact]
-        public void CalculateNewCapacity()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CalculateNewCapacity(bool preferDirect)
         {
-            IByteBufferAllocator allocator = this.NewAllocator();
+            IByteBufferAllocator allocator = this.NewAllocator(preferDirect);
             Assert.Equal(8, allocator.CalculateNewCapacity(1, 8));
             Assert.Equal(7, allocator.CalculateNewCapacity(1, 7));
             Assert.Equal(64, allocator.CalculateNewCapacity(1, 129));
@@ -26,7 +30,20 @@ namespace DotNetty.Buffers.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => allocator.CalculateNewCapacity(-1, 8));
         }
 
-        protected static void AssertInstanceOf<T>(T buffer) where T : IByteBuffer
+        [Fact]
+        public void UnsafeHeapBufferAndUnsafeDirectBuffer()
+        {
+            IByteBufferAllocator allocator = this.NewUnpooledAllocator();
+            IByteBuffer directBuffer = allocator.DirectBuffer();
+            AssertInstanceOf<UnpooledUnsafeDirectByteBuffer>(directBuffer);
+            directBuffer.Release();
+
+            IByteBuffer heapBuffer = allocator.HeapBuffer();
+            AssertInstanceOf<UnpooledHeapByteBuffer>(heapBuffer);
+            heapBuffer.Release();
+        }
+
+        protected static void AssertInstanceOf<T>(IByteBuffer buffer) where T : IByteBuffer
         {
             Assert.IsAssignableFrom<T>(buffer is SimpleLeakAwareByteBuffer ? buffer.Unwrap() : buffer);
         }
@@ -34,7 +51,7 @@ namespace DotNetty.Buffers.Tests
         [Fact]
         public void UsedHeapMemory()
         {
-            IByteBufferAllocator allocator = this.NewAllocator();
+            IByteBufferAllocator allocator = this.NewAllocator(true);
             IByteBufferAllocatorMetric metric = ((IByteBufferAllocatorMetricProvider)allocator).Metric;
 
             Assert.Equal(0, metric.UsedHeapMemory);
@@ -51,14 +68,8 @@ namespace DotNetty.Buffers.Tests
             Assert.Equal(this.ExpectedUsedMemoryAfterRelease(allocator, capacity), metric.UsedHeapMemory);
         }
 
-        protected virtual long ExpectedUsedMemory(IByteBufferAllocator allocator, int capacity)
-        {
-            return capacity;
-        }
+        protected virtual long ExpectedUsedMemory(IByteBufferAllocator allocator, int capacity) => capacity;
 
-        protected virtual long ExpectedUsedMemoryAfterRelease(IByteBufferAllocator allocator, int capacity)
-        {
-            return 0;
-        }
+        protected virtual long ExpectedUsedMemoryAfterRelease(IByteBufferAllocator allocator, int capacity) => 0;
     }
 }

@@ -416,25 +416,25 @@ namespace DotNetty.Buffers
             return base.BytesBefore(index, length, value);
         }
 
-        public override int ForEachByte(ByteProcessor processor)
+        public override int ForEachByte(IByteProcessor processor)
         {
             RecordLeakNonRefCountingOperation(this.Leak);
             return base.ForEachByte(processor);
         }
 
-        public override int ForEachByte(int index, int length, ByteProcessor processor)
+        public override int ForEachByte(int index, int length, IByteProcessor processor)
         {
             RecordLeakNonRefCountingOperation(this.Leak);
             return base.ForEachByte(index, length, processor);
         }
 
-        public override int ForEachByteDesc(ByteProcessor processor)
+        public override int ForEachByteDesc(IByteProcessor processor)
         {
             RecordLeakNonRefCountingOperation(this.Leak);
             return base.ForEachByteDesc(processor);
         }
 
-        public override int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        public override int ForEachByteDesc(int index, int length, IByteProcessor processor)
         {
             RecordLeakNonRefCountingOperation(this.Leak);
             return base.ForEachByteDesc(index, length, processor);

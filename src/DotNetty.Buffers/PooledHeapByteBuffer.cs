@@ -26,6 +26,8 @@ namespace DotNetty.Buffers
         {
         }
 
+        public override bool IsDirect => false;
+
         protected internal override byte _GetByte(int index) => HeapByteBufferUtil.GetByte(this.Memory, this.Idx(index));
 
         protected internal override short _GetShort(int index) => HeapByteBufferUtil.GetShort(this.Memory, this.Idx(index));
@@ -165,5 +167,15 @@ namespace DotNetty.Buffers
         }
 
         public override int ArrayOffset => this.Offset;
+
+        public override bool HasMemoryAddress => true;
+
+        public override ref byte GetPinnableMemoryAddress()
+        {
+            this.EnsureAccessible();
+            return ref this.Memory[this.Offset];
+        }
+
+        public override IntPtr AddressOfPinnedMemory() => IntPtr.Zero;
     }
 }

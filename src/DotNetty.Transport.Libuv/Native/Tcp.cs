@@ -19,7 +19,7 @@ namespace DotNetty.Transport.Libuv.Native
 
         public Tcp(Loop loop) : base(loop)
         {
-            this.pendingReads = PlatformDependent.SpscLinkedQueue<ReadOperation>();
+            this.pendingReads = PlatformDependent.NewSpscLinkedQueue<ReadOperation>();
         }
 
         public void ReadStart(INativeUnsafe channel)

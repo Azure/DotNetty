@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -45,6 +46,8 @@ namespace DotNetty.Buffers
 
         public override IByteBufferAllocator Allocator => this.Unwrap().Allocator;
 
+        public override bool IsDirect => this.Unwrap().IsDirect;
+
         public override int Capacity => this.Unwrap().Capacity;
 
         public override IByteBuffer AdjustCapacity(int newCapacity) => this.Unwrap().AdjustCapacity(newCapacity);
@@ -56,6 +59,12 @@ namespace DotNetty.Buffers
         public override byte[] Array => this.Unwrap().Array;
 
         public override int ArrayOffset => this.Unwrap().ArrayOffset;
+
+        public override bool HasMemoryAddress => this.Unwrap().HasMemoryAddress;
+
+        public override ref byte GetPinnableMemoryAddress() => ref this.Unwrap().GetPinnableMemoryAddress();
+
+        public override IntPtr AddressOfPinnedMemory() => this.Unwrap().AddressOfPinnedMemory();
 
         protected internal override byte _GetByte(int index) => this.UnwrapCore()._GetByte(index);
 
@@ -105,8 +114,8 @@ namespace DotNetty.Buffers
 
         protected internal override void _SetLongLE(int index, long value) => this.UnwrapCore()._SetLongLE(index, value);
 
-        public override int ForEachByte(int index, int length, ByteProcessor processor) => this.Unwrap().ForEachByte(index, length, processor);
+        public override int ForEachByte(int index, int length, IByteProcessor processor) => this.Unwrap().ForEachByte(index, length, processor);
 
-        public override int ForEachByteDesc(int index, int length, ByteProcessor processor) => this.Unwrap().ForEachByteDesc(index, length, processor);
+        public override int ForEachByteDesc(int index, int length, IByteProcessor processor) => this.Unwrap().ForEachByteDesc(index, length, processor);
     }
 }

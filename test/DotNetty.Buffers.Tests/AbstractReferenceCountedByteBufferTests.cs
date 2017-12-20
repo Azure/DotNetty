@@ -126,7 +126,15 @@ namespace DotNetty.Buffers.Tests
 
             public override int ArrayOffset => throw new NotSupportedException();
 
+            public override bool HasMemoryAddress => throw new NotSupportedException();
+
+            public override ref byte GetPinnableMemoryAddress() => throw new NotSupportedException();
+
+            public override IntPtr AddressOfPinnedMemory() => throw new NotSupportedException();
+
             public override IByteBuffer Unwrap() => throw new NotSupportedException();
+
+            public override bool IsDirect => throw new NotSupportedException();
 
             public override IByteBuffer Copy(int index, int length) => throw new NotSupportedException();
 

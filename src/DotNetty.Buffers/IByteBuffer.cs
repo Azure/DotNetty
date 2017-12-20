@@ -35,6 +35,8 @@ namespace DotNetty.Buffers
         /// </summary>
         IByteBufferAllocator Allocator { get; }
 
+        bool IsDirect { get; }
+
         int ReaderIndex { get; }
 
         int WriterIndex { get; }
@@ -1077,8 +1079,25 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Grabs the underlying byte array for this buffer
         /// </summary>
-        /// <value></value>
         byte[] Array { get; }
+
+        /// <summary>
+        /// Returns {@code true} if and only if this buffer has a reference to the low-level memory address that points
+        /// to the backing data.
+        /// </summary>
+        bool HasMemoryAddress { get; }
+
+        /// <summary>
+        ///  Returns the low-level memory address that point to the first byte of ths backing data.
+        /// </summary>
+        /// <returns>The low-level memory address</returns>
+        ref byte GetPinnableMemoryAddress();
+
+        /// <summary>
+        /// Returns the pointer address of the buffer if the memory is pinned.
+        /// </summary>
+        /// <returns>IntPtr.Zero if not pinned.</returns>
+        IntPtr AddressOfPinnedMemory();
 
         /// <summary>
         ///     Creates a deep clone of the existing byte array and returns it
@@ -1141,10 +1160,10 @@ namespace DotNetty.Buffers
         /// </summary>
         /// <returns>
         ///     <c>-1</c> if the processor iterated to or beyond the end of the readable bytes.
-        ///     The last-visited index If the <see cref="ByteProcessor.Process(byte)" /> returned <c>false</c>.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)" /> returned <c>false</c>.
         /// </returns>
         /// <param name="processor">Processor.</param>
-        int ForEachByte(ByteProcessor processor);
+        int ForEachByte(IByteProcessor processor);
 
         /// <summary>
         ///     Iterates over the specified area of this buffer with the specified <paramref name="processor"/> in ascending order.
@@ -1152,22 +1171,22 @@ namespace DotNetty.Buffers
         /// </summary>
         /// <returns>
         ///     <c>-1</c> if the processor iterated to or beyond the end of the specified area.
-        ///     The last-visited index If the <see cref="ByteProcessor.Process(byte)"/> returned <c>false</c>.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)"/> returned <c>false</c>.
         /// </returns>
         /// <param name="index">Index.</param>
         /// <param name="length">Length.</param>
         /// <param name="processor">Processor.</param>
-        int ForEachByte(int index, int length, ByteProcessor processor);
+        int ForEachByte(int index, int length, IByteProcessor processor);
 
         /// <summary>
         ///     Iterates over the readable bytes of this buffer with the specified <paramref name="processor"/> in descending order.
         /// </summary>
         /// <returns>
         ///     <c>-1</c> if the processor iterated to or beyond the beginning of the readable bytes.
-        ///     The last-visited index If the <see cref="ByteProcessor.Process(byte)"/> returned <c>false</c>.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)"/> returned <c>false</c>.
         /// </returns>
         /// <param name="processor">Processor.</param>
-        int ForEachByteDesc(ByteProcessor processor);
+        int ForEachByteDesc(IByteProcessor processor);
 
         /// <summary>
         ///     Iterates over the specified area of this buffer with the specified <paramref name="processor"/> in descending order.
@@ -1175,11 +1194,11 @@ namespace DotNetty.Buffers
         /// </summary>
         /// <returns>
         ///     <c>-1</c> if the processor iterated to or beyond the beginning of the specified area.
-        ///     The last-visited index If the <see cref="ByteProcessor.Process(byte)"/> returned <c>false</c>.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)"/> returned <c>false</c>.
         /// </returns>
         /// <param name="index">Index.</param>
         /// <param name="length">Length.</param>
         /// <param name="processor">Processor.</param>
-        int ForEachByteDesc(int index, int length, ByteProcessor processor);
+        int ForEachByteDesc(int index, int length, IByteProcessor processor);
     }
 }

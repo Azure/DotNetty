@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.IO;
+    using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
@@ -43,6 +44,18 @@ namespace DotNetty.Buffers
         public override IByteBuffer AdjustCapacity(int newCapacity) =>throw new NotSupportedException("sliced buffer");
 
         public override int ArrayOffset => this.Idx(this.Unwrap().ArrayOffset);
+
+        public override ref byte GetPinnableMemoryAddress() => ref Unsafe.Add(ref this.Unwrap().GetPinnableMemoryAddress(), this.adjustment);
+
+        public override IntPtr AddressOfPinnedMemory()
+        {
+            IntPtr ptr = this.Unwrap().AddressOfPinnedMemory();
+            if (ptr == IntPtr.Zero)
+            {
+                return ptr;
+            }
+            return ptr + this.adjustment;
+        }
 
         public override ArraySegment<byte> GetIoBuffer(int index, int length)
         {
@@ -271,7 +284,7 @@ namespace DotNetty.Buffers
             return this.Unwrap().SetBytesAsync(this.Idx(index), src, length, cancellationToken);
         }
 
-        public override int ForEachByte(int index, int length, ByteProcessor processor)
+        public override int ForEachByte(int index, int length, IByteProcessor processor)
         {
             this.CheckIndex0(index, length);
             int ret = this.Unwrap().ForEachByte(this.Idx(index), length, processor);
@@ -282,7 +295,7 @@ namespace DotNetty.Buffers
             return ret - this.adjustment;
         }
 
-        public override int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        public override int ForEachByteDesc(int index, int length, IByteProcessor processor)
         {
             this.CheckIndex0(index, length);
             int ret = this.Unwrap().ForEachByteDesc(this.Idx(index), length, processor);

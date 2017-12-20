@@ -281,7 +281,7 @@ namespace DotNetty.Buffers
                 return -1;
             }
 
-            return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new ByteProcessor.IndexOfProcessor(value));
+            return buffer.ForEachByte(fromIndex, toIndex - fromIndex, new IndexOfProcessor(value));
         }
 
         static int LastIndexOf(IByteBuffer buffer, int fromIndex, int toIndex, byte value)
@@ -292,7 +292,7 @@ namespace DotNetty.Buffers
                 return -1;
             }
 
-            return buffer.ForEachByteDesc(toIndex, fromIndex - toIndex, new ByteProcessor.IndexOfProcessor(value));
+            return buffer.ForEachByteDesc(toIndex, fromIndex - toIndex, new IndexOfProcessor(value));
         }
 
         /// <summary>
@@ -667,9 +667,9 @@ namespace DotNetty.Buffers
 
         static readonly FindNonAscii AsciiByteProcessor = new FindNonAscii();
 
-        sealed class FindNonAscii : ByteProcessor
+        sealed class FindNonAscii : IByteProcessor
         {
-            public override bool Process(byte value) => value < 0x80;
+            public bool Process(byte value) => value < 0x80;
         }
 
         static bool IsAscii(IByteBuffer buf, int index, int length) => buf.ForEachByte(index, length, AsciiByteProcessor) == -1;

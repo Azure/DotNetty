@@ -23,7 +23,9 @@ namespace DotNetty.Buffers.Tests
         public void AllocationCounter()
         {
             var allocator = new PooledByteBufferAllocator(
-                1,      // nHeapArena
+                true,   // preferDirect
+                0,      // nHeapArena
+                1,      // nDirectArena
                 8192,   // pageSize
                 11,     // maxOrder
                 0,      // tinyCacheSize
@@ -48,8 +50,8 @@ namespace DotNetty.Buffers.Tests
             Assert.True(b2.Release());
             Assert.True(b3.Release());
 
-            Assert.True(allocator.HeapArenas().Count >= 1);
-            IPoolArenaMetric metric = allocator.HeapArenas()[0];
+            Assert.True(allocator.DirectArenas().Count >= 1);
+            IPoolArenaMetric metric = allocator.DirectArenas()[0];
 
             Assert.Equal(3, metric.NumDeallocations);
             Assert.Equal(3, metric.NumAllocations);

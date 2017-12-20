@@ -1999,7 +1999,7 @@ namespace DotNetty.Buffers.Tests
             this.buffer.SetIndex(Capacity / 4, Capacity * 3 / 4);
             int i1 = Capacity / 4;
             Assert.Equal(-1,
-                this.buffer.ForEachByte(new ByteProcessor.CustomProcessor(
+                this.buffer.ForEachByte(new ByteProcessor(
                     value =>
                     {
                         Assert.Equal(value, (byte)(i1 + 1));
@@ -2022,7 +2022,7 @@ namespace DotNetty.Buffers.Tests
 
             int stop = Capacity / 2;
             int i1 = Capacity / 3;
-            Assert.Equal(stop, this.buffer.ForEachByte(Capacity / 3, Capacity / 3, new ByteProcessor.CustomProcessor(value =>
+            Assert.Equal(stop, this.buffer.ForEachByte(Capacity / 3, Capacity / 3, new ByteProcessor(value =>
             {
                 Assert.Equal((byte)(i1 + 1), value);
                 if (i1 == stop)
@@ -2046,7 +2046,7 @@ namespace DotNetty.Buffers.Tests
 
             int lastIndex = 0;
             int i1 = Capacity * 3 / 4 - 1;
-            Assert.Equal(-1, this.buffer.ForEachByteDesc(Capacity / 4, Capacity * 2 / 4, new ByteProcessor.CustomProcessor(value =>
+            Assert.Equal(-1, this.buffer.ForEachByteDesc(Capacity / 4, Capacity * 2 / 4, new ByteProcessor(value =>
             {
                 Assert.Equal((byte)(i1 + 1), value);
                 Volatile.Write(ref lastIndex, i1);
@@ -2447,12 +2447,49 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
+        public void MemoryAddressAfterRelease()
+        {
+            IByteBuffer buf = this.ReleasedBuffer();
+            if (buf.HasMemoryAddress)
+            {
+                Assert.Throws<IllegalReferenceCountException>(() => buf.GetPinnableMemoryAddress());
+            }
+        }
+
+        [Fact]
         public void SliceRelease()
         {
             IByteBuffer buf = this.NewBuffer(8);
             Assert.Equal(1, buf.ReferenceCount);
             Assert.True(buf.Slice().Release());
             Assert.Equal(0, buf.ReferenceCount);
+        }
+
+        [Fact]
+        public void ReadSliceOutOfBounds() => Assert.Throws<IndexOutOfRangeException>(() => this.ReadSliceOutOfBounds(false));
+
+        [Fact]
+        public void ReadRetainedSliceOutOfBounds() => Assert.Throws<IndexOutOfRangeException>(() => this.ReadSliceOutOfBounds(true));
+
+        void ReadSliceOutOfBounds(bool retainedSlice)
+        {
+            IByteBuffer buf = this.NewBuffer(100);
+            try
+            {
+                buf.WriteZero(50);
+                if (retainedSlice)
+                {
+                    buf.ReadRetainedSlice(51);
+                }
+                else
+                {
+                    buf.ReadSlice(51);
+                }
+            }
+            finally
+            {
+                buf.Release();
+            }
         }
 
         [Fact]
@@ -3097,7 +3134,7 @@ namespace DotNetty.Buffers.Tests
             }
         }
 
-        sealed class ForEachByteDesc2Processor : ByteProcessor
+        sealed class ForEachByteDesc2Processor : IByteProcessor
         {
             int index;
 
@@ -3109,7 +3146,7 @@ namespace DotNetty.Buffers.Tests
 
             public byte[] Bytes { get; }
 
-            public override bool Process(byte value)
+            public bool Process(byte value)
             {
                 this.Bytes[this.index--] = value;
                 return true;
@@ -3136,7 +3173,7 @@ namespace DotNetty.Buffers.Tests
             }
         }
 
-        sealed class ForEachByte2Processor : ByteProcessor
+        sealed class ForEachByte2Processor : IByteProcessor
         {
             int index;
 
@@ -3148,7 +3185,7 @@ namespace DotNetty.Buffers.Tests
 
             public byte[] Bytes { get; }
 
-            public override bool Process(byte value)
+            public bool Process(byte value)
             {
                 this.Bytes[this.index++] = value;
                 return true;
@@ -3301,9 +3338,9 @@ namespace DotNetty.Buffers.Tests
             return buf;
         }
 
-        sealed class TestByteProcessor : ByteProcessor
+        sealed class TestByteProcessor : IByteProcessor
         {
-            public override bool Process(byte value) => true;
+            public bool Process(byte value) => true;
         }
     }
 }

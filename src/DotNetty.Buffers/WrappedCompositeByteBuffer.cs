@@ -102,13 +102,13 @@ namespace DotNetty.Buffers
 
         public override int BytesBefore(int index, int length, byte value) => this.wrapped.BytesBefore(index, length, value);
 
-        public override int ForEachByte(ByteProcessor processor) => this.wrapped.ForEachByte(processor);
+        public override int ForEachByte(IByteProcessor processor) => this.wrapped.ForEachByte(processor);
 
-        public override int ForEachByte(int index, int length, ByteProcessor processor) => this.wrapped.ForEachByte(index, length, processor);
+        public override int ForEachByte(int index, int length, IByteProcessor processor) => this.wrapped.ForEachByte(index, length, processor);
 
-        public override int ForEachByteDesc(ByteProcessor processor) => this.wrapped.ForEachByteDesc(processor);
+        public override int ForEachByteDesc(IByteProcessor processor) => this.wrapped.ForEachByteDesc(processor);
 
-        public override int ForEachByteDesc(int index, int length, ByteProcessor processor) => this.wrapped.ForEachByteDesc(index, length, processor);
+        public override int ForEachByteDesc(int index, int length, IByteProcessor processor) => this.wrapped.ForEachByteDesc(index, length, processor);
 
         public override int GetHashCode() => this.wrapped.GetHashCode();
 

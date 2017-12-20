@@ -160,7 +160,7 @@ namespace DotNetty.Codecs
 
         int FindEndOfLine(IByteBuffer buffer)
         {
-            int i = buffer.ForEachByte(ByteProcessor.FIND_LF);
+            int i = buffer.ForEachByte(ByteProcessor.FindLF);
             if (i > 0 && buffer.GetByte(i - 1) == '\r')
             {
                 i--;

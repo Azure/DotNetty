@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoProperty
 namespace DotNetty.Buffers
 {
     using System;
@@ -37,34 +38,40 @@ namespace DotNetty.Buffers
         }
 
         static readonly ArraySegment<byte> EmptyNioBuffer = Unpooled.Empty.GetIoBuffer();
+
+        readonly IByteBufferAllocator allocator;
+        readonly bool direct;
         readonly List<ComponentEntry> components;
+        readonly int maxNumComponents;
 
         bool freed;
 
-        public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents)
+        public CompositeByteBuffer(IByteBufferAllocator allocator, bool direct, int maxNumComponents)
             : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
         {
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
 
-            this.Allocator = allocator;
-            this.MaxNumComponents = maxNumComponents;
+            this.allocator = allocator;
+            this.direct = direct;
+            this.maxNumComponents = maxNumComponents;
             this.components = NewList(maxNumComponents);
         }
 
-        public CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, params IByteBuffer[] buffers)
-            : this(allocator, maxNumComponents, buffers, 0, buffers.Length)
+        public CompositeByteBuffer(IByteBufferAllocator allocator, bool direct, int maxNumComponents, params IByteBuffer[] buffers)
+            : this(allocator, direct, maxNumComponents, buffers, 0, buffers.Length)
         {
         }
 
-        internal CompositeByteBuffer(IByteBufferAllocator allocator, int maxNumComponents, IByteBuffer[] buffers, int offset, int length)
+        internal CompositeByteBuffer(IByteBufferAllocator allocator, bool direct, int maxNumComponents, IByteBuffer[] buffers, int offset, int length)
             : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
         {
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
 
-            this.Allocator = allocator;
-            this.MaxNumComponents = maxNumComponents;
+            this.allocator = allocator;
+            this.direct = direct;
+            this.maxNumComponents = maxNumComponents;
             this.components = NewList(maxNumComponents);
 
             this.AddComponents0(false, 0, buffers, offset, length);
@@ -73,15 +80,15 @@ namespace DotNetty.Buffers
         }
 
         public CompositeByteBuffer(
-            IByteBufferAllocator allocator, int maxNumComponents, IEnumerable<IByteBuffer> buffers)
+            IByteBufferAllocator allocator, bool direct, int maxNumComponents, IEnumerable<IByteBuffer> buffers)
             : base(AbstractByteBufferAllocator.DefaultMaxCapacity)
         {
             Contract.Requires(allocator != null);
             Contract.Requires(maxNumComponents >= 2);
 
-            this.Allocator = allocator;
-            this.MaxNumComponents = maxNumComponents;
-
+            this.allocator = allocator;
+            this.direct = direct;
+            this.maxNumComponents = maxNumComponents;
             this.components = NewList(maxNumComponents);
 
             this.AddComponents0(false, 0, buffers);
@@ -95,8 +102,9 @@ namespace DotNetty.Buffers
         // Special constructor used by WrappedCompositeByteBuf
         internal CompositeByteBuffer(IByteBufferAllocator allocator) : base(int.MaxValue)
         {
-            this.Allocator = allocator;
-            this.MaxNumComponents = 0;
+            this.allocator = allocator;
+            this.direct = false;
+            this.maxNumComponents = 0;
             this.components = new List<ComponentEntry>(0);
         }
 
@@ -579,6 +587,27 @@ namespace DotNetty.Buffers
             return buffers.ToArray();
         }
 
+
+        public override bool IsDirect
+        {
+            get
+            {
+                int size = this.components.Count;
+                if (size == 0)
+                {
+                    return false;
+                }
+                for (int i = 0; i < size; i++)
+                {
+                    if (!this.components[i].Buffer.IsDirect)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
         public override bool HasArray
         {
             get
@@ -624,6 +653,42 @@ namespace DotNetty.Buffers
                     default:
                         throw new NotSupportedException();
                 }
+            }
+        }
+
+        public override bool HasMemoryAddress
+        {
+            get
+            {
+                switch (this.components.Count)
+                {
+                    case 1:
+                        return this.components[0].Buffer.HasMemoryAddress;
+                    default:
+                        return false;
+                }
+            }
+        }
+
+        public override ref byte GetPinnableMemoryAddress()
+        {
+            switch (this.components.Count)
+            {
+                case 1:
+                    return ref this.components[0].Buffer.GetPinnableMemoryAddress();
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        public override IntPtr AddressOfPinnedMemory()
+        {
+            switch (this.components.Count)
+            {
+                case 1:
+                    return this.components[0].Buffer.AddressOfPinnedMemory();
+                default:
+                    throw new NotSupportedException();
             }
         }
 
@@ -699,7 +764,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public override IByteBufferAllocator Allocator { get; }
+        public override IByteBufferAllocator Allocator => this.allocator;
 
         /// <summary>
         ///     Return the current number of {@link IByteBuffer}'s that are composed in this instance
@@ -709,7 +774,7 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Return the max number of {@link IByteBuffer}'s that are composed in this instance
         /// </summary>
-        public virtual int MaxNumComponents { get; }
+        public virtual int MaxNumComponents => this.maxNumComponents;
 
         /// <summary>
         ///     Return the index for the given offset
@@ -1396,7 +1461,8 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        IByteBuffer AllocateBuffer(int capacity) => this.Allocator.Buffer(capacity);
+        IByteBuffer AllocateBuffer(int capacity) => 
+            this.direct ? this.Allocator.DirectBuffer(capacity) : this.Allocator.HeapBuffer(capacity);
 
         public override string ToString()
         {

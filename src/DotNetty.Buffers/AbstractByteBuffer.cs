@@ -243,7 +243,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        protected void EnsureWritable0(int minWritableBytes)
+        protected internal void EnsureWritable0(int minWritableBytes)
         {
             this.EnsureAccessible();
             if (minWritableBytes <= this.WritableBytes)
@@ -821,6 +821,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer ReadSlice(int length)
         {
+            this.CheckReadableBytes(length);
             IByteBuffer slice = this.Slice(this.readerIndex, length);
             this.readerIndex += length;
             return slice;
@@ -828,6 +829,7 @@ namespace DotNetty.Buffers
 
         public virtual IByteBuffer ReadRetainedSlice(int length)
         {
+            this.CheckReadableBytes(length);
             IByteBuffer slice = this.RetainedSlice(this.readerIndex, length);
             this.readerIndex += length;
             return slice;
@@ -1145,19 +1147,19 @@ namespace DotNetty.Buffers
             return endIndex - index;
         }
 
-        public virtual int ForEachByte(ByteProcessor processor)
+        public virtual int ForEachByte(IByteProcessor processor)
         {
             this.EnsureAccessible();
             return this.ForEachByteAsc0(this.readerIndex, this.writerIndex, processor);
         }
 
-        public virtual int ForEachByte(int index, int length, ByteProcessor processor)
+        public virtual int ForEachByte(int index, int length, IByteProcessor processor)
         {
             this.CheckIndex(index, length);
             return this.ForEachByteAsc0(index, index + length, processor);
         }
 
-        int ForEachByteAsc0(int start, int end, ByteProcessor processor)
+        int ForEachByteAsc0(int start, int end, IByteProcessor processor)
         {
             for (; start < end; ++start)
             {
@@ -1170,19 +1172,19 @@ namespace DotNetty.Buffers
             return -1;
         }
 
-        public virtual int ForEachByteDesc(ByteProcessor processor)
+        public virtual int ForEachByteDesc(IByteProcessor processor)
         {
             this.EnsureAccessible();
             return this.ForEachByteDesc0(this.writerIndex - 1, this.readerIndex, processor);
         }
 
-        public virtual int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        public virtual int ForEachByteDesc(int index, int length, IByteProcessor processor)
         {
             this.CheckIndex(index, length);
             return this.ForEachByteDesc0(index + length - 1, index, processor);
         }
 
-        int ForEachByteDesc0(int rStart, int rEnd, ByteProcessor processor)
+        int ForEachByteDesc0(int rStart, int rEnd, IByteProcessor processor)
         {
             for (; rStart >= rEnd; --rStart)
             {
@@ -1331,7 +1333,15 @@ namespace DotNetty.Buffers
 
         public abstract int ArrayOffset { get; }
 
+        public abstract bool HasMemoryAddress { get; }
+
+        public abstract ref byte GetPinnableMemoryAddress();
+
+        public abstract IntPtr AddressOfPinnedMemory();
+
         public abstract IByteBuffer Unwrap();
+
+        public abstract bool IsDirect { get; }
 
         public abstract int ReferenceCount { get; }
 

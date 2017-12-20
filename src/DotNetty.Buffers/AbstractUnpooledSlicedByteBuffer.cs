@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.IO;
+    using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
@@ -45,6 +46,8 @@ namespace DotNetty.Buffers
 
         public override IByteBufferAllocator Allocator => this.Unwrap().Allocator;
 
+        public override bool IsDirect => this.Unwrap().IsDirect;
+
         public override IByteBuffer AdjustCapacity(int newCapacity) => throw new NotSupportedException("sliced buffer");
 
         public override bool HasArray => this.Unwrap().HasArray;
@@ -52,6 +55,20 @@ namespace DotNetty.Buffers
         public override byte[] Array => this.Unwrap().Array;
 
         public override int ArrayOffset => this.Idx(this.Unwrap().ArrayOffset);
+
+        public override bool HasMemoryAddress => this.Unwrap().HasMemoryAddress;
+
+        public override ref byte GetPinnableMemoryAddress() => ref Unsafe.Add(ref this.Unwrap().GetPinnableMemoryAddress(), this.adjustment);
+
+        public override IntPtr AddressOfPinnedMemory()
+        {
+            IntPtr ptr = this.Unwrap().AddressOfPinnedMemory();
+            if (ptr == IntPtr.Zero)
+            {
+                return ptr;
+            }
+            return ptr + this.adjustment;
+        }
 
         public override byte GetByte(int index)
         {
@@ -275,7 +292,7 @@ namespace DotNetty.Buffers
             return this.Unwrap().GetIoBuffers(index + this.adjustment, length);
         }
 
-        public override int ForEachByte(int index, int length, ByteProcessor processor)
+        public override int ForEachByte(int index, int length, IByteProcessor processor)
         {
             this.CheckIndex0(index, length);
             int ret = this.Unwrap().ForEachByte(this.Idx(index), length, processor);
@@ -289,7 +306,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        public override int ForEachByteDesc(int index, int length, ByteProcessor processor)
+        public override int ForEachByteDesc(int index, int length, IByteProcessor processor)
         {
             this.CheckIndex0(index, length);
             int ret = this.Unwrap().ForEachByteDesc(this.Idx(index), length, processor);
