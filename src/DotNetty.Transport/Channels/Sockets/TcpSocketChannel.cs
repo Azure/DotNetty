@@ -338,7 +338,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 if (localWrittenBytes > 0)
                 {
                     long leftBytes = localWrittenBytes - buffer.Count;
-                    if (leftBytes <= 0)
+                    if (leftBytes < 0)
                     {
                         int offset = buffer.Offset + (int)localWrittenBytes;
                         int count = -(int)leftBytes;
