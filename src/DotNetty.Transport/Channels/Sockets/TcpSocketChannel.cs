@@ -256,7 +256,8 @@ namespace DotNetty.Transport.Channels.Sockets
                     break;
                 }
 
-                List<ArraySegment<byte>> nioBuffers = input.GetSharedBufferList();
+                // - https://github.com/dotnet/corefx/issues/23416
+                List<ArraySegment<byte>> nioBuffers = input.GetSharedBufferList(1024);
                 int nioBufferCnt = nioBuffers.Count;
                 if (nioBufferCnt == 0)
                 {
@@ -265,9 +266,8 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
                 else
                 {
-                    ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
-                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
-                    bool flag = this.IncompleteWrite0(asyncOperation);
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(nioBuffers);
+                    bool flag = this.IncompleteWrite(asyncOperation);
                     if (flag)
                     {
                         break;
@@ -300,10 +300,9 @@ namespace DotNetty.Transport.Channels.Sockets
                     var nioBuffers = new List<ArraySegment<byte>>();
                     ArraySegment<byte> nioBuffer = buf.GetIoBuffer();
                     nioBuffers.Add(nioBuffer);
-
-                    ArraySegment<byte>[] copiedBuffers = nioBuffers.ToArray();
-                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
-                    this.IncompleteWrite0(asyncOperation);
+                    
+                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(nioBuffers);
+                    this.IncompleteWrite(asyncOperation);
                     break;
                 }
                 else
