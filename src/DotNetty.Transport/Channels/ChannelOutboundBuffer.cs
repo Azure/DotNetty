@@ -313,7 +313,7 @@ namespace DotNetty.Transport.Channels
         // Clear all ByteBuffer from the array so these can be GC'ed.
         // See https://github.com/netty/netty/issues/3837
         void ClearNioBuffers() => NioBuffers.Value.Clear();
-        
+
         ///
         ///Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
         ///{@link #nioBufferCount()} and {@link #nioBufferSize()} will return the number of NIO buffers in the returned
@@ -323,15 +323,20 @@ namespace DotNetty.Transport.Channels
         ///{@link AbstractChannel#doWrite(ChannelOutboundBuffer)}.
         ///Refer to {@link NioSocketChannel#doWrite(ChannelOutboundBuffer)} for an example.
         ///</p>
-        ///
-        public List<ArraySegment<byte>> GetSharedBufferList()
+        /// @param maxCount The maximum amount of buffers that will be added to the return value.
+        /// @param maxBytes A hint toward the maximum number of bytes to include as part of the return value. Note that this
+        ///                 value maybe exceeded because we make a best effort to include at least 1 {@link ByteBuffer}
+        ///                 in the return value to ensure write progress is made.
+        /// 
+        public List<ArraySegment<byte>> GetSharedBufferList(int maxCount, long maxBytes = int.MaxValue)
         {
             long nioBufferSize = 0;
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
             List<ArraySegment<byte>> nioBuffers = NioBuffers.Get(threadLocalMap);
             Entry entry = this.flushedEntry;
-            int i = 0;
-            while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer) {
+            int nioBufferCount = 0;
+            while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer)
+            {
                 if (!entry.Cancelled)
                 {
                     var buf = (IByteBuffer)entry.Message;
@@ -340,7 +345,7 @@ namespace DotNetty.Transport.Channels
 
                     if (readableBytes > 0)
                     {
-                        if (int.MaxValue - readableBytes < nioBufferSize)
+                        if (maxBytes - readableBytes < nioBufferSize && nioBufferCount != 0)
                         {
                             // If the nioBufferSize + readableBytes will overflow an Integer we stop populate the
                             // ByteBuffer array. This is done as bsd/osx don't allow to write more bytes then
@@ -361,12 +366,6 @@ namespace DotNetty.Transport.Channels
                             //noinspection ConstantValueVariableUse
                             entry.Count = count = buf.IoBufferCount;
                         }
-                        i += count;
-                        if (i > 1024 && Util.IsLinux)
-                        {
-                            //- https://github.com/dotnet/corefx/issues/23416
-                            break;
-                        }
                         if (count == 1)
                         {
                             ArraySegment<byte> nioBuf = entry.Buffer;
@@ -377,6 +376,7 @@ namespace DotNetty.Transport.Channels
                                 entry.Buffer = nioBuf = buf.GetIoBuffer(readerIndex, readableBytes);
                             }
                             nioBuffers.Add(nioBuf);
+                            nioBufferCount++;
                         }
                         else
                         {
@@ -387,10 +387,24 @@ namespace DotNetty.Transport.Channels
                                 // of Object allocation
                                 entry.Buffers = nioBufs = buf.GetIoBuffers();
                             }
-                            foreach (ArraySegment<byte> b in nioBufs)
+                            for (int i = 0; i < nioBufs.Length && nioBufferCount < maxCount; ++i)
                             {
-                                nioBuffers.Add(b);
+                                ArraySegment<byte> nioBuf = nioBufs[i];
+                                if (nioBuf.Array == null)
+                                {
+                                    break;
+                                }
+                                else if (nioBuf.Count == 0)
+                                {
+                                    continue;
+                                }
+                                nioBuffers.Add(nioBuf);
+                                nioBufferCount++;
                             }
+                        }
+                        if (nioBufferCount == maxCount)
+                        {
+                            break;
                         }
                     }
                 }
@@ -399,6 +413,21 @@ namespace DotNetty.Transport.Channels
             this.NioBufferSize = nioBufferSize;
 
             return nioBuffers;
+        }
+
+        ///
+        ///Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
+        ///{@link #nioBufferCount()} and {@link #nioBufferSize()} will return the number of NIO buffers in the returned
+        ///array and the total number of readable bytes of the NIO buffers respectively.
+        ///<p>
+        ///Note that the returned array is reused and thus should not escape
+        ///{@link AbstractChannel#doWrite(ChannelOutboundBuffer)}.
+        ///Refer to {@link NioSocketChannel#doWrite(ChannelOutboundBuffer)} for an example.
+        ///</p>
+        ///
+        public List<ArraySegment<byte>> GetSharedBufferList()
+        {
+            return this.GetSharedBufferList(int.MaxValue, int.MaxValue);
         }
 
         /**
