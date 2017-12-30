@@ -4,14 +4,10 @@
 namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
-    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
-    using System.Runtime.InteropServices;
-    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
@@ -244,8 +240,6 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected abstract class AbstractSocketUnsafe : AbstractUnsafe, ISocketChannelUnsafe
         {
-            static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractSocketUnsafe>();
-
             protected AbstractSocketUnsafe(AbstractSocketChannel channel)
                 : base(channel)
             {
