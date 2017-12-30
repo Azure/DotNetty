@@ -252,7 +252,7 @@ namespace DotNetty.Transport.Channels
 
         void RemoveEntry(Entry e)
         {
-            if (-- this.flushed == 0)
+            if (--this.flushed == 0)
             {
                 // processed everything
                 this.flushedEntry = null;
@@ -595,7 +595,7 @@ namespace DotNetty.Transport.Channels
             try
             {
                 this.inFail = true;
-                for (;;)
+                for (; ; )
                 {
                     if (!this.Remove0(cause, notify))
                     {
@@ -658,7 +658,7 @@ namespace DotNetty.Transport.Channels
             }
             this.ClearNioBuffers();
         }
-        
+
         public long TotalPendingWriteBytes() => Volatile.Read(ref this.totalPendingSize);
 
         /// <summary>

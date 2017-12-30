@@ -5,7 +5,6 @@ namespace DotNetty.Transport.Channels.Sockets
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -246,82 +245,8 @@ namespace DotNetty.Transport.Channels.Sockets
         //    return region.transferTo(javaChannel(), position);
         //}
 
-        void Write(ChannelOutboundBuffer input)
-        {
-            while (true)
-            {
-                int size = input.Count;
-                if (size == 0)
-                {
-                    break;
-                }
-
-                // - https://github.com/dotnet/corefx/issues/23416
-                List<ArraySegment<byte>> nioBuffers = input.GetSharedBufferList(1024);
-                int nioBufferCnt = nioBuffers.Count;
-                if (nioBufferCnt == 0)
-                {
-                    this.WriteByteBuffers(input);
-                    return;
-                }
-                else
-                {
-                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(nioBuffers);
-                    bool flag = this.IncompleteWrite(asyncOperation);
-                    if (flag)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        void WriteByteBuffers(ChannelOutboundBuffer input)
-        {
-            while (true)
-            {
-                object msg = input.Current;
-                if (msg == null)
-                {
-                    // Wrote all messages.
-                    break;
-                }
-
-                var buf = msg as IByteBuffer;
-                if (buf != null)
-                {
-                    int readableBytes = buf.ReadableBytes;
-                    if (readableBytes == 0)
-                    {
-                        input.Remove();
-                        continue;
-                    }
-
-                    var nioBuffers = new List<ArraySegment<byte>>();
-                    ArraySegment<byte> nioBuffer = buf.GetIoBuffer();
-                    nioBuffers.Add(nioBuffer);
-                    
-                    SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(nioBuffers);
-                    this.IncompleteWrite(asyncOperation);
-                    break;
-                }
-                else
-                {
-                    // Should not reach here.
-                    throw new InvalidOperationException();
-                }
-            }
-        }
-
         protected override void DoWrite(ChannelOutboundBuffer input)
         {
-            if (Util.IsLinux)
-            {
-                //- https://github.com/dotnet/corefx/issues/23672
-                this.Write(input);
-                return;
-            }
-
             List<ArraySegment<byte>> sharedBufferList = null;
             try
             {
@@ -335,14 +260,14 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     long writtenBytes = 0;
                     bool done = false;
-                    bool setOpWrite = false;
 
                     // Ensure the pending writes are made of ByteBufs only.
-                    sharedBufferList = input.GetSharedBufferList();
+                    sharedBufferList = input.GetSharedBufferList(1024);
                     int nioBufferCnt = sharedBufferList.Count;
                     long expectedWrittenBytes = input.NioBufferSize;
                     Socket socket = this.Socket;
 
+                    List<ArraySegment<byte>> bufferList = sharedBufferList;
                     // Always us nioBuffers() to workaround data-corruption.
                     // See https://github.com/netty/netty/issues/2761
                     switch (nioBufferCnt)
@@ -351,37 +276,11 @@ namespace DotNetty.Transport.Channels.Sockets
                             // We have something else beside ByteBuffers to write so fallback to normal writes.
                             base.DoWrite(input);
                             return;
-                        case 1:
-                            // Only one ByteBuf so use non-gathering write
-                            ArraySegment<byte> nioBuffer = sharedBufferList[0];
-                            for (int i = this.Configuration.WriteSpinCount - 1; i >= 0; i--)
-                            {
-                                SocketError errorCode;
-                                int localWrittenBytes = socket.Send(nioBuffer.Array, nioBuffer.Offset, nioBuffer.Count, SocketFlags.None, out errorCode);
-                                if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
-                                {
-                                    throw new SocketException((int)errorCode);
-                                }
-
-                                if (localWrittenBytes == 0)
-                                {
-                                    setOpWrite = true;
-                                    break;
-                                }
-                                expectedWrittenBytes -= localWrittenBytes;
-                                writtenBytes += localWrittenBytes;
-                                if (expectedWrittenBytes == 0)
-                                {
-                                    done = true;
-                                    break;
-                                }
-                            }
-                            break;
                         default:
                             for (int i = this.Configuration.WriteSpinCount - 1; i >= 0; i--)
                             {
                                 SocketError errorCode;
-                                long localWrittenBytes = socket.Send(sharedBufferList, SocketFlags.None, out errorCode);
+                                long localWrittenBytes = socket.Send(bufferList, SocketFlags.None, out errorCode);
                                 if (errorCode != SocketError.Success && errorCode != SocketError.WouldBlock)
                                 {
                                     throw new SocketException((int)errorCode);
@@ -389,9 +288,9 @@ namespace DotNetty.Transport.Channels.Sockets
 
                                 if (localWrittenBytes == 0)
                                 {
-                                    setOpWrite = true;
                                     break;
                                 }
+
                                 expectedWrittenBytes -= localWrittenBytes;
                                 writtenBytes += localWrittenBytes;
                                 if (expectedWrittenBytes == 0)
@@ -399,31 +298,65 @@ namespace DotNetty.Transport.Channels.Sockets
                                     done = true;
                                     break;
                                 }
+                                else
+                                {
+                                    bufferList = this.AdjustBufferList(localWrittenBytes, bufferList);
+                                }
                             }
                             break;
                     }
 
-                    if (!done)
-                    {                                 
-                        ArraySegment<byte>[] copiedBuffers = sharedBufferList.ToArray(); // copying buffers to
-                        SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(copiedBuffers);
-
+                    if (writtenBytes > 0)
+                    {
                         // Release the fully written buffers, and update the indexes of the partially written buffer.
                         input.RemoveBytes(writtenBytes);
-
-                        // Did not write all buffers completely.
-                        this.IncompleteWrite(setOpWrite, asyncOperation);
-                        break;
                     }
 
-                    // Release the fully written buffers, and update the indexes of the partially written buffer.
-                    input.RemoveBytes(writtenBytes);
+                    if (!done)
+                    {
+                        SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(bufferList);
+
+                        // Did not write all buffers completely.
+                        if (this.IncompleteWrite(true, asyncOperation))
+                        {
+                            break;
+                        }
+                    }
                 }
             }
             finally
             {
                 sharedBufferList?.Clear();
             }
+        }
+
+        List<ArraySegment<byte>> AdjustBufferList(long localWrittenBytes, List<ArraySegment<byte>> bufferList)
+        {
+            var adjustbufferList = new List<ArraySegment<byte>>(bufferList.Count);
+            foreach (ArraySegment<byte> buffer in bufferList)
+            {
+                if (localWrittenBytes > 0)
+                {
+                    long leftBytes = localWrittenBytes - buffer.Count;
+                    if (leftBytes <= 0)
+                    {
+                        int offset = buffer.Offset + (int)localWrittenBytes;
+                        int count = -(int)leftBytes;
+                        adjustbufferList.Add(new ArraySegment<byte>(buffer.Array, offset, count));
+                        localWrittenBytes = 0;
+                    }
+                    else
+                    {
+                        localWrittenBytes = leftBytes;
+                    }
+                }
+                else
+                {
+                    adjustbufferList.Add(buffer);
+                }
+            }
+            bufferList = adjustbufferList;
+            return bufferList;
         }
 
         protected override IChannelUnsafe NewUnsafe() => new TcpSocketChannelUnsafe(this);

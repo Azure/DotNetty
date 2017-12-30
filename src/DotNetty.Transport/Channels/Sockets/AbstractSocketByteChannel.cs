@@ -301,13 +301,16 @@ namespace DotNetty.Transport.Channels.Sockets
                 "unsupported message type: " + msg.GetType().Name + ExpectedTypes);
         }
 
-        protected bool IncompleteWrite(SocketChannelAsyncOperation operation)
+        protected bool IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
         {
-            this.SetState(StateFlags.WriteScheduled);
-            bool pending;
+            // Did not write completely.
+            if (scheduleAsync)
+            {
+                this.SetState(StateFlags.WriteScheduled);
+                bool pending;
 
 #if NETSTANDARD1_3
-            pending = this.Socket.SendAsync(operation);
+                pending = this.Socket.SendAsync(operation);
 #else
                 if (ExecutionContext.IsFlowSuppressed())
                 {
@@ -322,24 +325,19 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
 #endif
 
-            if (!pending)
-            {
-                ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
-            }
-            return pending;
-        }
+                if (!pending)
+                {
+                    ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
+                }
 
-        protected void IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
-        {
-            // Did not write completely.
-            if (scheduleAsync)
-            {
-                this.IncompleteWrite(operation);
+                return pending;
             }
             else
             {
                 // Schedule flush again later so other tasks can be picked up input the meantime
                 this.EventLoop.Execute(FlushAction, this);
+
+                return true;
             }
         }
 
