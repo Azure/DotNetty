@@ -6,7 +6,6 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
-    using System.Runtime.InteropServices;
     using System.Threading;
     using DotNetty.Buffers;
     using DotNetty.Common;
