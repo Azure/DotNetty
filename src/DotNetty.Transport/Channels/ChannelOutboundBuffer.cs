@@ -237,10 +237,7 @@ namespace DotNetty.Transport.Channels
                 ReferenceCountUtil.SafeRelease(msg);
 
                 Util.SafeSetFailure(promise, cause, Logger);
-                //if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
-                //{
-                //    Logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
-                //}
+
                 this.DecrementPendingOutboundBytes(size, false, notifyWritability);
             }
 
@@ -387,7 +384,7 @@ namespace DotNetty.Transport.Channels
                                 // of Object allocation
                                 entry.Buffers = nioBufs = buf.GetIoBuffers();
                             }
-                            for (int i = 0; i < nioBufs.Length && nioBufferCount < maxCount; ++i)
+                            for (int i = 0; i < nioBufs.Length && nioBufferCount < maxCount; i++)
                             {
                                 ArraySegment<byte> nioBuf = nioBufs[i];
                                 if (nioBuf.Array == null)
@@ -644,10 +641,6 @@ namespace DotNetty.Transport.Channels
                     {
                         ReferenceCountUtil.SafeRelease(e.Message);
                         Util.SafeSetFailure(e.Promise, cause, Logger);
-                        //if (e.Promise != TaskCompletionSource.Void && !e.Promise.TrySetException(cause))
-                        //{
-                        //    Logger.Warn($"Failed to mark a promise as failure because it's done already: {e.Promise}", cause);
-                        //}
                     }
                     e = e.RecycleAndGetNext();
                 }
