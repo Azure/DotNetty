@@ -301,7 +301,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 "unsupported message type: " + msg.GetType().Name + ExpectedTypes);
         }
 
-        protected void IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
+        protected bool IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
         {
             // Did not write completely.
             if (scheduleAsync)
@@ -329,11 +329,15 @@ namespace DotNetty.Transport.Channels.Sockets
                 {
                     ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
                 }
+
+                return pending;
             }
             else
             {
                 // Schedule flush again later so other tasks can be picked up input the meantime
                 this.EventLoop.Execute(FlushAction, this);
+
+                return true;
             }
         }
 
