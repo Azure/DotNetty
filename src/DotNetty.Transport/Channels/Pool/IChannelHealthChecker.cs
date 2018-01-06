@@ -17,6 +17,6 @@ namespace DotNetty.Transport.Channels.Pool
        *
        * This method will be called by the {@link EventLoop} of the {@link Channel}.
        */
-        Task<bool> IsHealthyAsync(IChannel channel);
+        ValueTask<bool> IsHealthyAsync(IChannel channel);
     }
 }

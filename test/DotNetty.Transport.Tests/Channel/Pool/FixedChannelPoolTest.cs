@@ -49,7 +49,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             var pool = new FixedChannelPool(cb, handler, 1);
 
             IChannel channel = await pool.AcquireAsync();
-            Task<IChannel> future = pool.AcquireAsync();
+            var future = pool.AcquireAsync();
             Assert.False(future.IsCompleted);
 
             await pool.ReleaseAsync(channel);
@@ -88,7 +88,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             IChannel channel = await pool.AcquireAsync();
             try
             {
-                await Assert.ThrowsAsync<TimeoutException>(pool.AcquireAsync);
+                await Assert.ThrowsAsync<TimeoutException>(async () => await pool.AcquireAsync());
             }
             finally
             {
@@ -184,12 +184,12 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             var pool = new FixedChannelPool(cb, handler, 1, 1);
 
             IChannel channel = await pool.AcquireAsync();
-            Task<IChannel> future = pool.AcquireAsync();
+            var future = pool.AcquireAsync();
             Assert.False(future.IsCompleted);
 
             try
             {
-                await Assert.ThrowsAsync<InvalidOperationException>(pool.AcquireAsync);
+                await Assert.ThrowsAsync<InvalidOperationException>(async () => await pool.AcquireAsync());
             }
             finally
             {

@@ -18,7 +18,7 @@ namespace DotNetty.Transport.Channels.Pool
          * <strong>Its important that an acquired is always released to the pool again, even if the {@link Channel}
          * is explicitly closed..</strong>
          */
-        Task<IChannel> AcquireAsync();
+        ValueTask<IChannel> AcquireAsync();
 
         /**
          * Acquire a {@link Channel} from this {@link ChannelPool}. The given {@link Promise} is notified once

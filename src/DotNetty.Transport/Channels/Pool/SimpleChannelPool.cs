@@ -129,62 +129,44 @@ namespace DotNetty.Transport.Channels.Pool
          */
         internal bool ReleaseHealthCheck { get; }
 
-        public virtual Task<IChannel> AcquireAsync()
+        public virtual ValueTask<IChannel> AcquireAsync()
         {
-            var promise = new TaskCompletionSource<IChannel>();
-            this.Acquire(promise);
-            return promise.Task;
+            IChannel channel;
+            if (!this.TryPollChannel(out channel))
+            {
+                Bootstrap bs = this.Bootstrap.Clone();
+                bs.Attribute(PoolKey, this);
+                return new ValueTask<IChannel>(this.ConnectChannel(bs));
+            }
+            IEventLoop eventLoop = channel.EventLoop;
+            if (eventLoop.InEventLoop)
+            {
+                return this.DoHealthCheck(channel);
+            }
+            else
+            {
+                var completionSource = new TaskCompletionSource<IChannel>();
+                eventLoop.Execute(this.DoHealthCheck, channel, completionSource);
+                return new ValueTask<IChannel>(completionSource.Task);    
+            }
         }
 
-        /**
-         * Tries to retrieve healthy channel from the pool if any or creates a new channel otherwise.
-         * @param promise the promise to provide acquire result.
-         * @return future for acquiring a channel.
-         */
-        protected virtual async void Acquire(TaskCompletionSource<IChannel> promise)
+        async void DoHealthCheck(object channel, object promise)
         {
+            var tsc = promise as TaskCompletionSource<IChannel>;
             try
             {
-                if (!this.TryPollChannel(out var channel))
-                {
-                    // No Channel left in the pool bootstrap a new Channel
-                    Bootstrap bs = this.Bootstrap.Clone();
-                    bs.Attribute(PoolKey, this);
-                    try
-                    {
-                        channel = await this.ConnectChannel(bs);
-                        if (!promise.TrySetResult(channel))
-                        {
-                            this.ReleaseAsync(channel);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        promise.TrySetException(e);
-                    }
-
-                    return;
-                }
-
-                IEventLoop loop = channel.EventLoop;
-                if (loop.InEventLoop)
-                {
-                    this.DoHealthCheck(channel, promise);
-                }
-                else
-                {
-                    loop.Execute(this.DoHealthCheck, channel, promise);
-                }
+                var result = await this.DoHealthCheck((IChannel)channel);
+                tsc.TrySetResult(result);
             }
             catch (Exception ex)
             {
-                promise.TrySetException(ex);
+                tsc.TrySetException(ex);
             }
         }
+        
 
-        void DoHealthCheck(object channel, object promise) => this.DoHealthCheck((IChannel)channel, (TaskCompletionSource<IChannel>)promise);
-
-        async void DoHealthCheck(IChannel channel, TaskCompletionSource<IChannel> promise)
+        async ValueTask<IChannel> DoHealthCheck(IChannel channel)
         {
             Contract.Assert(channel.EventLoop.InEventLoop);
             try
@@ -195,23 +177,24 @@ namespace DotNetty.Transport.Channels.Pool
                     {
                         channel.GetAttribute(PoolKey).Set(this);
                         this.Handler.ChannelAcquired(channel);
-                        promise.TrySetResult(channel);
+                        return channel;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        CloseAndFail(channel, ex, promise);
+                        CloseChannel(channel);
+                        throw;
                     }
                 }
                 else
                 {
                     CloseChannel(channel);
-                    this.Acquire(promise);
+                    return await this.AcquireAsync();
                 }
             }
             catch
             {
                 CloseChannel(channel);
-                this.Acquire(promise);
+                return await this.AcquireAsync();
             }
         }
 
@@ -320,12 +303,6 @@ namespace DotNetty.Transport.Channels.Pool
         }
 
         static void CloseAndFail(IChannel channel, Exception cause, TaskCompletionSource promise)
-        {
-            CloseChannel(channel);
-            promise.TrySetException(cause);
-        }
-
-        static void CloseAndFail<T>(IChannel channel, Exception cause, TaskCompletionSource<T> promise)
         {
             CloseChannel(channel);
             promise.TrySetException(cause);
