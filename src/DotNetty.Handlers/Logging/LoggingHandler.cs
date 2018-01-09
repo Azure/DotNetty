@@ -94,6 +94,8 @@ namespace DotNetty.Handlers.Logging
             this.InternalLevel = level.ToInternalLevel();
         }
 
+        public override bool IsSharable => true;
+
         /// <summary>
         ///     Returns the <see cref="LogLevel" /> that this handler uses to log
         /// </summary>
