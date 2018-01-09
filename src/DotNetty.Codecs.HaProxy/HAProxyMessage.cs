@@ -8,6 +8,7 @@ namespace DotNetty.Codecs.HaProxy
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Common.Utilities;
+    using DotNetty.Util;
 
     using static DotNetty.Codecs.HaProxy.HAProxyProxiedProtocol;
 
@@ -136,7 +137,7 @@ namespace DotNetty.Codecs.HaProxy
 
             if (ver != HAProxyProtocolVersion.V2)
             {
-                throw new HAProxyProtocolException("version 1 unsupported: 0x" + verCmdByte.ToString("X"));
+                throw new HAProxyProtocolException("version 1 unsupported: 0x" + verCmdByte.ToString("x"));
             }
 
             HAProxyCommand cmd;
@@ -413,21 +414,21 @@ namespace DotNetty.Codecs.HaProxy
             }
             else
             {
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
                 sb.Append(':');
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
                 sb.Append(':');
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
                 sb.Append(':');
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
                 sb.Append(':');
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
                 sb.Append(':');
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
                 sb.Append(':');
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
                 sb.Append(':');
-                sb.Append(header.ReadUnsignedShort().ToString("X"));
+                sb.Append(header.ReadUnsignedShort().ToString("x"));
             }
             return sb.ToString();
         }

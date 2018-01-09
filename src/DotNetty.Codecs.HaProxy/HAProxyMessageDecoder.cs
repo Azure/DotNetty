@@ -392,7 +392,7 @@ namespace DotNetty.Codecs.HaProxy
         private void Fail(IChannelHandlerContext ctx, string errMsg, Exception e)
         {
             finished = true;
-            ctx.CloseAsync().RunSynchronously(); // drop connection immediately per spec
+            ctx.CloseAsync().Wait(); // drop connection immediately per spec
             HAProxyProtocolException ppex;
             if (errMsg != null && e != null)
             {

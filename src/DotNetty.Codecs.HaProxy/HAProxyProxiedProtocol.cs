@@ -11,6 +11,8 @@ namespace DotNetty.Codecs.HaProxy
      */
     public sealed class HAProxyProxiedProtocol
     {
+        static readonly Dictionary<string, HAProxyProxiedProtocol> NAME_LOOKUP = new Dictionary<string, HAProxyProxiedProtocol>();
+
         /**
          * The UNKNOWN represents a connection which was forwarded for an unknown protocol and an unknown address family.
          */
@@ -53,8 +55,6 @@ namespace DotNetty.Codecs.HaProxy
                 yield return UNIX_DGRAM;
             }
         }
-
-        static readonly Dictionary<string, HAProxyProxiedProtocol> NAME_LOOKUP = new Dictionary<string, HAProxyProxiedProtocol>();
 
         readonly byte byteValue;
         readonly AddressFamily addressFamily;
