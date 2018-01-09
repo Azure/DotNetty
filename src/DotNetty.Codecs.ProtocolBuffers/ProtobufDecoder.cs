@@ -24,6 +24,8 @@ namespace DotNetty.Codecs.ProtocolBuffers
             this.extensionRegistry = extensionRegistry;
         }
 
+        public override bool IsSharable => true;
+
         protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output)
         {
             Contract.Requires(context != null);

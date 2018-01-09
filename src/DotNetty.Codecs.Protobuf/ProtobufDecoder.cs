@@ -22,6 +22,8 @@ namespace DotNetty.Codecs.Protobuf
             this.messageParser = messageParser;
         }
 
+        public override bool IsSharable => true;
+
         protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output)
         {
             Contract.Requires(context != null);

@@ -12,6 +12,8 @@ namespace DotNetty.Codecs.Protobuf
 
     public sealed class ProtobufEncoder : MessageToMessageEncoder<IMessage>
     {
+        public override bool IsSharable => true;
+
         protected override void Encode(IChannelHandlerContext context, IMessage message, List<object> output)
         {
             Contract.Requires(context != null);
