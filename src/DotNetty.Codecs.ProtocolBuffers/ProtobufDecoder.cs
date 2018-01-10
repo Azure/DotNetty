@@ -11,7 +11,7 @@ namespace DotNetty.Codecs.ProtocolBuffers
     using DotNetty.Transport.Channels;
     using Google.ProtocolBuffers;
 
-    public sealed class ProtobufDecoder : MessageToMessageDecoder<IByteBuffer>
+    public class ProtobufDecoder : MessageToMessageDecoder<IByteBuffer>
     {
         readonly IMessageLite protoType;
         readonly ExtensionRegistry extensionRegistry;

@@ -10,7 +10,7 @@ namespace DotNetty.Codecs.ProtocolBuffers
     using DotNetty.Transport.Channels;
     using Google.ProtocolBuffers;
 
-    public sealed class ProtobufEncoder : MessageToMessageEncoder<IMessageLite>
+    public class ProtobufEncoder : MessageToMessageEncoder<IMessageLite>
     {
         public override bool IsSharable => true;
 
