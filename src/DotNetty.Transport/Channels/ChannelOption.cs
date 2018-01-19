@@ -50,6 +50,7 @@ namespace DotNetty.Transport.Channels
         public static readonly ChannelOption<int> SoSndbuf = ValueOf<int>("SO_SNDBUF");
         public static readonly ChannelOption<int> SoRcvbuf = ValueOf<int>("SO_RCVBUF");
         public static readonly ChannelOption<bool> SoReuseaddr = ValueOf<bool>("SO_REUSEADDR");
+        public static readonly ChannelOption<bool> SoReuseport = ValueOf<bool>("SO_REUSEPORT");
         public static readonly ChannelOption<int> SoLinger = ValueOf<int>("SO_LINGER");
         public static readonly ChannelOption<int> SoBacklog = ValueOf<int>("SO_BACKLOG");
         public static readonly ChannelOption<int> SoTimeout = ValueOf<int>("SO_TIMEOUT");

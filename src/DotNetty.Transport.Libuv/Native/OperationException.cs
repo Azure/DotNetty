@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable InconsistentNaming
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
@@ -32,7 +33,6 @@ namespace DotNetty.Transport.Libuv.Native
         public override string Message => $"{this.Name} ({this.ErrorCode}) : {this.Description}";
     }
 
-    // ReSharper disable InconsistentNaming
     enum uv_err_code
     {
         UV_OK = 0,

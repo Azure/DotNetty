@@ -6,6 +6,7 @@ namespace DotNetty.Common.Concurrency
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Internal.Logging;
     using Thread = XThread;
 
     /// <summary>
@@ -13,6 +14,8 @@ namespace DotNetty.Common.Concurrency
     /// </summary>
     public abstract class AbstractEventExecutor : IEventExecutor
     {
+        static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractEventExecutor>();
+
         static readonly TimeSpan DefaultShutdownQuietPeriod = TimeSpan.FromSeconds(2);
         static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(15);
 
@@ -153,6 +156,18 @@ namespace DotNetty.Common.Concurrency
 
         /// <inheritdoc cref="IEventExecutor"/>
         protected void SetCurrentExecutor(IEventExecutor executor) => ExecutionEnvironment.SetCurrentExecutor(executor);
+
+        protected static void SafeExecute(IRunnable task)
+        {
+            try
+            {
+                task.Run();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("A task raised an exception. Task: {}", task, ex);
+            }
+        }
 
         #region Queuing data structures
 

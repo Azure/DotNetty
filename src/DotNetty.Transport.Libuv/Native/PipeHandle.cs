@@ -4,7 +4,7 @@
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
-    using System.Diagnostics.Contracts;
+    using System.Diagnostics;
     using System.Runtime.InteropServices;
 
     abstract unsafe class PipeHandle : NativeHandle
@@ -13,25 +13,18 @@ namespace DotNetty.Transport.Libuv.Native
 
         protected PipeHandle(Loop loop, bool ipc) : base(uv_handle_type.UV_NAMED_PIPE)
         {
-            Contract.Requires(loop != null);
+            Debug.Assert(loop != null);
 
-            int size = NativeMethods.uv_handle_size(uv_handle_type.UV_NAMED_PIPE).ToInt32();
-            IntPtr handle = Marshal.AllocHGlobal(size);
-
-            int result;
+            IntPtr handle = NativeMethods.Allocate(uv_handle_type.UV_NAMED_PIPE);
             try
             {
-                result = NativeMethods.uv_pipe_init(loop.Handle, handle, ipc ? 1 : 0);
+                int result = NativeMethods.uv_pipe_init(loop.Handle, handle, ipc ? 1 : 0);
+                NativeMethods.ThrowIfError(result);
             }
-            catch (Exception)
+            catch
             {
-                Marshal.FreeHGlobal(handle);
+                NativeMethods.FreeMemory(handle);
                 throw;
-            }
-            if (result < 0)
-            {
-                Marshal.FreeHGlobal(handle);
-                throw NativeMethods.CreateError((uv_err_code)result);
             }
 
             GCHandle gcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
@@ -41,71 +34,39 @@ namespace DotNetty.Transport.Libuv.Native
 
         public void Bind(string name)
         {
-            Contract.Requires(!string.IsNullOrEmpty(name));
+            Debug.Assert(!string.IsNullOrEmpty(name));
 
             this.Validate();
             int result = NativeMethods.uv_pipe_bind(this.Handle, name);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            NativeMethods.ThrowIfError(result);
         }
 
         public string GetSocketName()
         {
             this.Validate();
-            string socketName;
-            IntPtr buf = IntPtr.Zero;
-            try
-            {
-                buf = Marshal.AllocHGlobal(NameBufferSize);
-                var length = (IntPtr)NameBufferSize;
+            var buf = stackalloc byte[NameBufferSize];
+            var length = (IntPtr)NameBufferSize;
+            var ptr = (IntPtr)buf;
 
-                int result = NativeMethods.uv_pipe_getsockname(this.Handle, buf, ref length);
-                if (result < 0)
-                {
-                    throw NativeMethods.CreateError((uv_err_code)result);
-                }
+            int result = NativeMethods.uv_pipe_getsockname(this.Handle, ptr, ref length);
+            NativeMethods.ThrowIfError(result);
 
-                socketName = Marshal.PtrToStringAnsi(buf, length.ToInt32());
-            }
-            finally
-            {
-                if (buf != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buf);
-                }
-            }
-
+            string socketName = Marshal.PtrToStringAnsi(ptr, length.ToInt32());
             return socketName;
         }
 
         public string GetPeerName()
         {
             this.Validate();
-            string peerName;
-            IntPtr buf = IntPtr.Zero;
-            try
-            {
-                buf = Marshal.AllocHGlobal(NameBufferSize);
-                var length = (IntPtr)NameBufferSize;
 
-                int result = NativeMethods.uv_pipe_getpeername(this.Handle, buf, ref length);
-                if (result < 0)
-                {
-                    throw NativeMethods.CreateError((uv_err_code)result);
-                }
+            var buf = stackalloc byte[NameBufferSize];
+            var length = (IntPtr)NameBufferSize;
+            var ptr = (IntPtr)buf;
 
-                peerName = Marshal.PtrToStringAnsi(buf, length.ToInt32());
-            }
-            finally
-            {
-                if (buf != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buf);
-                }
-            }
+            int result = NativeMethods.uv_pipe_getpeername(this.Handle, ptr, ref length);
+            NativeMethods.ThrowIfError(result);
 
+            string peerName = Marshal.PtrToStringAnsi(ptr, length.ToInt32());
             return peerName;
         }
     }

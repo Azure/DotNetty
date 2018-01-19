@@ -3,11 +3,13 @@
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable RedundantAssignment
+// ReSharper disable NotAccessedVariable
 #pragma warning disable 414
 #pragma warning disable 169
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
+    using System.Net.Sockets;
     using System.Runtime.InteropServices;
 
     //https://github.com/aspnet/KestrelHttpServer/blob/dev/src/Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv/Internal/ListenerPrimary.cs
@@ -19,7 +21,7 @@ namespace DotNetty.Transport.Libuv.Native
         public WindowsApi()
         {
             var fileCompletionInfo = new FILE_COMPLETION_INFORMATION { Key = IntPtr.Zero, Port = IntPtr.Zero };
-            this.fileCompletionInfoPtr = Marshal.AllocHGlobal(Marshal.SizeOf(fileCompletionInfo));
+            this.fileCompletionInfoPtr = NativeMethods.Allocate(Marshal.SizeOf(fileCompletionInfo));
             Marshal.StructureToPtr(fileCompletionInfo, this.fileCompletionInfoPtr, false);
         }
 
@@ -66,16 +68,49 @@ namespace DotNetty.Transport.Libuv.Native
         }
 
         [DllImport("NtDll.dll")]
-        static extern uint NtSetInformationFile(IntPtr FileHandle,
-            out IO_STATUS_BLOCK IoStatusBlock, IntPtr FileInformation, uint Length,
-            int FileInformationClass);
+        static extern uint NtSetInformationFile(IntPtr FileHandle, out IO_STATUS_BLOCK IoStatusBlock, IntPtr FileInformation, uint Length, int FileInformationClass);
+
+        [DllImport("ws2_32.dll", SetLastError = true)]
+        static extern SocketError setsockopt(IntPtr socketHandle, SocketOptionLevel level, SocketOptionName optionName, ref int optionValue, uint optionLength);
+
+        [DllImport("ws2_32.dll", SetLastError = true)]
+        static extern SocketError getsockopt(IntPtr socketHandle, SocketOptionLevel level, SocketOptionName optionName, ref int optionValue, ref int optionLength);
+
+        internal static bool GetReuseAddress(IntPtr socket)
+        {
+            int value = GetSocketOption(socket, SocketOptionName.ReuseAddress);
+            return value != 0;
+        }
+
+        internal static void SetReuseAddress(IntPtr socket, int value) => SetSocketOption(socket, SocketOptionName.ReuseAddress, value);
+
+        static int GetSocketOption(IntPtr socket, SocketOptionName optionName)
+        {
+            int optLen = 4;
+            int value = 0;
+            SocketError status = getsockopt(socket, SocketOptionLevel.Socket, optionName, ref value, ref optLen);
+            if (status == SocketError.SocketError)
+            {
+                throw new SocketException(Marshal.GetLastWin32Error());
+            }
+            return value;
+        }
+
+        static void SetSocketOption(IntPtr socket, SocketOptionName optionName, int value)
+        {
+            SocketError status = setsockopt(socket, SocketOptionLevel.Socket, optionName, ref value, 4);
+            if (status == SocketError.SocketError)
+            {
+                throw new SocketException(Marshal.GetLastWin32Error());
+            }
+        }
 
         public void Dispose()
         {
             IntPtr handle = this.fileCompletionInfoPtr;
             if (handle != IntPtr.Zero)
             {
-                Marshal.FreeHGlobal(handle);
+                NativeMethods.FreeMemory(handle);
             }
             this.fileCompletionInfoPtr = IntPtr.Zero;
         }

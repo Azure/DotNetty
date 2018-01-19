@@ -47,7 +47,7 @@ namespace DotNetty.Common.Utilities
                     ((TaskCompletionSource)tcs).TrySetCanceled();
                     break;
                 case TaskStatus.Faulted:
-                    ((TaskCompletionSource)tcs).TrySetException(t.Exception);
+                    ((TaskCompletionSource)tcs).TryUnwrap(t.Exception);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -65,7 +65,7 @@ namespace DotNetty.Common.Utilities
                     taskCompletionSource.TrySetCanceled();
                     break;
                 case TaskStatus.Faulted:
-                    taskCompletionSource.TrySetException(task.Exception);
+                    taskCompletionSource.TryUnwrap(task.Exception);
                     break;
                 default:
                     task.ContinueWith(
@@ -90,7 +90,7 @@ namespace DotNetty.Common.Utilities
                             ((TaskCompletionSource<T>)tcs).TrySetCanceled();
                             break;
                         case TaskStatus.Faulted:
-                            ((TaskCompletionSource<T>)tcs).TrySetException(t.Exception);
+                            ((TaskCompletionSource<T>)tcs).TryUnwrap(t.Exception);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -109,12 +109,34 @@ namespace DotNetty.Common.Utilities
                     taskCompletionSource.TrySetCanceled();
                     break;
                 case TaskStatus.Faulted:
-                    taskCompletionSource.TrySetException(task.Exception);
+                    taskCompletionSource.TryUnwrap(task.Exception);
                     break;
                 default:
                     task.ContinueWith(LinkOutcomeActionHost<T>.Action, taskCompletionSource, TaskContinuationOptions.ExecuteSynchronously);
                     break;
             }
+        }
+
+        public static void TryUnwrap<T>(this TaskCompletionSource<T> completionSource, Exception exception)
+        {
+            if (exception is AggregateException aggregateException)
+            {
+                completionSource.TrySetException(aggregateException.InnerExceptions);
+            }
+            else
+            {
+                completionSource.TrySetException(exception);
+            }
+        }
+
+        public static Exception Unwrap(this Exception exception)
+        {
+            if (exception is AggregateException aggregateException)
+            {
+                return aggregateException.InnerException;
+            }
+
+            return exception;
         }
     }
 }

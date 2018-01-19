@@ -5,7 +5,7 @@
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
-    using System.Diagnostics.Contracts;
+    using System.Diagnostics;
     using System.Net;
     using System.Net.Sockets;
     using System.Runtime.CompilerServices;
@@ -288,9 +288,11 @@ namespace DotNetty.Transport.Libuv.Native
     {
         const string LibraryName = "libuv";
 
+        internal const int EOF = (int)uv_err_code.UV_EOF;
+
         internal static void GetSocketAddress(IPEndPoint endPoint, out sockaddr addr)
         {
-            Contract.Requires(endPoint != null);
+            Debug.Assert(endPoint != null);
 
             string ip = endPoint.Address.ToString();
             int result;
@@ -303,19 +305,14 @@ namespace DotNetty.Transport.Libuv.Native
                     result = uv_ip6_addr(ip, endPoint.Port, out addr);
                     break;
                 default:
-                    throw new NotSupportedException(
-                        $"End point {endPoint} is not supported, expecting InterNetwork/InterNetworkV6.");
+                    throw new NotSupportedException($"End point {endPoint} is not supported, expecting InterNetwork/InterNetworkV6.");
             }
-
-            if (result < 0)
-            {
-                throw CreateError((uv_err_code)result);
-            }
+            ThrowIfError(result);
         }
 
         internal static IPEndPoint TcpGetSocketName(IntPtr handle)
         {
-            Contract.Requires(handle != IntPtr.Zero);
+            Debug.Assert(handle != IntPtr.Zero);
 
 #if NETSTANDARD1_3
             int namelen = Marshal.SizeOf<sockaddr>();
@@ -323,13 +320,12 @@ namespace DotNetty.Transport.Libuv.Native
             int namelen = Marshal.SizeOf(typeof(sockaddr));
 #endif
             uv_tcp_getsockname(handle, out sockaddr sockaddr, ref namelen);
-
             return sockaddr.GetIPEndPoint();
         }
 
         internal static IPEndPoint TcpGetPeerName(IntPtr handle)
         {
-            Contract.Requires(handle != IntPtr.Zero);
+            Debug.Assert(handle != IntPtr.Zero);
 
 #if NETSTANDARD1_3
             int namelen = Marshal.SizeOf<sockaddr>();
@@ -337,12 +333,30 @@ namespace DotNetty.Transport.Libuv.Native
             int namelen = Marshal.SizeOf(typeof(sockaddr));
 #endif
             int result = uv_tcp_getpeername(handle, out sockaddr sockaddr, ref namelen);
-            if (result < 0)
-            {
-                throw CreateError((uv_err_code)result);
-            }
-
+            ThrowIfError(result);
             return sockaddr.GetIPEndPoint();
+        }
+
+#if NETSTANDARD1_3
+        internal static IntPtr Allocate(int size) => Marshal.AllocCoTaskMem(size);
+
+        internal static void FreeMemory(IntPtr ptr) => Marshal.FreeCoTaskMem(ptr);
+#else
+        internal static IntPtr Allocate(int size) => Marshal.AllocHGlobal(size);
+
+        internal static void FreeMemory(IntPtr ptr) => Marshal.FreeHGlobal(ptr);
+#endif
+
+        internal static IntPtr Allocate(uv_handle_type handleType)
+        {
+            int size = uv_handle_size(handleType).ToInt32();
+            return Allocate(size);
+        }
+
+        internal static IntPtr Allocate(uv_req_type requestType, int size = 0)
+        {
+            size = uv_req_size(requestType).ToInt32() + size;
+            return Allocate(size);
         }
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
@@ -519,6 +533,21 @@ namespace DotNetty.Transport.Libuv.Native
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern long uv_timer_get_repeat(IntPtr handle);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void ThrowIfError(int code)
+        {
+            if (code < 0)
+            {
+                ThrowOperationException((uv_err_code)code);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void ThrowOperationException(uv_err_code error) => throw CreateError(error);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void ThrowObjectDisposedException(string message) => throw new ObjectDisposedException(message);
+
         internal static OperationException CreateError(uv_err_code error)
         {
             IntPtr ptr = uv_err_name(error);
@@ -528,13 +557,6 @@ namespace DotNetty.Transport.Libuv.Native
             string description = ptr != IntPtr.Zero ?  Marshal.PtrToStringAnsi(ptr) : null;
 
             return new OperationException((int)error, name, description);
-        }
-
-        internal static string GetErrorName(uv_err_code error)
-        {
-            IntPtr ptr = uv_err_name(error);
-            string name = ptr != IntPtr.Zero ? Marshal.PtrToStringAnsi(ptr) : null;
-            return name;
         }
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
