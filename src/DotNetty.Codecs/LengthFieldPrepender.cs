@@ -118,7 +118,7 @@ namespace DotNetty.Codecs
                 lengthFieldLength != 4 && lengthFieldLength != 8)
             {
                 throw new ArgumentException(
-                    "lengthFieldLength must be either 1, 2, 3, 4, or 8: " +
+                    "lengthFieldLength must be either 1, 2, 4, or 8: " +
                         lengthFieldLength, nameof(lengthFieldLength));
             }
 
