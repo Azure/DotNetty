@@ -46,7 +46,7 @@ namespace DotNetty.Codecs
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
-        ///     Only 1, 2, 4, and 8 are allowed.
+        ///     Only 1, 2, 3, 4, and 8 are allowed.
         /// </param>
         public LengthFieldPrepender(int lengthFieldLength)
             : this(lengthFieldLength, false)
@@ -58,7 +58,7 @@ namespace DotNetty.Codecs
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
-        ///     Only 1, 2, 4, and 8 are allowed.
+        ///     Only 1, 2, 3, 4, and 8 are allowed.
         /// </param>
         /// <param name="lengthFieldIncludesLengthFieldLength">
         ///     If <c>true</c>, the length of the prepended length field is added
@@ -74,7 +74,7 @@ namespace DotNetty.Codecs
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
-        ///     Only 1, 2, 4, and 8 are allowed.
+        ///     Only 1, 2, 3, 4, and 8 are allowed.
         /// </param>
         /// <param name="lengthAdjustment">The compensation value to add to the value of the length field.</param>
         public LengthFieldPrepender(int lengthFieldLength, int lengthAdjustment)
@@ -87,7 +87,7 @@ namespace DotNetty.Codecs
         /// </summary>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
-        ///     Only 1, 2, 4, and 8 are allowed.
+        ///     Only 1, 2, 3, 4, and 8 are allowed.
         /// </param>
         /// <param name="lengthFieldIncludesLengthFieldLength">
         ///     If <c>true</c>, the length of the prepended length field is added
@@ -105,7 +105,7 @@ namespace DotNetty.Codecs
         /// <param name="byteOrder">The <see cref="ByteOrder" /> of the length field.</param>
         /// <param name="lengthFieldLength">
         ///     The length of the prepended length field.
-        ///     Only 1, 2, 4, and 8 are allowed.
+        ///     Only 1, 2, 3, 4, and 8 are allowed.
         /// </param>
         /// <param name="lengthFieldIncludesLengthFieldLength">
         ///     If <c>true</c>, the length of the prepended length field is added
@@ -114,7 +114,7 @@ namespace DotNetty.Codecs
         /// <param name="lengthAdjustment">The compensation value to add to the value of the length field.</param>
         public LengthFieldPrepender(ByteOrder byteOrder, int lengthFieldLength, int lengthAdjustment, bool lengthFieldIncludesLengthFieldLength)
         {
-            if (lengthFieldLength != 1 && lengthFieldLength != 2 &&
+            if (lengthFieldLength != 1 && lengthFieldLength != 2 && lengthFieldLength != 3 &&
                 lengthFieldLength != 4 && lengthFieldLength != 8)
             {
                 throw new ArgumentException(
@@ -158,6 +158,15 @@ namespace DotNetty.Codecs
                     output.Add(this.byteOrder == ByteOrder.BigEndian 
                         ? context.Allocator.Buffer(2).WriteShort((short)length) 
                         : context.Allocator.Buffer(2).WriteShortLE((short)length));
+                    break;
+                case 3:
+                    if (length >= 167772156)
+                    {
+                        throw new ArgumentException("length of object does not fit into a medium integer: " + length);
+                    }
+                    output.Add(this.byteOrder == ByteOrder.BigEndian
+                        ? context.Allocator.Buffer(3).WriteMedium(length)
+                        : context.Allocator.Buffer(3).WriteMediumLE(length));
                     break;
                 case 4:
                     output.Add(this.byteOrder == ByteOrder.BigEndian
