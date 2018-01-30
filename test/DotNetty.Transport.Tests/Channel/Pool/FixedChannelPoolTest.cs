@@ -222,7 +222,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
 
             try
             {
-                await Assert.ThrowsAsync<ArgumentException>(() => pool2.ReleaseAsync(channel));
+                await Assert.ThrowsAsync<ArgumentException>(async () => await pool2.ReleaseAsync(channel));
             }
             finally
             {
@@ -253,7 +253,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             pool.Dispose();
 
             await group.GetNext().SubmitAsync(() => TaskEx.Completed);
-            var e = await Assert.ThrowsAsync<InvalidOperationException>(() => pool.ReleaseAsync(channel));
+            var e = await Assert.ThrowsAsync<InvalidOperationException>(async () => await pool.ReleaseAsync(channel));
             Assert.Same(FixedChannelPool.PoolClosedOnReleaseException, e);
             
             // Since the pool is closed, the Channel should have been closed as well.

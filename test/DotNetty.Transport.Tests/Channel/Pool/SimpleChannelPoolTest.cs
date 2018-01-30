@@ -47,7 +47,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             await pool.ReleaseAsync(channel2);
 
             // Should fail on multiple release calls.
-            await Assert.ThrowsAsync<ArgumentException>(() => pool.ReleaseAsync(channel2));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await pool.ReleaseAsync(channel2));
             Assert.False(channel.Active);
             try
             {
@@ -92,7 +92,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             IChannel channel2 = await pool.AcquireAsync();
 
             await pool.ReleaseAsync(channel);
-            await Assert.ThrowsAsync<InvalidOperationException>(() => pool.ReleaseAsync(channel2));
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await pool.ReleaseAsync(channel2));
 
             await channel2.CloseAsync();
 
