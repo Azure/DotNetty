@@ -29,10 +29,6 @@ namespace DotNetty.Codecs.Protobuf
             Contract.Requires(output != null);
 
             int length = message.ReadableBytes;
-            if (length <= 0)
-            {
-                return;
-            }
 
             Stream inputStream = null;
             try

@@ -295,5 +295,33 @@ namespace DotNetty.Codecs.Protobuf.Tests
 
             Assert.False(channel.Finish());
         }
+
+        [Fact]
+        public void EmptyTest()
+        {
+            var channel = new EmbeddedChannel(
+                new ProtobufVarint32FrameDecoder(),
+                new ProtobufDecoder(EmptyMessage.Parser),
+                new ProtobufVarint32LengthFieldPrepender(),
+                new ProtobufEncoder());
+
+            Assert.True(channel.WriteOutbound(new EmptyMessage()));
+            var buffer = channel.ReadOutbound<IByteBuffer>();
+            Assert.NotNull(buffer);
+            Assert.True(buffer.ReadableBytes > 0);
+
+            var data = new byte[buffer.ReadableBytes];
+            buffer.ReadBytes(data);
+
+            IByteBuffer inputBuffer = Unpooled.WrappedBuffer(data);
+
+            Assert.True(channel.WriteInbound(inputBuffer));
+
+            var message = channel.ReadInbound<IMessage>();
+            Assert.NotNull(message);
+            Assert.IsType<EmptyMessage>(message);
+
+            Assert.False(channel.Finish());
+        }
     }
 }

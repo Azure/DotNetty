@@ -205,5 +205,36 @@ namespace DotNetty.Codecs.ProtocolBuffers.Tests
             Assert.Equal(phoneNumber.Type, roundTripped.Type);
             Assert.Equal(phoneNumber.Number, roundTripped.Number);
         }
+
+        [Fact]
+        public void EmptyTest()
+        {
+            var builder = new EmptyMessage.Builder();
+
+            IMessageLite protoType = builder.DefaultInstanceForType;
+            var channel = new EmbeddedChannel(
+                new ProtobufVarint32FrameDecoder(),
+                new ProtobufDecoder(protoType, null),
+                new ProtobufVarint32LengthFieldPrepender(),
+                new ProtobufEncoder());
+
+            Assert.True(channel.WriteOutbound(builder.Build()));
+            var buffer = channel.ReadOutbound<IByteBuffer>();
+            Assert.NotNull(buffer);
+            Assert.True(buffer.ReadableBytes > 0);
+
+            var data = new byte[buffer.ReadableBytes];
+            buffer.ReadBytes(data);
+
+            IByteBuffer inputBuffer = Unpooled.WrappedBuffer(data);
+
+            Assert.True(channel.WriteInbound(inputBuffer));
+
+            var message = channel.ReadInbound<IMessageLite>();
+            Assert.NotNull(message);
+            Assert.IsType<EmptyMessage>(message);
+
+            Assert.False(channel.Finish());
+        }
     }
 }
