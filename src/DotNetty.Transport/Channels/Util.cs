@@ -17,9 +17,17 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         public static void SafeSetSuccess(TaskCompletionSource promise, IInternalLogger logger)
         {
-            if (promise != TaskCompletionSource.Void && !promise.TryComplete())
+            if (promise != TaskCompletionSource.Void && !promise.TryComplete() && logger.WarnEnabled)
             {
-                logger.Warn($"Failed to mark a promise as success because it is done already: {promise}");
+                AggregateException err = promise.Task.Exception;
+                if (err == null) 
+                {
+                    logger.Warn($"Failed to mark a promise as success because it's done already: {promise}");
+                } 
+                else 
+                {
+                    logger.Warn($"Failed to mark a promise as success because it has failed already: {promise}", err.InnerException);
+                }
             }
         }
 
@@ -28,9 +36,17 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         public static void SafeSetFailure(TaskCompletionSource promise, Exception cause, IInternalLogger logger)
         {
-            if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
+            if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause) && logger.WarnEnabled)
             {
-                logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
+                AggregateException err = promise.Task.Exception;
+                if (err == null) 
+                {
+                    logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
+                } 
+                else 
+                {
+                    logger.Warn($"Failed to mark a promise as failure because it has failed already: {promise}, failure: {err.InnerException}", cause);
+                }
             }
         }
 

@@ -626,6 +626,8 @@ namespace DotNetty.Transport.Channels
         ///     once you want to request to flush all pending data to the actual transport.
         /// </summary>
         Task WriteAsync(object msg);
+        
+        Task WriteAsync(object msg, TaskCompletionSource promise);
 
         /// <summary>
         ///     Request to flush all pending messages.
@@ -636,5 +638,7 @@ namespace DotNetty.Transport.Channels
         ///     Shortcut for call {@link #write(Object)} and {@link #flush()}.
         /// </summary>
         Task WriteAndFlushAsync(object msg);
+        
+        Task WriteAndFlushAsync(object msg, TaskCompletionSource promise);
     }
 }

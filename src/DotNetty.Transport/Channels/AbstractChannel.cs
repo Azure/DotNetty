@@ -187,7 +187,11 @@ namespace DotNetty.Transport.Channels
 
         public Task WriteAsync(object msg) => this.pipeline.WriteAsync(msg);
 
+        public Task WriteAsync(object message, TaskCompletionSource promise) => this.pipeline.WriteAsync(message, promise);
+
         public Task WriteAndFlushAsync(object message) => this.pipeline.WriteAndFlushAsync(message);
+        
+        public Task WriteAndFlushAsync(object message, TaskCompletionSource promise) => this.pipeline.WriteAndFlushAsync(message, promise);
 
         public Task CloseCompletion => this.closeFuture.Task;
 
@@ -666,8 +670,8 @@ namespace DotNetty.Transport.Channels
                     this.CloseSafe();
                 }
             }
-
-            public Task WriteAsync(object msg)
+            
+            public void Write(object msg, TaskCompletionSource promise)
             {
                 this.AssertEventLoop();
 
@@ -681,7 +685,8 @@ namespace DotNetty.Transport.Channels
 
                     // release message now to prevent resource-leak
                     ReferenceCountUtil.Release(msg);
-                    return TaskEx.FromException(new ClosedChannelException());
+                    Util.SafeSetFailure(promise, new ClosedChannelException(), Logger);
+                    return;
                 }
 
                 int size;
@@ -697,13 +702,11 @@ namespace DotNetty.Transport.Channels
                 catch (Exception t)
                 {
                     ReferenceCountUtil.Release(msg);
-
-                    return TaskEx.FromException(t);
+                    Util.SafeSetFailure(promise, t, Logger);
+                    return;
                 }
 
-                var promise = new TaskCompletionSource();
                 outboundBuffer.AddMessage(msg, size, promise);
-                return promise.Task;
             }
 
             public void Flush()

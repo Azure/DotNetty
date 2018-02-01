@@ -5,8 +5,8 @@ namespace DotNetty.Codecs
 {
     using System;
     using System.Diagnostics.Contracts;
-    using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
@@ -14,12 +14,11 @@ namespace DotNetty.Codecs
     {
         public virtual bool AcceptOutboundMessage(object message) => message is T;
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise)
         {
             Contract.Requires(context != null);
 
             IByteBuffer buffer = null;
-            Task result;
             try
             {
                 if (this.AcceptOutboundMessage(message))
@@ -37,35 +36,33 @@ namespace DotNetty.Codecs
 
                     if (buffer.IsReadable())
                     {
-                        result = context.WriteAsync(buffer);
+                        context.WriteAsync(buffer, promise);
                     }
                     else
                     {
                         buffer.Release();
-                        result = context.WriteAsync(Unpooled.Empty);
+                        context.WriteAsync(Unpooled.Empty, promise);
                     }
 
                     buffer = null;
                 }
                 else
                 {
-                    return context.WriteAsync(message);
+                    context.WriteAsync(message, promise);
                 }
             }
-            catch (EncoderException e)
+            catch (EncoderException)
             {
-                return TaskEx.FromException(e);
+                throw;
             }
             catch (Exception ex)
             {
-                return TaskEx.FromException(new EncoderException(ex));
+                throw new EncoderException(ex);
             }
             finally
             {
                 buffer?.Release();
             }
-
-            return result;
         }
 
         protected virtual IByteBuffer AllocateBuffer(IChannelHandlerContext context)

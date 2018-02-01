@@ -67,11 +67,15 @@ namespace DotNetty.Transport.Channels
 
         IChannelHandlerContext Read();
 
-        Task WriteAsync(object message); // todo: optimize: add flag saying if handler is interested in task, do not produce task if it isn't needed
+        Task WriteAsync(object message);
+
+        Task WriteAsync(object message, TaskCompletionSource promise);
 
         IChannelHandlerContext Flush();
 
         Task WriteAndFlushAsync(object message);
+
+        Task WriteAndFlushAsync(object message, TaskCompletionSource promise);
 
         /// <summary>
         ///     Request to bind to the given {@link SocketAddress} and notify the {@link ChannelFuture} once the operation

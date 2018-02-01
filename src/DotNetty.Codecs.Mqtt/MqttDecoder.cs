@@ -9,6 +9,7 @@ namespace DotNetty.Codecs.Mqtt
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Mqtt.Packets;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Transport.Channels;
 
     public sealed class MqttDecoder : ReplayingDecoder<MqttDecoder.ParseState>
@@ -241,7 +242,7 @@ namespace DotNetty.Codecs.Mqtt
             {
                 var connAckPacket = new ConnAckPacket();
                 connAckPacket.ReturnCode = ConnectReturnCode.RefusedUnacceptableProtocolVersion;
-                context.WriteAndFlushAsync(connAckPacket);
+                context.WriteAndFlushAsync(connAckPacket, TaskCompletionSource.Void);
                 throw new DecoderException($"Unexpected protocol level. Expected: {Util.ProtocolLevel}. Actual: {packet.ProtocolLevel}");
             }
 

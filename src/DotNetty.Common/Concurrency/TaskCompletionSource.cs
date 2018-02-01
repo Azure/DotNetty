@@ -3,6 +3,7 @@
 
 namespace DotNetty.Common.Concurrency
 {
+    using System;
     using System.Threading.Tasks;
 
     public sealed class TaskCompletionSource : TaskCompletionSource<int>
@@ -18,6 +19,8 @@ namespace DotNetty.Common.Concurrency
         {
         }
 
+        public bool IsVoid { get; private set; }
+
         public bool TryComplete() => this.TrySetResult(0);
 
         public void Complete() => this.SetResult(0);
@@ -30,8 +33,11 @@ namespace DotNetty.Common.Concurrency
         static TaskCompletionSource CreateVoidTcs()
         {
             var tcs = new TaskCompletionSource();
-            tcs.TryComplete();
+            tcs.TrySetException(new InvalidOperationException("No operations are allowed on void TaskCompletionSource"));
+            tcs.IsVoid = true;
             return tcs;
         }
+
+        public TaskCompletionSource Unvoid() => this.IsVoid ? new TaskCompletionSource() : this;
     }
 }

@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
 
     public interface IChannel : IAttributeMap, IComparable<IChannel>
@@ -63,8 +64,12 @@ namespace DotNetty.Transport.Channels
 
         Task WriteAsync(object message);
 
+        Task WriteAsync(object message, TaskCompletionSource promise);
+
         IChannel Flush();
 
         Task WriteAndFlushAsync(object message);
+        
+        Task WriteAndFlushAsync(object message, TaskCompletionSource promise);
     }
 }

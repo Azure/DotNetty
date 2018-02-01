@@ -56,21 +56,43 @@ namespace DotNetty.Transport.Channels.Groups
 
         public Task WriteAsync(object message) => this.WriteAsync(message, ChannelMatchers.All());
 
-        public Task WriteAsync(object message, IChannelMatcher matcher)
+        public Task WriteAsync(object message, IChannelMatcher matcher) => this.WriteAsync(message, matcher, false);
+
+        public Task WriteAsync(object message, IChannelMatcher matcher, bool voidPromise)
         {
             Contract.Requires(message != null);
             Contract.Requires(matcher != null);
-            var futures = new Dictionary<IChannel, Task>();
-            foreach (IChannel c in this.nonServerChannels.Values)
+
+            Task result;
+            if (voidPromise)
             {
-                if (matcher.Matches(c))
+                foreach (IChannel c in this.nonServerChannels.Values)
                 {
-                    futures.Add(c, c.WriteAsync(SafeDuplicate(message)));
+                    if (matcher.Matches(c))
+                    {
+                        c.WriteAsync(SafeDuplicate(message), TaskCompletionSource.Void);
+                    }
                 }
+
+                result = TaskEx.Completed;
+            }
+            else
+            {
+
+                var futures = new Dictionary<IChannel, Task>();
+
+                foreach (IChannel c in this.nonServerChannels.Values)
+                {
+                    if (matcher.Matches(c))
+                    {
+                        futures.Add(c, c.WriteAsync(SafeDuplicate(message)));
+                    }
+                }
+                result = new DefaultChannelGroupCompletionSource(this, futures /*, this.executor*/).Task;
             }
 
             ReferenceCountUtil.Release(message);
-            return new DefaultChannelGroupCompletionSource(this, futures /*, this.executor*/).Task;
+            return result;
         }
 
         public IChannelGroup Flush(IChannelMatcher matcher)
@@ -146,21 +168,41 @@ namespace DotNetty.Transport.Channels.Groups
 
         public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, ChannelMatchers.All());
 
-        public Task WriteAndFlushAsync(object message, IChannelMatcher matcher)
+        public Task WriteAndFlushAsync(object message, IChannelMatcher matcher) => this.WriteAndFlushAsync(message, matcher, false);
+
+        public Task WriteAndFlushAsync(object message, IChannelMatcher matcher, bool voidPromise)
         {
             Contract.Requires(message != null);
             Contract.Requires(matcher != null);
-            var futures = new Dictionary<IChannel, Task>();
-            foreach (IChannel c in this.nonServerChannels.Values)
+            Task result;
+            if (voidPromise)
             {
-                if (matcher.Matches(c))
+                foreach (IChannel c in this.nonServerChannels.Values)
                 {
-                    futures.Add(c, c.WriteAndFlushAsync(SafeDuplicate(message)));
+                    if (matcher.Matches(c))
+                    {
+                        c.WriteAndFlushAsync(SafeDuplicate(message), TaskCompletionSource.Void);
+                    }
                 }
+
+                result = TaskEx.Completed;
+            }
+            else
+            {
+                var futures = new Dictionary<IChannel, Task>();
+                foreach (IChannel c in this.nonServerChannels.Values)
+                {
+                    if (matcher.Matches(c))
+                    {
+                        futures.Add(c, c.WriteAndFlushAsync(SafeDuplicate(message)));
+                    }
+                }
+
+                result = new DefaultChannelGroupCompletionSource(this, futures /*, this.executor*/).Task;
             }
 
             ReferenceCountUtil.Release(message);
-            return new DefaultChannelGroupCompletionSource(this, futures /*, this.executor*/).Task;
+            return result;
         }
 
         public Task DisconnectAsync() => this.DisconnectAsync(ChannelMatchers.All());

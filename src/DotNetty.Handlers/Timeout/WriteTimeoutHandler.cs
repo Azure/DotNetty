@@ -83,16 +83,15 @@ namespace DotNetty.Handlers.Timeout
                  : TimeSpan.Zero;
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise)
         {
-            Task task = context.WriteAsync(message);
-
             if (this.timeout.Ticks > 0)
             {
-                this.ScheduleTimeout(context, task);
+                promise = promise.Unvoid();
+                this.ScheduleTimeout(context, promise.Task);
             }
-
-            return task;
+            
+            context.WriteAsync(message, promise);
         }
 
         public override void HandlerRemoved(IChannelHandlerContext context)

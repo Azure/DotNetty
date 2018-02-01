@@ -64,7 +64,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>Add the given <c>msg</c> and returns <see cref="Task" /> for completion of processing <c>msg</c>.</summary>
-        public Task Add(object msg)
+        public void Add(object msg, TaskCompletionSource promise)
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
             Contract.Requires(msg != null);
@@ -82,11 +82,14 @@ namespace DotNetty.Transport.Channels
                 if (canBundle)
                 {
                     currentTail.Add(msg, messageSize);
-                    return currentTail.Promise.Task;
+                    if (!promise.IsVoid)
+                    {
+                        ((Task)currentTail.Promise.Task).LinkOutcome(promise);
+                    }
+                    return;
                 }
             }
 
-            var promise = new TaskCompletionSource();
             PendingWrite write = PendingWrite.NewInstance(msg, messageSize, promise);
             if (currentTail == null)
             {
@@ -102,7 +105,6 @@ namespace DotNetty.Transport.Channels
             // if the channel was already closed when constructing the PendingWriteQueue.
             // See https://github.com/netty/netty/issues/3967
             this.buffer?.IncrementPendingOutboundBytes(messageSize);
-            return promise.Task;
         }
 
         /// <summary>
@@ -156,7 +158,7 @@ namespace DotNetty.Transport.Channels
 
         /// <summary>
         ///     Remove all pending write operation and performs them via
-        ///     <see cref="IChannelHandlerContext.WriteAsync(object)" />.
+        ///     <see cref="IChannelHandlerContext.WriteAsync(object, TaskCompletionSource)" />.
         /// </summary>
         /// <returns>
         ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
@@ -190,7 +192,7 @@ namespace DotNetty.Transport.Channels
                 object msg = write.Messages;
                 TaskCompletionSource promise = write.Promise;
                 this.Recycle(write, false);
-                this.ctx.WriteAsync(msg).LinkOutcome(promise);
+                this.ctx.WriteAsync(msg, promise);
                 tasks.Add(promise.Task);
                 write = next;
             }
@@ -202,7 +204,7 @@ namespace DotNetty.Transport.Channels
 
         /// <summary>
         ///     Removes a pending write operation and performs it via
-        ///     <see cref="IChannelHandlerContext.WriteAsync(object)"/>.
+        ///     <see cref="IChannelHandlerContext.WriteAsync(object, TaskCompletionSource)"/>.
         /// </summary>
         /// <returns>
         ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
@@ -220,7 +222,7 @@ namespace DotNetty.Transport.Channels
             object msg = write.Messages;
             TaskCompletionSource promise = write.Promise;
             this.Recycle(write, true);
-            this.ctx.WriteAsync(msg).LinkOutcome(promise);
+            this.ctx.WriteAsync(msg, promise);
             return promise.Task;
         }
 
