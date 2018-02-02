@@ -97,7 +97,9 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             if (this.TryResetState(StateFlags.Open | StateFlags.Active))
             {
-                this.Socket.Shutdown(SocketShutdown.Both);
+#if !NETSTANDARD1_3                
+                this.Socket.Close();
+#endif                
                 this.Socket.Dispose();
             }
         }
