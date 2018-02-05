@@ -10,8 +10,10 @@ namespace DotNetty.Codecs.Protobuf
     using DotNetty.Transport.Channels;
     using Google.Protobuf;
 
-    public sealed class ProtobufEncoder : MessageToMessageEncoder<IMessage>
+    public class ProtobufEncoder : MessageToMessageEncoder<IMessage>
     {
+        public override bool IsSharable => true;
+
         protected override void Encode(IChannelHandlerContext context, IMessage message, List<object> output)
         {
             Contract.Requires(context != null);

@@ -11,7 +11,7 @@ namespace DotNetty.Codecs.Protobuf
     using DotNetty.Transport.Channels;
     using Google.Protobuf;
 
-    public sealed class ProtobufDecoder : MessageToMessageDecoder<IByteBuffer>
+    public class ProtobufDecoder : MessageToMessageDecoder<IByteBuffer>
     {
         readonly MessageParser messageParser;
 
@@ -21,6 +21,8 @@ namespace DotNetty.Codecs.Protobuf
 
             this.messageParser = messageParser;
         }
+
+        public override bool IsSharable => true;
 
         protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output)
         {

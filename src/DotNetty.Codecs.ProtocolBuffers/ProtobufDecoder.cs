@@ -11,7 +11,7 @@ namespace DotNetty.Codecs.ProtocolBuffers
     using DotNetty.Transport.Channels;
     using Google.ProtocolBuffers;
 
-    public sealed class ProtobufDecoder : MessageToMessageDecoder<IByteBuffer>
+    public class ProtobufDecoder : MessageToMessageDecoder<IByteBuffer>
     {
         readonly IMessageLite protoType;
         readonly ExtensionRegistry extensionRegistry;
@@ -23,6 +23,8 @@ namespace DotNetty.Codecs.ProtocolBuffers
             this.protoType = protoType.WeakDefaultInstanceForType;
             this.extensionRegistry = extensionRegistry;
         }
+
+        public override bool IsSharable => true;
 
         protected override void Decode(IChannelHandlerContext context, IByteBuffer message, List<object> output)
         {
