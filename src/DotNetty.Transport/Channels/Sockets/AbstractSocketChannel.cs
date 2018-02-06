@@ -271,7 +271,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     else
                     {
-                        ch.connectPromise = new TaskCompletionSource(remoteAddress);
+                        ch.connectPromise = ch.NewPromise(remoteAddress);
 
                         // Schedule connect timeout.
                         TimeSpan connectTimeout = ch.Configuration.ConnectTimeout;

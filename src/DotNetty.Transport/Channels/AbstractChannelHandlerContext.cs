@@ -624,7 +624,7 @@ namespace DotNetty.Transport.Channels
             IEventExecutor nextExecutor = next.Executor;
             return nextExecutor.InEventLoop 
                 ? next.InvokeBindAsync(localAddress) 
-                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeBindAsync(localAddress));
+                : this.SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeBindAsync(localAddress));
         }
 
         Task InvokeBindAsync(EndPoint localAddress)
@@ -742,6 +742,13 @@ namespace DotNetty.Transport.Channels
                 : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeDeregisterAsync());
         }
 
+
+        public TaskCompletionSource NewPromise() => new TaskCompletionSource();
+        
+        public TaskCompletionSource NewPromise(object state) => new TaskCompletionSource(state);
+        
+        public TaskCompletionSource VoidPromise() => TaskCompletionSource.Void;
+
         Task InvokeDeregisterAsync()
         {
             if (this.Added)
@@ -793,7 +800,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAsync(object msg) => this.WriteAsync(msg, new TaskCompletionSource());
+        public Task WriteAsync(object msg) => this.WriteAsync(msg, this.NewPromise());
 
         public Task WriteAsync(object msg, TaskCompletionSource promise)
         {
@@ -875,7 +882,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, new TaskCompletionSource());
+        public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, this.NewPromise());
 
         public Task WriteAndFlushAsync(object message, TaskCompletionSource promise)
         {
@@ -973,9 +980,9 @@ namespace DotNetty.Transport.Channels
             return ctx;
         }
 
-        static Task SafeExecuteOutboundAsync(IEventExecutor executor, Func<Task> function)
+        Task SafeExecuteOutboundAsync(IEventExecutor executor, Func<Task> function)
         {
-            var promise = new TaskCompletionSource();
+            var promise = this.NewPromise();
             try
             {
                 executor.Execute((p, func) => ((Func<Task>)func)().LinkOutcome((TaskCompletionSource)p), promise, function);

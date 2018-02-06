@@ -17,7 +17,7 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         public static void SafeSetSuccess(TaskCompletionSource promise, IInternalLogger logger)
         {
-            if (promise != TaskCompletionSource.Void && !promise.TryComplete() && logger.WarnEnabled)
+            if (!promise.IsVoid && !promise.TryComplete() && logger.WarnEnabled)
             {
                 AggregateException err = promise.Task.Exception;
                 if (err == null) 
@@ -36,7 +36,7 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         public static void SafeSetFailure(TaskCompletionSource promise, Exception cause, IInternalLogger logger)
         {
-            if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause) && logger.WarnEnabled)
+            if (!promise.IsVoid && !promise.TrySetException(cause) && logger.WarnEnabled)
             {
                 AggregateException err = promise.Task.Exception;
                 if (err == null) 

@@ -131,7 +131,7 @@ namespace DotNetty.Transport.Libuv
                         throw new InvalidOperationException("connection attempt already made");
                     }
 
-                    ch.connectPromise = new TaskCompletionSource(remoteAddress);
+                    ch.connectPromise = this.channel.NewPromise(remoteAddress);
 
                     // Schedule connect timeout.
                     TimeSpan connectTimeout = ch.Configuration.ConnectTimeout;

@@ -254,5 +254,9 @@ namespace DotNetty.Common.Concurrency
         /// </param>
         /// <returns>the <see cref="TerminationCompletion" /> task.</returns>
         Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
+
+        TaskCompletionSource NewPromise();
+        
+        TaskCompletionSource NewPromise(object state);
     }
 }

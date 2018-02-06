@@ -242,7 +242,7 @@ namespace DotNetty.Codecs.Mqtt
             {
                 var connAckPacket = new ConnAckPacket();
                 connAckPacket.ReturnCode = ConnectReturnCode.RefusedUnacceptableProtocolVersion;
-                context.WriteAndFlushAsync(connAckPacket, TaskCompletionSource.Void);
+                context.WriteAndFlushAsync(connAckPacket, context.VoidPromise());
                 throw new DecoderException($"Unexpected protocol level. Expected: {Util.ProtocolLevel}. Actual: {packet.ProtocolLevel}");
             }
 

@@ -61,7 +61,7 @@ namespace DotNetty.Common.Concurrency
         protected SingleThreadEventExecutor(IEventExecutorGroup parent, string threadName, TimeSpan breakoutInterval, IQueue<IRunnable> taskQueue)
             : base(parent)
         {
-            this.terminationCompletionSource = new TaskCompletionSource();
+            this.terminationCompletionSource = this.NewPromise();
             this.taskQueue = taskQueue;
             this.preciseBreakoutInterval = PreciseTimeSpan.FromTimeSpan(breakoutInterval);
             this.scheduler = new ExecutorTaskScheduler(this);

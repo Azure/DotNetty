@@ -31,7 +31,7 @@ namespace DotNetty.Transport.Libuv
             }
 
             this.pipeName = name;
-            this.connectCompletion = new TaskCompletionSource();
+            this.connectCompletion = this.NewPromise();
             this.Start();
         }
 

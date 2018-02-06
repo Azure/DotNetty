@@ -72,7 +72,7 @@ namespace DotNetty.Codecs
                         for (int i = 0; i < lastItemIndex; i++)
                         {
                             // we don't care about output from these messages as failure while sending one of these messages will fail all messages up to the last message - which will be observed by the caller in Task result.
-                            ctx.WriteAsync(output[i], promise.IsVoid ? promise : new TaskCompletionSource());
+                            ctx.WriteAsync(output[i], promise.IsVoid ? promise : ctx.Channel.NewPromise());
                         }
                         ctx.WriteAsync(output[lastItemIndex], promise);
                     }

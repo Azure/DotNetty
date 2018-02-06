@@ -12,7 +12,7 @@ namespace DotNetty.Common.Concurrency
 
         public StateActionWithContextScheduledTask(AbstractScheduledEventExecutor executor, Action<object, object> action, object context, object state,
             PreciseTimeSpan deadline)
-            : base(executor, deadline, new TaskCompletionSource(state))
+            : base(executor, deadline, executor.NewPromise(state))
         {
             this.action = action;
             this.context = context;

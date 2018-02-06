@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.CompilerServices;
     using System.Text;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
@@ -23,7 +24,7 @@ namespace DotNetty.Transport.Channels
         readonly IChannelUnsafe channelUnsafe;
 
         readonly DefaultChannelPipeline pipeline;
-        readonly TaskCompletionSource closeFuture = new TaskCompletionSource();
+        readonly TaskCompletionSource closeFuture;
 
         volatile EndPoint localAddress;
         volatile EndPoint remoteAddress;
@@ -45,6 +46,7 @@ namespace DotNetty.Transport.Channels
             this.Id = this.NewId();
             this.channelUnsafe = this.NewUnsafe();
             this.pipeline = this.NewChannelPipeline();
+            this.closeFuture = this.NewPromise();
         }
 
         /// <summary>
@@ -57,6 +59,7 @@ namespace DotNetty.Transport.Channels
             this.Id = id;
             this.channelUnsafe = this.NewUnsafe();
             this.pipeline = this.NewChannelPipeline();
+            this.closeFuture = this.NewPromise();
         }
 
         public IChannelId Id { get; }
@@ -193,6 +196,12 @@ namespace DotNetty.Transport.Channels
         
         public Task WriteAndFlushAsync(object message, TaskCompletionSource promise) => this.pipeline.WriteAndFlushAsync(message, promise);
 
+        public TaskCompletionSource NewPromise() => new TaskCompletionSource();
+        
+        public TaskCompletionSource NewPromise(object state) => new TaskCompletionSource(state);
+        
+        public TaskCompletionSource VoidPromise() => TaskCompletionSource.Void;
+
         public Task CloseCompletion => this.closeFuture.Task;
 
         public IChannelUnsafe Unsafe => this.channelUnsafe;
@@ -327,7 +336,7 @@ namespace DotNetty.Transport.Channels
 
                 this.channel.eventLoop = eventLoop;
 
-                var promise = new TaskCompletionSource();
+                var promise = this.channel.NewPromise();
 
                 if (eventLoop.InEventLoop)
                 {
@@ -475,7 +484,7 @@ namespace DotNetty.Transport.Channels
 
             Task CloseAsync(Exception cause, bool notify)
             {
-                var promise = new TaskCompletionSource();
+                var promise = this.channel.NewPromise();
                 if (!promise.SetUncancellable())
                 {
                     return promise.Task;
@@ -485,7 +494,7 @@ namespace DotNetty.Transport.Channels
                 if (outboundBuffer == null)
                 {
                     // Only needed if no VoidChannelPromise.
-                    if (promise != TaskCompletionSource.Void)
+                    if (!promise.IsVoid)
                     {
                         // This means close() was called before so we just register a listener and return
                         return this.channel.closeFuture.Task;
@@ -608,7 +617,7 @@ namespace DotNetty.Transport.Channels
                     return TaskEx.Completed;
                 }
 
-                var promise = new TaskCompletionSource();
+                var promise = this.channel.NewPromise();
 
                 // As a user may call deregister() from within any method while doing processing in the ChannelPipeline,
                 // we need to ensure we do the actual deregister operation later. This is needed as for example,

@@ -70,7 +70,7 @@ namespace DotNetty.Transport.Channels.Groups
                 {
                     if (matcher.Matches(c))
                     {
-                        c.WriteAsync(SafeDuplicate(message), TaskCompletionSource.Void);
+                        c.WriteAsync(SafeDuplicate(message), c.VoidPromise());
                     }
                 }
 
@@ -181,7 +181,7 @@ namespace DotNetty.Transport.Channels.Groups
                 {
                     if (matcher.Matches(c))
                     {
-                        c.WriteAndFlushAsync(SafeDuplicate(message), TaskCompletionSource.Void);
+                        c.WriteAndFlushAsync(SafeDuplicate(message), c.VoidPromise());
                     }
                 }
 

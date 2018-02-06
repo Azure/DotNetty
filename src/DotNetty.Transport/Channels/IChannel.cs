@@ -71,5 +71,11 @@ namespace DotNetty.Transport.Channels
         Task WriteAndFlushAsync(object message);
         
         Task WriteAndFlushAsync(object message, TaskCompletionSource promise);
+
+        TaskCompletionSource NewPromise();
+
+        TaskCompletionSource NewPromise(object state);
+
+        TaskCompletionSource VoidPromise();
     }
 }

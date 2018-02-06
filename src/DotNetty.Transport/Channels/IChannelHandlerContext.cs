@@ -140,5 +140,11 @@ namespace DotNetty.Transport.Channels
         ///     {@link Channel}.
         /// </summary>
         Task DeregisterAsync();
+
+        TaskCompletionSource NewPromise();
+        
+        TaskCompletionSource NewPromise(object state);
+
+        TaskCompletionSource VoidPromise();
     }
 }

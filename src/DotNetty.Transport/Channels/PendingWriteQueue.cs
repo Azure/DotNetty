@@ -83,7 +83,8 @@ namespace DotNetty.Transport.Channels
                 // Size may be unknow so just use 0
                 messageSize = 0;
             }
-            var promise = new TaskCompletionSource();
+
+            var promise = this.ctx.NewPromise();
             PendingWrite write = PendingWrite.NewInstance(msg, messageSize, promise);
             PendingWrite currentTail = this.tail;
             if (currentTail == null)

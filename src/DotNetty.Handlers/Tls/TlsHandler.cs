@@ -520,7 +520,7 @@ namespace DotNetty.Handlers.Tls
                 // may want to add a ChannelFutureListener to the ChannelPromise later.
                 //
                 // See https://github.com/netty/netty/issues/3364
-                this.pendingUnencryptedWrites.Add(Unpooled.Empty, new TaskCompletionSource());
+                this.pendingUnencryptedWrites.Add(Unpooled.Empty, context.NewPromise());
             }
 
             if (!this.EnsureAuthenticated())
@@ -803,10 +803,10 @@ namespace DotNetty.Handlers.Tls
             }
 #endif
 
-            public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count, new TaskCompletionSource());
+            public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count, this.owner.capturedContext.NewPromise());
 
             public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count, new TaskCompletionSource());
+                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count, this.owner.capturedContext.NewPromise());
 
 #if !NETSTANDARD1_3
             static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
@@ -824,7 +824,7 @@ namespace DotNetty.Handlers.Tls
                         return result;
                     default:
                         this.writeCallback = callback;
-                        var tcs = new TaskCompletionSource(state);
+                        var tcs = this.owner.capturedContext.NewPromise(state);
                         this.writeCompletion = tcs;
                         task.ContinueWith(WriteCompleteCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                         return tcs.Task;
