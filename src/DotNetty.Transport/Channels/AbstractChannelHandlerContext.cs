@@ -713,7 +713,7 @@ namespace DotNetty.Transport.Channels
             IEventExecutor nextExecutor = next.Executor;
             return nextExecutor.InEventLoop
                 ? next.InvokeCloseAsync()
-                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeCloseAsync());
+                : this.SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeCloseAsync());
         }
 
         Task InvokeCloseAsync()
@@ -739,15 +739,15 @@ namespace DotNetty.Transport.Channels
             IEventExecutor nextExecutor = next.Executor;
             return nextExecutor.InEventLoop
                 ? next.InvokeDeregisterAsync()
-                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeDeregisterAsync());
+                : this.SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeDeregisterAsync());
         }
 
 
-        public TaskCompletionSource NewPromise() => new TaskCompletionSource();
+        public TaskCompletionSource NewPromise() => this.Channel.NewPromise();
+
+        public TaskCompletionSource NewPromise(object state) => this.Channel.NewPromise(state);
         
-        public TaskCompletionSource NewPromise(object state) => new TaskCompletionSource(state);
-        
-        public TaskCompletionSource VoidPromise() => TaskCompletionSource.Void;
+        public TaskCompletionSource VoidPromise() => this.Channel.VoidPromise();
 
         Task InvokeDeregisterAsync()
         {
