@@ -3,14 +3,10 @@
 
 namespace DotNetty.Common.Concurrency
 {
-    using System;
-    using System.Globalization;
     using System.Threading.Tasks;
 
     public sealed class TaskCompletionSource : TaskCompletionSource<int>, IPromise
     {
-        public static readonly TaskCompletionSource Void = CreateVoidTcs();
-
         public TaskCompletionSource(object state)
             : base(state)
         {
@@ -21,9 +17,9 @@ namespace DotNetty.Common.Concurrency
             
         }
 
-        Task IPromise.Task => this.Task;  
+        Task IPromise.Task => this.Task;
 
-        public bool IsVoid { get; private set; }
+        public bool IsVoid => false; 
 
         public bool TryComplete() => this.TrySetResult(0);
 
@@ -33,15 +29,5 @@ namespace DotNetty.Common.Concurrency
         public bool SetUncancellable() => true;
 
         public override string ToString() => "TaskCompletionSource[status: " + this.Task.Status.ToString() + "]";
-
-        static TaskCompletionSource CreateVoidTcs()
-        {
-            var tcs = new TaskCompletionSource();
-            tcs.TrySetException(new InvalidOperationException("No operations are allowed on void TaskCompletionSource"));
-            tcs.IsVoid = true;
-            return tcs;
-        }
-
-        public IPromise Unvoid() => this.IsVoid ? new TaskCompletionSource() : this;
     }
 }

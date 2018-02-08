@@ -200,7 +200,7 @@ namespace DotNetty.Transport.Channels
         
         public IPromise NewPromise(object state) => new TaskCompletionSource(state);
         
-        public IPromise VoidPromise() => TaskCompletionSource.Void;
+        public IPromise VoidPromise() => DotNetty.Common.Concurrency.VoidPromise.Instance;
 
         public Task CloseCompletion => this.closeFuture.Task;
 
