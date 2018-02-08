@@ -37,7 +37,7 @@ namespace DotNetty.Common.Concurrency
         PreciseTimeSpan lastExecutionTime;
         readonly ManualResetEventSlim emptyEvent = new ManualResetEventSlim(false, 1);
         readonly TaskScheduler scheduler;
-        readonly TaskCompletionSource terminationCompletionSource;
+        readonly IPromise terminationCompletionSource;
         PreciseTimeSpan gracefulShutdownStartTime;
         PreciseTimeSpan gracefulShutdownQuietPeriod;
         PreciseTimeSpan gracefulShutdownTimeout;

@@ -41,36 +41,37 @@ namespace DotNetty.Common.Utilities
             switch (t.Status)
             {
                 case TaskStatus.RanToCompletion:
-                    ((TaskCompletionSource)tcs).TryComplete();
+                    ((IPromise)tcs).TryComplete();
                     break;
                 case TaskStatus.Canceled:
-                    ((TaskCompletionSource)tcs).TrySetCanceled();
+                    ((IPromise)tcs).TrySetCanceled();
                     break;
                 case TaskStatus.Faulted:
-                    ((TaskCompletionSource)tcs).TryUnwrap(t.Exception);
+                    ((IPromise)tcs).TryUnwrap(t.Exception);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         };
 
-        public static void LinkOutcome(this Task task, TaskCompletionSource taskCompletionSource)
+       
+        public static void LinkOutcome(this Task task, IPromise promise)
         {
             switch (task.Status)
             {
                 case TaskStatus.RanToCompletion:
-                    taskCompletionSource.TryComplete();
+                    promise.TryComplete();
                     break;
                 case TaskStatus.Canceled:
-                    taskCompletionSource.TrySetCanceled();
+                    promise.TrySetCanceled();
                     break;
                 case TaskStatus.Faulted:
-                    taskCompletionSource.TryUnwrap(task.Exception);
+                    promise.TryUnwrap(task.Exception);
                     break;
                 default:
                     task.ContinueWith(
                         LinkOutcomeContinuationAction,
-                        taskCompletionSource,
+                        promise,
                         TaskContinuationOptions.ExecuteSynchronously);
                     break;
             }
@@ -118,6 +119,18 @@ namespace DotNetty.Common.Utilities
         }
 
         public static void TryUnwrap<T>(this TaskCompletionSource<T> completionSource, Exception exception)
+        {
+            if (exception is AggregateException aggregateException)
+            {
+                completionSource.TrySetException(aggregateException.InnerExceptions);
+            }
+            else
+            {
+                completionSource.TrySetException(exception);
+            }
+        }
+        
+        public static void TryUnwrap(this IPromise completionSource, Exception exception)
         {
             if (exception is AggregateException aggregateException)
             {

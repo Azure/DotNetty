@@ -347,7 +347,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         public Task JoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source) => this.JoinGroup(multicastAddress, networkInterface, source, this.NewPromise());
 
-        public Task JoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, TaskCompletionSource promise)
+        public Task JoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, IPromise promise)
         {
             if (this.EventLoop.InEventLoop)
             {
@@ -368,7 +368,7 @@ namespace DotNetty.Transport.Channels.Sockets
             return promise.Task;
         }
 
-        void DoJoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, TaskCompletionSource promise)
+        void DoJoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, IPromise promise)
         {
             try
             {
@@ -395,7 +395,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         public Task LeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source) => this.LeaveGroup(multicastAddress, networkInterface, source, this.NewPromise());
 
-        public Task LeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, TaskCompletionSource promise)
+        public Task LeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, IPromise promise)
         {
             if (this.EventLoop.InEventLoop)
             {
@@ -416,7 +416,7 @@ namespace DotNetty.Transport.Channels.Sockets
             return promise.Task;
         }
 
-        void DoLeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, TaskCompletionSource promise)
+        void DoLeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, IPromise promise)
         {
             try
             {

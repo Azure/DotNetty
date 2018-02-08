@@ -210,7 +210,7 @@ namespace DotNetty.Handlers.Logging
             ctx.FireChannelRead(message);
         }
 
-        public override void Write(IChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+        public override void Write(IChannelHandlerContext ctx, object msg, IPromise promise)
         {
             if (this.Logger.IsEnabled(this.InternalLevel))
             {

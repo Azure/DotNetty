@@ -18,7 +18,7 @@ namespace DotNetty.Codecs
         /// </summary>
         public virtual bool AcceptOutboundMessage(object msg) => msg is T;
 
-        public override void Write(IChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+        public override void Write(IChannelHandlerContext ctx, object msg, IPromise promise)
         {
             ThreadLocalObjectList output = null;
             try

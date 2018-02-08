@@ -69,13 +69,13 @@ namespace DotNetty.Transport.Channels
 
         Task WriteAsync(object message);
 
-        Task WriteAsync(object message, TaskCompletionSource promise);
+        Task WriteAsync(object message, IPromise promise);
 
         IChannelHandlerContext Flush();
 
         Task WriteAndFlushAsync(object message);
 
-        Task WriteAndFlushAsync(object message, TaskCompletionSource promise);
+        Task WriteAndFlushAsync(object message, IPromise promise);
 
         /// <summary>
         ///     Request to bind to the given {@link SocketAddress} and notify the {@link ChannelFuture} once the operation
@@ -141,10 +141,10 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         Task DeregisterAsync();
 
-        TaskCompletionSource NewPromise();
+        IPromise NewPromise();
         
-        TaskCompletionSource NewPromise(object state);
+        IPromise NewPromise(object state);
 
-        TaskCompletionSource VoidPromise();
+        IPromise VoidPromise();
     }
 }

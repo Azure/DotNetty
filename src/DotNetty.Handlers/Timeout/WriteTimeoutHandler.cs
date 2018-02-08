@@ -83,7 +83,7 @@ namespace DotNetty.Handlers.Timeout
                  : TimeSpan.Zero;
         }
 
-        public override void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise)
+        public override void Write(IChannelHandlerContext context, object message, IPromise promise)
         {
             if (this.timeout.Ticks > 0)
             {

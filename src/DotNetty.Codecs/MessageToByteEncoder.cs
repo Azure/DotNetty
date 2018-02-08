@@ -14,7 +14,7 @@ namespace DotNetty.Codecs
     {
         public virtual bool AcceptOutboundMessage(object message) => message is T;
 
-        public override void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise)
+        public override void Write(IChannelHandlerContext context, object message, IPromise promise)
         {
             Contract.Requires(context != null);
 

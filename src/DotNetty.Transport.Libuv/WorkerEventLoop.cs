@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Libuv
 
     sealed class WorkerEventLoop : LoopExecutor, IEventLoop
     {
-        readonly TaskCompletionSource connectCompletion;
+        readonly IPromise connectCompletion;
         readonly string pipeName;
         Pipe pipe;
 

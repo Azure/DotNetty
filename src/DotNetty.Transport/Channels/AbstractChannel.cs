@@ -24,7 +24,7 @@ namespace DotNetty.Transport.Channels
         readonly IChannelUnsafe channelUnsafe;
 
         readonly DefaultChannelPipeline pipeline;
-        readonly TaskCompletionSource closeFuture;
+        readonly IPromise closeFuture;
 
         volatile EndPoint localAddress;
         volatile EndPoint remoteAddress;
@@ -190,17 +190,17 @@ namespace DotNetty.Transport.Channels
 
         public Task WriteAsync(object msg) => this.pipeline.WriteAsync(msg);
 
-        public Task WriteAsync(object message, TaskCompletionSource promise) => this.pipeline.WriteAsync(message, promise);
+        public Task WriteAsync(object message, IPromise promise) => this.pipeline.WriteAsync(message, promise);
 
         public Task WriteAndFlushAsync(object message) => this.pipeline.WriteAndFlushAsync(message);
         
-        public Task WriteAndFlushAsync(object message, TaskCompletionSource promise) => this.pipeline.WriteAndFlushAsync(message, promise);
+        public Task WriteAndFlushAsync(object message, IPromise promise) => this.pipeline.WriteAndFlushAsync(message, promise);
 
-        public TaskCompletionSource NewPromise() => new TaskCompletionSource();
+        public IPromise NewPromise() => new TaskCompletionSource();
         
-        public TaskCompletionSource NewPromise(object state) => new TaskCompletionSource(state);
+        public IPromise NewPromise(object state) => new TaskCompletionSource(state);
         
-        public TaskCompletionSource VoidPromise() => TaskCompletionSource.Void;
+        public IPromise VoidPromise() => TaskCompletionSource.Void;
 
         public Task CloseCompletion => this.closeFuture.Task;
 
@@ -360,7 +360,7 @@ namespace DotNetty.Transport.Channels
                 return promise.Task;
             }
 
-            void Register0(TaskCompletionSource promise)
+            void Register0(IPromise promise)
             {
                 try
                 {
@@ -560,7 +560,7 @@ namespace DotNetty.Transport.Channels
                 return promise.Task;
             }
 
-            void DoClose0(TaskCompletionSource promise)
+            void DoClose0(IPromise promise)
             {
                 try
                 {
@@ -680,7 +680,7 @@ namespace DotNetty.Transport.Channels
                 }
             }
             
-            public void Write(object msg, TaskCompletionSource promise)
+            public void Write(object msg, IPromise promise)
             {
                 this.AssertEventLoop();
 
@@ -786,7 +786,7 @@ namespace DotNetty.Transport.Channels
 
             protected virtual bool CanWrite => this.channel.Active;
 
-            protected bool EnsureOpen(TaskCompletionSource promise)
+            protected bool EnsureOpen(IPromise promise)
             {
                 if (this.channel.Open)
                 {

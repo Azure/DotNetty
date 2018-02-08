@@ -845,7 +845,7 @@ namespace DotNetty.Transport.Channels
 
         public Task WriteAsync(object msg) => this.tail.WriteAsync(msg);
         
-        public Task WriteAsync(object msg, TaskCompletionSource promise) => this.tail.WriteAsync(msg, promise);
+        public Task WriteAsync(object msg, IPromise promise) => this.tail.WriteAsync(msg, promise);
 
         public IChannelPipeline Flush()
         {
@@ -855,7 +855,7 @@ namespace DotNetty.Transport.Channels
 
         public Task WriteAndFlushAsync(object msg) => this.tail.WriteAndFlushAsync(msg);
         
-        public Task WriteAndFlushAsync(object msg, TaskCompletionSource promise) => this.tail.WriteAndFlushAsync(msg, promise);
+        public Task WriteAndFlushAsync(object msg, IPromise promise) => this.tail.WriteAndFlushAsync(msg, promise);
 
         string FilterName(string name, IChannelHandler handler)
         {
@@ -1074,7 +1074,7 @@ namespace DotNetty.Transport.Channels
             public void UserEventTriggered(IChannelHandlerContext context, object evt) => ReferenceCountUtil.Release(evt);
 
             [Skip]
-            public void Write(IChannelHandlerContext ctx, object message, TaskCompletionSource promise) => ctx.WriteAsync(message, promise);
+            public void Write(IChannelHandlerContext ctx, object message, IPromise promise) => ctx.WriteAsync(message, promise);
 
             [Skip]
             public void Flush(IChannelHandlerContext context) => context.Flush();
@@ -1117,7 +1117,7 @@ namespace DotNetty.Transport.Channels
 
             public void Read(IChannelHandlerContext context) => this.channelUnsafe.BeginRead();
 
-            public void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise) => this.channelUnsafe.Write(message, promise);
+            public void Write(IChannelHandlerContext context, object message, IPromise promise) => this.channelUnsafe.Write(message, promise);
 
             [Skip]
             public void HandlerAdded(IChannelHandlerContext context)

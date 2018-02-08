@@ -15,7 +15,7 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
         /// </summary>
-        public static void SafeSetSuccess(TaskCompletionSource promise, IInternalLogger logger)
+        public static void SafeSetSuccess(IPromise promise, IInternalLogger logger)
         {
             if (!promise.IsVoid && !promise.TryComplete() && logger.WarnEnabled)
             {
@@ -34,7 +34,7 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Marks the specified {@code promise} as failure.  If the {@code promise} is done already, log a message.
         /// </summary>
-        public static void SafeSetFailure(TaskCompletionSource promise, Exception cause, IInternalLogger logger)
+        public static void SafeSetFailure(IPromise promise, Exception cause, IInternalLogger logger)
         {
             if (!promise.IsVoid && !promise.TrySetException(cause) && logger.WarnEnabled)
             {

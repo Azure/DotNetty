@@ -14,11 +14,11 @@ namespace DotNetty.Common.Concurrency
         const int CancellationProhibited = 1;
         const int CancellationRequested = 1 << 1;
 
-        protected readonly TaskCompletionSource Promise;
+        protected readonly IPromise Promise;
         protected readonly AbstractScheduledEventExecutor Executor;
         int volatileCancellationState;
 
-        protected ScheduledTask(AbstractScheduledEventExecutor executor, PreciseTimeSpan deadline, TaskCompletionSource promise)
+        protected ScheduledTask(AbstractScheduledEventExecutor executor, PreciseTimeSpan deadline, IPromise promise)
         {
             this.Executor = executor;
             this.Promise = promise;

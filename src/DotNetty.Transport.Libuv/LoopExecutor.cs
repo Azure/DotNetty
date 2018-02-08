@@ -37,7 +37,7 @@ namespace DotNetty.Transport.Libuv
         readonly XThread thread;
         readonly TaskScheduler scheduler;
         readonly ManualResetEventSlim loopRunStart;
-        readonly TaskCompletionSource terminationCompletionSource;
+        readonly IPromise terminationCompletionSource;
         readonly Loop loop;
         readonly Async asyncHandle;
         readonly Timer timerHandle;

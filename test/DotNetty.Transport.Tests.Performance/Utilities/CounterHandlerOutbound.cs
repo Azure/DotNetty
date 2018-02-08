@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
             this.throughput = throughput;
         }
 
-        public override void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise)
+        public override void Write(IChannelHandlerContext context, object message, IPromise promise)
         {
             this.throughput.Increment();
             context.WriteAsync(message, promise);

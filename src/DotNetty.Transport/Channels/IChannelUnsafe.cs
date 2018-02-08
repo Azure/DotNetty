@@ -27,7 +27,7 @@ namespace DotNetty.Transport.Channels
 
         void BeginRead();
 
-        void Write(object message, TaskCompletionSource promise);
+        void Write(object message, IPromise promise);
 
         void Flush();
 

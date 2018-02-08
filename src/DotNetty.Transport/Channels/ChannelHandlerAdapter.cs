@@ -47,7 +47,7 @@ namespace DotNetty.Transport.Channels
         public virtual void UserEventTriggered(IChannelHandlerContext context, object evt) => context.FireUserEventTriggered(evt);
 
         [Skip]
-        public virtual void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise) => context.WriteAsync(message, promise);
+        public virtual void Write(IChannelHandlerContext context, object message, IPromise promise) => context.WriteAsync(message, promise);
 
         [Skip]
         public virtual void Flush(IChannelHandlerContext context) => context.Flush();

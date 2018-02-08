@@ -64,18 +64,18 @@ namespace DotNetty.Transport.Channels
 
         Task WriteAsync(object message);
 
-        Task WriteAsync(object message, TaskCompletionSource promise);
+        Task WriteAsync(object message, IPromise promise);
 
         IChannel Flush();
 
         Task WriteAndFlushAsync(object message);
         
-        Task WriteAndFlushAsync(object message, TaskCompletionSource promise);
+        Task WriteAndFlushAsync(object message, IPromise promise);
 
-        TaskCompletionSource NewPromise();
+        IPromise NewPromise();
 
-        TaskCompletionSource NewPromise(object state);
+        IPromise NewPromise(object state);
 
-        TaskCompletionSource VoidPromise();
+        IPromise VoidPromise();
     }
 }

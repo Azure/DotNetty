@@ -64,7 +64,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>Add the given <c>msg</c> and returns <see cref="Task" /> for completion of processing <c>msg</c>.</summary>
-        public void Add(object msg, TaskCompletionSource promise)
+        public void Add(object msg, IPromise promise)
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
             Contract.Requires(msg != null);
@@ -126,7 +126,7 @@ namespace DotNetty.Transport.Channels
             {
                 PendingWrite next = write.Next;
                 ReleaseMessages(write.Messages);
-                TaskCompletionSource promise = write.Promise;
+                IPromise promise = write.Promise;
                 this.Recycle(write, false);
                 Util.SafeSetFailure(promise, cause, Logger);
                 write = next;
@@ -151,14 +151,14 @@ namespace DotNetty.Transport.Channels
                 return;
             }
             ReleaseMessages(write.Messages);
-            TaskCompletionSource promise = write.Promise;
+            IPromise promise = write.Promise;
             Util.SafeSetFailure(promise, cause, Logger);
             this.Recycle(write, true);
         }
 
         /// <summary>
         ///     Remove all pending write operation and performs them via
-        ///     <see cref="IChannelHandlerContext.WriteAsync(object, TaskCompletionSource)" />.
+        ///     <see cref="IChannelHandlerContext.WriteAsync(object,DotNetty.Common.Concurrency.IPromise)" />.
         /// </summary>
         /// <returns>
         ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
@@ -190,7 +190,7 @@ namespace DotNetty.Transport.Channels
             {
                 PendingWrite next = write.Next;
                 object msg = write.Messages;
-                TaskCompletionSource promise = write.Promise;
+                IPromise promise = write.Promise;
                 this.Recycle(write, false);
                 this.ctx.WriteAsync(msg, promise);
                 tasks.Add(promise.Task);
@@ -204,7 +204,7 @@ namespace DotNetty.Transport.Channels
 
         /// <summary>
         ///     Removes a pending write operation and performs it via
-        ///     <see cref="IChannelHandlerContext.WriteAsync(object, TaskCompletionSource)"/>.
+        ///     <see cref="IChannelHandlerContext.WriteAsync(object,DotNetty.Common.Concurrency.IPromise)"/>.
         /// </summary>
         /// <returns>
         ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
@@ -220,7 +220,7 @@ namespace DotNetty.Transport.Channels
                 return null;
             }
             object msg = write.Messages;
-            TaskCompletionSource promise = write.Promise;
+            IPromise promise = write.Promise;
             this.Recycle(write, true);
             this.ctx.WriteAsync(msg, promise);
             return promise.Task;
@@ -230,7 +230,7 @@ namespace DotNetty.Transport.Channels
         ///     Removes a pending write operation and release it's message via <see cref="ReferenceCountUtil.SafeRelease(object)"/>.
         /// </summary>
         /// <returns><see cref="TaskCompletionSource" /> of the pending write or <c>null</c> if the queue is empty.</returns>
-        public TaskCompletionSource Remove()
+        public IPromise Remove()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
 
@@ -239,7 +239,7 @@ namespace DotNetty.Transport.Channels
             {
                 return null;
             }
-            TaskCompletionSource promise = write.Promise;
+            IPromise promise = write.Promise;
             ReferenceCountUtil.SafeRelease(write.Messages);
             this.Recycle(write, true);
             return promise;
@@ -328,7 +328,7 @@ namespace DotNetty.Transport.Channels
             readonly ThreadLocalPool.Handle handle;
             public PendingWrite Next;
             public long Size;
-            public TaskCompletionSource Promise;
+            public IPromise Promise;
             public readonly List<object> Messages;
 
             PendingWrite(ThreadLocalPool.Handle handle)
@@ -337,7 +337,7 @@ namespace DotNetty.Transport.Channels
                 this.handle = handle;
             }
 
-            public static PendingWrite NewInstance(object msg, int size, TaskCompletionSource promise)
+            public static PendingWrite NewInstance(object msg, int size, IPromise promise)
             {
                 PendingWrite write = Pool.Take();
                 write.Add(msg, size);

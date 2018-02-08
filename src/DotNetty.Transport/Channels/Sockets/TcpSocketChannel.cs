@@ -98,7 +98,7 @@ namespace DotNetty.Transport.Channels.Sockets
             return tcs.Task;
         }
 
-        void ShutdownOutput0(TaskCompletionSource promise)
+        void ShutdownOutput0(IPromise promise)
         {
             try
             {

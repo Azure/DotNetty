@@ -51,7 +51,7 @@ namespace DotNetty.Transport.Channels
         ///     Add given message to this {@link ChannelOutboundBuffer}. The given {@link ChannelPromise} will be notified once
         ///     the message was written.
         /// </summary>
-        public void AddMessage(object msg, int size, TaskCompletionSource promise)
+        public void AddMessage(object msg, int size, IPromise promise)
         {
             Entry entry = Entry.NewInstance(msg, size, promise);
             if (this.tailEntry == null)
@@ -189,7 +189,7 @@ namespace DotNetty.Transport.Channels
             }
             object msg = e.Message;
 
-            TaskCompletionSource promise = e.Promise;
+            IPromise promise = e.Promise;
             int size = e.PendingSize;
 
             this.RemoveEntry(e);
@@ -225,7 +225,7 @@ namespace DotNetty.Transport.Channels
             }
             object msg = e.Message;
 
-            TaskCompletionSource promise = e.Promise;
+            IPromise promise = e.Promise;
             int size = e.PendingSize;
 
             this.RemoveEntry(e);
@@ -669,7 +669,7 @@ namespace DotNetty.Transport.Channels
             public object Message;
             public ArraySegment<byte>[] Buffers;
             public ArraySegment<byte> Buffer;
-            public TaskCompletionSource Promise;
+            public IPromise Promise;
             public int PendingSize;
             public int Count = -1;
             public bool Cancelled;
@@ -679,7 +679,7 @@ namespace DotNetty.Transport.Channels
                 this.handle = handle;
             }
 
-            public static Entry NewInstance(object msg, int size, TaskCompletionSource promise)
+            public static Entry NewInstance(object msg, int size, IPromise promise)
             {
                 Entry entry = Pool.Take();
                 entry.Message = msg;

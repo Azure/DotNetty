@@ -743,11 +743,11 @@ namespace DotNetty.Transport.Channels
         }
 
 
-        public TaskCompletionSource NewPromise() => this.Channel.NewPromise();
+        public IPromise NewPromise() => this.Channel.NewPromise();
 
-        public TaskCompletionSource NewPromise(object state) => this.Channel.NewPromise(state);
+        public IPromise NewPromise(object state) => this.Channel.NewPromise(state);
         
-        public TaskCompletionSource VoidPromise() => this.Channel.VoidPromise();
+        public IPromise VoidPromise() => this.Channel.VoidPromise();
 
         Task InvokeDeregisterAsync()
         {
@@ -802,7 +802,7 @@ namespace DotNetty.Transport.Channels
 
         public Task WriteAsync(object msg) => this.WriteAsync(msg, this.NewPromise());
 
-        public Task WriteAsync(object msg, TaskCompletionSource promise)
+        public Task WriteAsync(object msg, IPromise promise)
         {
             Contract.Requires(msg != null);
             
@@ -818,7 +818,7 @@ namespace DotNetty.Transport.Channels
         }
         
 
-        void InvokeWrite(object msg, TaskCompletionSource promise)
+        void InvokeWrite(object msg, IPromise promise)
         {
             if (this.Added)
             {
@@ -831,7 +831,7 @@ namespace DotNetty.Transport.Channels
             
         }
 
-        void InvokeWrite0(object msg, TaskCompletionSource promise)
+        void InvokeWrite0(object msg, IPromise promise)
         {
             try
             {
@@ -884,7 +884,7 @@ namespace DotNetty.Transport.Channels
 
         public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, this.NewPromise());
 
-        public Task WriteAndFlushAsync(object message, TaskCompletionSource promise)
+        public Task WriteAndFlushAsync(object message, IPromise promise)
         {
             Contract.Requires(message != null);
             // todo: check for cancellation
@@ -898,7 +898,7 @@ namespace DotNetty.Transport.Channels
             return promise.Task;
         }
 
-        void InvokeWriteAndFlush(object msg, TaskCompletionSource promise)
+        void InvokeWriteAndFlush(object msg, IPromise promise)
         {
             if (this.Added)
             {
@@ -911,7 +911,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        void Write(object msg, bool flush, TaskCompletionSource promise)
+        void Write(object msg, bool flush, IPromise promise)
         {
             AbstractChannelHandlerContext next = this.FindContextOutbound();
             object m = this.pipeline.Touch(msg, next);
@@ -982,10 +982,10 @@ namespace DotNetty.Transport.Channels
 
         Task SafeExecuteOutboundAsync(IEventExecutor executor, Func<Task> function)
         {
-            var promise = this.NewPromise();
+            IPromise promise = this.NewPromise();
             try
             {
-                executor.Execute((p, func) => ((Func<Task>)func)().LinkOutcome((TaskCompletionSource)p), promise, function);
+                executor.Execute((p, func) => ((Func<Task>)func)().LinkOutcome((IPromise)p), promise, function);
             }
             catch (Exception cause)
             {
@@ -994,7 +994,7 @@ namespace DotNetty.Transport.Channels
             return promise.Task;
         }
 
-        static void SafeExecuteOutbound(IEventExecutor executor, IRunnable task, TaskCompletionSource promise, object msg)
+        static void SafeExecuteOutbound(IEventExecutor executor, IRunnable task, IPromise promise, object msg)
         {
             try
             {
@@ -1017,7 +1017,7 @@ namespace DotNetty.Transport.Channels
 
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
 
-        static bool IsNotValidPromise(TaskCompletionSource promise, bool allowVoid)
+        static bool IsNotValidPromise(IPromise promise, bool allowVoid)
         {
             Contract.Requires(promise != null);
 
@@ -1063,10 +1063,10 @@ namespace DotNetty.Transport.Channels
             ThreadLocalPool.Handle handle;
             AbstractChannelHandlerContext ctx;
             object msg;
-            TaskCompletionSource promise;
+            IPromise promise;
             int size;
 
-            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg, IPromise promise)
             {
                 task.ctx = ctx;
                 task.msg = msg;
@@ -1120,13 +1120,13 @@ namespace DotNetty.Transport.Channels
                 }
             }
 
-            protected virtual void Write(AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise) => ctx.InvokeWrite(msg, promise);
+            protected virtual void Write(AbstractChannelHandlerContext ctx, object msg, IPromise promise) => ctx.InvokeWrite(msg, promise);
         }
         sealed class WriteTask : AbstractWriteTask {
 
             static readonly ThreadLocalPool<WriteTask> Recycler = new ThreadLocalPool<WriteTask>(handle => new WriteTask(handle));
 
-            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg, IPromise promise)
             {
                 WriteTask task = Recycler.Take();
                 Init(task, ctx, msg, promise);
@@ -1145,7 +1145,7 @@ namespace DotNetty.Transport.Channels
             static readonly ThreadLocalPool<WriteAndFlushTask> Recycler = new ThreadLocalPool<WriteAndFlushTask>(handle => new WriteAndFlushTask(handle));
 
             public static WriteAndFlushTask NewInstance(
-                    AbstractChannelHandlerContext ctx, object msg,  TaskCompletionSource promise) {
+                    AbstractChannelHandlerContext ctx, object msg,  IPromise promise) {
                 WriteAndFlushTask task = Recycler.Take();
                 Init(task, ctx, msg, promise);
                 return task;
@@ -1156,7 +1156,7 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            protected override void Write(AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            protected override void Write(AbstractChannelHandlerContext ctx, object msg, IPromise promise)
             {
                 base.Write(ctx, msg, promise);
                 ctx.InvokeFlush();

@@ -38,7 +38,7 @@ namespace DotNetty.Transport.Channels
 
         void HandlerRemoved(IChannelHandlerContext context);
 
-        void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise);
+        void Write(IChannelHandlerContext context, object message, IPromise promise);
 
         void Flush(IChannelHandlerContext context);
 

@@ -4,9 +4,10 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Globalization;
     using System.Threading.Tasks;
 
-    public sealed class TaskCompletionSource : TaskCompletionSource<int>
+    public sealed class TaskCompletionSource : TaskCompletionSource<int>, IPromise
     {
         public static readonly TaskCompletionSource Void = CreateVoidTcs();
 
@@ -17,7 +18,10 @@ namespace DotNetty.Common.Concurrency
 
         public TaskCompletionSource()
         {
+            
         }
+
+        Task IPromise.Task => this.Task;  
 
         public bool IsVoid { get; private set; }
 
@@ -38,6 +42,6 @@ namespace DotNetty.Common.Concurrency
             return tcs;
         }
 
-        public TaskCompletionSource Unvoid() => this.IsVoid ? new TaskCompletionSource() : this;
+        public IPromise Unvoid() => this.IsVoid ? new TaskCompletionSource() : this;
     }
 }

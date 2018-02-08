@@ -627,7 +627,7 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         Task WriteAsync(object msg);
         
-        Task WriteAsync(object msg, TaskCompletionSource promise);
+        Task WriteAsync(object msg, IPromise promise);
 
         /// <summary>
         ///     Request to flush all pending messages.
@@ -639,6 +639,6 @@ namespace DotNetty.Transport.Channels
         /// </summary>
         Task WriteAndFlushAsync(object msg);
         
-        Task WriteAndFlushAsync(object msg, TaskCompletionSource promise);
+        Task WriteAndFlushAsync(object msg, IPromise promise);
     }
 }

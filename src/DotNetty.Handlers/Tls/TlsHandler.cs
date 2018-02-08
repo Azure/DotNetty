@@ -500,7 +500,7 @@ namespace DotNetty.Handlers.Tls
             return oldState.Has(TlsHandlerState.Authenticated);
         }
 
-        public override void Write(IChannelHandlerContext context, object message, TaskCompletionSource promise)
+        public override void Write(IChannelHandlerContext context, object message, IPromise promise)
         {
             if (!(message is IByteBuffer))
             {
@@ -571,7 +571,7 @@ namespace DotNetty.Handlers.Tls
                     buf.ReadBytes(this.sslStream, buf.ReadableBytes); // this leads to FinishWrap being called 0+ times
                     buf.Release();
 
-                    TaskCompletionSource promise = this.pendingUnencryptedWrites.Remove();
+                    IPromise promise = this.pendingUnencryptedWrites.Remove();
                     Task task = this.lastContextWriteTask;
                     if (task != null)
                     {
@@ -592,7 +592,7 @@ namespace DotNetty.Handlers.Tls
             }
         }
 
-        void FinishWrap(byte[] buffer, int offset, int count, TaskCompletionSource promise)
+        void FinishWrap(byte[] buffer, int offset, int count, IPromise promise)
         {
             IByteBuffer output;
             if (count == 0)
@@ -608,7 +608,7 @@ namespace DotNetty.Handlers.Tls
             this.lastContextWriteTask = this.capturedContext.WriteAsync(output, promise);
         }
 
-        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count, TaskCompletionSource promise)
+        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count, IPromise promise)
         {
             var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count), promise);
             this.ReadIfNeeded(this.capturedContext);
@@ -673,7 +673,7 @@ namespace DotNetty.Handlers.Tls
 #else
             SynchronousAsyncResult<int> syncReadResult;
             AsyncCallback readCallback;
-            TaskCompletionSource writeCompletion;
+            IPromise writeCompletion;
             AsyncCallback writeCallback;
 #endif
 
