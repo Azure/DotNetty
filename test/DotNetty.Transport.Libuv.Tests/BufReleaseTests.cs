@@ -117,6 +117,7 @@ namespace DotNetty.Transport.Libuv.Tests
                 Assert.True(this.writeTask.Wait(DefaultTimeout), "Write task timed out");
                 Assert.Equal(1, this.buf.ReferenceCount);
             }
+
             public void Release()
             {
                 this.buf.Release();

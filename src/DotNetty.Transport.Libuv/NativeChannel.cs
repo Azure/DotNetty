@@ -302,23 +302,14 @@ namespace DotNetty.Transport.Libuv
                 }
             }
 
-            // Write request callback from libuv thread
-            void INativeUnsafe.FinishWrite(WriteRequest writeRequest)
+            // Write request callback from libuv thread, note this is only called
+            // if there are errors in write operations.
+            void INativeUnsafe.FinishWrite(OperationException error)
             {
-                try
-                {
-                    if (writeRequest.Error != null)
-                    {
-                        ChannelOutboundBuffer input = this.OutboundBuffer;
-                        var error = new ChannelException(writeRequest.Error);
-                        input?.FailFlushed(error, true);
-                        this.channel.Pipeline.FireExceptionCaught(error);
-                    }
-                }
-                finally
-                {
-                    writeRequest.Release();
-                }
+                ChannelOutboundBuffer input = this.OutboundBuffer;
+                var exception = new ChannelException(error);
+                input?.FailFlushed(exception, true);
+                this.channel.Pipeline.FireExceptionCaught(exception);
             }
         }
     }
@@ -333,7 +324,7 @@ namespace DotNetty.Transport.Libuv
 
         void FinishRead(ReadOperation readOperation);
 
-        void FinishWrite(WriteRequest writeRequest);
+        void FinishWrite(OperationException error);
     }
     
     interface IServerNativeUnsafe

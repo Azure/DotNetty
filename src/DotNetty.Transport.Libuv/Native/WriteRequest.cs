@@ -3,145 +3,176 @@
 
 // ReSharper disable ConvertToAutoPropertyWithPrivateSetter
 // ReSharper disable ConvertToAutoProperty
+// ReSharper disable ConvertToAutoPropertyWhenPossible
+// ReSharper disable ForCanBeConvertedToForeach
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
     using DotNetty.Buffers;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
+    using DotNetty.Transport.Channels;
 
-    sealed class WriteRequest : NativeRequest
+    sealed class WriteRequest : NativeRequest, ChannelOutboundBuffer.IMessageProcessor
     {
-        // The maximum number of uv_buf_t in one write request, this limits 
-        // the libuv thread I/O time by channel write spin count. This is 
-        // also to avoid the bufs array pin per write request. The buf array 
-        // gets pinned upfront from the constructor and last for the lifetime 
-        // of the request. 
-        // Make this configurable if it is really a problem
-        const int MaximumBufferCount = 32;
+        static readonly int BufferSize;
+        static readonly uv_watcher_cb WriteCallback = OnWriteCallback;
 
-        internal static readonly uv_watcher_cb WriteCallback = OnWriteCallback;
+        const int MaximumBytes = int.MaxValue;
+        const int MaximumLimit = 64;
 
-        readonly ThreadLocalPool.Handle recyclerHandle;
-        readonly List<GCHandle> handles;
-
-        OperationException error;
-        INativeUnsafe nativeUnsafe;
-        GCHandle pin;
-        uv_buf_t[] bufs;
-        int bufferCount;
-
-        public WriteRequest(ThreadLocalPool.Handle recyclerHandle, int maximumBufferCount = MaximumBufferCount)
-            : base(uv_req_type.UV_WRITE, 0)
+        static WriteRequest()
         {
-            this.recyclerHandle = recyclerHandle;
-            this.handles = new List<GCHandle>(maximumBufferCount);
-
-            this.bufferCount = 0;
-            this.bufs = new uv_buf_t[maximumBufferCount];
-            this.pin = GCHandle.Alloc(this.bufs, GCHandleType.Pinned);
+#if NETSTANDARD1_3
+            BufferSize = Marshal.SizeOf<uv_buf_t>();
+#else
+            BufferSize = Marshal.SizeOf(typeof(uv_buf_t));
+#endif
         }
 
-        internal int Prepare(INativeUnsafe channelUnsafe, IByteBuffer buffer)
+        readonly int maxBytes;
+        readonly ThreadLocalPool.Handle recyclerHandle;
+        readonly List<GCHandle> handles;
+        readonly IByteBuffer[] flushedBufs;
+
+        IntPtr bufs;
+        GCHandle pin;
+        int count;
+        int flushed;
+        int size;
+
+        INativeUnsafe nativeUnsafe;
+
+        public WriteRequest(ThreadLocalPool.Handle recyclerHandle)
+            : base(uv_req_type.UV_WRITE, BufferSize * MaximumLimit)
+        {
+            this.recyclerHandle = recyclerHandle;
+
+            int offset = NativeMethods.GetSize(uv_req_type.UV_WRITE);
+            IntPtr addr = this.Handle;
+
+            this.maxBytes = MaximumBytes;
+            this.bufs = addr + offset;
+            this.pin = GCHandle.Alloc(addr, GCHandleType.Pinned);
+            this.handles = new List<GCHandle>();
+            this.flushedBufs = new IByteBuffer[MaximumLimit];
+        }
+
+        internal int Prepare(INativeUnsafe channelUnsafe, ChannelOutboundBuffer input)
         {
             Debug.Assert(this.nativeUnsafe == null);
 
-            int totalBytes = 0;
+            this.nativeUnsafe = channelUnsafe;
+            input.ForEachFlushedMessage(this);
+            return this.size;
+        }
 
-            // Do not pin the buffer again if it is already pinned
-            IntPtr arrayHandle = buffer.AddressOfPinnedMemory();
-            if (arrayHandle != IntPtr.Zero)
+        bool Add(IByteBuffer buf)
+        {
+            if (this.count == MaximumLimit)
             {
-                this.bufferCount = 1;
-                totalBytes = buffer.ReadableBytes;
-                this.bufs[0] = new uv_buf_t(arrayHandle + buffer.ReaderIndex, totalBytes);
+                return false;
+            }
+
+            int len = buf.ReadableBytes;
+            if (len == 0)
+            {
+                return true;
+            }
+
+            if (this.maxBytes - len < this.size && this.count > 0)
+            {
+                return false;
+            }
+
+            IntPtr addr = IntPtr.Zero;
+            if (buf.HasMemoryAddress)
+            {
+                addr = buf.AddressOfPinnedMemory();
+            }
+
+            if (addr != IntPtr.Zero)
+            {
+                this.Add(addr, buf.ReaderIndex, len);
             }
             else
             {
-                if (buffer.IoBufferCount == 1)
+                int bufferCount = buf.IoBufferCount;
+                if (MaximumLimit - bufferCount < this.count)
                 {
-                    this.bufferCount = 1;
-                    totalBytes = this.Prepare(0, buffer.GetIoBuffer());
+                    return false;
+                }
+
+                if (bufferCount == 1)
+                {
+                    ArraySegment<byte> arraySegment = buf.GetIoBuffer();
+
+                    byte[] array = arraySegment.Array;
+                    GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+                    this.handles.Add(handle);
+
+                    addr = handle.AddrOfPinnedObject();
+                    this.Add(addr, arraySegment.Offset, arraySegment.Count);
                 }
                 else
                 {
-                    ArraySegment<byte>[] ioBuffers = buffer.GetIoBuffers();
-                    this.bufferCount = Math.Min(ioBuffers.Length, this.bufs.Length);
-                    for (int i = 0; i < this.bufferCount; i++)
+                    ArraySegment<byte>[] segments = buf.GetIoBuffers();
+                    for (int i = 0; i < segments.Length; i++)
                     {
-                        totalBytes += this.Prepare(i, ioBuffers[i]);
+                        GCHandle handle = GCHandle.Alloc(segments[i].Array, GCHandleType.Pinned);
+                        this.handles.Add(handle);
+
+                        addr = handle.AddrOfPinnedObject();
+                        this.Add(addr, segments[i].Offset, segments[i].Count);
                     }
                 }
             }
-            this.nativeUnsafe = channelUnsafe;
-            return totalBytes;
+
+            this.flushedBufs[this.flushed] = buf;
+            this.flushed++;
+            return true;
         }
 
-        internal int Prepare(INativeUnsafe channelUnsafe, ArraySegment<byte> ioBuffer)
+        void Add(IntPtr addr, int offset, int len)
         {
-            Debug.Assert(this.nativeUnsafe == null);
-
-            this.bufferCount = 1;
-            int totalBytes = this.Prepare(0, ioBuffer);
-            this.nativeUnsafe = channelUnsafe;
-            return totalBytes;
+            IntPtr baseOffset = this.MemoryAddress(this.count);
+            this.size += len;
+            ++this.count;
+            uv_buf_t.InitMemory(baseOffset, addr + offset, len);
         }
 
-        internal int Prepare(INativeUnsafe channelUnsafe, List<ArraySegment<byte>> nioBuffers)
+        internal unsafe int DoWrite()
         {
-            Debug.Assert(this.nativeUnsafe == null);
+            int result = NativeMethods.uv_write(
+                this.Handle,
+                this.nativeUnsafe.UnsafeHandle,
+                (uv_buf_t*)this.bufs,
+                this.count,
+                WriteCallback);
 
-            int totalBytes = 0;
-            if (nioBuffers.Count == 1)
+            if (result >= 0)
             {
-                totalBytes = this.Prepare(0, nioBuffers[0]);
-                this.bufferCount = 1;
+                result = this.flushed;
             }
             else
             {
-                this.bufferCount = Math.Min(nioBuffers.Count, this.bufs.Length);
-                for (int i = 0; i < this.bufferCount; i++)
-                {
-                    totalBytes += this.Prepare(i, nioBuffers[i]);
-                }
+                this.Release();
+                NativeMethods.ThrowOperationException((uv_err_code)result);
             }
-            this.nativeUnsafe = channelUnsafe;
-            return totalBytes;
+
+            return result;
         }
 
-        int Prepare(int index, ArraySegment<byte> ioBuffer)
-        {
-            GCHandle handle = GCHandle.Alloc(ioBuffer.Array, GCHandleType.Pinned);
-            IntPtr arrayHandle = handle.AddrOfPinnedObject();
+        public bool ProcessMessage(object msg) => msg is IByteBuffer buf && this.Add(buf);
 
-            int size = ioBuffer.Count;
-            this.bufs[index] = new uv_buf_t(arrayHandle + ioBuffer.Offset, size);
-            this.handles.Add(handle);
-            return size;
-        }
-
-        internal ref uv_buf_t[] Bufs => ref this.bufs;
-
-        internal ref int BufferCount => ref this.bufferCount;
-
-        internal OperationException Error => this.error;
-
-        internal void Release()
-        {
-            this.ReleaseHandles();
-
-            this.nativeUnsafe = null;
-            this.error = null;
-            this.recyclerHandle.Release(this);
-        }
-
-        void ReleaseHandles()
+        void Release()
         {
             if (this.handles.Count > 0)
             {
-                // ReSharper disable once ForCanBeConvertedToForeach
                 for (int i = 0; i < this.handles.Count; i++)
                 {
                     if (this.handles[i].IsAllocated)
@@ -151,32 +182,56 @@ namespace DotNetty.Transport.Libuv.Native
                 }
                 this.handles.Clear();
             }
-        }
 
-        protected override void Dispose(bool disposing)
-        {
-            this.ReleaseHandles();
-            if (this.pin.IsAllocated)
+            for (int i = 0; i < this.flushed; i++)
             {
-                this.pin.Free();
+                this.flushedBufs[i].SafeRelease();
             }
-            base.Dispose(disposing);
+            Array.Clear(this.flushedBufs, 0, MaximumLimit);
+
+            this.nativeUnsafe = null;
+            this.count = 0;
+            this.flushed = 0;
+            this.size = 0;
+            this.recyclerHandle.Release(this);
         }
 
         void OnWriteCallback(int status)
         {
-            this.ReleaseHandles();
             if (status < 0)
             {
-                this.error = NativeMethods.CreateError((uv_err_code)status);
+                OperationException error = NativeMethods.CreateError((uv_err_code)status);
+                this.nativeUnsafe.FinishWrite(error);
             }
-            this.nativeUnsafe.FinishWrite(this);
+            this.Release();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        IntPtr MemoryAddress(int offset) => this.bufs + BufferSize * offset;
 
         static void OnWriteCallback(IntPtr handle, int status)
         {
             var request = GetTarget<WriteRequest>(handle);
             request.OnWriteCallback(status);
+        }
+
+        void Free()
+        {
+            this.Release();
+            if (this.pin.IsAllocated)
+            {
+                this.pin.Free();
+            }
+            this.bufs = IntPtr.Zero;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (this.bufs != IntPtr.Zero)
+            {
+                this.Free();
+            }
+            base.Dispose(disposing);
         }
     }
 }

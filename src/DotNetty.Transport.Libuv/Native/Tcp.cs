@@ -72,26 +72,6 @@ namespace DotNetty.Transport.Libuv.Native
             tcp.OnReadCallback(status, error);
         }
 
-        public void Write(WriteRequest request)
-        {
-            this.Validate();
-            try
-            {
-                int result = NativeMethods.uv_write(
-                    request.Handle,
-                    this.Handle,
-                    request.Bufs,
-                    request.BufferCount,
-                    WriteRequest.WriteCallback);
-                NativeMethods.ThrowIfError(result);
-            }
-            catch
-            {
-                request.Release();
-                throw;
-            }
-        }
-
         protected override void OnClosed()
         {
             base.OnClosed();
