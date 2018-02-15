@@ -4,7 +4,10 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
@@ -41,6 +44,7 @@ namespace DotNetty.Common.Concurrency
         PreciseTimeSpan gracefulShutdownStartTime;
         PreciseTimeSpan gracefulShutdownQuietPeriod;
         PreciseTimeSpan gracefulShutdownTimeout;
+        readonly ISet<Action> shutdownHooks = new HashSet<Action>();
 
         /// <summary>Creates a new instance of <see cref="SingleThreadEventExecutor"/>.</summary>
         public SingleThreadEventExecutor(string threadName, TimeSpan breakoutInterval)
@@ -143,6 +147,72 @@ namespace DotNetty.Common.Concurrency
                 this.Execute(WAKEUP_TASK);
             }
         }
+        
+        /**
+          * Add a {@link Runnable} which will be executed on shutdown of this instance
+          */
+        public void AddShutdownHook(Action action) 
+        {
+            if (this.InEventLoop) 
+            {
+                this.shutdownHooks.Add(action);
+            } 
+            else
+            {
+                this.Execute(() => this.shutdownHooks.Add(action));
+            }
+        }
+
+        /**
+         * Remove a previous added {@link Runnable} as a shutdown hook
+         */
+        public void RemoveShutdownHook(Action action) 
+        {
+            if (this.InEventLoop) 
+            {
+                this.shutdownHooks.Remove(action);
+            } 
+            else
+            {
+                this.Execute(() => this.shutdownHooks.Remove(action));
+            }
+        }
+
+        bool RunShutdownHooks() 
+        {
+            bool ran = false;
+            
+            // Note shutdown hooks can add / remove shutdown hooks.
+            while (this.shutdownHooks.Count > 0) 
+            {
+                var copy = this.shutdownHooks.ToArray();
+                this.shutdownHooks.Clear();
+
+                for (var i = 0; i < copy.Length; i++)
+                {
+                    try 
+                    {
+                        copy[i]();
+                    } 
+                    catch (Exception ex) 
+                    {
+                        Logger.Warn("Shutdown hook raised an exception.", ex);
+                    } 
+                    finally 
+                    {
+                        ran = true;
+                    }
+                }
+            }
+
+            if (ran) 
+            {
+                this.lastExecutionTime = PreciseTimeSpan.FromStart;
+            }
+
+            return ran;
+        }
+        
 
         /// <inheritdoc cref="IEventExecutor"/>
         public override Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
@@ -223,7 +293,7 @@ namespace DotNetty.Common.Concurrency
                 this.gracefulShutdownStartTime = PreciseTimeSpan.FromStart;
             }
 
-            if (this.RunAllTasks()) // || runShutdownHooks())
+            if (this.RunAllTasks() || this.RunShutdownHooks())
             {
                 if (this.IsShutdown)
                 {

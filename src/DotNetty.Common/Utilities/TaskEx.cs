@@ -15,6 +15,10 @@ namespace DotNetty.Common.Utilities
 
         public static readonly Task<int> Cancelled = CreateCancelledTask();
 
+        public static readonly Task<bool> True = Task.FromResult(true);
+
+        public static readonly Task<bool> False = Task.FromResult(false);
+
         static Task<int> CreateCancelledTask()
         {
             var tcs = new TaskCompletionSource<int>();
