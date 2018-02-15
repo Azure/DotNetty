@@ -28,5 +28,7 @@ namespace DotNetty.Common.Concurrency
         void SetCanceled();
 
         bool SetUncancellable();
+
+        IPromise Unvoid();
     }
 }

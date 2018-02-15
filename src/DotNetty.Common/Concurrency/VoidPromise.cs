@@ -39,6 +39,8 @@ namespace DotNetty.Common.Concurrency
 
         public bool SetUncancellable() => false;
 
+        public IPromise Unvoid() => new TaskCompletionSource();
+
         public override string ToString() => "VoidPromise";
     }
 }

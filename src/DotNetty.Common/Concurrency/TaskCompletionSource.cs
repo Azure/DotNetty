@@ -28,6 +28,8 @@ namespace DotNetty.Common.Concurrency
         // todo: support cancellation token where used
         public bool SetUncancellable() => true;
 
+        public IPromise Unvoid() => this;
+
         public override string ToString() => "TaskCompletionSource[status: " + this.Task.Status.ToString() + "]";
     }
 }
