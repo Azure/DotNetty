@@ -22,7 +22,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         /// <summary>Create a new instance</summary>
         public TcpSocketChannel()
-            : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+            : this(new Socket(DefaultAddressFamily, SocketType.Stream, ProtocolType.Tcp) { DualMode = UseDualMode })
         {
         }
 
@@ -62,6 +62,10 @@ namespace DotNetty.Transport.Channels.Sockets
         public override ChannelMetadata Metadata => METADATA;
 
         public override IChannelConfiguration Configuration => this.config;
+
+        static AddressFamily DefaultAddressFamily => Socket.OSSupportsIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+
+        static bool UseDualMode => Socket.OSSupportsIPv6;
 
         protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
 

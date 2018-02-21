@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.InteropServices;
     using DotNetty.Common.Internal.Logging;
 
     /// <summary>
@@ -28,7 +29,7 @@ namespace DotNetty.Transport.Channels.Sockets
         ///     Create a new instance
         /// </summary>
         public TcpServerSocketChannel()
-            : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+            : this(new Socket(DefaultAddressFamily, SocketType.Stream, ProtocolType.Tcp){ DualMode = UseDualMode })
         {
         }
 
@@ -60,6 +61,9 @@ namespace DotNetty.Transport.Channels.Sockets
         protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
 
         SocketChannelAsyncOperation AcceptOperation => this.acceptOperation ?? (this.acceptOperation = new SocketChannelAsyncOperation(this, false));
+
+        static AddressFamily DefaultAddressFamily => Socket.OSSupportsIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+        static bool UseDualMode => Socket.OSSupportsIPv6;
 
         protected override IChannelUnsafe NewUnsafe() => new TcpServerSocketChannelUnsafe(this);
 
