@@ -24,7 +24,7 @@ namespace DotNetty.Transport.Libuv.Tests
         }
 
         [Fact]
-        public void WriteBeforeConnect()
+        public async Task WriteBeforeConnect()
         {
             Bootstrap cb = new Bootstrap()
                 .Group(this.group)
@@ -42,7 +42,7 @@ namespace DotNetty.Transport.Libuv.Tests
             this.clientChannel = task.Result;
 
             Task connectTask = this.clientChannel.ConnectAsync(LoopbackAnyPort);
-            Task writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[] { 1 }));
+            Task writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[] { 1 })).AsTask();
             var error = Assert.Throws<AggregateException>(() => writeTask.Wait(DefaultTimeout));
 
             Assert.Single(error.InnerExceptions);

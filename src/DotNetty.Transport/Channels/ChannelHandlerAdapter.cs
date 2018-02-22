@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Net;
     using System.Threading.Tasks;
     using DotNetty.Common.Utilities;
+    using DotNetty.Common.Concurrency;
 
     public class ChannelHandlerAdapter : IChannelHandler
     {
@@ -47,7 +48,7 @@ namespace DotNetty.Transport.Channels
         public virtual void UserEventTriggered(IChannelHandlerContext context, object evt) => context.FireUserEventTriggered(evt);
 
         [Skip]
-        public virtual Task WriteAsync(IChannelHandlerContext context, object message) => context.WriteAsync(message);
+        public virtual ChannelFuture WriteAsync(IChannelHandlerContext context, object message) => context.WriteAsync(message);
 
         [Skip]
         public virtual void Flush(IChannelHandlerContext context) => context.Flush();

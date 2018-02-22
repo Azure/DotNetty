@@ -146,7 +146,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
 
         [Theory]
         [MemberData(nameof(GetData))]
-        public void SimpleSend(IByteBuffer source, bool bindClient, IByteBufferAllocator allocator, AddressFamily addressFamily, byte[] expectedData, int count)
+        public async Task SimpleSend(IByteBuffer source, bool bindClient, IByteBufferAllocator allocator, AddressFamily addressFamily, byte[] expectedData, int count)
         {
             SocketDatagramChannel serverChannel = null;
             IChannel clientChannel = null;
@@ -217,12 +217,12 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                 for (int i = 0; i < count; i++)
                 {
                     var packet = new DatagramPacket((IByteBuffer)source.Retain(), new IPEndPoint(address, endPoint.Port));
-                    clientChannel.WriteAndFlushAsync(packet).Wait();
+                    await clientChannel.WriteAndFlushAsync(packet);//.Wait();
                     Assert.True(handler.WaitForResult());
 
                     var duplicatedPacket = (DatagramPacket)packet.Duplicate();
                     duplicatedPacket.Retain();
-                    clientChannel.WriteAndFlushAsync(duplicatedPacket).Wait();
+                    await clientChannel.WriteAndFlushAsync(duplicatedPacket);//.Wait();
                     Assert.True(handler.WaitForResult());
                 }
             }
@@ -232,9 +232,9 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                 clientChannel?.CloseAsync().Wait(TimeSpan.FromMilliseconds(DefaultTimeOutInMilliseconds));
 
                 source.Release();
-                Task.WaitAll(
-                    serverGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
-                    clientGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
+                
+                await serverGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
+                await clientGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
             }
         }
     }

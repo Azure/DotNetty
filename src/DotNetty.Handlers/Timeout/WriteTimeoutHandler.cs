@@ -83,9 +83,9 @@ namespace DotNetty.Handlers.Timeout
                  : TimeSpan.Zero;
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
         {
-            Task task = context.WriteAsync(message);
+            ChannelFuture task = context.WriteAsync(message);
 
             if (this.timeout.Ticks > 0)
             {
@@ -106,7 +106,7 @@ namespace DotNetty.Handlers.Timeout
             }
         }
 
-        void ScheduleTimeout(IChannelHandlerContext context, Task future)
+        void ScheduleTimeout(IChannelHandlerContext context, ChannelFuture future)
         {
             // Schedule a timeout.
             var task = new WriteTimeoutTask(context, future, this);
@@ -118,7 +118,8 @@ namespace DotNetty.Handlers.Timeout
                 this.AddWriteTimeoutTask(task);
 
                 // Cancel the scheduled timeout if the flush promise is complete.
-                future.ContinueWith(WriteTimeoutTask.OperationCompleteAction, task, TaskContinuationOptions.ExecuteSynchronously);
+                future.OnCompleted(WriteTimeoutTask.OperationCompleteAction, task);
+              //  future.ContinueWith(WriteTimeoutTask.OperationCompleteAction, task, TaskContinuationOptions.ExecuteSynchronously);
             }
         }
 
@@ -146,22 +147,22 @@ namespace DotNetty.Handlers.Timeout
             }
         }
 
-        sealed class WriteTimeoutTask : IRunnable
+        sealed class WriteTimeoutTask : AbstractChannelPromise, IRunnable
         {
             readonly WriteTimeoutHandler handler;
             readonly IChannelHandlerContext context;
-            readonly Task future;
+            readonly ChannelFuture future;
 
-            public static readonly Action<Task, object> OperationCompleteAction = HandleOperationComplete;
+            public static readonly Action<object> OperationCompleteAction = HandleOperationComplete;
 
-            public WriteTimeoutTask(IChannelHandlerContext context, Task future, WriteTimeoutHandler handler)
+            public WriteTimeoutTask(IChannelHandlerContext context, ChannelFuture future, WriteTimeoutHandler handler)
             {
                 this.context = context;
                 this.future = future;
                 this.handler = handler;
             }
 
-            static void HandleOperationComplete(Task future, object state)
+            static void HandleOperationComplete(object state)
             {
                 var writeTimeoutTask = (WriteTimeoutTask) state;
 

@@ -90,7 +90,7 @@ namespace DotNetty.Tests.End2End
                 string[] messages = { "message 1", string.Join(",", Enumerable.Range(1, 300)) };
                 foreach (string message in messages)
                 {
-                    await clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(message))).WithTimeout(DefaultTimeout);
+                    await Task.Run(async () => await clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(Encoding.UTF8.GetBytes(message)))).WithTimeout(DefaultTimeout);
 
                     var responseMessage = Assert.IsAssignableFrom<IByteBuffer>(await readListener.ReceiveAsync());
                     Assert.Equal(message, responseMessage.ToString(Encoding.UTF8));

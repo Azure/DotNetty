@@ -8,6 +8,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
@@ -85,7 +86,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                 this.writes = writes;
             }
 
-            public override Task WriteAsync(IChannelHandlerContext context, object message)
+            public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
             {
                 this.writes.Increment();
                 return context.WriteAsync(message);

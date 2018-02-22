@@ -25,6 +25,17 @@ namespace DotNetty.Transport.Channels
                 logger.Warn($"Failed to mark a promise as success because it is done already: {promise}");
             }
         }
+        
+        /// <summary>
+        ///     Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
+        /// </summary>
+        public static void SafeSetSuccess(IChannelPromise promise, IInternalLogger logger)
+        {
+            if (!promise.TryComplete())
+            {
+                logger.Warn($"Failed to mark a promise as success because it is done already: {promise}");
+            }
+        }
 
         /// <summary>
         /// Marks the specified <see cref="TaskCompletionSource"/> as failure. If the
@@ -36,6 +47,17 @@ namespace DotNetty.Transport.Channels
         public static void SafeSetFailure(TaskCompletionSource promise, Exception cause, IInternalLogger logger)
         {
             if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
+            {
+                logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
+            }
+        }
+        
+        /// <summary>
+        ///     Marks the specified {@code promise} as failure.  If the {@code promise} is done already, log a message.
+        /// </summary>
+        public static void SafeSetFailure(IChannelPromise promise, Exception cause, IInternalLogger logger)
+        {
+            if (!promise.TryComplete(cause))
             {
                 logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
             }

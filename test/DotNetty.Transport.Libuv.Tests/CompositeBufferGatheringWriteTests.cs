@@ -133,8 +133,7 @@ namespace DotNetty.Transport.Libuv.Tests
         {
             public override void ChannelActive(IChannelHandlerContext ctx) =>
                 ctx.WriteAndFlushAsync(NewCompositeBuffer(ctx.Allocator))
-                   .ContinueWith((t, s) => ((IChannelHandlerContext)s).CloseAsync(), 
-                        ctx, TaskContinuationOptions.ExecuteSynchronously);
+                   .OnCompleted(() => ctx.CloseAsync());
         }
 
         static IByteBuffer NewCompositeBuffer(IByteBufferAllocator alloc)

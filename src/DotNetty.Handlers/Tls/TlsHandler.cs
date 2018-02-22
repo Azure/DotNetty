@@ -36,7 +36,7 @@ namespace DotNetty.Handlers.Tls
         int packetLength;
         volatile IChannelHandlerContext capturedContext;
         BatchingPendingWriteQueue pendingUnencryptedWrites;
-        Task lastContextWriteTask;
+        ChannelFuture lastContextWriteTask;
         bool firedChannelRead;
         IByteBuffer pendingSslStreamReadBuffer;
         Task<int> pendingSslStreamReadFuture;
@@ -508,11 +508,11 @@ namespace DotNetty.Handlers.Tls
             return oldState.Has(TlsHandlerState.Authenticated);
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
         {
             if (!(message is IByteBuffer))
             {
-                return TaskEx.FromException(new UnsupportedMessageTypeException(message, typeof(IByteBuffer)));
+                throw new UnsupportedMessageTypeException(message, typeof(IByteBuffer));
             }
             return this.pendingUnencryptedWrites.Add(message);
         }
@@ -572,12 +572,12 @@ namespace DotNetty.Handlers.Tls
                     buf.ReadBytes(this.sslStream, buf.ReadableBytes); // this leads to FinishWrap being called 0+ times
                     buf.Release();
 
-                    TaskCompletionSource promise = this.pendingUnencryptedWrites.Remove();
-                    Task task = this.lastContextWriteTask;
-                    if (task != null)
+                    IChannelPromise promise = this.pendingUnencryptedWrites.Remove();
+                    ChannelFuture task = this.lastContextWriteTask;
+                    if (!task.IsCompleted)
                     {
                         task.LinkOutcome(promise);
-                        this.lastContextWriteTask = null;
+                        this.lastContextWriteTask = ChannelFuture.Completed;
                     }
                     else
                     {
@@ -609,7 +609,7 @@ namespace DotNetty.Handlers.Tls
             this.lastContextWriteTask = this.capturedContext.WriteAsync(output);
         }
 
-        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
+        ChannelFuture FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
         {
             var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
             this.ReadIfNeeded(this.capturedContext);
@@ -814,8 +814,10 @@ namespace DotNetty.Handlers.Tls
 
             public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count);
 
-            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
+            public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                await this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
+            }
 
 #if !NETSTANDARD1_3
             static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;

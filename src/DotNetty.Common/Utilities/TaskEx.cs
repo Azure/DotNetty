@@ -80,6 +80,27 @@ namespace DotNetty.Common.Utilities
             }
         }
 
+        public static void LinkOutcome(this ChannelFuture future, IChannelPromise promise)
+        {
+            if (future.IsCompleted)
+            {
+                try
+                {
+                    future.GetResult();
+                    promise.TryComplete();
+                }
+                catch (Exception ex)
+                {
+                    promise.TryComplete(ex);
+                }
+            }
+            else
+            {
+                future.OnCompleted(() => LinkOutcome(future, promise));
+            }
+        }
+        
+
         static class LinkOutcomeActionHost<T>
         {
             public static readonly Action<Task<T>, object> Action =

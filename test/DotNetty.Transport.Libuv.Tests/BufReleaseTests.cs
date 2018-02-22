@@ -4,10 +4,14 @@
 namespace DotNetty.Transport.Libuv.Tests
 {
     using System;
+    using System.Diagnostics;
+    using System.Globalization;
     using System.Net;
+    using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using Xunit;
@@ -27,7 +31,7 @@ namespace DotNetty.Transport.Libuv.Tests
         }
 
         [Fact]
-        public void BufRelease()
+        public async Task BufRelease()
         {
             ServerBootstrap sb = new ServerBootstrap()
                 .Group(this.group)
@@ -103,7 +107,7 @@ namespace DotNetty.Transport.Libuv.Tests
                 // call retain on it so it can't be put back on the pool
                 this.buf.WriteBytes(data).Retain();
 
-                this.writeTask = ctx.Channel.WriteAndFlushAsync(this.buf);
+                this.writeTask = ctx.Channel.WriteAndFlushAsync(this.buf).AsTask();
             }
 
             protected override void ChannelRead0(IChannelHandlerContext ctx, object msg)

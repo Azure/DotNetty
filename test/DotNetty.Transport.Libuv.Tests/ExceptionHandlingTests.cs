@@ -10,6 +10,7 @@ namespace DotNetty.Transport.Libuv.Tests
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
+    using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using Xunit;
@@ -60,7 +61,7 @@ namespace DotNetty.Transport.Libuv.Tests
             this.clientChannel = task.Result;
             Assert.NotNull(this.clientChannel.LocalAddress);
 
-            Task writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[1024]));
+            ChannelFuture writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[1024]));
             Assert.True(writeTask.Wait(DefaultTimeout), "Write task timed out");
 
             ExceptionHandler exceptionHandler = serverInitializer.ErrorHandler;

@@ -14,7 +14,7 @@ namespace DotNetty.Tests.Common
             var list = new List<Task>();
             foreach (object m in messages)
             {
-                list.Add(channel.WriteAsync(m));
+                list.Add(Task.Run(async () => await channel.WriteAsync(m)));
             }
             IEnumerable<Task> tasks = list.ToArray();
             channel.Flush();

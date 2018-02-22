@@ -793,16 +793,16 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAsync(object msg)
+        public ChannelFuture WriteAsync(object msg)
         {
             Contract.Requires(msg != null);
             // todo: check for cancellation
             return this.WriteAsync(msg, false);
         }
 
-        Task InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
+        ChannelFuture InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
 
-        Task InvokeWriteAsync0(object msg)
+        ChannelFuture InvokeWriteAsync0(object msg)
         {
             try
             {
@@ -810,7 +810,7 @@ namespace DotNetty.Transport.Channels
             }
             catch (Exception ex)
             {
-                return ComposeExceptionTask(ex);
+                return ChannelFuture.FromException(ex);
             }
         }
 
@@ -853,7 +853,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAndFlushAsync(object message)
+        public ChannelFuture WriteAndFlushAsync(object message)
         {
             Contract.Requires(message != null);
             // todo: check for cancellation
@@ -861,18 +861,18 @@ namespace DotNetty.Transport.Channels
             return this.WriteAsync(message, true);
         }
 
-        Task InvokeWriteAndFlushAsync(object msg)
+        ChannelFuture InvokeWriteAndFlushAsync(object msg)
         {
             if (this.Added)
             {
-                Task task = this.InvokeWriteAsync0(msg);
+                ChannelFuture task = this.InvokeWriteAsync0(msg);
                 this.InvokeFlush0();
                 return task;
             }
             return this.WriteAndFlushAsync(msg);
         }
 
-        Task WriteAsync(object msg, bool flush)
+        ChannelFuture WriteAsync(object msg, bool flush)
         {
             AbstractChannelHandlerContext next = this.FindContextOutbound();
             object m = this.pipeline.Touch(msg, next);
@@ -885,12 +885,11 @@ namespace DotNetty.Transport.Channels
             }
             else
             {
-                var promise = new TaskCompletionSource();
                 AbstractWriteTask task = flush 
-                    ? WriteAndFlushTask.NewInstance(next, m, promise)
-                    : (AbstractWriteTask)WriteTask.NewInstance(next, m, promise);
-                SafeExecuteOutbound(nextExecutor, task, promise, msg);
-                return promise.Task;
+                    ? WriteAndFlushTask.NewInstance(next, m)
+                    : (AbstractWriteTask)WriteTask.NewInstance(next, m);
+                SafeExecuteOutbound(nextExecutor, task, msg);
+                return task;
             }
         }
 
@@ -952,7 +951,7 @@ namespace DotNetty.Transport.Channels
             return promise.Task;
         }
 
-        static void SafeExecuteOutbound(IEventExecutor executor, IRunnable task, TaskCompletionSource promise, object msg)
+        static void SafeExecuteOutbound(IEventExecutor executor, AbstractWriteTask task, object msg)
         {
             try
             {
@@ -962,7 +961,7 @@ namespace DotNetty.Transport.Channels
             {
                 try
                 {
-                    promise.TrySetException(cause);
+                    task.TryComplete(cause);
                 }
                 finally
                 {
@@ -976,7 +975,7 @@ namespace DotNetty.Transport.Channels
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
 
 
-        abstract class AbstractWriteTask : IRunnable
+        abstract class AbstractWriteTask : AbstractRecyclableChannelPromise, IRunnable
         {
             static readonly bool EstimateTaskSizeOnSubmit =
                 SystemPropertyUtil.GetBoolean("io.netty.transport.estimateSizeOnSubmit", true);
@@ -985,17 +984,15 @@ namespace DotNetty.Transport.Channels
             static readonly int WriteTaskOverhead =
                 SystemPropertyUtil.GetInt("io.netty.transport.writeTaskSizeOverhead", 56);
 
-            ThreadLocalPool.Handle handle;
             AbstractChannelHandlerContext ctx;
             object msg;
-            TaskCompletionSource promise;
             int size;
 
-            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg)
             {
+                task.Init(ctx.Executor);
                 task.ctx = ctx;
                 task.msg = msg;
-                task.promise = promise;
 
                 if (EstimateTaskSizeOnSubmit)
                 {
@@ -1018,9 +1015,9 @@ namespace DotNetty.Transport.Channels
                 }
             }
 
-            protected AbstractWriteTask(ThreadLocalPool.Handle handle)
+            protected AbstractWriteTask(ThreadLocalPool.Handle handle) : base(handle)
             {
-                this.handle = handle;
+
             }
 
             public void Run()
@@ -1033,28 +1030,42 @@ namespace DotNetty.Transport.Channels
                     {
                         buffer?.DecrementPendingOutboundBytes(this.size);
                     }
-                    this.WriteAsync(this.ctx, this.msg).LinkOutcome(this.promise);
+
+                    this.WriteAsync(this.ctx, this.msg).LinkOutcome(this);
+                }
+                catch (Exception ex)
+                {
+                    this.TryComplete(ex);
                 }
                 finally
                 {
                     // Set to null so the GC can collect them directly
                     this.ctx = null;
                     this.msg = null;
-                    this.promise = null;
-                    this.handle.Release(this);
+                    
+                    //this.Recycle();
+                    //this.handle.Release(this);
                 }
             }
 
-            protected virtual Task WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
-        }
-        sealed class WriteTask : AbstractWriteTask {
+            protected virtual ChannelFuture WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
 
+            /*public override void Recycle()
+            {
+                base.Recycle();
+                this.handle.Release(this);
+            }*/
+        }
+        
+        
+        sealed class WriteTask : AbstractWriteTask 
+        {
             static readonly ThreadLocalPool<WriteTask> Recycler = new ThreadLocalPool<WriteTask>(handle => new WriteTask(handle));
 
-            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg)
             {
                 WriteTask task = Recycler.Take();
-                Init(task, ctx, msg, promise);
+                Init(task, ctx, msg);
                 return task;
             }
 
@@ -1065,14 +1076,13 @@ namespace DotNetty.Transport.Channels
         }
 
         sealed class WriteAndFlushTask : AbstractWriteTask
-    {
-
+        {
             static readonly ThreadLocalPool<WriteAndFlushTask> Recycler = new ThreadLocalPool<WriteAndFlushTask>(handle => new WriteAndFlushTask(handle));
 
-            public static WriteAndFlushTask NewInstance(
-                    AbstractChannelHandlerContext ctx, object msg,  TaskCompletionSource promise) {
+            public static WriteAndFlushTask NewInstance(AbstractChannelHandlerContext ctx, object msg) 
+            {
                 WriteAndFlushTask task = Recycler.Take();
-                Init(task, ctx, msg, promise);
+                Init(task, ctx, msg);
                 return task;
             }
 
@@ -1081,9 +1091,9 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            protected override Task WriteAsync(AbstractChannelHandlerContext ctx, object msg)
+            protected override ChannelFuture WriteAsync(AbstractChannelHandlerContext ctx, object msg)
             {
-                Task result = base.WriteAsync(ctx, msg);
+                ChannelFuture result = base.WriteAsync(ctx, msg);
                 ctx.InvokeFlush();
                 return result;
             }

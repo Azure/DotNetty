@@ -96,7 +96,7 @@ namespace DotNetty.Handlers.Timeout
     {
         static readonly TimeSpan MinTimeout = TimeSpan.FromMilliseconds(1);
 
-        readonly Action<Task> writeListener;
+        readonly Action writeListener;
 
         readonly bool observeOutput;
         readonly TimeSpan readerIdleTime;
@@ -201,7 +201,7 @@ namespace DotNetty.Handlers.Timeout
                 ? TimeUtil.Max(allIdleTime, IdleStateHandler.MinTimeout)
                 : TimeSpan.Zero;
 
-            this.writeListener = new Action<Task>(antecedent =>
+            this.writeListener = new Action(() =>
                 {
                     this.lastWriteTime = this.Ticks();
                     this.firstWriterIdleEvent = this.firstAllIdleEvent = true;
@@ -303,12 +303,13 @@ namespace DotNetty.Handlers.Timeout
             context.FireChannelReadComplete();
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
         {
             if (this.writerIdleTime.Ticks > 0 || this.allIdleTime.Ticks > 0)
             {
-                Task task = context.WriteAsync(message);
-                task.ContinueWith(this.writeListener, TaskContinuationOptions.ExecuteSynchronously);
+                ChannelFuture task = context.WriteAsync(message);
+                //task.ContinueWith(this.writeListener, TaskContinuationOptions.ExecuteSynchronously);
+                task.OnCompleted(this.writeListener);
 
                 return task;
             }

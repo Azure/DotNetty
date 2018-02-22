@@ -94,7 +94,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
 
         [Theory]
         [MemberData(nameof(GetData))]
-        public void Multicast(AddressFamily addressFamily, IByteBufferAllocator allocator)
+        public async Task Multicast(AddressFamily addressFamily, IByteBufferAllocator allocator)
         {
             SocketDatagramChannel serverChannel = null;
             IChannel clientChannel = null;
@@ -155,7 +155,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                 Assert.True(joinTask.Wait(TimeSpan.FromMilliseconds(DefaultTimeOutInMilliseconds * 5)),
                     $"Multicast server join group {groupAddress} timed out!");
 
-                clientChannel.WriteAndFlushAsync(new DatagramPacket(Unpooled.Buffer().WriteInt(1), groupAddress)).Wait();
+                await clientChannel.WriteAndFlushAsync(new DatagramPacket(Unpooled.Buffer().WriteInt(1), groupAddress));//.Wait();
                 Assert.True(multicastHandler.WaitForResult(), "Multicast server should have receivied the message.");
 
                 Task leaveTask = serverChannel.LeaveGroup(groupAddress, loopback);
@@ -166,7 +166,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                 Task.Delay(DefaultTimeOutInMilliseconds).Wait();
 
                 // we should not receive a message anymore as we left the group before
-                clientChannel.WriteAndFlushAsync(new DatagramPacket(Unpooled.Buffer().WriteInt(1), groupAddress)).Wait();
+                await clientChannel.WriteAndFlushAsync(new DatagramPacket(Unpooled.Buffer().WriteInt(1), groupAddress)); //.Wait();
                 Assert.False(multicastHandler.WaitForResult(), "Multicast server should not receive the message.");
             }
             finally
@@ -174,9 +174,11 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                 serverChannel?.CloseAsync().Wait(TimeSpan.FromMilliseconds(DefaultTimeOutInMilliseconds));
                 clientChannel?.CloseAsync().Wait(TimeSpan.FromMilliseconds(DefaultTimeOutInMilliseconds));
 
-                Task.WaitAll(
+                await serverGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
+                await clientGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1));
+                /*Task.WaitAll(
                     serverGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)),
-                    clientGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));
+                    clientGroup.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1)));*/
             }
         }
     }

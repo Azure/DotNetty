@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels.Groups
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
     public interface IChannelGroup : ICollection<IChannel>, IComparable<IChannelGroup>
     {
@@ -17,17 +18,17 @@ namespace DotNetty.Transport.Channels.Groups
 
         IChannel Find(IChannelId id);
 
-        Task WriteAsync(object message);
+        ChannelFuture WriteAsync(object message);
 
-        Task WriteAsync(object message, IChannelMatcher matcher);
+        ChannelFuture WriteAsync(object message, IChannelMatcher matcher);
 
         IChannelGroup Flush();
 
         IChannelGroup Flush(IChannelMatcher matcher);
 
-        Task WriteAndFlushAsync(object message);
+        ChannelFuture WriteAndFlushAsync(object message);
 
-        Task WriteAndFlushAsync(object message, IChannelMatcher matcher);
+        ChannelFuture WriteAndFlushAsync(object message, IChannelMatcher matcher);
 
         Task DisconnectAsync();
 

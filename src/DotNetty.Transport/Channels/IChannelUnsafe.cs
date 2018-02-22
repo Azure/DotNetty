@@ -5,6 +5,7 @@ namespace DotNetty.Transport.Channels
 {
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
     public interface IChannelUnsafe
     {
@@ -26,7 +27,7 @@ namespace DotNetty.Transport.Channels
 
         void BeginRead();
 
-        Task WriteAsync(object message);
+        ChannelFuture WriteAsync(object message);
 
         void Flush();
 
