@@ -44,7 +44,7 @@ namespace DotNetty.Transport.Libuv.Tests
             {
                 if (Interlocked.Increment(ref this.count) >= this.expected)
                 {
-                    this.EndTime = DateTime.Now.Ticks;
+                    this.EndTime = DateTime.UtcNow.Ticks;
                     this.completionSource.TryComplete();
                 }
             }

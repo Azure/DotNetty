@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // ReSharper disable ConvertToAutoPropertyWhenPossible
+// ReSharper disable ConvertToAutoProperty
 #pragma warning disable 420
 namespace DotNetty.Transport.Libuv
 {
@@ -32,6 +33,7 @@ namespace DotNetty.Transport.Libuv
         const int ShutdownState = 4;
         const int TerminatedState = 5;
 
+        readonly ThreadLocalPool<WriteRequest> writeRequestPool = new ThreadLocalPool<WriteRequest>(handle => new WriteRequest(handle));
         readonly long preciseBreakoutInterval;
         readonly IQueue<IRunnable> taskQueue;
         readonly XThread thread;
@@ -81,6 +83,8 @@ namespace DotNetty.Transport.Libuv
             this.thread = new XThread(Run) { Name = name };
             this.loopRunStart = new ManualResetEventSlim(false, 1);
         }
+
+        internal ThreadLocalPool<WriteRequest> WriteRequestPool => this.writeRequestPool;
 
         protected void Start()
         {

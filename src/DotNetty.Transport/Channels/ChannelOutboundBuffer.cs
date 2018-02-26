@@ -1,10 +1,16 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoProperty
+// ReSharper disable ConvertToAutoPropertyWithPrivateSetter
+// ReSharper disable ConvertToAutoPropertyWhenPossible
+
+#pragma warning disable 420 // all volatile fields are used with referenced in Interlocked methods only
 namespace DotNetty.Transport.Channels
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Threading;
     using DotNetty.Buffers;
@@ -15,8 +21,6 @@ namespace DotNetty.Transport.Channels
 
     public sealed class ChannelOutboundBuffer
     {
-#pragma warning disable 420 // all volatile fields are used with referenced in Interlocked methods only
-
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ChannelOutboundBuffer>();
 
         static readonly ThreadLocalByteBufferList NioBuffers = new ThreadLocalByteBufferList();
@@ -34,7 +38,7 @@ namespace DotNetty.Transport.Channels
         // The number of flushed entries that are not written yet
         int flushed;
 
-        //int nioBufferCount;
+        long nioBufferSize;
 
         bool inFail;
 
@@ -179,7 +183,7 @@ namespace DotNetty.Transport.Channels
         ///     flushed message exists at the time this method is called it will return {@code false} to signal that no more
         ///     messages are ready to be handled.
         /// </summary>
-        public bool Remove()
+        public bool Remove(bool releaseMessages = true)
         {
             Entry e = this.flushedEntry;
             if (e == null)
@@ -197,8 +201,11 @@ namespace DotNetty.Transport.Channels
             if (!e.Cancelled)
             {
                 // only release message, notify and decrement if it was not canceled before.
-                ReferenceCountUtil.SafeRelease(msg);
-                Util.SafeSetSuccess(promise, Logger);
+                if (releaseMessages)
+                {
+                    ReferenceCountUtil.SafeRelease(msg);
+                }
+                SafeSuccess(promise);
                 this.DecrementPendingOutboundBytes(size, false, true);
             }
 
@@ -268,18 +275,17 @@ namespace DotNetty.Transport.Channels
         ///     Removes the fully written entries and update the reader index of the partially written entry.
         ///     This operation assumes all messages in this buffer is {@link ByteBuf}.
         /// </summary>
-        public void RemoveBytes(long writtenBytes)
+        public void RemoveBytes(long writtenBytes, bool releaseMessages = true)
         {
             while (true)
             {
                 object msg = this.Current;
-                if (!(msg is IByteBuffer))
+                if (!(msg is IByteBuffer buf))
                 {
                     Contract.Assert(writtenBytes == 0);
                     break;
                 }
 
-                var buf = (IByteBuffer)msg;
                 int readerIndex = buf.ReaderIndex;
                 int readableBytes = buf.WriterIndex - readerIndex;
 
@@ -290,7 +296,7 @@ namespace DotNetty.Transport.Channels
                         this.Progress(readableBytes);
                         writtenBytes -= readableBytes;
                     }
-                    this.Remove();
+                    this.Remove(releaseMessages);
                 }
                 else
                 {
@@ -319,18 +325,33 @@ namespace DotNetty.Transport.Channels
         ///{@link AbstractChannel#doWrite(ChannelOutboundBuffer)}.
         ///Refer to {@link NioSocketChannel#doWrite(ChannelOutboundBuffer)} for an example.
         ///</p>
+        ///
+        public List<ArraySegment<byte>> GetSharedBufferList() => this.GetSharedBufferList(int.MaxValue, int.MaxValue);
+
+        ///
+        ///Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
+        ///{@link #nioBufferCount()} and {@link #nioBufferSize()} will return the number of NIO buffers in the returned
+        ///array and the total number of readable bytes of the NIO buffers respectively.
+        ///<p>
+        ///Note that the returned array is reused and thus should not escape
+        ///{@link AbstractChannel#doWrite(ChannelOutboundBuffer)}.
+        ///Refer to {@link NioSocketChannel#doWrite(ChannelOutboundBuffer)} for an example.
+        ///</p>
         /// @param maxCount The maximum amount of buffers that will be added to the return value.
         /// @param maxBytes A hint toward the maximum number of bytes to include as part of the return value. Note that this
         ///                 value maybe exceeded because we make a best effort to include at least 1 {@link ByteBuffer}
         ///                 in the return value to ensure write progress is made.
         /// 
-        public List<ArraySegment<byte>> GetSharedBufferList(int maxCount, long maxBytes = int.MaxValue)
+        public List<ArraySegment<byte>> GetSharedBufferList(int maxCount, long maxBytes)
         {
-            long nioBufferSize = 0;
+            Debug.Assert(maxCount > 0);
+            Debug.Assert(maxBytes > 0);
+
+            long ioBufferSize = 0;
+            int nioBufferCount = 0;
             InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.Get();
             List<ArraySegment<byte>> nioBuffers = NioBuffers.Get(threadLocalMap);
             Entry entry = this.flushedEntry;
-            int nioBufferCount = 0;
             while (this.IsFlushedEntry(entry) && entry.Message is IByteBuffer)
             {
                 if (!entry.Cancelled)
@@ -341,7 +362,7 @@ namespace DotNetty.Transport.Channels
 
                     if (readableBytes > 0)
                     {
-                        if (maxBytes - readableBytes < nioBufferSize && nioBufferCount != 0)
+                        if (maxBytes - readableBytes < ioBufferSize && nioBufferCount != 0)
                         {
                             // If the nioBufferSize + readableBytes will overflow an Integer we stop populate the
                             // ByteBuffer array. This is done as bsd/osx don't allow to write more bytes then
@@ -355,11 +376,10 @@ namespace DotNetty.Transport.Channels
                             // - http://linux.die.net/man/2/writev
                             break;
                         }
-                        nioBufferSize += readableBytes;
+                        ioBufferSize += readableBytes;
                         int count = entry.Count;
                         if (count == -1)
                         {
-                            //noinspection ConstantValueVariableUse
                             entry.Count = count = buf.IoBufferCount;
                         }
                         if (count == 1)
@@ -406,24 +426,9 @@ namespace DotNetty.Transport.Channels
                 }
                 entry = entry.Next;
             }
-            this.NioBufferSize = nioBufferSize;
+            this.nioBufferSize = ioBufferSize;
 
             return nioBuffers;
-        }
-
-        ///
-        ///Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
-        ///{@link #nioBufferCount()} and {@link #nioBufferSize()} will return the number of NIO buffers in the returned
-        ///array and the total number of readable bytes of the NIO buffers respectively.
-        ///<p>
-        ///Note that the returned array is reused and thus should not escape
-        ///{@link AbstractChannel#doWrite(ChannelOutboundBuffer)}.
-        ///Refer to {@link NioSocketChannel#doWrite(ChannelOutboundBuffer)} for an example.
-        ///</p>
-        ///
-        public List<ArraySegment<byte>> GetSharedBufferList()
-        {
-            return this.GetSharedBufferList(int.MaxValue, int.MaxValue);
         }
 
         /**
@@ -431,7 +436,7 @@ namespace DotNetty.Transport.Channels
          * obtained via {@link #nioBuffers()}. This method <strong>MUST</strong> be called after {@link #nioBuffers()}
          * was called.
          */
-        public long NioBufferSize { get; private set; }
+        public long NioBufferSize => this.nioBufferSize;
 
         /// <summary>
         ///     Returns an array of direct NIO buffers if the currently pending messages are made of {@link ByteBuf} only.
@@ -556,7 +561,6 @@ namespace DotNetty.Transport.Channels
             IChannelPipeline pipeline = this.channel.Pipeline;
             if (invokeLater)
             {
-                // todo: allocation check
                 this.channel.EventLoop.Execute(p => ((IChannelPipeline)p).FireChannelWritabilityChanged(), pipeline);
             }
             else
@@ -568,7 +572,7 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Returns the number of flushed messages in this {@link ChannelOutboundBuffer}.
         /// </summary>
-        public int Count => this.flushed;
+        public int Size => this.flushed;
 
         /// <summary>
         ///     Returns {@code true} if there are flushed messages in this {@link ChannelOutboundBuffer} or {@code false}
@@ -591,7 +595,7 @@ namespace DotNetty.Transport.Channels
             try
             {
                 this.inFail = true;
-                for (; ; )
+                for (;;)
                 {
                     if (!this.Remove0(cause, notify))
                     {
@@ -605,18 +609,33 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        internal void Close(ClosedChannelException cause)
+        sealed class CloseChannelTask : IRunnable
+        {
+            readonly ChannelOutboundBuffer buf;
+            readonly Exception cause;
+            readonly bool allowChannelOpen;
+
+            public CloseChannelTask(ChannelOutboundBuffer buf, Exception cause, bool allowChannelOpen)
+            {
+                this.buf = buf;
+                this.cause = cause;
+                this.allowChannelOpen = allowChannelOpen;
+            }
+
+            public void Run() => this.buf.Close(this.cause, this.allowChannelOpen);
+        }
+
+        internal void Close(Exception cause, bool allowChannelOpen)
         {
             if (this.inFail)
             {
-                this.channel.EventLoop.Execute((buf, ex) => ((ChannelOutboundBuffer)buf).Close((ClosedChannelException)ex),
-                    this, cause);
+                this.channel.EventLoop.Execute(new CloseChannelTask(this, cause, allowChannelOpen));
                 return;
             }
 
             this.inFail = true;
 
-            if (this.channel.Open)
+            if (!allowChannelOpen && this.channel.Open)
             {
                 throw new InvalidOperationException("close() must be invoked after the channel is closed.");
             }
@@ -639,6 +658,7 @@ namespace DotNetty.Transport.Channels
                     if (!e.Cancelled)
                     {
                         ReferenceCountUtil.SafeRelease(e.Message);
+                        SafeFail(e.Promise, cause);
                         Util.SafeSetFailure(e.Promise, cause, Logger);
                     }
                     e = e.RecycleAndGetNext();
@@ -651,7 +671,83 @@ namespace DotNetty.Transport.Channels
             this.ClearNioBuffers();
         }
 
+        internal void Close(ClosedChannelException cause) => this.Close(cause, false);
+
+        static void SafeSuccess(TaskCompletionSource promise)
+        {
+            // TODO:ChannelPromise
+            // Only log if the given promise is not of type VoidChannelPromise as trySuccess(...) is expected to return
+            // false.
+            Util.SafeSetSuccess(promise, Logger);
+        }
+
+        static void SafeFail(TaskCompletionSource promise, Exception cause)
+        {
+            // TODO:ChannelPromise
+            // Only log if the given promise is not of type VoidChannelPromise as tryFailure(...) is expected to return
+            // false.
+            Util.SafeSetFailure(promise, cause, Logger);
+        }
+
         public long TotalPendingWriteBytes() => Volatile.Read(ref this.totalPendingSize);
+
+        /**
+          * Get how many bytes can be written until {@link #isWritable()} returns {@code false}.
+          * This quantity will always be non-negative. If {@link #isWritable()} is {@code false} then 0.
+          */
+        public long BytesBeforeUnwritable()
+        {
+            long bytes = this.channel.Configuration.WriteBufferHighWaterMark - this.totalPendingSize;
+            // If bytes is negative we know we are not writable, but if bytes is non-negative we have to check writability.
+            // Note that totalPendingSize and isWritable() use different volatile variables that are not synchronized
+            // together. totalPendingSize will be updated before isWritable().
+            if (bytes > 0)
+            {
+                return this.IsWritable ? bytes : 0;
+            }
+            return 0;
+        }
+
+        /**
+          * Get how many bytes must be drained from the underlying buffer until {@link #isWritable()} returns {@code true}.
+          * This quantity will always be non-negative. If {@link #isWritable()} is {@code true} then 0.
+          */
+        public long BytesBeforeWritable()
+        {
+            long bytes = this.totalPendingSize - this.channel.Configuration.WriteBufferLowWaterMark;
+            // If bytes is negative we know we are writable, but if bytes is non-negative we have to check writability.
+            // Note that totalPendingSize and isWritable() use different volatile variables that are not synchronized
+            // together. totalPendingSize will be updated before isWritable().
+            if (bytes > 0)
+            {
+                return this.IsWritable ? 0 : bytes;
+            }
+            return 0;
+        }
+
+        public void ForEachFlushedMessage(IMessageProcessor processor)
+        {
+            Contract.Requires(processor != null);
+
+            Entry entry = this.flushedEntry;
+            if (entry == null)
+            {
+                return;
+            }
+
+            do
+            {
+                if (!entry.Cancelled)
+                {
+                    if (!processor.ProcessMessage(entry.Message))
+                    {
+                        return;
+                    }
+                }
+                entry = entry.Next;
+            }
+            while (this.IsFlushedEntry(entry));
+        }
 
         /// <summary>
         ///     Call {@link IMessageProcessor#processMessage(Object)} for each flushed message
@@ -659,6 +755,15 @@ namespace DotNetty.Transport.Channels
         ///     returns {@code false} or there are no more flushed messages to process.
         /// </summary>
         bool IsFlushedEntry(Entry e) => e != null && e != this.unflushedEntry;
+
+        public interface IMessageProcessor
+        {
+            /**
+             * Will be called for each flushed message until it either there are no more flushed messages or this
+             * method returns {@code false}.
+             */
+            bool ProcessMessage(object msg);
+        }
 
         sealed class Entry
         {

@@ -156,7 +156,7 @@ namespace DotNetty.Transport.Channels.Sockets
             }
         }
 
-        public int SendBufferSize
+        public virtual int SendBufferSize
         {
             get
             {

@@ -46,7 +46,11 @@ namespace DotNetty.Transport.Libuv.Native
             Debug.Assert(!this.pin.IsAllocated);
 
             // Do not pin the buffer again if it is already pinned
-            IntPtr arrayHandle = buf.AddressOfPinnedMemory();
+            IntPtr arrayHandle = IntPtr.Zero;
+            if (buf.HasMemoryAddress)
+            {
+                arrayHandle = buf.AddressOfPinnedMemory();
+            }
             int index = buf.WriterIndex;
 
             if (arrayHandle == IntPtr.Zero)

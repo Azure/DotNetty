@@ -63,7 +63,8 @@ namespace DotNetty.Transport.Libuv.Native
     [StructLayout(LayoutKind.Sequential)]
     struct uv_buf_t
     {
-        static readonly bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        static readonly int Size = IntPtr.Size;
 
         /*
            Windows 
@@ -80,9 +81,25 @@ namespace DotNetty.Transport.Libuv.Native
         readonly IntPtr second;
         // ReSharper restore PrivateFieldCanBeConvertedToLocalVariable
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe void InitMemory(IntPtr buf, IntPtr memory, int length)
+        {
+            var len = (IntPtr)length;
+            if (IsWindows)
+            {
+                *(IntPtr*)buf = len;
+                *(IntPtr*)(buf + Size) = memory;
+            }
+            else
+            {
+                *(IntPtr*)buf = memory;
+                *(IntPtr*)(buf + Size) = len;
+            }
+        }
+
         internal uv_buf_t(IntPtr memory, int length)
         {
-            if (isWindows)
+            if (IsWindows)
             {
                 this.first = (IntPtr)length;
                 this.second = memory;
@@ -284,7 +301,7 @@ namespace DotNetty.Transport.Libuv.Native
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     delegate void uv_work_cb(IntPtr watcher);
 
-    static class NativeMethods
+    static unsafe class NativeMethods
     {
         const string LibraryName = "libuv";
 
@@ -349,15 +366,19 @@ namespace DotNetty.Transport.Libuv.Native
 
         internal static IntPtr Allocate(uv_handle_type handleType)
         {
-            int size = uv_handle_size(handleType).ToInt32();
+            int size = GetSize(handleType);
             return Allocate(size);
         }
 
+        internal static int GetSize(uv_handle_type handleType) => uv_handle_size(handleType).ToInt32();
+
         internal static IntPtr Allocate(uv_req_type requestType, int size = 0)
         {
-            size = uv_req_size(requestType).ToInt32() + size;
+            size += GetSize(requestType);
             return Allocate(size);
         }
+
+        internal static int GetSize(uv_req_type requestType) => uv_req_size(requestType).ToInt32();
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_listen(IntPtr handle, int backlog, uv_watcher_cb connection_cb);
@@ -384,7 +405,7 @@ namespace DotNetty.Transport.Libuv.Native
         internal static extern int uv_read_stop(IntPtr handle);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int uv_write(IntPtr req, IntPtr handle, uv_buf_t[] bufs, int nbufs, uv_watcher_cb cb);
+        internal static extern int uv_write(IntPtr req, IntPtr handle, uv_buf_t* bufs, int nbufs, uv_watcher_cb cb);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int uv_write2(IntPtr req, IntPtr handle, uv_buf_t[] bufs, int nbufs, IntPtr sendHandle, uv_watcher_cb cb);
