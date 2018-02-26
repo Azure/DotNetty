@@ -160,7 +160,7 @@ namespace DotNetty.Codecs
                         : context.Allocator.Buffer(2).WriteShortLE((short)length));
                     break;
                 case 3:
-                    if (length >= 167772156)
+                    if (length >= 16777216)
                     {
                         throw new ArgumentException("length of object does not fit into a medium integer: " + length);
                     }
