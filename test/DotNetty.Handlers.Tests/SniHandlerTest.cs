@@ -194,7 +194,7 @@ namespace DotNetty.Handlers.Tests
                 {
                     Assert.Equal(targetHost, certificate.Issuer.Replace("CN=", string.Empty));
                     return true;
-                }), new ClientTlsSettings(SslProtocols.Tls12, false, new List<X509Certificate>(), targetHost)) :
+                }), new ClientTlsSettings(protocol, false, new List<X509Certificate>(), targetHost)) :
                 new SniHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ServerTlsSniSettings(CertificateSelector));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
@@ -234,7 +234,8 @@ namespace DotNetty.Handlers.Tests
             var driverStream = new SslStream(mediationStream, true, (_1, _2, _3, _4) => true);
             if (isClient)
             {
-                await Task.Run(() => driverStream.AuthenticateAsServerAsync(CertificateSelector(targetHost).Result.Certificate).WithTimeout(TimeSpan.FromSeconds(5)));
+                ServerTlsSettings serverTlsSettings = CertificateSelector(targetHost).Result;
+                await Task.Run(() => driverStream.AuthenticateAsServerAsync(serverTlsSettings.Certificate, false, protocol | serverTlsSettings.EnabledProtocols, false).WithTimeout(TimeSpan.FromSeconds(5)));
             }
             else
             {
