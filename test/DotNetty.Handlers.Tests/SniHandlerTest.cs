@@ -217,7 +217,7 @@ namespace DotNetty.Handlers.Tests
 
                 if (readResultBuffer.ReadableBytes < output.Count)
                 {
-                    await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), output.Count - readResultBuffer.ReadableBytes, readResultBuffer, TestTimeout);
+                    await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), 1, readResultBuffer, TestTimeout);
                 }
                 Assert.NotEqual(0, readResultBuffer.ReadableBytes);
                 int read = Math.Min(output.Count, readResultBuffer.ReadableBytes);
