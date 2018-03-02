@@ -104,6 +104,7 @@ namespace DotNetty.Handlers.Tests
                 }
 
                 driverStream.Dispose();
+                Assert.False(ch.Finish());
             }
             finally
             {
@@ -180,6 +181,7 @@ namespace DotNetty.Handlers.Tests
                 }
 
                 driverStream.Dispose();
+                Assert.False(ch.Finish());
             }
             finally
             {
@@ -217,7 +219,7 @@ namespace DotNetty.Handlers.Tests
 
                 if (readResultBuffer.ReadableBytes < output.Count)
                 {
-                    await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), 1, readResultBuffer, TestTimeout);
+                    await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), output.Count - readResultBuffer.ReadableBytes, readResultBuffer, TestTimeout, readResultBuffer.ReadableBytes != 0 ? 0 : 1);
                 }
                 Assert.NotEqual(0, readResultBuffer.ReadableBytes);
                 int read = Math.Min(output.Count, readResultBuffer.ReadableBytes);
@@ -253,10 +255,12 @@ namespace DotNetty.Handlers.Tests
             return Task.FromResult(SettingMap[hostName]);
         }
 
-        static Task ReadOutboundAsync(Func<Task<IByteBuffer>> readFunc, int expectedBytes, IByteBuffer result, TimeSpan timeout)
+        static Task ReadOutboundAsync(Func<Task<IByteBuffer>> readFunc, int expectedBytes, IByteBuffer result, TimeSpan timeout, int minBytes = -1)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             int remaining = expectedBytes;
+            if (minBytes < 0) minBytes = expectedBytes;
+            if (minBytes > expectedBytes) throw new ArgumentOutOfRangeException("minBytes can not greater than expectedBytes");
             return AssertEx.EventuallyAsync(
                 async () =>
                 {
@@ -266,13 +270,22 @@ namespace DotNetty.Handlers.Tests
                         return false;
                     }
 
-                    IByteBuffer output = await readFunc().WithTimeout(readTimeout);//inbound ? ch.ReadInbound<IByteBuffer>() : ch.ReadOutbound<IByteBuffer>();
-                    if (output != null)
+                    IByteBuffer output;
+                    while (true)
                     {
+                        output = await readFunc().WithTimeout(readTimeout);//inbound ? ch.ReadInbound<IByteBuffer>() : ch.ReadOutbound<IByteBuffer>();
+                        if (output == null)
+                            break;
+
                         remaining -= output.ReadableBytes;
+                        minBytes -= output.ReadableBytes;
                         result.WriteBytes(output);
+                        output.Release();
+
+                        if (remaining <= 0)
+                            return true;
                     }
-                    return remaining <= 0;
+                    return minBytes <= 0;
                 },
                 TimeSpan.FromMilliseconds(10),
                 timeout);
