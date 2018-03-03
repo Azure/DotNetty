@@ -28,7 +28,7 @@ namespace DotNetty.Handlers.Tls
         bool readPending;
 
         public SniHandler(ServerTlsSniSettings settings)
-            : this(stream => new SslStream(stream, true), settings)
+            : this(stream => new SslStream(stream, false), settings)
         {
         }
 

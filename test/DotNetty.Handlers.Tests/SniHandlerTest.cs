@@ -108,7 +108,7 @@ namespace DotNetty.Handlers.Tests
             }
             finally
             {
-                await executor.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(300));
+                await executor.ShutdownGracefullyAsync(TimeSpan.Zero, TimeSpan.Zero);
             }
         }
 
@@ -185,7 +185,7 @@ namespace DotNetty.Handlers.Tests
             }
             finally
             {
-                await executor.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(300));
+                await executor.ShutdownGracefullyAsync(TimeSpan.Zero, TimeSpan.Zero);
             }
         }
 
@@ -219,9 +219,9 @@ namespace DotNetty.Handlers.Tests
 
                 if (readResultBuffer.ReadableBytes < output.Count)
                 {
-                    await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), output.Count - readResultBuffer.ReadableBytes, readResultBuffer, TestTimeout, readResultBuffer.ReadableBytes != 0 ? 0 : 1);
+                    if (ch.Active)
+                        await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), output.Count - readResultBuffer.ReadableBytes, readResultBuffer, TestTimeout, readResultBuffer.ReadableBytes != 0 ? 0 : 1);
                 }
-                Assert.NotEqual(0, readResultBuffer.ReadableBytes);
                 int read = Math.Min(output.Count, readResultBuffer.ReadableBytes);
                 readResultBuffer.ReadBytes(output.Array, output.Offset, read);
                 return read;
@@ -276,6 +276,12 @@ namespace DotNetty.Handlers.Tests
                         output = await readFunc().WithTimeout(readTimeout);//inbound ? ch.ReadInbound<IByteBuffer>() : ch.ReadOutbound<IByteBuffer>();
                         if (output == null)
                             break;
+
+                        if (!output.IsReadable())
+                        {
+                            output.Release();
+                            return true;
+                        }
 
                         remaining -= output.ReadableBytes;
                         minBytes -= output.ReadableBytes;

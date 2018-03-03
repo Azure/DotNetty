@@ -637,6 +637,10 @@ namespace DotNetty.Handlers.Tls
                 //    //Logger.Debug("{} SSLEngine.closeInbound() raised an exception.", ctx.channel(), e);
                 //}
             }
+            this.pendingSslStreamReadBuffer?.SafeRelease();
+            this.pendingSslStreamReadBuffer = null;
+            this.pendingSslStreamReadFuture = null;
+
             this.NotifyHandshakeFailure(cause);
             this.pendingUnencryptedWrites.RemoveAndFailAll(cause);
         }
