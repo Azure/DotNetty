@@ -13,7 +13,7 @@ namespace DotNetty.Codecs.Protobuf.Tests
 
     public class RoundTripTests
     {
-        static IEnumerable<object[]> GetAddressBookCases()
+        public static IEnumerable<object[]> GetAddressBookCases()
         {
             var person = new Person
             {

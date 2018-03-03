@@ -38,10 +38,10 @@ namespace DotNetty.Transport.Libuv.Tests
             Bootstrap cb = new Bootstrap()
                 .Group(this.group)
                 .Channel<TcpChannel>();
-            this.AutoReadOffDuringReadOnlyReadsOneTime(readOutsideEventLoopThread, sb, cb);
+            this.AutoReadOffDuringReadOnlyReadsOneTime0(readOutsideEventLoopThread, sb, cb);
         }
 
-        void AutoReadOffDuringReadOnlyReadsOneTime(bool readOutsideEventLoopThread, ServerBootstrap sb, Bootstrap cb)
+        void AutoReadOffDuringReadOnlyReadsOneTime0(bool readOutsideEventLoopThread, ServerBootstrap sb, Bootstrap cb)
         {
             var serverInitializer = new AutoReadInitializer(!readOutsideEventLoopThread);
             var clientInitializer = new AutoReadInitializer(!readOutsideEventLoopThread);

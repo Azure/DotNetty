@@ -13,7 +13,7 @@ namespace DotNetty.Codecs.ProtocolBuffers.Tests
 
     public class RoundTripTests
     {
-        static IEnumerable<object[]> GetAddressBookCases()
+        public static IEnumerable<object[]> GetAddressBookCases()
         {
             Person.Builder personBuilder = Person.CreateBuilder();
             personBuilder.SetId(1);

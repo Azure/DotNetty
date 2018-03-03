@@ -29,10 +29,10 @@ namespace DotNetty.Transport.Libuv.Tests
             Bootstrap cb = new Bootstrap()
                 .Group(this.group)
                 .Channel<TcpChannel>();
-            this.WriteBeforeConnect(cb);
+            this.WriteBeforeConnect0(cb);
         }
 
-        void WriteBeforeConnect(Bootstrap cb)
+        void WriteBeforeConnect0(Bootstrap cb)
         {
             var h = new TestHandler();
             cb.Handler(h);

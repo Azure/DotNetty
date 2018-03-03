@@ -77,7 +77,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
             }
         }
 
-        static IEnumerable<object[]> GetData()
+        public static IEnumerable<object[]> GetData()
         {
             foreach (AddressFamily addressFamily in NetUtil.AddressFamilyTypes)
             {
