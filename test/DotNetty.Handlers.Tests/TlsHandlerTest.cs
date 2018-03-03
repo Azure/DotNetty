@@ -295,6 +295,7 @@ namespace DotNetty.Handlers.Tests
            Assert.False(ch.Configuration.AutoRead);
            Assert.True(ch.WriteOutbound(Unpooled.Empty));
            Assert.True(readHandler.ReadIssued);
+           ch.CloseAsync();
         }
 
         class ReadRegisterHandler : ChannelHandlerAdapter
