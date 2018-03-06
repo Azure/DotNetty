@@ -18,6 +18,7 @@ namespace DotNetty.Microbench
             typeof(ByteBufferBenchmark),
             typeof(UnpooledByteBufferBenchmark),
             typeof(PooledByteBufferBenchmark),
+            typeof(ByteBufUtilBenchmark),
             typeof(FastThreadLocalBenchmark),
             typeof(SingleThreadEventExecutorBenchmark)
         };

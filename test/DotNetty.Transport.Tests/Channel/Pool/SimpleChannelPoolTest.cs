@@ -64,7 +64,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             Assert.Equal(2, handler.ReleasedCount);
 
             await sc.CloseAsync();
-            group.ShutdownGracefullyAsync();
+            await group.ShutdownGracefullyAsync();
         }
 
         [Fact]
@@ -102,7 +102,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             await sc.CloseAsync();
             await channel.CloseAsync();
             await channel2.CloseAsync();
-            group.ShutdownGracefullyAsync();
+            await group.ShutdownGracefullyAsync();
         }
 
         /**
@@ -143,7 +143,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             Assert.NotSame(channel1, channel3);
             await sc.CloseAsync();
             await channel3.CloseAsync();
-            group.ShutdownGracefullyAsync();
+            await group.ShutdownGracefullyAsync();
         }
 
         /**
@@ -180,7 +180,7 @@ namespace DotNetty.Transport.Tests.Channel.Pool
             Assert.NotSame(channel1, channel2);
             await sc.CloseAsync();
             await channel2.CloseAsync();
-            group.ShutdownGracefullyAsync();
+            await group.ShutdownGracefullyAsync();
         }
 
         [Fact]

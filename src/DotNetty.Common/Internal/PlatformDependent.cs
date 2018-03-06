@@ -45,8 +45,8 @@ namespace DotNetty.Common.Internal
         public static unsafe bool ByteArrayEquals(byte[] bytes1, int startPos1, byte[] bytes2, int startPos2, int length)
         {
             fixed (byte* array1 = bytes1)
-            fixed (byte* array2 = bytes2)
-                return PlatformDependent0.ByteArrayEquals(array1, startPos1, array2, startPos2, length);
+                fixed (byte* array2 = bytes2)
+                    return PlatformDependent0.ByteArrayEquals(array1, startPos1, array2, startPos2, length);
         }
 
         public static unsafe void CopyMemory(byte[] src, int srcIndex, byte[] dst, int dstIndex, int length)

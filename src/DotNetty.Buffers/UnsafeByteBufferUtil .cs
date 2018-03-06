@@ -7,6 +7,7 @@ namespace DotNetty.Buffers
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Runtime.CompilerServices;
+    using System.Text;
     using DotNetty.Common.Internal;
 
     static unsafe class UnsafeByteBufferUtil
@@ -184,14 +185,22 @@ namespace DotNetty.Buffers
 
         internal static IByteBuffer Copy(AbstractByteBuffer buf, byte* addr, int index, int length)
         {
-            IByteBuffer copy = buf.Allocator.Buffer(length, buf.MaxCapacity);
+            IByteBuffer copy = buf.Allocator.DirectBuffer(length, buf.MaxCapacity);
             if (length != 0)
             {
                 if (copy.HasMemoryAddress)
                 {
-                    fixed (byte* dst = &copy.GetPinnableMemoryAddress())
+                    IntPtr ptr = copy.AddressOfPinnedMemory();
+                    if (ptr != IntPtr.Zero)
                     {
-                        PlatformDependent.CopyMemory(addr, dst, length);
+                        PlatformDependent.CopyMemory(addr, (byte*)ptr, length);
+                    }
+                    else
+                    {
+                        fixed (byte* dst = &copy.GetPinnableMemoryAddress())
+                        {
+                            PlatformDependent.CopyMemory(addr, dst, length);
+                        }
                     }
                     copy.SetIndex(0, length);
                 }
@@ -230,14 +239,22 @@ namespace DotNetty.Buffers
 
             if (MathUtil.IsOutOfBounds(dstIndex, length, dst.Capacity))
             {
-                throw new IndexOutOfRangeException($"dstIndex: {dstIndex}");
+                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}");
             }
 
             if (dst.HasMemoryAddress)
             {
-                fixed (byte* destination = &dst.GetPinnableMemoryAddress())
+                IntPtr ptr = dst.AddressOfPinnedMemory();
+                if (ptr != IntPtr.Zero)
                 {
-                    PlatformDependent.CopyMemory(addr, destination + dstIndex, length);
+                    PlatformDependent.CopyMemory(addr, (byte*)(ptr + dstIndex), length);
+                }
+                else
+                {
+                    fixed (byte* destination = &dst.GetPinnableMemoryAddress())
+                    {
+                        PlatformDependent.CopyMemory(addr, destination + dstIndex, length);
+                    }
                 }
             }
             else if (dst.HasArray)
@@ -256,7 +273,7 @@ namespace DotNetty.Buffers
 
             if (MathUtil.IsOutOfBounds(dstIndex, length, dst.Length))
             {
-                throw new IndexOutOfRangeException($"dstIndex: {dstIndex}");
+                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}");
             }
             if (length != 0)
             {
@@ -270,16 +287,24 @@ namespace DotNetty.Buffers
 
             if (MathUtil.IsOutOfBounds(srcIndex, length, src.Capacity))
             {
-                throw new IndexOutOfRangeException($"srcIndex: {srcIndex}");
+                ThrowHelper.ThrowIndexOutOfRangeException($"srcIndex: {srcIndex}");
             }
 
             if (length != 0)
             {
                 if (src.HasMemoryAddress)
                 {
-                    fixed (byte* source = &src.GetPinnableMemoryAddress())
+                    IntPtr ptr = src.AddressOfPinnedMemory();
+                    if (ptr != IntPtr.Zero)
                     {
-                        PlatformDependent.CopyMemory(source + srcIndex, addr, length);
+                        PlatformDependent.CopyMemory((byte*)(ptr + srcIndex), addr, length);
+                    }
+                    else
+                    {
+                        fixed (byte* source = &src.GetPinnableMemoryAddress())
+                        {
+                            PlatformDependent.CopyMemory(source + srcIndex, addr, length);
+                        }
                     }
                 }
                 else if (src.HasArray)
@@ -325,8 +350,19 @@ namespace DotNetty.Buffers
             PlatformDependent.SetMemory(addr, length, Zero);
         }
 
-        internal static UnpooledUnsafeDirectByteBuffer NewUnsafeDirectByteBuffer(
-            IByteBufferAllocator alloc, int initialCapacity, int maxCapacity) => 
-                new UnpooledUnsafeDirectByteBuffer(alloc, initialCapacity, maxCapacity);
+        internal static string GetString(byte* src, int length, Encoding encoding)
+        {
+#if NETSTANDARD1_3
+            return encoding.GetString(src, length);
+#else
+            int charCount = encoding.GetCharCount(src, length);
+            char* chars = stackalloc char[charCount];
+            encoding.GetChars(src, length, chars, charCount);
+            return new string(chars, 0, charCount);
+#endif
+        }
+
+        internal static UnpooledUnsafeDirectByteBuffer NewUnsafeDirectByteBuffer(IByteBufferAllocator alloc, int initialCapacity, int maxCapacity) =>  
+            new UnpooledUnsafeDirectByteBuffer(alloc, initialCapacity, maxCapacity);
     }
 }
