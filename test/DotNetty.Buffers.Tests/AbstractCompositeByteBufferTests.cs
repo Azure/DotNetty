@@ -812,12 +812,12 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
-        public void AllocatorIsSameWhenCopy() => this.AllocatorIsSameWhenCopy(false);
+        public void AllocatorIsSameWhenCopy() => this.AllocatorIsSameWhenCopy0(false);
 
         [Fact]
-        public void AllocatorIsSameWhenCopyUsingIndexAndLength() => this.AllocatorIsSameWhenCopy(true);
+        public void AllocatorIsSameWhenCopyUsingIndexAndLength() => this.AllocatorIsSameWhenCopy0(true);
 
-        void AllocatorIsSameWhenCopy(bool withIndexAndLength)
+        void AllocatorIsSameWhenCopy0(bool withIndexAndLength)
         {
             IByteBuffer buffer = this.NewBuffer(8);
             buffer.WriteZero(4);

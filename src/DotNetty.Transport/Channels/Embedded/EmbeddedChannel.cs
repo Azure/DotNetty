@@ -304,11 +304,8 @@ namespace DotNetty.Transport.Channels.Embedded
                     // The write may be delayed to run later by runPendingTasks()
                     future.ContinueWith(t => this.RecordException(t));
                 }
-                if (future.Exception != null)
-                {
-                    this.RecordException(future.Exception);
-                }
             }
+            futures.Return();
 
             this.RunPendingTasks();
             this.CheckException();

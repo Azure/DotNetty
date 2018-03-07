@@ -25,9 +25,12 @@ namespace DotNetty.Common.Tests.Concurrency
         public void TaskSchedulerIsPreserved()
         {
             var executor = new SingleThreadEventExecutor("test", TimeSpan.FromSeconds(5));
-            IEnumerable<Task<int>> tasks = Enumerable.Range(1, 1).Select(i =>
+            IEnumerable<Task<int>> tasks = Enumerable.Range(1, 1).Select(async i =>
             {
-                var completion = new TaskCompletionSource<int>();
+                //Clear SynchronizationContext set by xunit
+                SynchronizationContext.SetSynchronizationContext(null);
+
+                var completion = new TaskCompletionSource();
                 executor.Execute(async () =>
                 {
                     try
@@ -35,14 +38,16 @@ namespace DotNetty.Common.Tests.Concurrency
                         Assert.True(executor.InEventLoop);
                         await Task.Delay(1);
                         Assert.True(executor.InEventLoop);
-                        completion.TrySetResult(0); // all is well
+                        completion.TryComplete(); // all is well
                     }
                     catch (Exception ex)
                     {
                         completion.TrySetException(ex);
                     }
                 });
-                return completion.Task;
+                await completion.Task;
+                Assert.False(executor.InEventLoop);
+                return i;
             });
 
             Task.WhenAll(tasks).Wait(TimeSpan.FromSeconds(500));

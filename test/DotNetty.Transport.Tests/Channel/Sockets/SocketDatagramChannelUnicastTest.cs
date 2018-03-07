@@ -90,7 +90,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
         static readonly byte[] Data = { 0, 1, 2, 3 };
         static readonly bool[] BindClientOption = { true, false };
 
-        static IEnumerable<object[]> GetData()
+        public static IEnumerable<object[]> GetData()
         {
             foreach (AddressFamily addressFamily in NetUtil.AddressFamilyTypes)
             {
