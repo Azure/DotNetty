@@ -39,7 +39,7 @@ namespace DotNetty.Transport.Libuv
         readonly XThread thread;
         readonly TaskScheduler scheduler;
         readonly ManualResetEventSlim loopRunStart;
-        readonly TaskCompletionSource terminationCompletionSource;
+        readonly IPromise terminationCompletionSource;
         readonly Loop loop;
         readonly Async asyncHandle;
         readonly Timer timerHandle;
@@ -68,7 +68,7 @@ namespace DotNetty.Transport.Libuv
         public LoopExecutor(IEventLoopGroup parent, string threadName, TimeSpan breakoutInterval) : base(parent)
         {
             this.preciseBreakoutInterval = (long)breakoutInterval.TotalMilliseconds;
-            this.terminationCompletionSource = new TaskCompletionSource();
+            this.terminationCompletionSource = this.NewPromise();
             this.taskQueue = PlatformDependent.NewMpscQueue<IRunnable>();
             this.scheduler = new ExecutorTaskScheduler(this);
 

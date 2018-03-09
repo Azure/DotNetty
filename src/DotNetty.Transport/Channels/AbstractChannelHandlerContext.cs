@@ -151,7 +151,7 @@ namespace DotNetty.Transport.Channels
             {
                 flags |= SkipFlags.Read;
             }
-            if (IsSkippable(handlerType, nameof(IChannelHandler.WriteAsync), typeof(object)))
+            if (IsSkippable(handlerType, nameof(IChannelHandler.Write), typeof(object), typeof(TaskCompletionSource)))
             {
                 flags |= SkipFlags.Write;
             }
@@ -624,7 +624,7 @@ namespace DotNetty.Transport.Channels
             IEventExecutor nextExecutor = next.Executor;
             return nextExecutor.InEventLoop 
                 ? next.InvokeBindAsync(localAddress) 
-                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeBindAsync(localAddress));
+                : this.SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeBindAsync(localAddress));
         }
 
         Task InvokeBindAsync(EndPoint localAddress)
@@ -713,7 +713,7 @@ namespace DotNetty.Transport.Channels
             IEventExecutor nextExecutor = next.Executor;
             return nextExecutor.InEventLoop
                 ? next.InvokeCloseAsync()
-                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeCloseAsync());
+                : this.SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeCloseAsync());
         }
 
         Task InvokeCloseAsync()
@@ -739,8 +739,15 @@ namespace DotNetty.Transport.Channels
             IEventExecutor nextExecutor = next.Executor;
             return nextExecutor.InEventLoop
                 ? next.InvokeDeregisterAsync()
-                : SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeDeregisterAsync());
+                : this.SafeExecuteOutboundAsync(nextExecutor, () => next.InvokeDeregisterAsync());
         }
+
+
+        public IPromise NewPromise() => this.Channel.NewPromise();
+
+        public IPromise NewPromise(object state) => this.Channel.NewPromise(state);
+        
+        public IPromise VoidPromise() => this.Channel.VoidPromise();
 
         Task InvokeDeregisterAsync()
         {
@@ -793,24 +800,46 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAsync(object msg)
+        public Task WriteAsync(object msg) => this.WriteAsync(msg, this.NewPromise());
+
+        public Task WriteAsync(object msg, IPromise promise)
         {
             Contract.Requires(msg != null);
-            // todo: check for cancellation
-            return this.WriteAsync(msg, false);
+            
+            if (IsNotValidPromise(promise, true)) 
+            {
+                ReferenceCountUtil.Release(msg);
+                // cancelled
+                return promise.Task;
+            }
+            
+            this.Write(msg, false, promise);
+            return promise.Task;
+        }
+        
+
+        void InvokeWrite(object msg, IPromise promise)
+        {
+            if (this.Added)
+            {
+                this.InvokeWrite0(msg, promise);
+            }
+            else
+            {
+                this.WriteAsync(msg, promise);
+            }
+            
         }
 
-        Task InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
-
-        Task InvokeWriteAsync0(object msg)
+        void InvokeWrite0(object msg, IPromise promise)
         {
             try
             {
-                return this.Handler.WriteAsync(this, msg);
+                this.Handler.Write(this, msg, promise);
             }
             catch (Exception ex)
             {
-                return ComposeExceptionTask(ex);
+                Util.SafeSetFailure(promise, ex, DefaultChannelPipeline.Logger);
             }
         }
 
@@ -853,44 +882,57 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAndFlushAsync(object message)
+        public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, this.NewPromise());
+
+        public Task WriteAndFlushAsync(object message, IPromise promise)
         {
             Contract.Requires(message != null);
             // todo: check for cancellation
-
-            return this.WriteAsync(message, true);
+            if (IsNotValidPromise(promise, true))
+            {
+                ReferenceCountUtil.Release(message);
+                return promise.Task;
+            }
+            
+            this.Write(message, true, promise);
+            return promise.Task;
         }
 
-        Task InvokeWriteAndFlushAsync(object msg)
+        void InvokeWriteAndFlush(object msg, IPromise promise)
         {
             if (this.Added)
             {
-                Task task = this.InvokeWriteAsync0(msg);
+                this.InvokeWrite0(msg, promise);
                 this.InvokeFlush0();
-                return task;
             }
-            return this.WriteAndFlushAsync(msg);
+            else
+            {
+                this.WriteAndFlushAsync(msg, promise);
+            }
         }
 
-        Task WriteAsync(object msg, bool flush)
+        void Write(object msg, bool flush, IPromise promise)
         {
             AbstractChannelHandlerContext next = this.FindContextOutbound();
             object m = this.pipeline.Touch(msg, next);
             IEventExecutor nextExecutor = next.Executor;
             if (nextExecutor.InEventLoop)
             {
-                return flush
-                    ? next.InvokeWriteAndFlushAsync(m)
-                    : next.InvokeWriteAsync(m);
+                if (flush)
+                {
+                    next.InvokeWriteAndFlush(m, promise);
+                }
+                else
+                {
+                    next.InvokeWrite(m, promise);
+                }
             }
             else
             {
-                var promise = new TaskCompletionSource();
                 AbstractWriteTask task = flush 
                     ? WriteAndFlushTask.NewInstance(next, m, promise)
                     : (AbstractWriteTask)WriteTask.NewInstance(next, m, promise);
                 SafeExecuteOutbound(nextExecutor, task, promise, msg);
-                return promise.Task;
             }
         }
 
@@ -911,7 +953,7 @@ namespace DotNetty.Transport.Channels
         }
 
         static Task ComposeExceptionTask(Exception cause) => TaskEx.FromException(cause);
-
+        
         const string ExceptionCaughtMethodName = nameof(IChannelHandler.ExceptionCaught);
 
         static bool InExceptionCaught(Exception cause) => cause.StackTrace.IndexOf("." + ExceptionCaughtMethodName + "(", StringComparison.Ordinal) >= 0;
@@ -938,12 +980,12 @@ namespace DotNetty.Transport.Channels
             return ctx;
         }
 
-        static Task SafeExecuteOutboundAsync(IEventExecutor executor, Func<Task> function)
+        Task SafeExecuteOutboundAsync(IEventExecutor executor, Func<Task> function)
         {
-            var promise = new TaskCompletionSource();
+            IPromise promise = this.NewPromise();
             try
             {
-                executor.Execute((p, func) => ((Func<Task>)func)().LinkOutcome((TaskCompletionSource)p), promise, function);
+                executor.Execute((p, func) => ((Func<Task>)func)().LinkOutcome((IPromise)p), promise, function);
             }
             catch (Exception cause)
             {
@@ -952,7 +994,7 @@ namespace DotNetty.Transport.Channels
             return promise.Task;
         }
 
-        static void SafeExecuteOutbound(IEventExecutor executor, IRunnable task, TaskCompletionSource promise, object msg)
+        static void SafeExecuteOutbound(IEventExecutor executor, IRunnable task, IPromise promise, object msg)
         {
             try
             {
@@ -975,6 +1017,39 @@ namespace DotNetty.Transport.Channels
 
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
 
+        static bool IsNotValidPromise(IPromise promise, bool allowVoid)
+        {
+            Contract.Requires(promise != null);
+
+            if (promise.IsVoid)
+            {
+                if (allowVoid)
+                {
+                    return false;
+                }
+                else
+                {
+                    throw new ArgumentException("Void promise is not allowed for this operation");
+                }
+            }
+
+            var task = promise.Task;
+            if (task.IsCompleted)
+            {
+                // Check if the promise was cancelled and if so signal that the processing of the operation
+                // should not be performed.
+                //
+                // See https://github.com/netty/netty/issues/2349
+                if (task.IsCanceled)
+                {
+                    return true;
+                }
+                
+                throw new ArgumentException($"Promise {promise} already completed");
+            }
+
+            return false;
+        }
 
         abstract class AbstractWriteTask : IRunnable
         {
@@ -988,10 +1063,10 @@ namespace DotNetty.Transport.Channels
             ThreadLocalPool.Handle handle;
             AbstractChannelHandlerContext ctx;
             object msg;
-            TaskCompletionSource promise;
+            IPromise promise;
             int size;
 
-            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg, IPromise promise)
             {
                 task.ctx = ctx;
                 task.msg = msg;
@@ -1033,7 +1108,7 @@ namespace DotNetty.Transport.Channels
                     {
                         buffer?.DecrementPendingOutboundBytes(this.size);
                     }
-                    this.WriteAsync(this.ctx, this.msg).LinkOutcome(this.promise);
+                    this.Write(this.ctx, this.msg, this.promise);
                 }
                 finally
                 {
@@ -1045,13 +1120,13 @@ namespace DotNetty.Transport.Channels
                 }
             }
 
-            protected virtual Task WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
+            protected virtual void Write(AbstractChannelHandlerContext ctx, object msg, IPromise promise) => ctx.InvokeWrite(msg, promise);
         }
         sealed class WriteTask : AbstractWriteTask {
 
             static readonly ThreadLocalPool<WriteTask> Recycler = new ThreadLocalPool<WriteTask>(handle => new WriteTask(handle));
 
-            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg, IPromise promise)
             {
                 WriteTask task = Recycler.Take();
                 Init(task, ctx, msg, promise);
@@ -1070,7 +1145,7 @@ namespace DotNetty.Transport.Channels
             static readonly ThreadLocalPool<WriteAndFlushTask> Recycler = new ThreadLocalPool<WriteAndFlushTask>(handle => new WriteAndFlushTask(handle));
 
             public static WriteAndFlushTask NewInstance(
-                    AbstractChannelHandlerContext ctx, object msg,  TaskCompletionSource promise) {
+                    AbstractChannelHandlerContext ctx, object msg,  IPromise promise) {
                 WriteAndFlushTask task = Recycler.Take();
                 Init(task, ctx, msg, promise);
                 return task;
@@ -1081,11 +1156,10 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            protected override Task WriteAsync(AbstractChannelHandlerContext ctx, object msg)
+            protected override void Write(AbstractChannelHandlerContext ctx, object msg, IPromise promise)
             {
-                Task result = base.WriteAsync(ctx, msg);
+                base.Write(ctx, msg, promise);
                 ctx.InvokeFlush();
-                return result;
             }
         }
     }

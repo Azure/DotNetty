@@ -169,7 +169,7 @@ namespace DotNetty.Transport.Bootstrapping
         {
             // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
             // the pipeline in its channelRegistered() implementation.
-            var promise = new TaskCompletionSource();
+            var promise = channel.NewPromise();
             channel.EventLoop.Execute(() =>
             {
                 try

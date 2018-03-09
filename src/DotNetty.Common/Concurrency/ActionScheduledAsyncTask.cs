@@ -11,7 +11,7 @@ namespace DotNetty.Common.Concurrency
         readonly Action action;
 
         public ActionScheduledAsyncTask(AbstractScheduledEventExecutor executor, Action action, PreciseTimeSpan deadline, CancellationToken cancellationToken)
-            : base(executor, deadline, new TaskCompletionSource(), cancellationToken)
+            : base(executor, deadline, executor.NewPromise(), cancellationToken)
         {
             this.action = action;
         }

@@ -30,7 +30,7 @@ namespace DotNetty.Transport.Libuv
         internal bool ReadPending;
         volatile StateFlags state;
 
-        TaskCompletionSource connectPromise;
+        IPromise connectPromise;
         IScheduledTask connectCancellationTask;
 
         protected NativeChannel(IChannel parent) : base(parent)
@@ -91,7 +91,7 @@ namespace DotNetty.Transport.Libuv
 
         protected override void DoClose()
         {
-            TaskCompletionSource promise = this.connectPromise;
+            IPromise promise = this.connectPromise;
             if (promise != null)
             {
                 promise.TrySetException(new ClosedChannelException());
@@ -131,7 +131,7 @@ namespace DotNetty.Transport.Libuv
                         throw new InvalidOperationException("connection attempt already made");
                     }
 
-                    ch.connectPromise = new TaskCompletionSource(remoteAddress);
+                    ch.connectPromise = this.channel.NewPromise(remoteAddress);
 
                     // Schedule connect timeout.
                     TimeSpan connectTimeout = ch.Configuration.ConnectTimeout;
@@ -155,7 +155,7 @@ namespace DotNetty.Transport.Libuv
             {
                 var ch = (NativeChannel)context;
                 var address = (IPEndPoint)state;
-                TaskCompletionSource promise = ch.connectPromise;
+                IPromise promise = ch.connectPromise;
                 var cause = new ConnectTimeoutException($"connection timed out: {address}");
                 if (promise != null && promise.TrySetException(cause))
                 {
@@ -169,7 +169,7 @@ namespace DotNetty.Transport.Libuv
                 var ch = (NativeChannel)this.channel;
                 ch.connectCancellationTask?.Cancel();
 
-                TaskCompletionSource promise = ch.connectPromise;
+                IPromise promise = ch.connectPromise;
                 bool success = false;
                 try
                 {

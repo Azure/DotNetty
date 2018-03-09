@@ -3,7 +3,7 @@
 
 namespace DotNetty.Transport.Tests.Performance.Utilities
 {
-    using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Transport.Channels;
     using NBench;
 
@@ -16,10 +16,10 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
             this.throughput = throughput;
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override void Write(IChannelHandlerContext context, object message, IPromise promise)
         {
             this.throughput.Increment();
-            return context.WriteAsync(message);
+            context.WriteAsync(message, promise);
         }
 
         public override bool IsSharable => true;

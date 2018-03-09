@@ -500,20 +500,27 @@ namespace DotNetty.Handlers.Tls
             return oldState.Has(TlsHandlerState.Authenticated);
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override void Write(IChannelHandlerContext context, object message, IPromise promise)
         {
             if (!(message is IByteBuffer))
             {
-                return TaskEx.FromException(new UnsupportedMessageTypeException(message, typeof(IByteBuffer)));
+                promise.TrySetException(new UnsupportedMessageTypeException(message, typeof(IByteBuffer)));
             }
-            return this.pendingUnencryptedWrites.Add(message);
+            else
+            {
+                this.pendingUnencryptedWrites.Add(message, promise);
+            }
         }
 
         public override void Flush(IChannelHandlerContext context)
         {
             if (this.pendingUnencryptedWrites.IsEmpty)
             {
-                this.pendingUnencryptedWrites.Add(Unpooled.Empty);
+                // It's important to NOT use a voidPromise here as the user
+                // may want to add a ChannelFutureListener to the ChannelPromise later.
+                //
+                // See https://github.com/netty/netty/issues/3364
+                this.pendingUnencryptedWrites.Add(Unpooled.Empty, context.NewPromise());
             }
 
             if (!this.EnsureAuthenticated())
@@ -564,7 +571,7 @@ namespace DotNetty.Handlers.Tls
                     buf.ReadBytes(this.sslStream, buf.ReadableBytes); // this leads to FinishWrap being called 0+ times
                     buf.Release();
 
-                    TaskCompletionSource promise = this.pendingUnencryptedWrites.Remove();
+                    IPromise promise = this.pendingUnencryptedWrites.Remove();
                     Task task = this.lastContextWriteTask;
                     if (task != null)
                     {
@@ -585,7 +592,7 @@ namespace DotNetty.Handlers.Tls
             }
         }
 
-        void FinishWrap(byte[] buffer, int offset, int count)
+        void FinishWrap(byte[] buffer, int offset, int count, IPromise promise)
         {
             IByteBuffer output;
             if (count == 0)
@@ -598,12 +605,12 @@ namespace DotNetty.Handlers.Tls
                 output.WriteBytes(buffer, offset, count);
             }
 
-            this.lastContextWriteTask = this.capturedContext.WriteAsync(output);
+            this.lastContextWriteTask = this.capturedContext.WriteAsync(output, promise);
         }
 
-        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
+        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count, IPromise promise)
         {
-            var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+            var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count), promise);
             this.ReadIfNeeded(this.capturedContext);
             return future;
         }
@@ -670,7 +677,7 @@ namespace DotNetty.Handlers.Tls
 #else
             SynchronousAsyncResult<int> syncReadResult;
             AsyncCallback readCallback;
-            TaskCompletionSource writeCompletion;
+            IPromise writeCompletion;
             AsyncCallback writeCallback;
 #endif
 
@@ -800,10 +807,10 @@ namespace DotNetty.Handlers.Tls
             }
 #endif
 
-            public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count);
+            public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count, this.owner.capturedContext.NewPromise());
 
             public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
+                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count, this.owner.capturedContext.NewPromise());
 
 #if !NETSTANDARD1_3
             static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
@@ -821,7 +828,7 @@ namespace DotNetty.Handlers.Tls
                         return result;
                     default:
                         this.writeCallback = callback;
-                        var tcs = new TaskCompletionSource(state);
+                        var tcs = this.owner.capturedContext.NewPromise(state);
                         this.writeCompletion = tcs;
                         task.ContinueWith(WriteCompleteCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                         return tcs.Task;

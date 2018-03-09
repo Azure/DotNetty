@@ -39,7 +39,7 @@ namespace DotNetty.Transport.Channels.Sockets
         internal bool ReadPending;
         volatile StateFlags state;
 
-        TaskCompletionSource connectPromise;
+        IPromise connectPromise;
         IScheduledTask connectCancellationTask;
 
         protected AbstractSocketChannel(IChannel parent, Socket socket)
@@ -271,7 +271,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     else
                     {
-                        ch.connectPromise = new TaskCompletionSource(remoteAddress);
+                        ch.connectPromise = ch.NewPromise(remoteAddress);
 
                         // Schedule connect timeout.
                         TimeSpan connectTimeout = ch.Configuration.ConnectTimeout;
@@ -283,7 +283,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                     // todo: make static / cache delegate?..
                                     var self = (AbstractSocketChannel)c;
                                     // todo: call Socket.CancelConnectAsync(...)
-                                    TaskCompletionSource promise = self.connectPromise;
+                                    IPromise promise = self.connectPromise;
                                     var cause = new ConnectTimeoutException("connection timed out: " + a.ToString());
                                     if (promise != null && promise.TrySetException(cause))
                                     {
@@ -318,7 +318,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
             void FulfillConnectPromise(bool wasActive)
             {
-                TaskCompletionSource promise = this.Channel.connectPromise;
+                IPromise promise = this.Channel.connectPromise;
                 if (promise == null)
                 {
                     // Closed via cancellation and the promise has been notified already.
@@ -344,7 +344,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
             void FulfillConnectPromise(Exception cause)
             {
-                TaskCompletionSource promise = this.Channel.connectPromise;
+                IPromise promise = this.Channel.connectPromise;
                 if (promise == null)
                 {
                     // Closed via cancellation and the promise has been notified already.
@@ -369,7 +369,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
                 catch (Exception ex)
                 {
-                    TaskCompletionSource promise = ch.connectPromise;
+                    IPromise promise = ch.connectPromise;
                     var remoteAddress = (EndPoint)promise?.Task.AsyncState;
                     this.FulfillConnectPromise(this.AnnotateConnectException(ex, remoteAddress));
                 }
@@ -464,7 +464,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected override void DoClose()
         {
-            TaskCompletionSource promise = this.connectPromise;
+            IPromise promise = this.connectPromise;
             if (promise != null)
             {
                 // Use TrySetException() instead of SetException() to avoid the race against cancellation due to timeout.

@@ -15,22 +15,38 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
         /// </summary>
-        public static void SafeSetSuccess(TaskCompletionSource promise, IInternalLogger logger)
+        public static void SafeSetSuccess(IPromise promise, IInternalLogger logger)
         {
-            if (promise != TaskCompletionSource.Void && !promise.TryComplete())
+            if (!promise.IsVoid && !promise.TryComplete() && logger.WarnEnabled)
             {
-                logger.Warn($"Failed to mark a promise as success because it is done already: {promise}");
+                AggregateException err = promise.Task.Exception;
+                if (err == null) 
+                {
+                    logger.Warn($"Failed to mark a promise as success because it's done already: {promise}");
+                } 
+                else 
+                {
+                    logger.Warn($"Failed to mark a promise as success because it has failed already: {promise}", err.InnerException);
+                }
             }
         }
 
         /// <summary>
         ///     Marks the specified {@code promise} as failure.  If the {@code promise} is done already, log a message.
         /// </summary>
-        public static void SafeSetFailure(TaskCompletionSource promise, Exception cause, IInternalLogger logger)
+        public static void SafeSetFailure(IPromise promise, Exception cause, IInternalLogger logger)
         {
-            if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
+            if (!promise.IsVoid && !promise.TrySetException(cause) && logger.WarnEnabled)
             {
-                logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
+                AggregateException err = promise.Task.Exception;
+                if (err == null) 
+                {
+                    logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
+                } 
+                else 
+                {
+                    logger.Warn($"Failed to mark a promise as failure because it has failed already: {promise}, failure: {err.InnerException}", cause);
+                }
             }
         }
 

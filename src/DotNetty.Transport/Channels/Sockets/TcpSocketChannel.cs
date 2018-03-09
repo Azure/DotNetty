@@ -74,7 +74,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         public Task ShutdownOutputAsync()
         {
-            var tcs = new TaskCompletionSource();
+            var tcs = this.NewPromise();
             // todo: use closeExecutor if available
             //Executor closeExecutor = ((TcpSocketChannelUnsafe) unsafe()).closeExecutor();
             //if (closeExecutor != null) {
@@ -98,7 +98,7 @@ namespace DotNetty.Transport.Channels.Sockets
             return tcs.Task;
         }
 
-        void ShutdownOutput0(TaskCompletionSource promise)
+        void ShutdownOutput0(IPromise promise)
         {
             try
             {

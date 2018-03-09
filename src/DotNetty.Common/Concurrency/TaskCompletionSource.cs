@@ -5,10 +5,8 @@ namespace DotNetty.Common.Concurrency
 {
     using System.Threading.Tasks;
 
-    public sealed class TaskCompletionSource : TaskCompletionSource<int>
+    public sealed class TaskCompletionSource : TaskCompletionSource<int>, IPromise
     {
-        public static readonly TaskCompletionSource Void = CreateVoidTcs();
-
         public TaskCompletionSource(object state)
             : base(state)
         {
@@ -16,7 +14,12 @@ namespace DotNetty.Common.Concurrency
 
         public TaskCompletionSource()
         {
+            
         }
+
+        Task IPromise.Task => this.Task;
+
+        public bool IsVoid => false; 
 
         public bool TryComplete() => this.TrySetResult(0);
 
@@ -25,13 +28,8 @@ namespace DotNetty.Common.Concurrency
         // todo: support cancellation token where used
         public bool SetUncancellable() => true;
 
-        public override string ToString() => "TaskCompletionSource[status: " + this.Task.Status.ToString() + "]";
+        public IPromise Unvoid() => this;
 
-        static TaskCompletionSource CreateVoidTcs()
-        {
-            var tcs = new TaskCompletionSource();
-            tcs.TryComplete();
-            return tcs;
-        }
+        public override string ToString() => "TaskCompletionSource[status: " + this.Task.Status.ToString() + "]";
     }
 }

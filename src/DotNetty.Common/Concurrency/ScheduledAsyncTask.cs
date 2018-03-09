@@ -10,7 +10,7 @@ namespace DotNetty.Common.Concurrency
         readonly CancellationToken cancellationToken;
         CancellationTokenRegistration cancellationTokenRegistration;
 
-        protected ScheduledAsyncTask(AbstractScheduledEventExecutor executor, PreciseTimeSpan deadline, TaskCompletionSource promise, CancellationToken cancellationToken)
+        protected ScheduledAsyncTask(AbstractScheduledEventExecutor executor, PreciseTimeSpan deadline, IPromise promise, CancellationToken cancellationToken)
             : base(executor, deadline, promise)
         {
             this.cancellationToken = cancellationToken;

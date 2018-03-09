@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Libuv
 
     sealed class WorkerEventLoop : LoopExecutor, IEventLoop
     {
-        readonly TaskCompletionSource connectCompletion;
+        readonly IPromise connectCompletion;
         readonly string pipeName;
         Pipe pipe;
 
@@ -31,7 +31,7 @@ namespace DotNetty.Transport.Libuv
             }
 
             this.pipeName = name;
-            this.connectCompletion = new TaskCompletionSource();
+            this.connectCompletion = this.NewPromise();
             this.Start();
         }
 

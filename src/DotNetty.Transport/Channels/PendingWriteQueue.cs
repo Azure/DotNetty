@@ -83,7 +83,8 @@ namespace DotNetty.Transport.Channels
                 // Size may be unknow so just use 0
                 messageSize = 0;
             }
-            var promise = new TaskCompletionSource();
+
+            var promise = this.ctx.NewPromise();
             PendingWrite write = PendingWrite.NewInstance(msg, messageSize, promise);
             PendingWrite currentTail = this.tail;
             if (currentTail == null)
@@ -122,7 +123,7 @@ namespace DotNetty.Transport.Channels
             {
                 PendingWrite next = write.Next;
                 ReferenceCountUtil.SafeRelease(write.Msg);
-                TaskCompletionSource promise = write.Promise;
+                IPromise promise = write.Promise;
                 this.Recycle(write, false);
                 Util.SafeSetFailure(promise, cause, Logger);
                 write = next;
@@ -147,7 +148,7 @@ namespace DotNetty.Transport.Channels
                 return;
             }
             ReferenceCountUtil.SafeRelease(write.Msg);
-            TaskCompletionSource promise = write.Promise;
+            IPromise promise = write.Promise;
             Util.SafeSetFailure(promise, cause, Logger);
             this.Recycle(write, true);
         }
@@ -186,9 +187,9 @@ namespace DotNetty.Transport.Channels
             {
                 PendingWrite next = write.Next;
                 object msg = write.Msg;
-                TaskCompletionSource promise = write.Promise;
+                IPromise promise = write.Promise;
                 this.Recycle(write, false);
-                this.ctx.WriteAsync(msg).LinkOutcome(promise);
+                this.ctx.WriteAsync(msg, promise);
                 tasks.Add(promise.Task);
                 write = next;
             }
@@ -216,17 +217,16 @@ namespace DotNetty.Transport.Channels
                 return null;
             }
             object msg = write.Msg;
-            TaskCompletionSource promise = write.Promise;
+            IPromise promise = write.Promise;
             this.Recycle(write, true);
-            this.ctx.WriteAsync(msg).LinkOutcome(promise);
-            return promise.Task;
+            return this.ctx.WriteAsync(msg, promise);
         }
 
         /// <summary>
         ///     Removes a pending write operation and release it's message via {@link ReferenceCountUtil#safeRelease(Object)}.
         /// </summary>
         /// <returns><seealso cref="TaskCompletionSource" /> of the pending write or <c>null</c> if the queue is empty.</returns>
-        public TaskCompletionSource Remove()
+        public IPromise Remove()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
 
@@ -235,7 +235,7 @@ namespace DotNetty.Transport.Channels
             {
                 return null;
             }
-            TaskCompletionSource promise = write.Promise;
+            IPromise promise = write.Promise;
             ReferenceCountUtil.SafeRelease(write.Msg);
             this.Recycle(write, true);
             return promise;
@@ -294,7 +294,7 @@ namespace DotNetty.Transport.Channels
             readonly ThreadLocalPool.Handle handle;
             public PendingWrite Next;
             public long Size;
-            public TaskCompletionSource Promise;
+            public IPromise Promise;
             public object Msg;
 
             PendingWrite(ThreadLocalPool.Handle handle)
@@ -302,7 +302,7 @@ namespace DotNetty.Transport.Channels
                 this.handle = handle;
             }
 
-            public static PendingWrite NewInstance(object msg, int size, TaskCompletionSource promise)
+            public static PendingWrite NewInstance(object msg, int size, IPromise promise)
             {
                 PendingWrite write = Pool.Take();
                 write.Size = size;

@@ -85,7 +85,8 @@ namespace DotNetty.Transport.Libuv.Tests
             var counter = new RunCounter(1);
             long startTime = DateTime.UtcNow.Ticks;
             IScheduledTask task = this.eventLoop.Schedule(counter, TimeSpan.FromMilliseconds(Delay));
-            Assert.True(task.Completion.Wait(DefaultTimeout));
+            bool condition = task.Completion.Wait(DefaultTimeout);
+            Assert.True(condition);
             Assert.Equal(1, counter.Count);
             long delay = counter.EndTime - startTime;
             Assert.True(delay > 0);

@@ -22,7 +22,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
         Task JoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source);
 
-        Task JoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, TaskCompletionSource promise);
+        Task JoinGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, IPromise promise);
 
         Task LeaveGroup(IPEndPoint multicastAddress);
 
@@ -34,6 +34,6 @@ namespace DotNetty.Transport.Channels.Sockets
 
         Task LeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source);
 
-        Task LeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, TaskCompletionSource promise);
+        Task LeaveGroup(IPEndPoint multicastAddress, NetworkInterface networkInterface, IPEndPoint source, IPromise promise);
     }
 }

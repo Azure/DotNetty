@@ -5,8 +5,8 @@ namespace DotNetty.Codecs
 {
     using System;
     using System.Collections.Generic;
-    using System.Threading.Tasks;
     using DotNetty.Common;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
@@ -18,9 +18,8 @@ namespace DotNetty.Codecs
         /// </summary>
         public virtual bool AcceptOutboundMessage(object msg) => msg is T;
 
-        public override Task WriteAsync(IChannelHandlerContext ctx, object msg)
+        public override void Write(IChannelHandlerContext ctx, object msg, IPromise promise)
         {
-            Task result;
             ThreadLocalObjectList output = null;
             try
             {
@@ -47,16 +46,16 @@ namespace DotNetty.Codecs
                 }
                 else
                 {
-                    return ctx.WriteAsync(msg);
+                    ctx.WriteAsync(msg, promise);
                 }
             }
-            catch (EncoderException e)
+            catch (EncoderException)
             {
-                return TaskEx.FromException(e);
+                throw;
             }
             catch (Exception ex)
             {
-                return TaskEx.FromException(new EncoderException(ex)); // todo: we don't have a stack on EncoderException but it's present on inner exception.
+                throw new EncoderException(ex); // todo: we don't have a stack on EncoderException but it's present on inner exception.
             }
             finally
             {
@@ -65,31 +64,21 @@ namespace DotNetty.Codecs
                     int lastItemIndex = output.Count - 1;
                     if (lastItemIndex == 0)
                     {
-                        result = ctx.WriteAsync(output[0]);
+                        ctx.WriteAsync(output[0], promise);
                     }
                     else if (lastItemIndex > 0)
                     {
+                        //https://github.com/netty/netty/issues/2525
                         for (int i = 0; i < lastItemIndex; i++)
                         {
                             // we don't care about output from these messages as failure while sending one of these messages will fail all messages up to the last message - which will be observed by the caller in Task result.
-                            ctx.WriteAsync(output[i]); // todo: optimize: once IChannelHandlerContext allows, pass "not interested in task" flag
+                            ctx.WriteAsync(output[i], promise.IsVoid ? promise : ctx.NewPromise());
                         }
-                        result = ctx.WriteAsync(output[lastItemIndex]);
-                    }
-                    else
-                    {
-                        // 0 items in output - must never get here
-                        result = null;
+                        ctx.WriteAsync(output[lastItemIndex], promise);
                     }
                     output.Return();
                 }
-                else
-                {
-                    // output was reset during exception handling - must never get here
-                    result = null;
-                }
             }
-            return result;
         }
 
         /// <summary>
