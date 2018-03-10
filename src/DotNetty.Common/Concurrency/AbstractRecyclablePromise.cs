@@ -40,31 +40,28 @@ namespace DotNetty.Common.Concurrency
             }
             catch
             {
-                this.executor.Execute(this.Recycle);
+                this.Recycle();
                 throw;
             }
 
             if (completed)
             {
-                this.executor.Execute(this.Recycle);
+                this.Recycle();
             }
 
             return completed;
         }
 
-        protected void Init(IEventExecutor executor)
+        protected void Init()
         {
-            this.executor = executor;
             this.recycled = false;
         }
 
         protected virtual void Recycle()
         {
-            this.executor = null;
             this.exception = null;
             this.ClearCallback();
             this.recycled = true;
-
             this.handle.Release(this);
         }
 
@@ -80,11 +77,6 @@ namespace DotNetty.Common.Concurrency
             if (this.recycled)
             {
                 throw new InvalidOperationException("Attempt to use recycled channel promise");
-            }
-
-            if (this.executor == null)
-            {
-                throw new InvalidOperationException("Attempt to use recyclable channel promise without executor");
             }
         }
     }

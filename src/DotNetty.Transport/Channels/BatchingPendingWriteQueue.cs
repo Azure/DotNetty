@@ -334,7 +334,7 @@ namespace DotNetty.Transport.Channels
             public static PendingWrite NewInstance(IEventExecutor executor, object msg, int size)
             {
                 PendingWrite write = Pool.Take();
-                write.Init(executor);
+                write.Init();
                 write.Add(msg, size);
                 return write;
             }

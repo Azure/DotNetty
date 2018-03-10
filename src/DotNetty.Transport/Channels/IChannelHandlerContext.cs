@@ -72,6 +72,8 @@ namespace DotNetty.Transport.Channels
         IChannelHandlerContext Flush();
 
         ValueTask WriteAndFlushAsync(object message);
+        
+        ValueTask WriteAndFlushAsync(object message, bool notifyComplete);
 
         /// <summary>
         /// Request to bind to the given <see cref="EndPoint"/>.

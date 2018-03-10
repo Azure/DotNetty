@@ -17,8 +17,7 @@ namespace DotNetty.Common.Concurrency
         
         static readonly Exception CanceledException = new OperationCanceledException();
         static readonly Exception CompletedNoException = new Exception();
-       
-        protected IEventExecutor executor;
+
         protected Exception exception;
 
         Action<object> callback;
@@ -131,8 +130,7 @@ namespace DotNetty.Common.Concurrency
 
             try
             {
-                Contract.Requires(this.executor != null);
-                this.executor.Execute(this.callback, this.callbackState);
+                this.callback(this.callbackState);
                 return true;
             }
             finally

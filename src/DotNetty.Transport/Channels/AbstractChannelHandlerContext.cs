@@ -797,7 +797,7 @@ namespace DotNetty.Transport.Channels
         {
             Contract.Requires(msg != null);
             // todo: check for cancellation
-            return this.WriteAsync(msg, false);
+            return this.WriteAsync(msg, FlushMode.NoFlush);
         }
 
         ValueTask InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
@@ -853,41 +853,45 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public ValueTask WriteAndFlushAsync(object message)
+        public ValueTask WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, true);
+        
+        public ValueTask WriteAndFlushAsync(object message, bool notifyComplete)
         {
             Contract.Requires(message != null);
             // todo: check for cancellation
 
-            return this.WriteAsync(message, true);
+            return this.WriteAsync(message, notifyComplete ? FlushMode.Flush : FlushMode.VoidFlush);
         }
 
-        ValueTask InvokeWriteAndFlushAsync(object msg)
+        ValueTask InvokeWriteAndFlushAsync(object msg, bool notifyComplete)
         {
             if (this.Added)
             {
                 ValueTask task = this.InvokeWriteAsync0(msg);
+                //flush can synchronously complete write, hence Task allocation required to capture result
+                task = notifyComplete ? task.Preserve() : default(ValueTask);
                 this.InvokeFlush0();
                 return task;
             }
             return this.WriteAndFlushAsync(msg);
         }
 
-        ValueTask WriteAsync(object msg, bool flush)
+        ValueTask WriteAsync(object msg, FlushMode mode)
         {
             AbstractChannelHandlerContext next = this.FindContextOutbound();
             object m = this.pipeline.Touch(msg, next);
             IEventExecutor nextExecutor = next.Executor;
             if (nextExecutor.InEventLoop)
             {
-                return flush
-                    ? next.InvokeWriteAndFlushAsync(m)
-                    : next.InvokeWriteAsync(m);
+                return mode == FlushMode.NoFlush
+                    ? next.InvokeWriteAsync(m)
+                    : next.InvokeWriteAndFlushAsync(m, mode == FlushMode.Flush);
             }
             else
             {
-                AbstractWriteTask task = flush 
-                    ? WriteAndFlushTask.NewInstance(next, m)
-                    : (AbstractWriteTask)WriteTask.NewInstance(next, m);
+                AbstractWriteTask task = mode == FlushMode.NoFlush 
+                    ? WriteTask.NewInstance(next, m)
+                    : (AbstractWriteTask)WriteAndFlushTask.NewInstance(next, m, mode == FlushMode.Flush);
                 SafeExecuteOutbound(nextExecutor, task, msg);
                 return task;
             }
@@ -974,6 +978,13 @@ namespace DotNetty.Transport.Channels
 
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
 
+        enum FlushMode : byte
+        {
+            NoFlush = 0,
+            VoidFlush = 1,
+            Flush = 2
+        }
+
         abstract class AbstractWriteTask : AbstractRecyclablePromise, IRunnable
         {
             static readonly bool EstimateTaskSizeOnSubmit =
@@ -989,7 +1000,7 @@ namespace DotNetty.Transport.Channels
 
             protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg)
             {
-                task.Init(ctx.Executor);
+                task.Init();
                 task.ctx = ctx;
                 task.msg = msg;
 
@@ -1047,7 +1058,7 @@ namespace DotNetty.Transport.Channels
                 }
             }
 
-            protected virtual ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
+            protected abstract ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg);
 
             /*public override void Recycle()
             {
@@ -1072,16 +1083,21 @@ namespace DotNetty.Transport.Channels
                 : base(handle)
             {
             }
+
+            protected override ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
         }
 
         sealed class WriteAndFlushTask : AbstractWriteTask
         {
+            bool notifyComplete;
+            
             static readonly ThreadLocalPool<WriteAndFlushTask> Recycler = new ThreadLocalPool<WriteAndFlushTask>(handle => new WriteAndFlushTask(handle));
 
-            public static WriteAndFlushTask NewInstance(AbstractChannelHandlerContext ctx, object msg) 
+            public static WriteAndFlushTask NewInstance(AbstractChannelHandlerContext ctx, object msg, bool notifyComplete) 
             {
                 WriteAndFlushTask task = Recycler.Take();
                 Init(task, ctx, msg);
+                task.notifyComplete = notifyComplete;
                 return task;
             }
 
@@ -1089,13 +1105,9 @@ namespace DotNetty.Transport.Channels
                 : base(handle)
             {
             }
+            
+            protected override ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAndFlushAsync(msg, this.notifyComplete);
 
-            protected override ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg)
-            {
-                ValueTask result = base.WriteAsync(ctx, msg);
-                ctx.InvokeFlush();
-                return result;
-            }
         }
     }
 }

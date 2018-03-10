@@ -831,6 +831,8 @@ namespace DotNetty.Transport.Channels
         }
 
         public ValueTask WriteAndFlushAsync(object msg) => this.tail.WriteAndFlushAsync(msg);
+        
+        public ValueTask WriteAndFlushAsync(object msg, bool notifyComplete) => this.tail.WriteAndFlushAsync(msg, notifyComplete);
 
         string FilterName(string name, IChannelHandler handler)
         {
