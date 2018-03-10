@@ -5,6 +5,7 @@ namespace DotNetty.Common.Concurrency
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.Contracts;
     using System.Runtime.CompilerServices;
     using System.Runtime.ExceptionServices;
     using System.Threading.Tasks;
@@ -17,10 +18,11 @@ namespace DotNetty.Common.Concurrency
         static readonly Exception CanceledException = new OperationCanceledException();
         static readonly Exception CompletedNoException = new Exception();
        
+        protected IEventExecutor executor;
         protected Exception exception;
-        
-        protected int callbackCount;
-        protected (Action<object>, object)[] callbacks;
+
+        Action<object> callback;
+        object callbackState;
         
         public bool TryComplete() => this.TryComplete0(CompletedNoException);
         
@@ -34,7 +36,7 @@ namespace DotNetty.Common.Concurrency
             {
                 // Set the exception object to the exception passed in or a sentinel value
                 this.exception = exception;
-                this.ExecuteCallbacks();
+                this.TryExecuteCallback();
                 return true;
             }
 
@@ -89,27 +91,13 @@ namespace DotNetty.Common.Concurrency
 
         public virtual void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
         {
-            if (this.callbacks == null)
-            {
-                this.callbacks = new (Action<object>, object)[1];
-                //this.callbacks = s_completionCallbackPool.Rent(InitialCallbacksSize);
-            }
-
-            int newIndex = this.callbackCount;
-            this.callbackCount++;
-
-            if (newIndex == this.callbacks.Length)
-            {
-                var newArray = new (Action<object>, object)[this.callbacks.Length * 2];
-                Array.Copy(this.callbacks, newArray, this.callbacks.Length);
-                this.callbacks = newArray;
-            }
-
-            this.callbacks[newIndex] = (continuation, state);
+            this.callback = continuation;
+            this.callbackState = state;
+            //todo: context preservation
 
             if (this.exception != null)
             {
-                this.ExecuteCallbacks();
+                this.TryExecuteCallback();
             }
         }
 
@@ -134,54 +122,30 @@ namespace DotNetty.Common.Concurrency
         [MethodImpl(MethodImplOptions.NoInlining)]
         void ThrowLatchedException() => ExceptionDispatchInfo.Capture(this.exception).Throw();
 
-        void ExecuteCallbacks()
+        bool TryExecuteCallback()
         {
-            if (this.callbacks == null || this.callbackCount == 0)
+            if (this.callback == null)
             {
-                return;
+                return false;
             }
 
             try
             {
-                List<Exception> exceptions = null;
-
-                for (int i = 0; i < this.callbackCount; i++)
-                {
-                    try
-                    {
-                        (Action<object> callback, object state) = this.callbacks[i];
-                        callback(state);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (exceptions == null)
-                        {
-                            exceptions = new List<Exception>();
-                        }
-
-                        exceptions.Add(ex);
-                    }
-                }
-
-                if (exceptions != null)
-                {
-                    throw new AggregateException(exceptions);
-                }
+                Contract.Requires(this.executor != null);
+                this.executor.Execute(this.callback, this.callbackState);
+                return true;
             }
             finally
             {
-                this.ClearCallbacks();
+                this.ClearCallback();
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void ClearCallbacks()
+        protected void ClearCallback()
         {
-            if (this.callbackCount > 0)
-            {
-                this.callbackCount = 0;
-                Array.Clear(this.callbacks, 0, this.callbacks.Length);
-            }
+            this.callback = null;
+            this.callbackState = null;
         }
     }
 }

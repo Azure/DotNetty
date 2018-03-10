@@ -9,7 +9,6 @@ namespace DotNetty.Common.Concurrency
 
     public abstract class AbstractRecyclablePromise : AbstractPromise
     {
-        protected IEventExecutor executor;
         protected bool recycled;
         protected readonly ThreadLocalPool.Handle handle;
 
@@ -63,7 +62,7 @@ namespace DotNetty.Common.Concurrency
         {
             this.executor = null;
             this.exception = null;
-            this.ClearCallbacks();
+            this.ClearCallback();
             this.recycled = true;
 
             this.handle.Release(this);
