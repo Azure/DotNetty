@@ -512,7 +512,7 @@ namespace DotNetty.Handlers.Tls
         {
             if (!(message is IByteBuffer))
             {
-                throw new UnsupportedMessageTypeException(message, typeof(IByteBuffer));
+                return new UnsupportedMessageTypeException(message, typeof(IByteBuffer)).ToValueTask();
             }
             return this.pendingUnencryptedWrites.Add(message);
         }
@@ -574,10 +574,10 @@ namespace DotNetty.Handlers.Tls
 
                     IPromise promise = this.pendingUnencryptedWrites.Remove();
                     Task task = this.lastContextWriteTask;
-                    if (!task.IsCompleted)
+                    if (task != null)
                     {
                         task.LinkOutcome(promise);
-                        this.lastContextWriteTask = TaskEx.Completed;
+                        this.lastContextWriteTask = null;
                     }
                     else
                     {
@@ -814,10 +814,9 @@ namespace DotNetty.Handlers.Tls
 
             public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count);
 
-            public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-            {
-                await this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
-            }
+            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count).AsTask();
+        
 
 #if !NETSTANDARD1_3
             static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
