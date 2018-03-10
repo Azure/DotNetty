@@ -31,7 +31,7 @@ namespace DotNetty.Transport.Libuv.Tests
         }
 
         [Fact]
-        public async Task BufRelease()
+        public void BufRelease()
         {
             ServerBootstrap sb = new ServerBootstrap()
                 .Group(this.group)
