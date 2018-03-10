@@ -86,7 +86,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                 this.writes = writes;
             }
 
-            public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
+            public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
             {
                 this.writes.Increment();
                 return context.WriteAsync(message);

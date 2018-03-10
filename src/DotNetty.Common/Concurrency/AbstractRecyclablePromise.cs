@@ -5,42 +5,39 @@ namespace DotNetty.Common.Concurrency
 {
     using System;
     using System.Runtime.CompilerServices;
+    using System.Threading.Tasks.Sources;
 
-    public abstract class AbstractRecyclableChannelPromise : AbstractChannelPromise
+    public abstract class AbstractRecyclablePromise : AbstractPromise
     {
         protected IEventExecutor executor;
         protected bool recycled;
-
         protected readonly ThreadLocalPool.Handle handle;
 
-        protected AbstractRecyclableChannelPromise(ThreadLocalPool.Handle handle)
+        protected AbstractRecyclablePromise(ThreadLocalPool.Handle handle)
         {
             this.handle = handle;
         }
 
-        public override bool IsCompleted
-        {
-            get
-            {
-                this.ThrowIfRecycled();
-                return base.IsCompleted;
-            }
-        }
-
-        public override void GetResult()
+        public override ValueTaskSourceStatus GetStatus(short token)
         {
             this.ThrowIfRecycled();
-            base.GetResult();
+            return base.GetStatus(token);
         }
 
-        public override bool TryComplete(Exception exception = null)
+        public override void GetResult(short token)
+        {
+            this.ThrowIfRecycled();
+            base.GetResult(token);
+        }
+
+        protected override bool TryComplete0(Exception exception)
         {
             this.ThrowIfRecycled();
 
             bool completed;
             try
             {
-                completed = base.TryComplete(exception);
+                completed = base.TryComplete0(exception);
             }
             catch
             {
@@ -72,10 +69,10 @@ namespace DotNetty.Common.Concurrency
             this.handle.Release(this);
         }
 
-        protected override void OnCompleted0(Delegate callback, object state)
+        public override void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
         {
             this.ThrowIfRecycled();
-            base.OnCompleted0(callback, state);
+            base.OnCompleted(continuation, state, token, flags);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

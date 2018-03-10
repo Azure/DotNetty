@@ -683,7 +683,7 @@ namespace DotNetty.Transport.Channels
         /// once you want to request to flush all pending data to the actual transport.
         /// </summary>
         /// <returns>An await-able task.</returns>
-        ChannelFuture WriteAsync(object msg);
+        ValueTask WriteAsync(object msg);
 
         /// <summary>
         /// Request to flush all pending messages.
@@ -694,6 +694,6 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         /// Shortcut for calling both <see cref="WriteAsync"/> and <see cref="Flush"/>.
         /// </summary>
-        ChannelFuture WriteAndFlushAsync(object msg);
+        ValueTask WriteAndFlushAsync(object msg);
     }
 }

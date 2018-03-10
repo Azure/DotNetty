@@ -19,9 +19,9 @@ namespace DotNetty.Codecs
         /// </summary>
         public virtual bool AcceptOutboundMessage(object msg) => msg is T;
 
-        public override ChannelFuture WriteAsync(IChannelHandlerContext ctx, object msg)
+        public override ValueTask WriteAsync(IChannelHandlerContext ctx, object msg)
         {
-            ChannelFuture result;
+            ValueTask result;
             ThreadLocalObjectList output = null;
             try
             {
@@ -51,13 +51,13 @@ namespace DotNetty.Codecs
                     return ctx.WriteAsync(msg);
                 }
             }
-            catch (EncoderException e)
+            catch (EncoderException)
             {
-                throw;//return TaskEx.FromException(e);
+                throw;
             }
             catch (Exception ex)
             {
-                throw new EncoderException(ex);//return TaskEx.FromException(new EncoderException(ex)); // todo: we don't have a stack on EncoderException but it's present on inner exception.
+                throw new EncoderException(ex);// todo: we don't have a stack on EncoderException but it's present on inner exception.
             }
             finally
             {
@@ -80,14 +80,14 @@ namespace DotNetty.Codecs
                     else
                     {
                         // 0 items in output - must never get here
-                        result = default(ChannelFuture);
+                        result = default(ValueTask);
                     }
                     output.Return();
                 }
                 else
                 {
                     // output was reset during exception handling - must never get here
-                    result = default(ChannelFuture);
+                    result = default(ValueTask);
                 }
             }
             return result;

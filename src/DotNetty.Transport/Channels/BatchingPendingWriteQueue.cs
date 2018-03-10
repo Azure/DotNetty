@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Threading.Tasks;
+    using System.Threading.Tasks.Sources;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
@@ -64,7 +65,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>Add the given <c>msg</c> and returns <see cref="Task" /> for completion of processing <c>msg</c>.</summary>
-        public ChannelFuture Add(object msg)
+        public ValueTask Add(object msg)
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
             Contract.Requires(msg != null);
@@ -160,7 +161,7 @@ namespace DotNetty.Transport.Channels
         ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
         ///     is empty.
         /// </returns>
-        public ChannelFuture RemoveAndWriteAllAsync()
+        public ValueTask RemoveAndWriteAllAsync()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
 
@@ -173,7 +174,7 @@ namespace DotNetty.Transport.Channels
             if (write == null)
             {
                 // empty so just return null
-                return ChannelFuture.Completed;
+                return default(ValueTask);
             }
 
             // Guard against re-entrance by directly reset
@@ -181,7 +182,7 @@ namespace DotNetty.Transport.Channels
             int currentSize = this.size;
             this.size = 0;
 
-            var tasks = new List<ChannelFuture>(currentSize);
+            var tasks = new List<IValueTaskSource>(currentSize);
             while (write != null)
             {
                 PendingWrite next = write.Next;
@@ -193,7 +194,7 @@ namespace DotNetty.Transport.Channels
                 write = next;
             }
             this.AssertEmpty();
-            return new ChannelFuture(new AggregatingPromise(tasks));
+            return new ValueTask(new AggregatingPromise(tasks), 0);
         }
 
         void AssertEmpty() => Contract.Assert(this.tail == null && this.head == null && this.size == 0);
@@ -206,26 +207,26 @@ namespace DotNetty.Transport.Channels
         ///     <see cref="Task" /> if something was written and <c>null</c> if the <see cref="BatchingPendingWriteQueue" />
         ///     is empty.
         /// </returns>
-        public ChannelFuture RemoveAndWriteAsync()
+        public ValueTask RemoveAndWriteAsync()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
 
             PendingWrite write = this.head;
             if (write == null)
             {
-                return ChannelFuture.Completed;
+                return default(ValueTask);
             }
             object msg = write.Messages;
             this.Recycle(write, true);
             this.ctx.WriteAsync(msg).LinkOutcome(write);
-            return new ChannelFuture(write);
+            return write;
         }
 
         /// <summary>
         ///     Removes a pending write operation and release it's message via <see cref="ReferenceCountUtil.SafeRelease(object)"/>.
         /// </summary>
         /// <returns><see cref="TaskCompletionSource" /> of the pending write or <c>null</c> if the queue is empty.</returns>
-        public IChannelPromise Remove()
+        public IPromise Remove()
         {
             Contract.Assert(this.ctx.Executor.InEventLoop);
 
@@ -317,7 +318,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>Holds all meta-data and construct the linked-list structure.</summary>
-        sealed class PendingWrite : AbstractRecyclableChannelPromise
+        sealed class PendingWrite : AbstractRecyclablePromise
         {
             static readonly ThreadLocalPool<PendingWrite> Pool = new ThreadLocalPool<PendingWrite>(handle => new PendingWrite(handle));
 

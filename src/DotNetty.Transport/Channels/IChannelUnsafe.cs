@@ -27,7 +27,7 @@ namespace DotNetty.Transport.Channels
 
         void BeginRead();
 
-        ChannelFuture WriteAsync(object message);
+        ValueTask WriteAsync(object message);
 
         void Flush();
 

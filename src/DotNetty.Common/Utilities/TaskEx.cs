@@ -4,6 +4,7 @@
 namespace DotNetty.Common.Utilities
 {
     using System;
+    using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
 
@@ -18,6 +19,10 @@ namespace DotNetty.Common.Utilities
         public static readonly Task<bool> True = Task.FromResult(true);
 
         public static readonly Task<bool> False = Task.FromResult(false);
+
+        public static ValueTask ToValueTask(this Exception ex) => new ValueTask(FromException(ex));
+        
+        public static ValueTask<T> ToValueTask<T>(this Exception ex) => new ValueTask<T>(FromException<T>(ex));
 
         static Task<int> CreateCancelledTask()
         {
@@ -40,7 +45,7 @@ namespace DotNetty.Common.Utilities
             return tcs.Task;
         }
 
-        static readonly Action<Task, object> LinkOutcomeContinuationAction = (t, tcs) =>
+        static readonly Action<Task, object> LinkOutcomeTcs = (t, tcs) =>
         {
             switch (t.Status)
             {
@@ -57,7 +62,7 @@ namespace DotNetty.Common.Utilities
                     throw new ArgumentOutOfRangeException();
             }
         };
-
+        
         public static void LinkOutcome(this Task task, TaskCompletionSource taskCompletionSource)
         {
             switch (task.Status)
@@ -72,22 +77,71 @@ namespace DotNetty.Common.Utilities
                     taskCompletionSource.TryUnwrap(task.Exception);
                     break;
                 default:
-                    task.ContinueWith(
-                        LinkOutcomeContinuationAction,
-                        taskCompletionSource,
-                        TaskContinuationOptions.ExecuteSynchronously);
+                    task.ContinueWith(LinkOutcomeTcs, taskCompletionSource, TaskContinuationOptions.ExecuteSynchronously);
+                    break;
+            }
+        }
+        
+        static readonly Action<Task, object> LinkOutcomePromise = (t, promise) =>
+        {
+            switch (t.Status)
+            {
+                case TaskStatus.RanToCompletion:
+                    ((IPromise)promise).TryComplete();
+                    break;
+                case TaskStatus.Canceled:
+                    ((IPromise)promise).TrySetCanceled();
+                    break;
+                case TaskStatus.Faulted:
+                    ((IPromise)promise).TryUnwrap(t.Exception);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        };
+        
+        public static void LinkOutcome(this Task task, IPromise promise)
+        {
+            switch (task.Status)
+            {
+                case TaskStatus.RanToCompletion:
+                    promise.TryComplete();
+                    break;
+                case TaskStatus.Canceled:
+                    promise.TrySetCanceled();
+                    break;
+                case TaskStatus.Faulted:
+                    promise.TryUnwrap(task.Exception);
+                    break;
+                default:
+                    task.ContinueWith(LinkOutcomePromise, promise, TaskContinuationOptions.ExecuteSynchronously);
                     break;
             }
         }
 
-        public static void LinkOutcome(this ChannelFuture future, IChannelPromise promise)
+        public static async void LinkOutcome(this ValueTask future, IPromise promise)
         {
-            if (future.IsCompleted)
+            try
+            {
+                await future;
+                promise.TryComplete();
+            }
+            catch (Exception ex)
+            {
+                promise.TrySetException(ex);
+            }
+            
+            /*
+            
+            if (future.IsCompletedSuccessfully)
+            {
+                promise.TryComplete();
+            }
+            else if (future.IsFaulted || future.IsCanceled)
             {
                 try
                 {
-                    future.GetResult();
-                    promise.TryComplete();
+                    future.GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {
@@ -96,8 +150,8 @@ namespace DotNetty.Common.Utilities
             }
             else
             {
-                future.OnCompleted(() => LinkOutcome(future, promise));
-            }
+                future.GetAwaiter().OnCompleted(() => LinkOutcome(future, promise));
+            }*/
         }
         
 
@@ -151,6 +205,18 @@ namespace DotNetty.Common.Utilities
             else
             {
                 completionSource.TrySetException(exception);
+            }
+        }
+        
+        public static void TryUnwrap(this IPromise promise, Exception exception)
+        {
+            if (exception is AggregateException aggregateException)
+            {
+                promise.TrySetException(aggregateException.InnerException);
+            }
+            else
+            {
+                promise.TrySetException(exception);
             }
         }
 

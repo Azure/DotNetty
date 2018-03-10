@@ -62,10 +62,10 @@ namespace DotNetty.Transport.Channels
 
         IChannel Read();
 
-        ChannelFuture WriteAsync(object message);
+        ValueTask WriteAsync(object message);
 
         IChannel Flush();
 
-        ChannelFuture WriteAndFlushAsync(object message);
+        ValueTask WriteAndFlushAsync(object message);
     }
 }

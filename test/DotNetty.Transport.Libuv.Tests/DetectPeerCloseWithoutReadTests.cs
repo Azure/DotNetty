@@ -9,6 +9,7 @@ namespace DotNetty.Transport.Libuv.Tests
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
+    using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using Xunit;
@@ -62,7 +63,7 @@ namespace DotNetty.Transport.Libuv.Tests
 
             IByteBuffer buf = this.clientChannel.Allocator.Buffer(ExpectedBytes);
             buf.SetWriterIndex(buf.WriterIndex + ExpectedBytes);
-            this.clientChannel.WriteAndFlushAsync(buf).OnCompleted(() => this.clientChannel.CloseAsync());
+            this.clientChannel.WriteAndFlushAsync(buf).CloseOnComplete(this.clientChannel);
 
             Task<int> completion = serverHandler.Completion;
             Assert.True(completion.Wait(DefaultTimeout));
@@ -172,7 +173,7 @@ namespace DotNetty.Transport.Libuv.Tests
             {
                 IByteBuffer buf = ctx.Allocator.Buffer(this.expectedBytesRead);
                 buf.SetWriterIndex(buf.WriterIndex + this.expectedBytesRead);
-                ctx.WriteAndFlushAsync(buf).OnCompleted(() => ctx.CloseAsync());
+                ctx.WriteAndFlushAsync(buf).CloseOnComplete(ctx);
                 ctx.FireChannelActive();
             }
 

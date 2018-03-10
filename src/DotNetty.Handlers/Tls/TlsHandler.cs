@@ -36,7 +36,7 @@ namespace DotNetty.Handlers.Tls
         int packetLength;
         volatile IChannelHandlerContext capturedContext;
         BatchingPendingWriteQueue pendingUnencryptedWrites;
-        ChannelFuture lastContextWriteTask;
+        Task lastContextWriteTask;
         bool firedChannelRead;
         IByteBuffer pendingSslStreamReadBuffer;
         Task<int> pendingSslStreamReadFuture;
@@ -508,7 +508,7 @@ namespace DotNetty.Handlers.Tls
             return oldState.Has(TlsHandlerState.Authenticated);
         }
 
-        public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
             if (!(message is IByteBuffer))
             {
@@ -572,12 +572,12 @@ namespace DotNetty.Handlers.Tls
                     buf.ReadBytes(this.sslStream, buf.ReadableBytes); // this leads to FinishWrap being called 0+ times
                     buf.Release();
 
-                    IChannelPromise promise = this.pendingUnencryptedWrites.Remove();
-                    ChannelFuture task = this.lastContextWriteTask;
+                    IPromise promise = this.pendingUnencryptedWrites.Remove();
+                    Task task = this.lastContextWriteTask;
                     if (!task.IsCompleted)
                     {
                         task.LinkOutcome(promise);
-                        this.lastContextWriteTask = ChannelFuture.Completed;
+                        this.lastContextWriteTask = TaskEx.Completed;
                     }
                     else
                     {
@@ -606,12 +606,12 @@ namespace DotNetty.Handlers.Tls
                 output.WriteBytes(buffer, offset, count);
             }
 
-            this.lastContextWriteTask = this.capturedContext.WriteAsync(output);
+            this.lastContextWriteTask = this.capturedContext.WriteAsync(output).AsTask();
         }
 
-        ChannelFuture FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
+        ValueTask FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
         {
-            var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+            ValueTask future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
             this.ReadIfNeeded(this.capturedContext);
             return future;
         }

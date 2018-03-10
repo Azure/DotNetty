@@ -40,7 +40,7 @@ namespace DotNetty.Transport.Channels
 
         void HandlerRemoved(IChannelHandlerContext context);
 
-        ChannelFuture WriteAsync(IChannelHandlerContext context, object message);
+        ValueTask WriteAsync(IChannelHandlerContext context, object message);
 
         void Flush(IChannelHandlerContext context);
 

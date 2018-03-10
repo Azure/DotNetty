@@ -7,24 +7,33 @@ namespace DotNetty.Common.Concurrency
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
     using System.Runtime.ExceptionServices;
+    using System.Threading.Tasks;
+    using System.Threading.Tasks.Sources;
 
-    public abstract class AbstractChannelPromise : IChannelFuture, IChannelPromise
+    public abstract class AbstractPromise : IPromise, IValueTaskSource
     {
-        protected static readonly Exception CompletedNoException = new Exception();
+        const short SourceToken = 0;
         
+        static readonly Exception CanceledException = new OperationCanceledException();
+        static readonly Exception CompletedNoException = new Exception();
+       
         protected Exception exception;
         
         protected int callbackCount;
-        protected (Delegate, object)[] callbacks;
+        protected (Action<object>, object)[] callbacks;
         
-        public virtual bool IsCompleted => this.exception != null;
+        public bool TryComplete() => this.TryComplete0(CompletedNoException);
+        
+        public bool TrySetException(Exception exception) => this.TryComplete0(exception);
 
-        public virtual bool TryComplete(Exception exception = null)
+        public bool TrySetCanceled() => this.TryComplete0(CanceledException); 
+        
+        protected virtual bool TryComplete0(Exception exception)
         {
             if (this.exception == null)
             {
                 // Set the exception object to the exception passed in or a sentinel value
-                this.exception = exception ?? CompletedNoException;
+                this.exception = exception;
                 this.ExecuteCallbacks();
                 return true;
             }
@@ -32,13 +41,33 @@ namespace DotNetty.Common.Concurrency
             return false;
         }
 
-        public IChannelFuture Future => this;
+        public IValueTaskSource Future => this;
 
         public bool SetUncancellable() => true;
-
-        public virtual void GetResult()
+        
+        public virtual ValueTaskSourceStatus GetStatus(short token)
         {
-            if (!this.IsCompleted)
+            if (this.exception == null)
+            {
+                return ValueTaskSourceStatus.Pending;
+            }
+            else if (this.exception == CompletedNoException)
+            {
+                return ValueTaskSourceStatus.Succeeded;
+            }
+            else if (this.exception == CanceledException)
+            {
+                return ValueTaskSourceStatus.Canceled;
+            }
+            else
+            {
+                return ValueTaskSourceStatus.Faulted;
+            }
+        }
+
+        public virtual void GetResult(short token)
+        {
+            if (this.exception == null)
             {
                 throw new InvalidOperationException("Attempt to get result on not yet completed promise");
                 //ThrowHelper.ThrowInvalidOperationException_GetResultNotCompleted();
@@ -58,17 +87,11 @@ namespace DotNetty.Common.Concurrency
             */
         }
 
-        public void UnsafeOnCompleted(Action continuation) => this.OnCompleted(continuation);
-
-        public void OnCompleted(Action callback) => this.OnCompleted0(callback, null);
-
-        public void OnCompleted(Action<object> continuation, object state) => this.OnCompleted0(continuation, null);
-
-        protected virtual void OnCompleted0(Delegate callback, object state)
+        public virtual void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
         {
             if (this.callbacks == null)
             {
-                this.callbacks = new (Delegate, object)[1];
+                this.callbacks = new (Action<object>, object)[1];
                 //this.callbacks = s_completionCallbackPool.Rent(InitialCallbacksSize);
             }
 
@@ -77,20 +100,20 @@ namespace DotNetty.Common.Concurrency
 
             if (newIndex == this.callbacks.Length)
             {
-                var newArray = new (Delegate, object)[this.callbacks.Length * 2];
+                var newArray = new (Action<object>, object)[this.callbacks.Length * 2];
                 Array.Copy(this.callbacks, newArray, this.callbacks.Length);
                 this.callbacks = newArray;
             }
 
-            this.callbacks[newIndex] = (callback, state);
+            this.callbacks[newIndex] = (continuation, state);
 
-            if (this.IsCompleted)
+            if (this.exception != null)
             {
                 this.ExecuteCallbacks();
             }
         }
 
-        public static implicit operator ChannelFuture(AbstractChannelPromise promise) => new ChannelFuture(promise);
+        public static implicit operator ValueTask(AbstractPromise promise) => new ValueTask(promise, SourceToken);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         bool IsCompletedOrThrow()
@@ -126,18 +149,8 @@ namespace DotNetty.Common.Concurrency
                 {
                     try
                     {
-                        (Delegate callback, object state) = this.callbacks[i];
-                        switch (callback)
-                        {
-                            case Action action:
-                                action();
-                                break;
-                            case Action<object> action:
-                                action(state);
-                                break;
-                            default:
-                                throw new ArgumentException("action");
-                        }
+                        (Action<object> callback, object state) = this.callbacks[i];
+                        callback(state);
                     }
                     catch (Exception ex)
                     {

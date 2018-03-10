@@ -83,9 +83,9 @@ namespace DotNetty.Handlers.Timeout
                  : TimeSpan.Zero;
         }
 
-        public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
-            ChannelFuture task = context.WriteAsync(message);
+            ValueTask task = context.WriteAsync(message);
 
             if (this.timeout.Ticks > 0)
             {
@@ -106,20 +106,20 @@ namespace DotNetty.Handlers.Timeout
             }
         }
 
-        void ScheduleTimeout(IChannelHandlerContext context, ChannelFuture future)
+        async void ScheduleTimeout(IChannelHandlerContext context, ValueTask future)
         {
             // Schedule a timeout.
             var task = new WriteTimeoutTask(context, future, this);
 
-            task.ScheduledTask = context.Executor.Schedule(task, timeout);
+            task.ScheduledTask = context.Executor.Schedule(task, this.timeout);
 
             if (!task.ScheduledTask.Completion.IsCompleted)
             {
                 this.AddWriteTimeoutTask(task);
 
                 // Cancel the scheduled timeout if the flush promise is complete.
-                future.OnCompleted(WriteTimeoutTask.OperationCompleteAction, task);
-              //  future.ContinueWith(WriteTimeoutTask.OperationCompleteAction, task, TaskContinuationOptions.ExecuteSynchronously);
+                await future;
+                WriteTimeoutTask.OperationCompleteAction(task);
             }
         }
 
@@ -147,15 +147,15 @@ namespace DotNetty.Handlers.Timeout
             }
         }
 
-        sealed class WriteTimeoutTask : AbstractChannelPromise, IRunnable
+        sealed class WriteTimeoutTask : AbstractPromise, IRunnable
         {
             readonly WriteTimeoutHandler handler;
             readonly IChannelHandlerContext context;
-            readonly ChannelFuture future;
+            readonly ValueTask future;
 
             public static readonly Action<object> OperationCompleteAction = HandleOperationComplete;
 
-            public WriteTimeoutTask(IChannelHandlerContext context, ChannelFuture future, WriteTimeoutHandler handler)
+            public WriteTimeoutTask(IChannelHandlerContext context, ValueTask future, WriteTimeoutHandler handler)
             {
                 this.context = context;
                 this.future = future;

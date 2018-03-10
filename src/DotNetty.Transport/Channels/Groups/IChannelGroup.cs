@@ -18,17 +18,17 @@ namespace DotNetty.Transport.Channels.Groups
 
         IChannel Find(IChannelId id);
 
-        ChannelFuture WriteAsync(object message);
+        ValueTask WriteAsync(object message);
 
-        ChannelFuture WriteAsync(object message, IChannelMatcher matcher);
+        ValueTask WriteAsync(object message, IChannelMatcher matcher);
 
         IChannelGroup Flush();
 
         IChannelGroup Flush(IChannelMatcher matcher);
 
-        ChannelFuture WriteAndFlushAsync(object message);
+        ValueTask WriteAndFlushAsync(object message);
 
-        ChannelFuture WriteAndFlushAsync(object message, IChannelMatcher matcher);
+        ValueTask WriteAndFlushAsync(object message, IChannelMatcher matcher);
 
         Task DisconnectAsync();
 

@@ -793,16 +793,16 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public ChannelFuture WriteAsync(object msg)
+        public ValueTask WriteAsync(object msg)
         {
             Contract.Requires(msg != null);
             // todo: check for cancellation
             return this.WriteAsync(msg, false);
         }
 
-        ChannelFuture InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
+        ValueTask InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
 
-        ChannelFuture InvokeWriteAsync0(object msg)
+        ValueTask InvokeWriteAsync0(object msg)
         {
             try
             {
@@ -810,7 +810,7 @@ namespace DotNetty.Transport.Channels
             }
             catch (Exception ex)
             {
-                return ChannelFuture.FromException(ex);
+                return ex.ToValueTask();
             }
         }
 
@@ -853,7 +853,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public ChannelFuture WriteAndFlushAsync(object message)
+        public ValueTask WriteAndFlushAsync(object message)
         {
             Contract.Requires(message != null);
             // todo: check for cancellation
@@ -861,18 +861,18 @@ namespace DotNetty.Transport.Channels
             return this.WriteAsync(message, true);
         }
 
-        ChannelFuture InvokeWriteAndFlushAsync(object msg)
+        ValueTask InvokeWriteAndFlushAsync(object msg)
         {
             if (this.Added)
             {
-                ChannelFuture task = this.InvokeWriteAsync0(msg);
+                ValueTask task = this.InvokeWriteAsync0(msg);
                 this.InvokeFlush0();
                 return task;
             }
             return this.WriteAndFlushAsync(msg);
         }
 
-        ChannelFuture WriteAsync(object msg, bool flush)
+        ValueTask WriteAsync(object msg, bool flush)
         {
             AbstractChannelHandlerContext next = this.FindContextOutbound();
             object m = this.pipeline.Touch(msg, next);
@@ -961,7 +961,7 @@ namespace DotNetty.Transport.Channels
             {
                 try
                 {
-                    task.TryComplete(cause);
+                    task.TrySetException(cause);
                 }
                 finally
                 {
@@ -974,8 +974,7 @@ namespace DotNetty.Transport.Channels
 
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
 
-
-        abstract class AbstractWriteTask : AbstractRecyclableChannelPromise, IRunnable
+        abstract class AbstractWriteTask : AbstractRecyclablePromise, IRunnable
         {
             static readonly bool EstimateTaskSizeOnSubmit =
                 SystemPropertyUtil.GetBoolean("io.netty.transport.estimateSizeOnSubmit", true);
@@ -1035,7 +1034,7 @@ namespace DotNetty.Transport.Channels
                 }
                 catch (Exception ex)
                 {
-                    this.TryComplete(ex);
+                    this.TrySetException(ex);
                 }
                 finally
                 {
@@ -1048,7 +1047,7 @@ namespace DotNetty.Transport.Channels
                 }
             }
 
-            protected virtual ChannelFuture WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
+            protected virtual ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
 
             /*public override void Recycle()
             {
@@ -1091,9 +1090,9 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            protected override ChannelFuture WriteAsync(AbstractChannelHandlerContext ctx, object msg)
+            protected override ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg)
             {
-                ChannelFuture result = base.WriteAsync(ctx, msg);
+                ValueTask result = base.WriteAsync(ctx, msg);
                 ctx.InvokeFlush();
                 return result;
             }

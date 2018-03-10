@@ -295,7 +295,7 @@ namespace DotNetty.Transport.Channels.Embedded
                 return IsNotEmpty(this.outboundMessages);
             }
 
-            ThreadLocalObjectList futures = ThreadLocalObjectList.NewInstance(msgs.Length);
+            ThreadLocalObjectList<Task> futures = ThreadLocalObjectList<Task>.NewInstance(msgs.Length);
 
             foreach (object m in msgs)
             {
@@ -324,6 +324,7 @@ namespace DotNetty.Transport.Channels.Embedded
                     future.ContinueWith(t => this.RecordException(t));
                 }
             }
+            
             futures.Return();
 
             this.RunPendingTasks();
@@ -331,15 +332,16 @@ namespace DotNetty.Transport.Channels.Embedded
             return IsNotEmpty(this.outboundMessages);
         }
 
-        void RecordException(ChannelFuture future)
+        void RecordException(Task future)
         {
-            try
+            switch (future.Status)
             {
-                future.GetResult();
-            }
-            catch (Exception ex)
-            {
-                this.RecordException(ex);
+                case TaskStatus.Canceled:
+                case TaskStatus.Faulted:
+                    this.RecordException(future.Exception);
+                    break;
+                default:
+                    break;
             }
         }
 

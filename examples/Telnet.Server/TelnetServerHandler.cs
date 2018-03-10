@@ -36,7 +36,7 @@ namespace Telnet.Server
                 response = "Did you say '" + msg + "'?\r\n";
             }
 
-            ChannelFuture wait_close = contex.WriteAndFlushAsync(response);
+            ValueTask wait_close = contex.WriteAndFlushAsync(response);
             if (close)
             {
                 await wait_close;

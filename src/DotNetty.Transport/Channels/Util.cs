@@ -29,7 +29,7 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
         /// </summary>
-        public static void SafeSetSuccess(IChannelPromise promise, IInternalLogger logger)
+        public static void SafeSetSuccess(IPromise promise, IInternalLogger logger)
         {
             if (!promise.TryComplete())
             {
@@ -55,9 +55,9 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         ///     Marks the specified {@code promise} as failure.  If the {@code promise} is done already, log a message.
         /// </summary>
-        public static void SafeSetFailure(IChannelPromise promise, Exception cause, IInternalLogger logger)
+        public static void SafeSetFailure(IPromise promise, Exception cause, IInternalLogger logger)
         {
-            if (!promise.TryComplete(cause))
+            if (!promise.TrySetException(cause))
             {
                 logger.Warn($"Failed to mark a promise as failure because it's done already: {promise}", cause);
             }

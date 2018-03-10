@@ -17,7 +17,7 @@ namespace DotNetty.Transport.Tests.Performance.Utilities
             this.throughput = throughput;
         }
 
-        public override ChannelFuture WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
             this.throughput.Increment();
             return context.WriteAsync(message);

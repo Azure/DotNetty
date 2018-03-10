@@ -61,8 +61,8 @@ namespace DotNetty.Transport.Libuv.Tests
             this.clientChannel = task.Result;
             Assert.NotNull(this.clientChannel.LocalAddress);
 
-            ChannelFuture writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[1024]));
-            Assert.True(writeTask.Wait(DefaultTimeout), "Write task timed out");
+            ValueTask writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[1024]));
+            Assert.True(writeTask.AsTask().Wait(DefaultTimeout), "Write task timed out");
 
             ExceptionHandler exceptionHandler = serverInitializer.ErrorHandler;
             Assert.True(exceptionHandler.Inactive.Wait(DefaultTimeout), "Handler inactive timed out");

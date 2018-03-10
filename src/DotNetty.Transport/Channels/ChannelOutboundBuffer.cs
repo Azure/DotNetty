@@ -17,6 +17,8 @@ namespace DotNetty.Transport.Channels
     using System.Runtime.ExceptionServices;
     using System.Security.Cryptography;
     using System.Threading;
+    using System.Threading.Tasks;
+    using System.Threading.Tasks.Sources;
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
@@ -57,12 +59,12 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// Adds the given message to this <see cref="ChannelOutboundBuffer"/>. The given
-        /// <see cref="TaskCompletionSource"/> will be notified once the message was written.
+        /// Adds the given message to this <see cref="ChannelOutboundBuffer"/>. Returned
+        /// <see cref="ValueTask"/> will be notified once the message was written.
         /// </summary>
         /// <param name="msg">The message to add to the buffer.</param>
         /// <param name="size">The size of the message.</param>
-        public ChannelFuture AddMessage(object msg, int size)
+        public ValueTask AddMessage(object msg, int size)
         {
             Entry entry = Entry.NewInstance(this.channel.EventLoop, msg, size);
             if (this.tailEntry == null)
@@ -786,7 +788,7 @@ namespace DotNetty.Transport.Channels
             bool ProcessMessage(object msg);
         }
 
-        sealed class Entry : AbstractRecyclableChannelPromise
+        sealed class Entry : AbstractRecyclablePromise
         {
             static readonly ThreadLocalPool<Entry> Pool = new ThreadLocalPool<Entry>(h => new Entry(h));
 

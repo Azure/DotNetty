@@ -54,13 +54,13 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public ChannelFuture WriteAsync(object message) => this.WriteAsync(message, ChannelMatchers.All());
+        public ValueTask WriteAsync(object message) => this.WriteAsync(message, ChannelMatchers.All());
 
-        public ChannelFuture WriteAsync(object message, IChannelMatcher matcher)
+        public ValueTask WriteAsync(object message, IChannelMatcher matcher)
         {
             Contract.Requires(message != null);
             Contract.Requires(matcher != null);
-            var futures = new Dictionary<IChannel, ChannelFuture>();
+            var futures = new Dictionary<IChannel, ValueTask>();
             foreach (IChannel c in this.nonServerChannels.Values)
             {
                 if (matcher.Matches(c))
@@ -144,13 +144,13 @@ namespace DotNetty.Transport.Channels.Groups
         IEnumerator IEnumerable.GetEnumerator() => new CombinedEnumerator<IChannel>(this.serverChannels.Values.GetEnumerator(),
             this.nonServerChannels.Values.GetEnumerator());
 
-        public ChannelFuture WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, ChannelMatchers.All());
+        public ValueTask WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, ChannelMatchers.All());
 
-        public ChannelFuture WriteAndFlushAsync(object message, IChannelMatcher matcher)
+        public ValueTask WriteAndFlushAsync(object message, IChannelMatcher matcher)
         {
             Contract.Requires(message != null);
             Contract.Requires(matcher != null);
-            var futures = new Dictionary<IChannel, ChannelFuture>();
+            var futures = new Dictionary<IChannel, ValueTask>();
             foreach (IChannel c in this.nonServerChannels.Values)
             {
                 if (matcher.Matches(c))

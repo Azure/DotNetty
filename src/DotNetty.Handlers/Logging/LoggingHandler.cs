@@ -209,8 +209,7 @@ namespace DotNetty.Handlers.Logging
             }
             ctx.FireChannelRead(message);
         }
-
-        public override Task WriteAsync(IChannelHandlerContext ctx, object msg)
+        
         public override void ChannelReadComplete(IChannelHandlerContext ctx)
         {
             if (this.Logger.IsEnabled(this.InternalLevel))
@@ -253,7 +252,7 @@ namespace DotNetty.Handlers.Logging
             ctx.Read();
         }
 
-        public override ChannelFuture WriteAsync(IChannelHandlerContext ctx, object msg)
+        public override ValueTask WriteAsync(IChannelHandlerContext ctx, object msg)
         {
             if (this.Logger.IsEnabled(this.InternalLevel))
             {

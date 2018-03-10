@@ -4,12 +4,17 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Threading.Tasks.Sources;
 
-    public interface IChannelPromise
+    public interface IPromise
     {
-        bool TryComplete(Exception exception = null);
+        bool TryComplete();
+        
+        bool TrySetException(Exception exception);
 
-        IChannelFuture Future { get; }
+        bool TrySetCanceled();
+
+        IValueTaskSource Future { get; }
 
         bool SetUncancellable();
     }

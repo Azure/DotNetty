@@ -6,29 +6,33 @@ namespace DotNetty.Transport.Channels.Groups
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
 
-    public sealed class DefaultChannelGroupPromise : AbstractChannelPromise
+    public sealed class DefaultChannelGroupPromise : AbstractPromise
     {
-        readonly Dictionary<IChannel, ChannelFuture> futures;
+        readonly Dictionary<IChannel, ValueTask> futures;
         int failureCount;
         int successCount;
         IList<KeyValuePair<IChannel, Exception>> failures;
 
-        public DefaultChannelGroupPromise(Dictionary<IChannel, ChannelFuture> futures /*, IEventExecutor executor*/)
+        public DefaultChannelGroupPromise(
+            Dictionary<IChannel, ValueTask> futures
+            /*, IEventExecutor executor*/)
         {
             Contract.Requires(futures != null);
 
-            this.futures = new Dictionary<IChannel, ChannelFuture>();
-            foreach (KeyValuePair<IChannel, ChannelFuture> pair in futures)
+            this.futures = new Dictionary<IChannel, ValueTask>();
+            foreach (KeyValuePair<IChannel, ValueTask> pair in futures)
             {
                 this.futures.Add(pair.Key, pair.Value);
-                pair.Value.OnCompleted(() =>
+                ValueTaskAwaiter awaiter = pair.Value.GetAwaiter();
+                awaiter.OnCompleted(() =>
                 {
                     try
                     {
-                        pair.Value.GetResult();
+                        awaiter.GetResult();
                         this.successCount++;
                     }
                     catch(Exception ex)
@@ -48,7 +52,7 @@ namespace DotNetty.Transport.Channels.Groups
                     {
                         if (this.failureCount > 0)
                         {
-                            this.TryComplete(new ChannelGroupException(this.failures));
+                            this.TrySetException(new ChannelGroupException(this.failures));
                         }
                         else
                         {
