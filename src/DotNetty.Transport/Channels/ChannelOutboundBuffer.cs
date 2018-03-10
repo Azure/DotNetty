@@ -659,7 +659,6 @@ namespace DotNetty.Transport.Channels
                     {
                         ReferenceCountUtil.SafeRelease(e.Message);
                         SafeFail(e.Promise, cause);
-                        Util.SafeSetFailure(e.Promise, cause, Logger);
                     }
                     e = e.RecycleAndGetNext();
                 }
