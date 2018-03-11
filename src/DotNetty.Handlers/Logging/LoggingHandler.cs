@@ -209,6 +209,48 @@ namespace DotNetty.Handlers.Logging
             ctx.FireChannelRead(message);
         }
 
+        public override void ChannelReadComplete(IChannelHandlerContext ctx)
+        {
+            if (this.Logger.IsEnabled(this.InternalLevel))
+            {
+                this.Logger.Log(this.InternalLevel, this.Format(ctx, "RECEIVED_COMPLETE"));
+            }
+            ctx.FireChannelReadComplete();
+        }
+
+        public override void ChannelWritabilityChanged(IChannelHandlerContext ctx)
+        {
+            if (this.Logger.IsEnabled(this.InternalLevel))
+            {
+                this.Logger.Log(this.InternalLevel, this.Format(ctx, "WRITABILITY", ctx.Channel.IsWritable));
+            }
+            ctx.FireChannelWritabilityChanged();
+        }
+
+        public override void HandlerAdded(IChannelHandlerContext ctx)
+        {
+            if (this.Logger.IsEnabled(this.InternalLevel))
+            {
+                this.Logger.Log(this.InternalLevel, this.Format(ctx, "HANDLER_ADDED"));
+            }
+        }
+        public override void HandlerRemoved(IChannelHandlerContext ctx)
+        {
+            if (this.Logger.IsEnabled(this.InternalLevel))
+            {
+                this.Logger.Log(this.InternalLevel, this.Format(ctx, "HANDLER_REMOVED"));
+            }
+        }
+
+        public override void Read(IChannelHandlerContext ctx)
+        {
+            if (this.Logger.IsEnabled(this.InternalLevel))
+            {
+                this.Logger.Log(this.InternalLevel, this.Format(ctx, "READ"));
+            }
+            ctx.Read();
+        }
+
         public override Task WriteAsync(IChannelHandlerContext ctx, object msg)
         {
             if (this.Logger.IsEnabled(this.InternalLevel))
