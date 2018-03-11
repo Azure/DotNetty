@@ -10,6 +10,7 @@ namespace DotNetty.Common.Tests.Internal.Logging
     using Moq;
     using Xunit;
 
+    [CollectionDefinition(nameof(InternalLoggerFactoryTest), DisableParallelization = true)]
     public class InternalLoggerFactoryTest
     {
         // todo: CodeContracts on CI
