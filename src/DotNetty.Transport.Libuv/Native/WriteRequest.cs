@@ -173,7 +173,6 @@ namespace DotNetty.Transport.Libuv.Native
             this.nativeUnsafe = null;
             this.count = 0;
             this.size = 0;
-            this.input = null;
             this.recyclerHandle.Release(this);
         }
 
