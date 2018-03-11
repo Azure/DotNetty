@@ -24,7 +24,7 @@ namespace DotNetty.Transport.Libuv.Tests
         }
 
         [Fact]
-        public async Task WriteBeforeConnect()
+        public void WriteBeforeConnect()
         {
             Bootstrap cb = new Bootstrap()
                 .Group(this.group)

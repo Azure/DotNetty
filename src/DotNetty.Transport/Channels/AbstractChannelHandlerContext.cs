@@ -4,11 +4,14 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Collections;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Reflection;
     using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
+    using System.Threading.Tasks.Sources;
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
@@ -873,7 +876,7 @@ namespace DotNetty.Transport.Channels
                 this.InvokeFlush0();
                 return task;
             }
-            return this.WriteAndFlushAsync(msg);
+            return this.WriteAndFlushAsync(msg, notifyComplete);
         }
 
         ValueTask WriteAsync(object msg, FlushMode mode)
@@ -892,8 +895,24 @@ namespace DotNetty.Transport.Channels
                 AbstractWriteTask task = mode == FlushMode.NoFlush 
                     ? WriteTask.NewInstance(next, m)
                     : (AbstractWriteTask)WriteAndFlushTask.NewInstance(next, m, mode == FlushMode.Flush);
+
+                ValueTask result;
+                switch (mode)
+                {
+                    case FlushMode.NoFlush:
+                        result = task;
+                        break;
+                    case FlushMode.Flush:
+                        result = ((ValueTask)task).Preserve();
+                        break;
+                    case FlushMode.VoidFlush:
+                    default:
+                        result = default(ValueTask);
+                        break;
+                }
+                
                 SafeExecuteOutbound(nextExecutor, task, msg);
-                return task;
+                return result;
             }
         }
 
@@ -1106,6 +1125,7 @@ namespace DotNetty.Transport.Channels
             {
             }
             
+            //notifyComplete is always true since continuation triggers WriteAndFlushTask completion 
             protected override ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAndFlushAsync(msg, this.notifyComplete);
 
         }
