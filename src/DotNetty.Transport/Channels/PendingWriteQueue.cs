@@ -83,7 +83,7 @@ namespace DotNetty.Transport.Channels
                 messageSize = 0;
             }
             //var promise = new TaskCompletionSource();
-            PendingWrite write = PendingWrite.NewInstance(this.ctx.Executor, msg, messageSize);
+            PendingWrite write = PendingWrite.NewInstance(msg, messageSize);
             PendingWrite currentTail = this.tail;
             if (currentTail == null)
             {
@@ -187,7 +187,7 @@ namespace DotNetty.Transport.Channels
                 write = next;
             }
             this.AssertEmpty();
-            return new ValueTask(new AggregatingPromise(tasks), 0);
+            return new AggregatingPromise(tasks);
         }
 
         void AssertEmpty() => Contract.Assert(this.tail == null && this.head == null && this.size == 0);
@@ -266,8 +266,6 @@ namespace DotNetty.Transport.Channels
                     Contract.Assert(this.size > 0);
                 }
             }
-
-            //write.Recycle();
             
             // We need to guard against null as channel.unsafe().outboundBuffer() may returned null
             // if the channel was already closed when constructing the PendingWriteQueue.
@@ -291,7 +289,7 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            public static PendingWrite NewInstance(IEventExecutor executor, object msg, int size)
+            public static PendingWrite NewInstance(object msg, int size)
             {
                 PendingWrite write = Pool.Take();
                 write.Init();
@@ -306,7 +304,6 @@ namespace DotNetty.Transport.Channels
                 this.Next = null;
                 this.Msg = null;
                 base.Recycle();
-                //this.handle.Release(this);
             }
         }
     }

@@ -609,11 +609,11 @@ namespace DotNetty.Handlers.Tls
             this.lastContextWriteTask = this.capturedContext.WriteAsync(output).AsTask();
         }
 
-        ValueTask FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
+        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
         {
-            ValueTask future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+            Task task = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count), true).AsTask();
             this.ReadIfNeeded(this.capturedContext);
-            return future;
+            return task;
         }
 
         public override Task CloseAsync(IChannelHandlerContext context)
@@ -815,7 +815,7 @@ namespace DotNetty.Handlers.Tls
             public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count);
 
             public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count).AsTask();
+                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
         
 
 #if !NETSTANDARD1_3

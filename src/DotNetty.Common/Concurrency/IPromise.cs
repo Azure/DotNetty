@@ -4,7 +4,6 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
-    using System.Threading.Tasks.Sources;
 
     public interface IPromise
     {
@@ -13,8 +12,6 @@ namespace DotNetty.Common.Concurrency
         bool TrySetException(Exception exception);
 
         bool TrySetCanceled();
-
-        IValueTaskSource Future { get; }
 
         bool SetUncancellable();
     }

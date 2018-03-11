@@ -903,6 +903,7 @@ namespace DotNetty.Transport.Channels
                         result = task;
                         break;
                     case FlushMode.Flush:
+                        //flush can synchronously complete write, hence Task allocation required to capture result
                         result = ((ValueTask)task).Preserve();
                         break;
                     case FlushMode.VoidFlush:

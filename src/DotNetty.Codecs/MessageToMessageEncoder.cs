@@ -73,7 +73,7 @@ namespace DotNetty.Codecs
                         for (int i = 0; i < lastItemIndex; i++)
                         {
                             // we don't care about output from these messages as failure while sending one of these messages will fail all messages up to the last message - which will be observed by the caller in Task result.
-                            ctx.WriteAsync(output[i]); // todo: optimize: once IChannelHandlerContext allows, pass "not interested in task" flag
+                            ctx.WriteAsync(output[i]);
                         }
                         result = ctx.WriteAsync(output[lastItemIndex]);
                     }

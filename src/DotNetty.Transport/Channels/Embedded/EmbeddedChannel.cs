@@ -295,7 +295,7 @@ namespace DotNetty.Transport.Channels.Embedded
                 return IsNotEmpty(this.outboundMessages);
             }
 
-            ThreadLocalObjectList<Task> futures = ThreadLocalObjectList<Task>.NewInstance(msgs.Length);
+            ThreadLocalObjectList futures = ThreadLocalObjectList.NewInstance(msgs.Length);
 
             foreach (object m in msgs)
             {

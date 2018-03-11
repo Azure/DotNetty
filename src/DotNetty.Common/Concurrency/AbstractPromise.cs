@@ -42,8 +42,6 @@ namespace DotNetty.Common.Concurrency
             return false;
         }
 
-        public IValueTaskSource Future => this;
-
         public bool SetUncancellable() => true;
         
         public virtual ValueTaskSourceStatus GetStatus(short token)

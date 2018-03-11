@@ -70,7 +70,7 @@ namespace DotNetty.Transport.Channels.Groups
             }
 
             ReferenceCountUtil.Release(message);
-            return new DefaultChannelGroupPromise(futures /*, this.executor*/);
+            return new DefaultChannelGroupPromise(futures);
         }
 
         public IChannelGroup Flush(IChannelMatcher matcher)
@@ -155,12 +155,12 @@ namespace DotNetty.Transport.Channels.Groups
             {
                 if (matcher.Matches(c))
                 {
-                    futures.Add(c, c.WriteAndFlushAsync(SafeDuplicate(message)));
+                    futures.Add(c, c.WriteAndFlushAsync(SafeDuplicate(message), true));
                 }
             }
 
             ReferenceCountUtil.Release(message);
-            return new DefaultChannelGroupPromise(futures /*, this.executor*/);
+            return new DefaultChannelGroupPromise(futures);
         }
 
         public Task DisconnectAsync() => this.DisconnectAsync(ChannelMatchers.All());

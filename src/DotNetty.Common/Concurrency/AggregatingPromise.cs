@@ -35,7 +35,7 @@ namespace DotNetty.Common.Concurrency
 
         void OnFutureCompleted(object obj)
         {
-            IValueTaskSource future = obj as IValueTaskSource;
+            var future = obj as IValueTaskSource;
             Contract.Assert(future != null);
             
             try
