@@ -46,6 +46,6 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.0-preview2-26308-11" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.0-preview2-26312-02" />
   </ItemGroup>
 </Project>
