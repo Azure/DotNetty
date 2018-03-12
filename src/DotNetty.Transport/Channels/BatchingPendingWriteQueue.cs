@@ -234,7 +234,6 @@ namespace DotNetty.Transport.Channels
             {
                 return null;
             }
-            //TaskCompletionSource promise = write.Promise;
             ReferenceCountUtil.SafeRelease(write.Messages);
             this.Recycle(write, true);
             return write;

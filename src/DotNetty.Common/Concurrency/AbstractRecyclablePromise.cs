@@ -60,7 +60,7 @@ namespace DotNetty.Common.Concurrency
         protected virtual void Recycle()
         {
             this.exception = null;
-            this.ClearCallback();
+            this.ClearCallbacks();
             this.recycled = true;
             this.handle.Release(this);
         }
