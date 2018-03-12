@@ -50,7 +50,7 @@ Task("Restore-NuGet-Packages")
   .Description("Restores dependencies")
   .Does(() =>
 {
-  DotNetCoreRestore();
+  DotNetCoreRestore(new DotNetCoreRestoreSettings { ConfigFile = ".nuget\\nuget.config" });
   
   int result = StartProcess("dotnet", new ProcessSettings { Arguments = "restore -r win-x64" } );
   if (result != 0)
