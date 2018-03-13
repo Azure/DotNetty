@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Collections.Concurrent;
     using DotNetty.Common.Internal.Logging;
 
     /// <summary>
@@ -31,6 +32,8 @@ namespace DotNetty.Transport.Channels
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<ChannelInitializer<T>>();
 
+        readonly ConcurrentDictionary<IChannelHandlerContext, bool> initMap = new ConcurrentDictionary<IChannelHandlerContext, bool>(); 
+
         /// <summary>
         ///     This method will be called once the {@link Channel} was registered. After the method returns this instance
         ///     will be removed from the {@link ChannelPipeline} of the {@link Channel}.
@@ -41,31 +44,74 @@ namespace DotNetty.Transport.Channels
 
         public override bool IsSharable => true;
 
-        public sealed override void ChannelRegistered(IChannelHandlerContext context)
+        public sealed override void ChannelRegistered(IChannelHandlerContext ctx)
         {
-            IChannelPipeline pipeline = context.Channel.Pipeline;
-            bool success = false;
+            // Normally this method will never be called as handlerAdded(...) should call initChannel(...) and remove
+            // the handler.
+            if (this.InitChannel(ctx)) {
+                // we called InitChannel(...) so we need to call now pipeline.fireChannelRegistered() to ensure we not
+                // miss an event.
+                ctx.Channel.Pipeline.FireChannelRegistered();
+            } else {
+                // Called InitChannel(...) before which is the expected behavior, so just forward the event.
+                ctx.FireChannelRegistered();
+            }
+        }
+
+        public override void ExceptionCaught(IChannelHandlerContext ctx, Exception cause)
+        {
+            Logger.Warn("Failed to initialize a channel. Closing: " + ctx.Channel, cause);
+            ctx.CloseAsync();
+        }
+
+        public override void HandlerAdded(IChannelHandlerContext ctx)
+        {
+            if (ctx.Channel.Registered)
+            {
+                // This should always be true with our current DefaultChannelPipeline implementation.
+                // The good thing about calling InitChannel(...) in HandlerAdded(...) is that there will be no ordering
+                // surprises if a ChannelInitializer will add another ChannelInitializer. This is as all handlers
+                // will be added in the expected order.
+                this.InitChannel(ctx);
+            }
+        }
+
+        bool InitChannel(IChannelHandlerContext ctx)
+        {
+            if (initMap.TryAdd(ctx, true)) // Guard against re-entrance.
+            {
+                try
+                {
+                    this.InitChannel((T) ctx.Channel);
+                }
+                catch (Exception cause)
+                {
+                    // Explicitly call exceptionCaught(...) as we removed the handler before calling initChannel(...).
+                    // We do so to prevent multiple calls to initChannel(...).
+                    this.ExceptionCaught(ctx, cause);
+                }
+                finally
+                {
+                    this.Remove(ctx);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        void Remove(IChannelHandlerContext ctx)
+        {
             try
             {
-                this.InitChannel((T)context.Channel);
-                pipeline.Remove(this);
-                context.FireChannelRegistered();
-                success = true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn("Failed to initialize a channel. Closing: " + context.Channel, ex);
-            }
-            finally
-            {
+                IChannelPipeline pipeline = ctx.Channel.Pipeline;
                 if (pipeline.Context(this) != null)
                 {
                     pipeline.Remove(this);
                 }
-                if (!success)
-                {
-                    context.CloseAsync();
-                }
+            }
+            finally
+            {
+                initMap.TryRemove(ctx, out bool removed);
             }
         }
     }
