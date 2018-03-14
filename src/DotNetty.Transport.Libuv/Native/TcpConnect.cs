@@ -8,9 +8,9 @@ namespace DotNetty.Transport.Libuv.Native
 
     sealed class TcpConnect : ConnectRequest
     {
-        readonly INativeUnsafe nativeUnsafe;
+        readonly NativeChannel.INativeUnsafe nativeUnsafe;
 
-        public TcpConnect(INativeUnsafe nativeUnsafe, IPEndPoint remoteEndPoint)
+        public TcpConnect(NativeChannel.INativeUnsafe nativeUnsafe, IPEndPoint remoteEndPoint)
         {
             Debug.Assert(nativeUnsafe != null);
             Debug.Assert(remoteEndPoint != null);

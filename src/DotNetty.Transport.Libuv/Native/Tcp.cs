@@ -13,14 +13,14 @@ namespace DotNetty.Transport.Libuv.Native
         static readonly uv_read_cb ReadCallback = OnReadCallback;
 
         readonly ReadOperation pendingRead;
-        INativeUnsafe nativeUnsafe;
+        NativeChannel.INativeUnsafe nativeUnsafe;
 
         public Tcp(Loop loop, uint flags = 0 /* AF_UNSPEC */ ) : base(loop, flags)
         {
             this.pendingRead = new ReadOperation();
         }
 
-        public void ReadStart(INativeUnsafe channel)
+        public void ReadStart(NativeChannel.INativeUnsafe channel)
         {
             Debug.Assert(channel != null);
 
