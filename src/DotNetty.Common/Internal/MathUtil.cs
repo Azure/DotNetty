@@ -10,7 +10,11 @@ namespace DotNetty.Common.Internal
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsOutOfBounds(int index, int length, int capacity) =>
-            (index | length | (index + length) | (capacity - (index + length))) < 0;
+            unchecked(index | length | (index + length) | (capacity - (index + length))) < 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsOutOfBounds2(int index, int length, int capacity) =>
+            length < 0 || unchecked(index | (index + length) | (capacity - (index + length))) < 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FindNextPositivePowerOfTwo(int value)
