@@ -34,29 +34,21 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static async void CloseSafe(this IChannel channel)
+        public static void CloseSafe(this IChannel channel)
         {
-            try
-            {
-                await channel.CloseAsync();
-            }
-            catch (TaskCanceledException)
-            {
-            }
-            catch (Exception ex) 
-            {
-                if (Log.DebugEnabled)
-                {
-                    Log.Debug("Failed to close channel " + channel + " cleanly.", ex);
-                }
-            }
+            CompleteChannelCloseTaskSafely(channel, channel.CloseAsync());
         }
 
-        public static async void CloseSafe(this IChannelUnsafe u)
+        public static void CloseSafe(this IChannelUnsafe u)
+        {
+            CompleteChannelCloseTaskSafely(u, u.CloseAsync());
+        }
+
+        internal static async void CompleteChannelCloseTaskSafely(object channelObject, Task closeTask)
         {
             try
             {
-                await u.CloseAsync();
+                await closeTask;
             }
             catch (TaskCanceledException)
             {
@@ -65,7 +57,7 @@ namespace DotNetty.Transport.Channels
             {
                 if (Log.DebugEnabled)
                 {
-                    Log.Debug("Failed to close channel " + u + " cleanly.", ex);
+                    Log.Debug("Failed to close channel " + channelObject + " cleanly.", ex);
                 }
             }
         }
