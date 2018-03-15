@@ -106,6 +106,13 @@ namespace DotNetty.Transport.Libuv
             }
         }
 
+        internal interface IServerNativeUnsafe
+        {
+            void Accept(RemoteConnection connection);
+
+            void Accept(NativeHandle handle);
+        }
+
         sealed class TcpServerChannelUnsafe : NativeChannelUnsafe, IServerNativeUnsafe
         {
             static readonly Action<object, object> AcceptAction = (u, e) => ((TcpServerChannelUnsafe)u).Accept((Tcp)e);

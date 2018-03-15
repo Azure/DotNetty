@@ -10,13 +10,13 @@ namespace DotNetty.Transport.Libuv.Native
     {
         static readonly uv_watcher_cb ConnectionCallback = OnConnectionCallback;
 
-        IServerNativeUnsafe nativeUnsafe;
+        TcpServerChannel.IServerNativeUnsafe nativeUnsafe;
 
         public TcpListener(Loop loop, uint flags) : base(loop, flags)
         {
         }
 
-        public void Listen(IServerNativeUnsafe channel, int backlog)
+        public void Listen(TcpServerChannel.IServerNativeUnsafe channel, int backlog)
         {
             Debug.Assert(channel != null && this.nativeUnsafe == null);
             Debug.Assert(backlog > 0);

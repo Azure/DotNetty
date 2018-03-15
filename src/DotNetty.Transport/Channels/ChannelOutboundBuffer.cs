@@ -183,7 +183,7 @@ namespace DotNetty.Transport.Channels
         ///     flushed message exists at the time this method is called it will return {@code false} to signal that no more
         ///     messages are ready to be handled.
         /// </summary>
-        public bool Remove(bool releaseMessages = true)
+        public bool Remove()
         {
             Entry e = this.flushedEntry;
             if (e == null)
@@ -201,10 +201,7 @@ namespace DotNetty.Transport.Channels
             if (!e.Cancelled)
             {
                 // only release message, notify and decrement if it was not canceled before.
-                if (releaseMessages)
-                {
-                    ReferenceCountUtil.SafeRelease(msg);
-                }
+                ReferenceCountUtil.SafeRelease(msg);
                 SafeSuccess(promise);
                 this.DecrementPendingOutboundBytes(size, false, true);
             }
@@ -241,9 +238,7 @@ namespace DotNetty.Transport.Channels
             {
                 // only release message, fail and decrement if it was not canceled before.
                 ReferenceCountUtil.SafeRelease(msg);
-
-                Util.SafeSetFailure(promise, cause, Logger);
-
+                SafeFail(promise, cause);
                 this.DecrementPendingOutboundBytes(size, false, notifyWritability);
             }
 
@@ -275,7 +270,7 @@ namespace DotNetty.Transport.Channels
         ///     Removes the fully written entries and update the reader index of the partially written entry.
         ///     This operation assumes all messages in this buffer is {@link ByteBuf}.
         /// </summary>
-        public void RemoveBytes(long writtenBytes, bool releaseMessages = true)
+        public void RemoveBytes(long writtenBytes)
         {
             while (true)
             {
@@ -296,7 +291,7 @@ namespace DotNetty.Transport.Channels
                         this.Progress(readableBytes);
                         writtenBytes -= readableBytes;
                     }
-                    this.Remove(releaseMessages);
+                    this.Remove();
                 }
                 else
                 {

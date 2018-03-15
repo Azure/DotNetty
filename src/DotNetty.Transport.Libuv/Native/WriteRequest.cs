@@ -14,7 +14,6 @@ namespace DotNetty.Transport.Libuv.Native
     using System.Runtime.InteropServices;
     using DotNetty.Buffers;
     using DotNetty.Common;
-    using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
     sealed class WriteRequest : NativeRequest, ChannelOutboundBuffer.IMessageProcessor
@@ -37,15 +36,13 @@ namespace DotNetty.Transport.Libuv.Native
         readonly int maxBytes;
         readonly ThreadLocalPool.Handle recyclerHandle;
         readonly List<GCHandle> handles;
-        readonly IByteBuffer[] flushedBufs;
 
         IntPtr bufs;
         GCHandle pin;
         int count;
-        int flushed;
         int size;
 
-        INativeUnsafe nativeUnsafe;
+        NativeChannel.INativeUnsafe nativeUnsafe;
 
         public WriteRequest(ThreadLocalPool.Handle recyclerHandle)
             : base(uv_req_type.UV_WRITE, BufferSize * MaximumLimit)
@@ -59,16 +56,15 @@ namespace DotNetty.Transport.Libuv.Native
             this.bufs = addr + offset;
             this.pin = GCHandle.Alloc(addr, GCHandleType.Pinned);
             this.handles = new List<GCHandle>();
-            this.flushedBufs = new IByteBuffer[MaximumLimit];
         }
 
-        internal int Prepare(INativeUnsafe channelUnsafe, ChannelOutboundBuffer input)
+        internal void DoWrite(NativeChannel.INativeUnsafe channelUnsafe, ChannelOutboundBuffer input)
         {
             Debug.Assert(this.nativeUnsafe == null);
 
             this.nativeUnsafe = channelUnsafe;
             input.ForEachFlushedMessage(this);
-            return this.size;
+            this.DoWrite();
         }
 
         bool Add(IByteBuffer buf)
@@ -131,9 +127,6 @@ namespace DotNetty.Transport.Libuv.Native
                     }
                 }
             }
-
-            this.flushedBufs[this.flushed] = buf;
-            this.flushed++;
             return true;
         }
 
@@ -145,7 +138,7 @@ namespace DotNetty.Transport.Libuv.Native
             uv_buf_t.InitMemory(baseOffset, addr + offset, len);
         }
 
-        internal unsafe int DoWrite()
+        unsafe void DoWrite()
         {
             int result = NativeMethods.uv_write(
                 this.Handle,
@@ -154,17 +147,11 @@ namespace DotNetty.Transport.Libuv.Native
                 this.count,
                 WriteCallback);
 
-            if (result >= 0)
-            {
-                result = this.flushed;
-            }
-            else
-            {
+            if (result < 0)
+            { 
                 this.Release();
                 NativeMethods.ThrowOperationException((uv_err_code)result);
             }
-
-            return result;
         }
 
         public bool ProcessMessage(object msg) => msg is IByteBuffer buf && this.Add(buf);
@@ -183,27 +170,24 @@ namespace DotNetty.Transport.Libuv.Native
                 this.handles.Clear();
             }
 
-            for (int i = 0; i < this.flushed; i++)
-            {
-                this.flushedBufs[i].SafeRelease();
-            }
-            Array.Clear(this.flushedBufs, 0, MaximumLimit);
-
             this.nativeUnsafe = null;
             this.count = 0;
-            this.flushed = 0;
             this.size = 0;
             this.recyclerHandle.Release(this);
         }
 
         void OnWriteCallback(int status)
         {
+            NativeChannel.INativeUnsafe @unsafe = this.nativeUnsafe;
+            int bytesWritten = this.size;
+            this.Release();
+
+            OperationException error = null;
             if (status < 0)
             {
-                OperationException error = NativeMethods.CreateError((uv_err_code)status);
-                this.nativeUnsafe.FinishWrite(error);
+                error = NativeMethods.CreateError((uv_err_code)status);
             }
-            this.Release();
+            @unsafe.FinishWrite(bytesWritten, error);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
