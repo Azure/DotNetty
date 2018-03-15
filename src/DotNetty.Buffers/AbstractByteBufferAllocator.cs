@@ -167,11 +167,11 @@ namespace DotNetty.Buffers
         {
             if (minNewCapacity < 0)
             {
-                throw new ArgumentOutOfRangeException($"minNewCapacity: {minNewCapacity} (expected: 0+)");
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(minNewCapacity), $"minNewCapacity: {minNewCapacity} (expected: 0+)");
             }
             if (minNewCapacity > maxCapacity)
             {
-                throw new ArgumentOutOfRangeException($"minNewCapacity: {minNewCapacity} (expected: not greater than maxCapacity({maxCapacity})");
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(maxCapacity), $"minNewCapacity: {minNewCapacity} (expected: not greater than maxCapacity({maxCapacity})");
             }
 
             const int Threshold = CalculateThreshold; // 4 MiB page

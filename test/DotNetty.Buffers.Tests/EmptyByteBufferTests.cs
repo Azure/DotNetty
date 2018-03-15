@@ -39,7 +39,7 @@ namespace DotNetty.Buffers.Tests
         {
             var empty = new EmptyByteBuffer(UnpooledByteBufferAllocator.Default);
             Assert.True(empty.HasArray);
-            Assert.Equal(0, empty.Array.Length);
+            Assert.Empty(empty.Array);
             Assert.Equal(0, empty.ArrayOffset);
         }
 

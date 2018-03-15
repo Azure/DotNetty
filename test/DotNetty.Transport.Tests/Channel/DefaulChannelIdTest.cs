@@ -3,7 +3,6 @@
 
 namespace DotNetty.Transport.Tests.Channel
 {
-    using System.Text.RegularExpressions;
     using DotNetty.Transport.Channels;
     using Xunit;
 
@@ -13,14 +12,14 @@ namespace DotNetty.Transport.Tests.Channel
         public void TestShortText()
         {
             string text = DefaultChannelId.NewInstance().AsShortText();
-            Assert.True(Regex.IsMatch(text, @"^[0-9a-f]{8}$"));
+            Assert.Matches(@"^[0-9a-f]{8}$", text);
         }
 
         [Fact]
         public void TestLongText()
         {
             string text = DefaultChannelId.NewInstance().AsLongText();
-            Assert.True(Regex.IsMatch(text, @"^[0-9a-f]{16}-[0-9a-f]{8}-[0-9a-f]{8}-[0-9a-f]{16}-[0-9a-f]{8}$"));
+            Assert.Matches(@"^[0-9a-f]{16}-[0-9a-f]{8}-[0-9a-f]{8}-[0-9a-f]{16}-[0-9a-f]{8}$", text);
         }
 
         [Fact]

@@ -46,7 +46,7 @@ namespace DotNetty.Transport.Libuv.Tests
             Task<IChannel> task = cb.ConnectAsync(badAddress);
             var error = Assert.Throws<AggregateException>(() => task.Wait(DefaultTimeout));
 
-            Assert.Equal(1, error.InnerExceptions.Count);
+            Assert.Single(error.InnerExceptions);
             Assert.IsType<ConnectTimeoutException>(error.InnerException);
             Assert.Equal(0, handler.Active);
             Assert.Null(handler.Error);
@@ -69,7 +69,7 @@ namespace DotNetty.Transport.Libuv.Tests
             Task<IChannel> task = cb.ConnectAsync(badAddress);
             var error = Assert.Throws<AggregateException>(() => task.Wait(DefaultTimeout));
 
-            Assert.Equal(1, error.InnerExceptions.Count);
+            Assert.Single(error.InnerExceptions);
             Assert.IsType<ChannelException>(error.InnerException);
             var exception = (ChannelException)error.InnerException;
             Assert.IsType<OperationException>(exception.InnerException);
