@@ -1330,7 +1330,7 @@ namespace DotNetty.Buffers
         {
             if (MathUtil.IsOutOfBounds(index, fieldLength, this.Capacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"index: {index}, length: {fieldLength} (expected: range(0, {this.Capacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException("index: {0}, length: {1} (expected: range(0, {2}))", index, fieldLength, this.Capacity);
             }
         }
 
@@ -1340,7 +1340,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(srcIndex, length, srcCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"srcIndex: {srcIndex}, length: {length} (expected: range(0, {srcCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException("srcIndex: {0}, length: {1} (expected: range(0, {2}))", srcIndex, length, srcCapacity);
             }
         }
 
@@ -1350,7 +1350,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(dstIndex, length, dstCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}, length: {length} (expected: range(0, {dstCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException("dstIndex: {0}, length: {1} (expected: range(0, {2}))", dstIndex, length, dstCapacity);
             }
         }
 
