@@ -665,8 +665,8 @@ namespace DotNetty.Handlers.Tls
             int inputLength;
             TaskCompletionSource<int> readCompletionSource;
             ArraySegment<byte> sslOwnedBuffer;
-#if NETSTANDARD1_3
-            int readByteCount;
+#if NETSTANDARD1_3 || NETSTANDARD2_0
+			int readByteCount;
 #else
             SynchronousAsyncResult<int> syncReadResult;
             AsyncCallback readCallback;
@@ -710,8 +710,8 @@ namespace DotNetty.Handlers.Tls
 
                 ArraySegment<byte> sslBuffer = this.sslOwnedBuffer;
 
-#if NETSTANDARD1_3
-                this.readByteCount = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
+#if NETSTANDARD1_3 || NETSTANDARD2_0
+				this.readByteCount = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
                 // hack: this tricks SslStream's continuation to run synchronously instead of dispatching to TP. Remove once Begin/EndRead are available. 
                 new Task(
                     ms =>
@@ -731,8 +731,8 @@ namespace DotNetty.Handlers.Tls
 #endif
             }
 
-#if NETSTANDARD1_3
-            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#if NETSTANDARD1_3 || NETSTANDARD2_0
+			public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
                 if (this.inputLength - this.inputOffset > 0)
                 {
@@ -805,8 +805,8 @@ namespace DotNetty.Handlers.Tls
             public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
                 => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
 
-#if !NETSTANDARD1_3
-            static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
+#if !NETSTANDARD1_3 && !NETSTANDARD2_0
+			static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
 
             public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
             {

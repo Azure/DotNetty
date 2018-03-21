@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="NuGet">
-    <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard1.3;net45</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <PackageId>DotNetty.Transport</PackageId>
     <Description>Transport model in DotNetty</Description>
@@ -31,7 +31,7 @@
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj" />
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.Contracts" Version="4.3.0" />
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
