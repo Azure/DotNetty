@@ -21,7 +21,7 @@ namespace DotNetty.Common.Internal
             byte* end = baseOffset1 + remainingBytes;
             for (byte* i = baseOffset1 - 8 + length, j = baseOffset2 - 8 + length; i >= end; i -= 8, j -= 8)
             {
-                if (Unsafe.Read<long>(i) != Unsafe.Read<long>(j))
+                if (Unsafe.ReadUnaligned<long>(i) != Unsafe.ReadUnaligned<long>(j))
                 {
                     return false;
                 }
@@ -30,14 +30,14 @@ namespace DotNetty.Common.Internal
             if (remainingBytes >= 4)
             {
                 remainingBytes -= 4;
-                if (Unsafe.Read<int>(baseOffset1 + remainingBytes) != Unsafe.Read<int>(baseOffset2 + remainingBytes))
+                if (Unsafe.ReadUnaligned<int>(baseOffset1 + remainingBytes) != Unsafe.ReadUnaligned<int>(baseOffset2 + remainingBytes))
                 {
                     return false;
                 }
             }
             if (remainingBytes >= 2)
             {
-                return Unsafe.Read<short>(baseOffset1) == Unsafe.Read<short>(baseOffset2) 
+                return Unsafe.ReadUnaligned<short>(baseOffset1) == Unsafe.ReadUnaligned<short>(baseOffset2) 
                     && (remainingBytes == 2 || *(bytes1 + startPos1 + 2) == *(bytes2 + startPos2 + 2));
             }
             return *baseOffset1 == *baseOffset2;

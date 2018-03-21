@@ -72,7 +72,7 @@ namespace DotNetty.Buffers
         {
             if (index < 0 || index > this.writerIndex)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"ReaderIndex: {index} (expected: 0 <= readerIndex <= writerIndex({this.WriterIndex})");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReaderIndex(index, this.WriterIndex);
             }
 
             this.readerIndex = index;
@@ -85,7 +85,7 @@ namespace DotNetty.Buffers
         {
             if (index < this.readerIndex || index > this.Capacity)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"WriterIndex: {index} (expected: 0 <= readerIndex({this.readerIndex}) <= writerIndex <= capacity ({this.Capacity})");
+                ThrowHelper.ThrowIndexOutOfRangeException_WriterIndex(index, this.readerIndex, this.Capacity);
             }
 
             this.SetWriterIndex0(index);
@@ -101,7 +101,7 @@ namespace DotNetty.Buffers
         {
             if (readerIdx < 0 || readerIdx > writerIdx || writerIdx > this.Capacity)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"ReaderIndex: {readerIdx}, WriterIndex: {writerIdx} (expected: 0 <= readerIndex <= writerIndex <= capacity ({this.Capacity})");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReaderWriterIndex(readerIdx, writerIdx, this.Capacity);
             }
 
             this.SetIndex0(readerIdx, writerIdx);
@@ -235,7 +235,7 @@ namespace DotNetty.Buffers
         {
             if (minWritableBytes < 0)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(minWritableBytes), "expected minWritableBytes to be greater than zero");
+                ThrowHelper.ThrowArgumentOutOfRangeException_MinWritableBytes();
             }
 
             this.EnsureWritable0(minWritableBytes);
@@ -253,7 +253,7 @@ namespace DotNetty.Buffers
 
             if (minWritableBytes > this.MaxCapacity - this.writerIndex)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"writerIndex({this.writerIndex}) + minWritableBytes({minWritableBytes}) exceeds maxCapacity({this.MaxCapacity}): {this}");
+                ThrowHelper.ThrowIndexOutOfRangeException_WriterIndex(minWritableBytes, this.writerIndex, this.MaxCapacity, this);
             }
 
             // Normalize the current capacity to the power of 2.
@@ -648,7 +648,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (length > src.ReadableBytes)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"length({length}) exceeds src.readableBytes({src.ReadableBytes}) where src is: {src}");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReadableBytes(length, src);
             }
             this.SetBytes(index, src, src.ReaderIndex, length);
             src.SetReaderIndex(src.ReaderIndex + length);
@@ -937,7 +937,7 @@ namespace DotNetty.Buffers
         {
             if (length > dst.WritableBytes)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"length({length}) exceeds destination.WritableBytes({dst.WritableBytes}) where destination is: {dst}");
+                ThrowHelper.ThrowIndexOutOfRangeException_WritableBytes(length, dst);
             }
             this.ReadBytes(dst, dst.WriterIndex, length);
             dst.SetWriterIndex(dst.WriterIndex + length);
@@ -1106,7 +1106,7 @@ namespace DotNetty.Buffers
         {
             if (length > src.ReadableBytes)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"length({length}) exceeds src.readableBytes({src.ReadableBytes}) where src is: {src}");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReadableBytes(length, src);
             }
             this.WriteBytes(src, src.ReaderIndex, length);
             src.SetReaderIndex(src.ReaderIndex + length);
@@ -1330,7 +1330,7 @@ namespace DotNetty.Buffers
         {
             if (MathUtil.IsOutOfBounds(index, fieldLength, this.Capacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"index: {index}, length: {fieldLength} (expected: range(0, {this.Capacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException_Index(index, fieldLength, this.Capacity);
             }
         }
 
@@ -1340,7 +1340,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(srcIndex, length, srcCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"srcIndex: {srcIndex}, length: {length} (expected: range(0, {srcCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException_SrcIndex(srcIndex, length, srcCapacity);
             }
         }
 
@@ -1350,7 +1350,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(dstIndex, length, dstCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}, length: {length} (expected: range(0, {dstCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException_DstIndex(dstIndex, length, dstCapacity);
             }
         }
 
@@ -1358,7 +1358,7 @@ namespace DotNetty.Buffers
         {
             if (minimumReadableBytes < 0)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(minimumReadableBytes), $"minimumReadableBytes: {minimumReadableBytes} (expected: >= 0)");
+                ThrowHelper.ThrowArgumentOutOfRangeException_MinimumReadableBytes(minimumReadableBytes);
             }
 
             this.CheckReadableBytes0(minimumReadableBytes);
@@ -1369,7 +1369,7 @@ namespace DotNetty.Buffers
             this.EnsureAccessible();
             if (newCapacity < 0 || newCapacity > this.MaxCapacity)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(newCapacity), $"newCapacity: {newCapacity} (expected: 0-{this.MaxCapacity})");
+                ThrowHelper.ThrowArgumentOutOfRangeException_Capacity(newCapacity, this.MaxCapacity);
             }
         }
 
@@ -1379,7 +1379,7 @@ namespace DotNetty.Buffers
             this.EnsureAccessible();
             if (this.readerIndex > this.writerIndex - minimumReadableBytes)
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"readerIndex({this.readerIndex}) + length({minimumReadableBytes}) exceeds writerIndex({this.writerIndex}): {this}");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReaderIndex(minimumReadableBytes, this.readerIndex, this.writerIndex, this);
             }
         }
 
@@ -1388,7 +1388,7 @@ namespace DotNetty.Buffers
         {
             if (CheckAccessible && this.ReferenceCount == 0)
             {
-                ThrowHelper.ThrowIllegalReferenceCountException();
+                ThrowHelper.ThrowIllegalReferenceCountException(0);
             }
         }
 
