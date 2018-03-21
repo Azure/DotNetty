@@ -23,7 +23,8 @@ var nuget = Directory(".nuget");
 var output = Directory("build");
 var outputBinaries = output + Directory("binaries");
 var outputBinariesNet45 = outputBinaries + Directory("net45");
-var outputBinariesNetstandard = outputBinaries + Directory("netstandard1.3");
+var outputBinariesNetstandard13 = outputBinaries + Directory("netstandard1.3");
+var outputBinariesNetstandard20 = outputBinaries + Directory("netstandard2.0");
 var outputPackages = output + Directory("packages");
 var outputNuGet = output + Directory("nuget");
 var outputPerfResults = Directory("perfResults");
@@ -36,7 +37,8 @@ Task("Clean")
   // Clean artifact directories.
   CleanDirectories(new DirectoryPath[] {
     output, outputBinaries, outputPackages, outputNuGet,
-    outputBinariesNet45, outputBinariesNetstandard
+    outputBinariesNet45, outputBinariesNetstandard13,
+	outputBinariesNetstandard20
   });
 
   if(!skipClean) {
