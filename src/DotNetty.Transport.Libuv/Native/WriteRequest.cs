@@ -26,8 +26,8 @@ namespace DotNetty.Transport.Libuv.Native
 
         static WriteRequest()
         {
-#if NETSTANDARD1_3
-            BufferSize = Marshal.SizeOf<uv_buf_t>();
+#if NETSTANDARD1_3 || NETSTANDARD2_0
+			BufferSize = Marshal.SizeOf<uv_buf_t>();
 #else
             BufferSize = Marshal.SizeOf(typeof(uv_buf_t));
 #endif
