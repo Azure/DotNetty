@@ -4,14 +4,19 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Diagnostics.Contracts;
     using System.Runtime.CompilerServices;
     using System.Threading.Tasks.Sources;
 
     public abstract class AbstractRecyclablePromise : AbstractPromise
     {
-        protected bool recycled;
+        static readonly Action<object> RecycleAction = Recycle;
+        
         protected readonly ThreadLocalPool.Handle handle;
-
+        
+        protected bool recycled;
+        protected IEventExecutor executor;
+        
         protected AbstractRecyclablePromise(ThreadLocalPool.Handle handle)
         {
             this.handle = handle;
@@ -29,38 +34,39 @@ namespace DotNetty.Common.Concurrency
             base.GetResult(token);
         }
 
-        protected override bool TryComplete0(Exception exception)
+        protected override bool TryComplete0(Exception exception, out bool continuationInvoked)
         {
+            Contract.Assert(this.executor.InEventLoop, "must be invoked from an event loop");
             this.ThrowIfRecycled();
 
-            bool completed;
             try
             {
-                completed = base.TryComplete0(exception);
+                bool completed = base.TryComplete0(exception, out continuationInvoked);
+                if (!continuationInvoked)
+                {
+                    this.Recycle();
+                }
+                return completed;
             }
             catch
             {
                 this.Recycle();
                 throw;
             }
-
-            if (completed)
-            {
-                this.Recycle();
-            }
-
-            return completed;
         }
-
-        protected void Init()
+        
+        protected void Init(IEventExecutor executor)
         {
+            this.executor = executor;
             this.recycled = false;
         }
 
         protected virtual void Recycle()
         {
+            Contract.Assert(this.executor.InEventLoop, "must be invoked from an event loop");
             this.exception = null;
-            this.ClearCallbacks();
+            this.ClearCallback();
+            this.executor = null;
             this.recycled = true;
             this.handle.Release(this);
         }
@@ -68,9 +74,28 @@ namespace DotNetty.Common.Concurrency
         public override void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
         {
             this.ThrowIfRecycled();
-            base.OnCompleted(continuation, state, token, flags);
+            base.OnCompleted(continuation,state, token, flags);
         }
 
+        protected override void ExecuteContinuation0()
+        {
+            try
+            {
+                base.ExecuteContinuation0();
+            }
+            finally
+            {
+                if (this.executor.InEventLoop)
+                {
+                    this.Recycle();
+                }
+                else
+                {
+                    this.executor.Execute(RecycleAction, this);
+                }
+            }
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void ThrowIfRecycled()
         {
@@ -78,6 +103,13 @@ namespace DotNetty.Common.Concurrency
             {
                 throw new InvalidOperationException("Attempt to use recycled channel promise");
             }
+        }
+        
+        static void Recycle(object state)
+        {
+            AbstractRecyclablePromise promise = (AbstractRecyclablePromise)state;
+            Contract.Assert(promise.executor.InEventLoop, "must be invoked from an event loop");
+            promise.Recycle();
         }
     }
 }

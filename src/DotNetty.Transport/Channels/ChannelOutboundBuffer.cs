@@ -808,7 +808,7 @@ namespace DotNetty.Transport.Channels
             public static Entry NewInstance(IEventExecutor executor, object msg, int size)
             {
                 Entry entry = Pool.Take();
-                entry.Init();
+                entry.Init(executor);
                 entry.Message = msg;
                 entry.PendingSize = size;
                 return entry;

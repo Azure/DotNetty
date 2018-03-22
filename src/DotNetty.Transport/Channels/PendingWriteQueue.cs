@@ -82,8 +82,8 @@ namespace DotNetty.Transport.Channels
                 // Size may be unknow so just use 0
                 messageSize = 0;
             }
-            //var promise = new TaskCompletionSource();
-            PendingWrite write = PendingWrite.NewInstance(msg, messageSize);
+            
+            PendingWrite write = PendingWrite.NewInstance(this.ctx.Executor, msg, messageSize);
             PendingWrite currentTail = this.tail;
             if (currentTail == null)
             {
@@ -289,10 +289,10 @@ namespace DotNetty.Transport.Channels
             {
             }
 
-            public static PendingWrite NewInstance(object msg, int size)
+            public static PendingWrite NewInstance(IEventExecutor executor, object msg, int size)
             {
                 PendingWrite write = Pool.Take();
-                write.Init();
+                write.Init(executor);
                 write.Size = size;
                 write.Msg = msg;
                 return write;

@@ -514,7 +514,7 @@ namespace DotNetty.Handlers.Tls
             {
                 return new UnsupportedMessageTypeException(message, typeof(IByteBuffer)).ToValueTask();
             }
-            return this.pendingUnencryptedWrites.Add(message);
+            return new ValueTask(this.pendingUnencryptedWrites.Add(message));
         }
 
         public override void Flush(IChannelHandlerContext context)

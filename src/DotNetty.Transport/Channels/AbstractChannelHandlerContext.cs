@@ -1020,7 +1020,7 @@ namespace DotNetty.Transport.Channels
 
             protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg)
             {
-                task.Init();
+                task.Init(ctx.Executor);
                 task.ctx = ctx;
                 task.msg = msg;
 

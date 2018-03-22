@@ -5,57 +5,55 @@ namespace DotNetty.Common.Concurrency
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.Contracts;
+    using System.Reflection;
     using System.Runtime.CompilerServices;
     using System.Runtime.ExceptionServices;
+    using System.Runtime.InteropServices.ComTypes;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Threading.Tasks.Sources;
 
     public abstract class AbstractPromise : IPromise, IValueTaskSource
     {
-        struct CompletionData
-        {
-            public Action<object> Continuation { get; }
-            public object State { get; }
-            public ExecutionContext ExecutionContext { get; }
-            public SynchronizationContext SynchronizationContext { get; }
-
-            public CompletionData(Action<object> continuation, object state, ExecutionContext executionContext, SynchronizationContext synchronizationContext)
-            {
-                this.Continuation = continuation;
-                this.State = state;
-                this.ExecutionContext = executionContext;
-                this.SynchronizationContext = synchronizationContext;
-            }
-        }
-        
-        const short SourceToken = 0;
-
         static readonly ContextCallback ExecutionContextCallback = Execute;
-        static readonly SendOrPostCallback SyncContextCallbackWithExecutionContext = ExecuteWithExecutionContext;
         static readonly SendOrPostCallback SyncContextCallback = Execute;
+        static readonly SendOrPostCallback SyncContextCallbackWithExecutionContext = ExecuteWithExecutionContext;
+        static readonly Action<object> TaskSchedulerCallback = Execute;
+        static readonly Action<object> TaskScheduleCallbackWithExecutionContext = ExecuteWithExecutionContext;
         
-        static readonly Exception CanceledException = new OperationCanceledException();
-        static readonly Exception CompletedNoException = new Exception();
+        static readonly Exception CompletedSentinel = new Exception();
 
+        short currentId;
         protected Exception exception;
-        
-        int callbackCount;
-        CompletionData[] completions;
-        
-        public bool TryComplete() => this.TryComplete0(CompletedNoException);
-        
-        public bool TrySetException(Exception exception) => this.TryComplete0(exception);
 
-        public bool TrySetCanceled() => this.TryComplete0(CanceledException); 
+        Action<object> continuation;
+        object state;
+        ExecutionContext executionContext;
+        object schedulingContext;
+
+        public ValueTask ValueTask => new ValueTask(this, this.currentId);
         
-        protected virtual bool TryComplete0(Exception exception)
+        public bool TryComplete() => this.TryComplete0(CompletedSentinel, out _);
+        
+        public bool TrySetException(Exception exception) => this.TryComplete0(exception, out _);
+
+        public bool TrySetCanceled(CancellationToken cancellationToken = default(CancellationToken)) => this.TryComplete0(new OperationCanceledException(cancellationToken), out _); 
+        
+        protected virtual bool TryComplete0(Exception exception, out bool continuationInvoked)
         {
+            continuationInvoked = false;
+            
             if (this.exception == null)
             {
                 // Set the exception object to the exception passed in or a sentinel value
                 this.exception = exception;
-                this.TryExecuteCompletions();
+
+                if (this.continuation != null)
+                {
+                    this.ExecuteContinuation();
+                    continuationInvoked = true;
+                }
                 return true;
             }
 
@@ -66,15 +64,17 @@ namespace DotNetty.Common.Concurrency
         
         public virtual ValueTaskSourceStatus GetStatus(short token)
         {
+            this.EnsureValidToken(token);
+            
             if (this.exception == null)
             {
                 return ValueTaskSourceStatus.Pending;
             }
-            else if (this.exception == CompletedNoException)
+            else if (this.exception == CompletedSentinel)
             {
                 return ValueTaskSourceStatus.Succeeded;
             }
-            else if (this.exception == CanceledException)
+            else if (this.exception is OperationCanceledException)
             {
                 return ValueTaskSourceStatus.Canceled;
             }
@@ -86,150 +86,117 @@ namespace DotNetty.Common.Concurrency
 
         public virtual void GetResult(short token)
         {
+            this.EnsureValidToken(token);
+
             if (this.exception == null)
             {
                 throw new InvalidOperationException("Attempt to get result on not yet completed promise");
             }
 
-            this.IsCompletedOrThrow();
+            this.currentId++;
+
+            if (this.exception != CompletedSentinel)
+            {
+                this.ThrowLatchedException();
+            }
         }
 
         public virtual void OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
         {
-            if (this.completions == null)
+            this.EnsureValidToken(token);
+
+            if (this.continuation != null)
             {
-                this.completions = new CompletionData[1];
+                throw new InvalidOperationException("Attempt to subscribe same promise twice");
             }
 
-            int newIndex = this.callbackCount;
-            this.callbackCount++;
+            this.continuation = continuation;
+            this.state = state;
+            this.executionContext = (flags & ValueTaskSourceOnCompletedFlags.FlowExecutionContext) != 0 ? ExecutionContext.Capture() : null;
 
-            if (newIndex == this.completions.Length)
+            if ((flags & ValueTaskSourceOnCompletedFlags.UseSchedulingContext) != 0)
             {
-                var newArray = new CompletionData[this.completions.Length * 2];
-                Array.Copy(this.completions, newArray, this.completions.Length);
-                this.completions = newArray;
+                SynchronizationContext sc = SynchronizationContext.Current;
+                if (sc != null && sc.GetType() != typeof(SynchronizationContext))
+                {
+                    this.schedulingContext = sc;
+                }
+                else
+                {
+                    TaskScheduler ts = TaskScheduler.Current;
+                    if (ts != TaskScheduler.Default)
+                    {
+                        this.schedulingContext = ts;
+                    }
+                }
             }
-
-            this.completions[newIndex] = new CompletionData(
-                continuation, 
-                state,
-                (flags & ValueTaskSourceOnCompletedFlags.FlowExecutionContext) != 0 ? ExecutionContext.Capture() : null,
-                (flags & ValueTaskSourceOnCompletedFlags.UseSchedulingContext) != 0 ? SynchronizationContext.Current : null
-            );
 
             if (this.exception != null)
             {
-                this.TryExecuteCompletions();
+                this.ExecuteContinuation();
             }
         }
 
-        public static implicit operator ValueTask(AbstractPromise promise) => new ValueTask(promise, SourceToken);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool IsCompletedOrThrow()
-        {
-            if (this.exception == null)
-            {
-                return false;
-            }
-
-            if (this.exception != CompletedNoException)
-            {
-                this.ThrowLatchedException();
-            }
-
-            return true;
-        }
+        public static implicit operator ValueTask(AbstractPromise promise) => promise.ValueTask;
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         void ThrowLatchedException() => ExceptionDispatchInfo.Capture(this.exception).Throw();
-
-        bool TryExecuteCompletions()
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void ClearCallback()
         {
-            if (this.callbackCount == 0 || this.completions == null)
-            {
-                return false;
-            }
-
-            List<Exception> exceptions = null;
-            
-            for (int i = 0; i < this.callbackCount; i++)
-            {
-                try
-                {
-                    CompletionData completion = this.completions[i];
-                    ExecuteCompletion(completion);
-                }
-                catch (Exception ex)
-                {
-                    if (exceptions == null)
-                    {
-                        exceptions = new List<Exception>();
-                    }
-
-                    exceptions.Add(ex);
-                }
-            }
-
-            if (exceptions == null)
-            {
-                return true;
-            }
-            
-            throw new AggregateException(exceptions);
+            this.continuation = null;
+            this.state = null;
+            this.executionContext = null;
+            this.schedulingContext = null;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void ClearCallbacks()
+        void EnsureValidToken(short token)
         {
-            if (this.callbackCount > 0)
+            if (this.currentId != token)
             {
-                this.callbackCount = 0;
-                Array.Clear(this.completions, 0, this.completions.Length);
+                throw new InvalidOperationException("Incorrect ValueTask token");
             }
-        }        
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void ExecuteCompletion(CompletionData completion)
+        void ExecuteContinuation()
         {
-            if (completion.SynchronizationContext == null)
+            ExecutionContext executionContext = this.executionContext;
+            object schedulingContext = this.schedulingContext;
+            
+            if (schedulingContext == null)
             {
-                if (completion.ExecutionContext == null)
+                if (executionContext == null)
                 {
-                    completion.Continuation(completion.State);
+                    this.ExecuteContinuation0();
                 }
                 else
                 {
-                    //boxing
-                    ExecutionContext.Run(completion.ExecutionContext, ExecutionContextCallback, completion);    
+                    ExecutionContext.Run(executionContext, ExecutionContextCallback, this);    
                 }
+            }
+            else if (schedulingContext is SynchronizationContext sc)
+            {
+                sc.Post(executionContext == null ? SyncContextCallback : SyncContextCallbackWithExecutionContext, this);
             }
             else
             {
-                if (completion.ExecutionContext == null)
-                {
-                    //boxing
-                    completion.SynchronizationContext.Post(SyncContextCallback, completion);
-                }
-                else
-                {
-                    //boxing
-                    completion.SynchronizationContext.Post(SyncContextCallbackWithExecutionContext, completion);
-                }
+                TaskScheduler ts = (TaskScheduler)schedulingContext;
+                Contract.Assert(ts != null, "Expected a TaskScheduler");
+                Task.Factory.StartNew(executionContext == null ? TaskSchedulerCallback : TaskScheduleCallbackWithExecutionContext, this, CancellationToken.None, TaskCreationOptions.DenyChildAttach, ts);
             }
         }
 
-        static void Execute(object state)
+        static void Execute(object state) => ((AbstractPromise)state).ExecuteContinuation0();
+
+        static void ExecuteWithExecutionContext(object state) => ExecutionContext.Run(((AbstractPromise)state).executionContext, ExecutionContextCallback, state);
+
+        protected virtual void ExecuteContinuation0()
         {
-            CompletionData completion = (CompletionData)state;
-            completion.Continuation(completion.State);
-        }
-        
-        static void ExecuteWithExecutionContext(object state)
-        {
-            CompletionData completion = (CompletionData)state;
-            ExecutionContext.Run(completion.ExecutionContext, ExecutionContextCallback, state);
+            Contract.Assert(this.continuation != null);
+            this.continuation(this.state);
         }
     }
 }

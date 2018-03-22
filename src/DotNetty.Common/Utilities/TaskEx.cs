@@ -123,35 +123,14 @@ namespace DotNetty.Common.Utilities
         {
             try
             {
-                await future;
+                //context capturing not required since callback executed synchrounusly on completion in eventloop
+                await future.ConfigureAwait(false);
                 promise.TryComplete();
             }
             catch (Exception ex)
             {
                 promise.TrySetException(ex);
             }
-            
-            /*
-            
-            if (future.IsCompletedSuccessfully)
-            {
-                promise.TryComplete();
-            }
-            else if (future.IsFaulted || future.IsCanceled)
-            {
-                try
-                {
-                    future.GetAwaiter().GetResult();
-                }
-                catch (Exception ex)
-                {
-                    promise.TryComplete(ex);
-                }
-            }
-            else
-            {
-                future.GetAwaiter().OnCompleted(() => LinkOutcome(future, promise));
-            }*/
         }
         
 

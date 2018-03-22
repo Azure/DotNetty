@@ -70,13 +70,11 @@ namespace DotNetty.Codecs.Tests.Frame
         public void TestPrependAdjustedLengthLessThanZero()
         {
             var ch = new EmbeddedChannel(new LengthFieldPrepender(4, -2));
-            var ex = Assert.Throws<AggregateException>(() =>
+            var ex = Assert.Throws<EncoderException>(() =>
             {
                 ch.WriteOutbound(this.msg);
                 Assert.True(false, typeof(EncoderException).Name + " must be raised.");
             });
-
-            Assert.IsType<EncoderException>(ex.InnerExceptions.Single());
         }
 
         [Fact]

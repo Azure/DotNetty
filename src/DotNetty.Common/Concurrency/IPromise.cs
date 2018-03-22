@@ -4,14 +4,18 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     public interface IPromise
     {
+        ValueTask ValueTask { get; }
+        
         bool TryComplete();
         
         bool TrySetException(Exception exception);
 
-        bool TrySetCanceled();
+        bool TrySetCanceled(CancellationToken cancellationToken = default(CancellationToken));
 
         bool SetUncancellable();
     }
