@@ -63,7 +63,7 @@ namespace DotNetty.Transport.Libuv.Native
             Debug.Assert(this.nativeUnsafe == null);
 
             this.nativeUnsafe = channelUnsafe;
-            this.input.ForEachFlushedMessage(this);
+            input.ForEachFlushedMessage(this);
             this.DoWrite();
         }
 
