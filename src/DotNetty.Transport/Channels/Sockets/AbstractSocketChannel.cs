@@ -108,7 +108,18 @@ namespace DotNetty.Transport.Channels.Sockets
 
         protected void SetState(StateFlags stateToSet) => this.state |= stateToSet;
 
-        protected bool ResetState(StateFlags stateToReset)
+        /// <returns>state before modification</returns>
+        protected StateFlags ResetState(StateFlags stateToReset)
+        {
+            StateFlags oldState = this.state;
+            if ((oldState & stateToReset) != 0)
+            {
+                this.state = oldState & ~stateToReset;
+            }
+            return oldState;
+        }
+
+        protected bool TryResetState(StateFlags stateToReset)
         {
             StateFlags oldState = this.state;
             if ((oldState & stateToReset) != 0)
@@ -185,6 +196,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     break;
                 case SocketAsyncOperation.Receive:
+                case SocketAsyncOperation.ReceiveFrom:
                     if (eventLoop.InEventLoop)
                     {
                         @unsafe.FinishRead(operation);
@@ -195,6 +207,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     }
                     break;
                 case SocketAsyncOperation.Send:
+                case SocketAsyncOperation.SendTo:
                     if (eventLoop.InEventLoop)
                     {
                         @unsafe.FinishWrite(operation);
@@ -274,7 +287,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                     var cause = new ConnectTimeoutException("connection timed out: " + a.ToString());
                                     if (promise != null && promise.TrySetException(cause))
                                     {
-                                        self.CloseAsync();
+                                        self.CloseSafe();
                                     }
                                 },
                                 this.channel,
@@ -288,7 +301,7 @@ namespace DotNetty.Transport.Channels.Sockets
                                 var c = (AbstractSocketChannel)s;
                                 c.connectCancellationTask?.Cancel();
                                 c.connectPromise = null;
-                                c.CloseAsync();
+                                c.CloseSafe();
                             },
                             ch,
                             TaskContinuationOptions.OnlyOnCanceled | TaskContinuationOptions.ExecuteSynchronously);
@@ -325,7 +338,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 // If a user cancelled the connection attempt, close the channel, which is followed by channelInactive().
                 if (!promiseSet)
                 {
-                    this.CloseAsync();
+                    this.CloseSafe();
                 }
             }
 
@@ -385,7 +398,7 @@ namespace DotNetty.Transport.Channels.Sockets
 
             public void FinishWrite(SocketChannelAsyncOperation operation)
             {
-                bool resetWritePending = this.Channel.ResetState(StateFlags.WriteScheduled);
+                bool resetWritePending = this.Channel.TryResetState(StateFlags.WriteScheduled);
 
                 Contract.Assert(resetWritePending);
 
@@ -402,12 +415,12 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
                 catch (Exception ex)
                 {
-                    input.FailFlushed(ex, true);
-                    throw;
+                    Util.CompleteChannelCloseTaskSafely(this.channel, this.CloseAsync(new ClosedChannelException("Failed to write", ex), false));
                 }
 
-                // directly call base.Flush0() to force a flush now
-                base.Flush0(); // todo: does it make sense now that we've actually written out everything that was flushed previously? concurrent flush handling?
+                // Double check if there's no pending flush
+                // See https://github.com/Azure/DotNetty/issues/218
+                this.Flush0(); // todo: does it make sense now that we've actually written out everything that was flushed previously? concurrent flush handling?
             }
 
             bool IsFlushPending() => this.Channel.IsInState(StateFlags.WriteScheduled);
@@ -454,7 +467,7 @@ namespace DotNetty.Transport.Channels.Sockets
             if (promise != null)
             {
                 // Use TrySetException() instead of SetException() to avoid the race against cancellation due to timeout.
-                promise.TrySetException(ClosedChannelException);
+                promise.TrySetException(new ClosedChannelException());
                 this.connectPromise = null;
             }
 

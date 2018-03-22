@@ -6,6 +6,7 @@ namespace DotNetty.Common.Concurrency
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public interface IEventExecutor
     {
@@ -41,6 +42,11 @@ namespace DotNetty.Common.Concurrency
         ///     Note that <see cref="IsTerminated" /> is never <c>true</c> unless <see cref="ShutdownGracefullyAsync()" /> was called first.
         /// </remarks>
         bool IsTerminated { get; }
+
+        /// <summary>
+        /// Parent <see cref="IEventExecutorGroup"/>.
+        /// </summary>
+        IEventExecutorGroup Parent { get; }
 
         /// <summary>
         ///     Returns <c>true</c> if the given <see cref="Thread" /> belongs to this event loop,

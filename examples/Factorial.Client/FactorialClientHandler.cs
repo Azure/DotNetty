@@ -3,49 +3,18 @@
 
 namespace Factorial.Client
 {
-    using System.Numerics;
-    using System;
     using System.Collections.Concurrent;
+    using System.Numerics;
     using DotNetty.Transport.Channels;
 
     public class FactorialClientHandler : SimpleChannelInboundHandler<BigInteger>
     {
-        private IChannelHandlerContext ctx;
-        private int receivedMessages;
-        private int next = 1;
-        readonly ConcurrentQueue<BigInteger> answer = new ConcurrentQueue<BigInteger>();
+        IChannelHandlerContext ctx;
+        int receivedMessages;
+        int next = 1;
+        readonly BlockingCollection<BigInteger> answer = new BlockingCollection<BigInteger>();
 
-        public BigInteger GetFactorial()
-        {
-            bool interrupted = false;
-            BigInteger result = new BigInteger(1);
-            try
-            {
-                for (;;)
-                {
-                    try
-                    {
-                        if (this.answer.TryDequeue(out result))
-                            return result;
-                    }
-                    catch
-                    {
-                        interrupted = true;
-                    }
-                }
-            }
-            finally
-            {
-                if (interrupted)
-                {
-                    System.Threading.Thread.CurrentThread.Interrupt();
-                }
-            }
-        }
-
-        public FactorialClientHandler()
-        {
-        }
+        public BigInteger GetFactorial() => this.answer.Take();
 
         public override void ChannelActive(IChannelHandlerContext ctx)
         {
@@ -56,22 +25,20 @@ namespace Factorial.Client
         protected override void ChannelRead0(IChannelHandlerContext ctx, BigInteger msg)
         {
             this.receivedMessages++;
-            this.answer.Enqueue(msg);
-            if (this.receivedMessages == FactorialClientSettings.Count)
+            if (this.receivedMessages == ClientSettings.Count)
             {
-                Console.WriteLine("Factorial of {0} is: {1}", FactorialClientSettings.Count, msg);
-                ctx.CloseAsync();
+                ctx.CloseAsync().ContinueWith(t => this.answer.Add(msg));
             }
         }
 
-        private void SendNumbers()
+        void SendNumbers()
         {
-            for (int i = 0; i < 4096 && next <= FactorialClientSettings.Count; i++)
+            for (int i = 0; (i < 4096) && (this.next <= ClientSettings.Count); i++)
             {
-                ctx.WriteAsync(new BigInteger(next));
-                next++;
+                this.ctx.WriteAsync(new BigInteger(this.next));
+                this.next++;
             }
-            ctx.Flush();
+            this.ctx.Flush();
         }
     }
 }

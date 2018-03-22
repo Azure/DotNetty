@@ -41,7 +41,7 @@ namespace DotNetty.Handlers.Tls
         Task<int> pendingSslStreamReadFuture;
 
         public TlsHandler(TlsSettings settings)
-            : this(stream => new SslStream(stream, true), settings)
+            : this(stream => new SslStream(stream, false), settings)
         {
         }
 
@@ -62,9 +62,12 @@ namespace DotNetty.Handlers.Tls
  
         public static TlsHandler Server(X509Certificate certificate) => new TlsHandler(new ServerTlsSettings(certificate));
 
-        public X509Certificate LocalCertificate => this.sslStream.LocalCertificate;
+        // using workaround mentioned here: https://github.com/dotnet/corefx/issues/4510
+        public X509Certificate2 LocalCertificate => this.sslStream.LocalCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.LocalCertificate?.Export(X509ContentType.Cert));
 
-        public X509Certificate RemoteCertificate => this.sslStream.RemoteCertificate;
+        public X509Certificate2 RemoteCertificate => this.sslStream.RemoteCertificate as X509Certificate2 ?? new X509Certificate2(this.sslStream.RemoteCertificate?.Export(X509ContentType.Cert));
+
+        bool IsServer => this.settings is ServerTlsSettings;
 
         public void Dispose() => this.sslStream?.Dispose();
 
@@ -72,7 +75,7 @@ namespace DotNetty.Handlers.Tls
         {
             base.ChannelActive(context);
 
-            if (this.settings is ServerTlsSettings)
+            if (!this.IsServer)
             {
                 this.EnsureAuthenticated();
             }
@@ -144,8 +147,7 @@ namespace DotNetty.Handlers.Tls
                     {
                         // ReSharper disable once AssignNullToNotNullAttribute -- task.Exception will be present as task is faulted
                         TlsHandlerState oldState = self.state;
-                        Contract.Assert(!oldState.HasAny(TlsHandlerState.AuthenticationCompleted));
-                        self.state = (oldState | TlsHandlerState.FailedAuthentication) & ~TlsHandlerState.Authenticating;
+                        Contract.Assert(!oldState.HasAny(TlsHandlerState.Authenticated));
                         self.HandleFailure(task.Exception);
                         break;
                     }
@@ -159,7 +161,7 @@ namespace DotNetty.Handlers.Tls
             base.HandlerAdded(context);
             this.capturedContext = context;
             this.pendingUnencryptedWrites = new BatchingPendingWriteQueue(context, UnencryptedWriteBatchSize);
-            if (context.Channel.Active && this.settings is ClientTlsSettings)
+            if (context.Channel.Active && !this.IsServer)
             {
                 // todo: support delayed initialization on an existing/active channel if in client mode
                 this.EnsureAuthenticated();
@@ -445,7 +447,7 @@ namespace DotNetty.Handlers.Tls
                     }
                     else
                     {
-                        outputBuffer.Release();
+                        outputBuffer.SafeRelease();
                     }
                 }
             }
@@ -480,15 +482,15 @@ namespace DotNetty.Handlers.Tls
             if (!oldState.HasAny(TlsHandlerState.AuthenticationStarted))
             {
                 this.state = oldState | TlsHandlerState.Authenticating;
-                var serverSettings = settings as ServerTlsSettings;
-                if (serverSettings != null)
+                if (this.IsServer)
                 {
+                    var serverSettings = (ServerTlsSettings)this.settings;
                     this.sslStream.AuthenticateAsServerAsync(serverSettings.Certificate, serverSettings.NegotiateClientCertificate, serverSettings.EnabledProtocols, serverSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
                 else
                 {
-                    var clientSettings = (ClientTlsSettings)settings;
+                    var clientSettings = (ClientTlsSettings)this.settings;
                     this.sslStream.AuthenticateAsClientAsync(clientSettings.TargetHost, clientSettings.X509CertificateCollection, clientSettings.EnabledProtocols, clientSettings.CheckCertificateRevocation)
                         .ContinueWith(HandshakeCompletionCallback, this, TaskContinuationOptions.ExecuteSynchronously);
                 }
@@ -577,7 +579,7 @@ namespace DotNetty.Handlers.Tls
             }
             catch (Exception ex)
             {
-                ReferenceCountUtil.SafeRelease(buf);
+                buf.SafeRelease();
                 this.HandleFailure(ex);
                 throw;
             }
@@ -599,6 +601,13 @@ namespace DotNetty.Handlers.Tls
             this.lastContextWriteTask = this.capturedContext.WriteAsync(output);
         }
 
+        Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
+        {
+            var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+            this.ReadIfNeeded(this.capturedContext);
+            return future;
+        }
+
         public override Task CloseAsync(IChannelHandlerContext context)
         {
             this.closeFuture.TryComplete();
@@ -615,7 +624,7 @@ namespace DotNetty.Handlers.Tls
             {
                 this.sslStream.Dispose();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // todo: evaluate following:
                 // only log in Debug mode as it most likely harmless and latest chrome still trigger
@@ -628,6 +637,10 @@ namespace DotNetty.Handlers.Tls
                 //    //Logger.Debug("{} SSLEngine.closeInbound() raised an exception.", ctx.channel(), e);
                 //}
             }
+            this.pendingSslStreamReadBuffer?.SafeRelease();
+            this.pendingSslStreamReadBuffer = null;
+            this.pendingSslStreamReadFuture = null;
+
             this.NotifyHandshakeFailure(cause);
             this.pendingUnencryptedWrites.RemoveAndFailAll(cause);
         }
@@ -645,19 +658,21 @@ namespace DotNetty.Handlers.Tls
 
         sealed class MediationStream : Stream
         {
-            static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
-
             readonly TlsHandler owner;
             byte[] input;
             int inputStartOffset;
             int inputOffset;
             int inputLength;
-            SynchronousAsyncResult<int> syncReadResult;
             TaskCompletionSource<int> readCompletionSource;
-            AsyncCallback readCallback;
             ArraySegment<byte> sslOwnedBuffer;
+#if NETSTANDARD1_3
+            int readByteCount;
+#else
+            SynchronousAsyncResult<int> syncReadResult;
+            AsyncCallback readCallback;
             TaskCompletionSource writeCompletion;
             AsyncCallback writeCallback;
+#endif
 
             public MediationStream(TlsHandler owner)
             {
@@ -695,12 +710,28 @@ namespace DotNetty.Handlers.Tls
 
                 ArraySegment<byte> sslBuffer = this.sslOwnedBuffer;
 
+#if NETSTANDARD1_3
+                this.readByteCount = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
+                // hack: this tricks SslStream's continuation to run synchronously instead of dispatching to TP. Remove once Begin/EndRead are available. 
+                new Task(
+                    ms =>
+                    {
+                        var self = (MediationStream)ms;
+                        TaskCompletionSource<int> p = self.readCompletionSource;
+                        this.readCompletionSource = null;
+                        p.TrySetResult(self.readByteCount);
+                    },
+                    this)
+                    .RunSynchronously(TaskScheduler.Default);
+#else
                 int read = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
+                this.readCompletionSource = null;
                 promise.TrySetResult(read);
-
                 this.readCallback?.Invoke(promise.Task);
+#endif
             }
 
+#if NETSTANDARD1_3
             public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
                 if (this.inputLength - this.inputOffset > 0)
@@ -715,7 +746,7 @@ namespace DotNetty.Handlers.Tls
                 this.readCompletionSource = new TaskCompletionSource<int>();
                 return this.readCompletionSource.Task;
             }
-
+#else
             public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
             {
                 if (this.inputLength - this.inputOffset > 0)
@@ -759,14 +790,27 @@ namespace DotNetty.Handlers.Tls
                 }
             }
 
+            IAsyncResult PrepareSyncReadResult(int readBytes, object state)
+            {
+                // it is safe to reuse sync result object as it can't lead to leak (no way to attach to it via handle)
+                SynchronousAsyncResult<int> result = this.syncReadResult ?? (this.syncReadResult = new SynchronousAsyncResult<int>());
+                result.Result = readBytes;
+                result.AsyncState = state;
+                return result;
+            }
+#endif
+
             public override void Write(byte[] buffer, int offset, int count) => this.owner.FinishWrap(buffer, offset, count);
 
             public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-                => this.owner.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+                => this.owner.FinishWrapNonAppDataAsync(buffer, offset, count);
+
+#if !NETSTANDARD1_3
+            static readonly Action<Task, object> WriteCompleteCallback = HandleChannelWriteComplete;
 
             public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
             {
-                Task task = this.owner.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
+                Task task = this.WriteAsync(buffer, offset, count);
                 switch (task.Status)
                 {
                     case TaskStatus.RanToCompletion:
@@ -825,6 +869,7 @@ namespace DotNetty.Handlers.Tls
                     throw;
                 }
             }
+#endif
 
             int ReadFromInput(byte[] destination, int destinationOffset, int destinationCapacity)
             {
@@ -838,21 +883,23 @@ namespace DotNetty.Handlers.Tls
                 return length;
             }
 
-            IAsyncResult PrepareSyncReadResult(int readBytes, object state)
-            {
-                // it is safe to reuse sync result object as it can't lead to leak (no way to attach to it via handle)
-                SynchronousAsyncResult<int> result = this.syncReadResult ?? (this.syncReadResult = new SynchronousAsyncResult<int>());
-                result.Result = readBytes;
-                result.AsyncState = state;
-                return result;
-            }
-
             public override void Flush()
             {
                 // NOOP: called on SslStream.Close
             }
 
-            #region plumbing
+            protected override void Dispose(bool disposing)
+            {
+                base.Dispose(disposing);
+                if (disposing)
+                {
+                    TaskCompletionSource<int> p = this.readCompletionSource;
+                    this.readCompletionSource = null;
+                    p?.TrySetResult(0);
+                }
+            }
+
+#region plumbing
 
             public override long Seek(long offset, SeekOrigin origin)
             {
@@ -886,10 +933,9 @@ namespace DotNetty.Handlers.Tls
                 set { throw new NotSupportedException(); }
             }
 
-            #endregion
+#endregion
 
-            #region sync result
-
+#region sync result
             sealed class SynchronousAsyncResult<T> : IAsyncResult
             {
                 public T Result { get; set; }
@@ -906,7 +952,7 @@ namespace DotNetty.Handlers.Tls
                 public bool CompletedSynchronously => true;
             }
 
-            #endregion
+#endregion
         }
     }
 

@@ -15,9 +15,9 @@ namespace DotNetty.Buffers
     ///     Inspired by the Netty ByteBuffer implementation
     ///     (https://github.com/netty/netty/blob/master/buffer/src/main/java/io/netty/buffer/ByteBuf.java)
     ///     Provides circular-buffer-esque security around a byte array, allowing reads and writes to occur independently.
-    ///     In general, the <see cref="IByteBuffer" /> guarantees:
-    ///     /// <see cref="ReaderIndex" /> LESS THAN OR EQUAL TO <see cref="WriterIndex" /> LESS THAN OR EQUAL TO
-    ///     <see cref="Capacity" />.
+    ///     In general, the <see cref="T:DotNetty.Buffers.IByteBuffer" /> guarantees:
+    ///     /// <see cref="P:DotNetty.Buffers.IByteBuffer.ReaderIndex" /> LESS THAN OR EQUAL TO <see cref="P:DotNetty.Buffers.IByteBuffer.WriterIndex" /> LESS THAN OR EQUAL TO
+    ///     <see cref="P:DotNetty.Buffers.IByteBuffer.Capacity" />.
     /// </summary>
     public interface IByteBuffer : IReferenceCounted, IComparable<IByteBuffer>, IEquatable<IByteBuffer>
     {
@@ -34,6 +34,8 @@ namespace DotNetty.Buffers
         ///     The allocator who created this buffer
         /// </summary>
         IByteBufferAllocator Allocator { get; }
+
+        bool IsDirect { get; }
 
         int ReaderIndex { get; }
 
@@ -86,7 +88,7 @@ namespace DotNetty.Buffers
         bool IsWritable();
 
         /// <summary>
-        ///     Returns true if and only if the buffer has enough <see cref="Capacity" /> to accomodate <see cref="size" />
+        ///     Returns true if and only if the buffer has enough <see cref="Capacity" /> to accomodate <paramref name="size" />
         ///     additional bytes.
         /// </summary>
         /// <param name="size">The number of additional elements we would like to write.</param>
@@ -151,12 +153,12 @@ namespace DotNetty.Buffers
 
         /// <summary>
         ///     Makes sure the number of <see cref="WritableBytes" /> is equal to or greater than
-        ///     the specified value (<see cref="minWritableBytes" />.) If there is enough writable bytes in this buffer,
+        ///     the specified value (<paramref name="minWritableBytes" />.) If there is enough writable bytes in this buffer,
         ///     the method returns with no side effect. Otherwise, it raises an <see cref="ArgumentOutOfRangeException" />.
         /// </summary>
         /// <param name="minWritableBytes">The expected number of minimum writable bytes</param>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if <see cref="WriterIndex" /> + <see cref="minWritableBytes" /> >
+        ///     if <see cref="WriterIndex" /> + <paramref name="minWritableBytes" /> >
         ///     <see cref="MaxCapacity" />.
         /// </exception>
         IByteBuffer EnsureWritable(int minWritableBytes);
@@ -183,150 +185,282 @@ namespace DotNetty.Buffers
         int EnsureWritable(int minWritableBytes, bool force);
 
         /// <summary>
-        ///     Gets a boolean at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets a boolean at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         bool GetBoolean(int index);
 
         /// <summary>
-        ///     Gets a byte at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets a byte at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         byte GetByte(int index);
 
         /// <summary>
-        ///     Gets a short at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets a short at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         short GetShort(int index);
 
         /// <summary>
-        ///     Gets an ushort at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets a short at the specified absolute <paramref name="index" /> in this buffer 
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        short GetShortLE(int index);
+
+        /// <summary>
+        ///     Gets an ushort at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         ushort GetUnsignedShort(int index);
 
         /// <summary>
-        ///     Gets an integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets an ushort at the specified absolute <paramref name="index" /> in this buffer 
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        ushort GetUnsignedShortLE(int index);
+
+        /// <summary>
+        ///     Gets an integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
         /// </exception>
         int GetInt(int index);
 
         /// <summary>
-        ///     Gets an unsigned integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets an integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetIntLE(int index);
+
+        /// <summary>
+        ///     Gets an unsigned integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
         /// </exception>
         uint GetUnsignedInt(int index);
 
         /// <summary>
-        ///     Gets a long integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets an unsigned integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        uint GetUnsignedIntLE(int index);
+
+        /// <summary>
+        ///     Gets a long integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
         /// </exception>
         long GetLong(int index);
 
         /// <summary>
-        ///     Gets a char at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets a long integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> or 
+        ///     <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
+        /// </exception>
+        long GetLongLE(int index);
+
+        /// <summary>
+        ///     Gets a 24-bit medium integer at the specified absolute index in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <param name="index"/>  is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetMedium(int index);
+
+        /// <summary>
+        ///     Gets a 24-bit medium integer at the specified absolute index in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <param name="index"/> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetMediumLE(int index);
+
+        /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the specified absolute index in this buffer.
+        ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
+        ///     of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <param name="index"/> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetUnsignedMedium(int index);
+
+        /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the specified absolute index in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <param name="index"/> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        int GetUnsignedMediumLE(int index);
+
+        /// <summary>
+        ///     Gets a char at the specified absolute <paramref name="index" /> in this buffer.
+        ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
+        ///     of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         char GetChar(int index);
 
         /// <summary>
-        ///     Gets a double at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets a float at the specified absolute <paramref name="index"/> in this buffer.
         ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
         ///     of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index"/> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        float GetFloat(int index);
+
+        /// <summary>
+        ///     Gets a float at the specified absolute <paramref name="index"/> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index"/> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        float GetFloatLE(int index);
+
+        /// <summary>
+        ///     Gets a double at the specified absolute <paramref name="index" /> in this buffer.
+        ///     This method does not modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" />
+        ///     of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
         /// </exception>
         double GetDouble(int index);
 
         /// <summary>
-        ///     Transfers this buffers data to the specified <see cref="destination" /> buffer starting at the specified
-        ///     absolute <see cref="index" /> until the destination becomes non-writable.
+        ///     Gets a double at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
+        /// </exception>
+        double GetDoubleLE(int index);
+
+        /// <summary>
+        ///     Transfers this buffers data to the specified <paramref name="destination" /> buffer starting at the specified
+        ///     absolute <paramref name="index" /> until the destination becomes non-writable.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer GetBytes(int index, IByteBuffer destination);
 
         /// <summary>
-        ///     Transfers this buffers data to the specified <see cref="destination" /> buffer starting at the specified
-        ///     absolute <see cref="index" /> until the destination becomes non-writable.
+        ///     Transfers this buffers data to the specified <paramref name="destination" /> buffer starting at the specified
+        ///     absolute <paramref name="index" /> until the destination becomes non-writable.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer GetBytes(int index, IByteBuffer destination, int length);
 
         /// <summary>
-        ///     Transfers this buffers data to the specified <see cref="destination" /> buffer starting at the specified
-        ///     absolute <see cref="index" /> until the destination becomes non-writable.
+        ///     Transfers this buffers data to the specified <paramref name="destination" /> buffer starting at the specified
+        ///     absolute <paramref name="index" /> until the destination becomes non-writable.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer GetBytes(int index, IByteBuffer destination, int dstIndex, int length);
 
         /// <summary>
-        ///     Transfers this buffers data to the specified <see cref="destination" /> buffer starting at the specified
-        ///     absolute <see cref="index" /> until the destination becomes non-writable.
+        ///     Transfers this buffers data to the specified <paramref name="destination" /> buffer starting at the specified
+        ///     absolute <paramref name="index" /> until the destination becomes non-writable.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer GetBytes(int index, byte[] destination);
 
         /// <summary>
-        ///     Transfers this buffers data to the specified <see cref="destination" /> buffer starting at the specified
-        ///     absolute <see cref="index" /> until the destination becomes non-writable.
+        ///     Transfers this buffers data to the specified <paramref name="destination" /> buffer starting at the specified
+        ///     absolute <paramref name="index" /> until the destination becomes non-writable.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer GetBytes(int index, byte[] destination, int dstIndex, int length);
@@ -350,149 +484,277 @@ namespace DotNetty.Buffers
         IByteBuffer GetBytes(int index, Stream destination, int length);
 
         /// <summary>
-        ///     Sets the specified boolean at the specified absolute <see cref="index" /> in this buffer.
+        ///     Gets a string with the given length at the given index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="length">length the length to read</param>
+        /// <param name="encoding">charset that should be use</param>
+        /// <returns>the string value.</returns>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if length is greater than readable bytes.
+        /// </exception>
+        string GetString(int index, int length, Encoding encoding);
+
+        /// <summary>
+        ///     Sets the specified boolean at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetBoolean(int index, bool value);
 
         /// <summary>
-        ///     Sets the specified byte at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified byte at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
         ///     <c>index + 1</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetByte(int index, int value);
 
         /// <summary>
-        ///     Sets the specified short at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified short at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetShort(int index, int value);
 
         /// <summary>
-        ///     Sets the specified unsigned short at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified short at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetShortLE(int index, int value);
+
+        /// <summary>
+        ///     Sets the specified unsigned short at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetUnsignedShort(int index, ushort value);
 
         /// <summary>
-        ///     Sets the specified integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified unsigned short at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetUnsignedShortLE(int index, ushort value);
+
+        /// <summary>
+        ///     Sets the specified integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetInt(int index, int value);
 
         /// <summary>
-        ///     Sets the specified unsigned integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetIntLE(int index, int value);
+
+        /// <summary>
+        ///     Sets the specified unsigned integer at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetUnsignedInt(int index, uint value);
 
         /// <summary>
-        ///     Sets the specified long integer at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified unsigned integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> or 
+        ///     <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetUnsignedIntLE(int index, uint value);
+
+        /// <summary>
+        ///     Sets the specified 24-bit medium integer at the specified absolute <paramref name="index" /> in this buffer.
+        ///     Note that the most significant byte is ignored in the specified value.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetMedium(int index, int value);
+
+        /// <summary>
+        ///     Sets the specified 24-bit medium integer at the specified absolute <paramref name="index" /> in this buffer.
+        ///     Note that the most significant byte is ignored in the specified value.
+        ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 3</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetMediumLE(int index, int value);
+
+        /// <summary>
+        ///     Sets the specified long integer at the specified absolute <paramref name="index" /> in this buffer.
+        ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetLong(int index, long value);
 
         /// <summary>
-        ///     Sets the specified UTF-16 char at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified long integer at the specified absolute <paramref name="index" /> in this buffer
+        ///     in the Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> or 
+        ///     <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetLongLE(int index, long value);
+
+        /// <summary>
+        ///     Sets the specified UTF-16 char at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 2</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetChar(int index, char value);
 
         /// <summary>
-        ///     Sets the specified double at the specified absolute <see cref="index" /> in this buffer.
+        ///     Sets the specified double at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 8</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetDouble(int index, double value);
 
         /// <summary>
-        ///     Transfers the <see cref="src" /> byte buffer's contents starting at the specified absolute <see cref="index" />.
+        ///     Sets the specified float at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetFloat(int index, float value);
+
+        /// <summary>
+        ///     Sets the specified float at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetDoubleLE(int index, double value);
+
+        /// <summary>
+        ///     Sets the specified float at the specified absolute <paramref name="index" /> in this buffer
+        ///     in Little Endian Byte Order. This method does not directly modify <see cref="ReaderIndex" /> 
+        ///     or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c>index + 4</c> greater than <see cref="Capacity" />
+        /// </exception>
+        IByteBuffer SetFloatLE(int index, float value);
+
+        /// <summary>
+        ///     Transfers the <paramref name="src" /> byte buffer's contents starting at the specified absolute <paramref name="index" />.
+        ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c><paramref name="index"/> + <paramref name="src"/>.ReadableBytes</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetBytes(int index, IByteBuffer src);
 
         /// <summary>
-        ///     Transfers the <see cref="src" /> byte buffer's contents starting at the specified absolute <see cref="index" />.
+        ///     Transfers the <paramref name="src" /> byte buffer's contents starting at the specified absolute <paramref name="index" />.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index"/> is less than <c>0</c> or
+        ///     <paramref name="length"/> is less than <c>0</c> or
+        ///     <c><paramref name="index"/> + <paramref name="length"/></c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetBytes(int index, IByteBuffer src, int length);
 
         /// <summary>
-        ///     Transfers the <see cref="src" /> byte buffer's contents starting at the specified absolute <see cref="index" />.
+        ///     Transfers the <paramref name="src" /> byte buffer's contents starting at the specified absolute <paramref name="index" />.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index"/> is less than <c>0</c> or
+        ///     <paramref name="srcIndex"/> is less than <c>0</c> or
+        ///     <paramref name="length"/> is less than <c>0</c> or
+        ///     <c><paramref name="index"/> + <paramref name="length"/></c> greater than <see cref="Capacity" /> or
+        ///     <c><paramref name="srcIndex"/> + <paramref name="length"/></c> greater than <c><paramref name="src" />.Capacity</c>
         /// </exception>
         IByteBuffer SetBytes(int index, IByteBuffer src, int srcIndex, int length);
 
         /// <summary>
-        ///     Transfers the <see cref="src" /> byte buffer's contents starting at the specified absolute <see cref="index" />.
+        ///     Transfers the <paramref name="src" /> byte buffer's contents starting at the specified absolute <paramref name="index" />.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index" /> is less than <c>0</c> or
+        ///     <c><paramref name="index"/> + <paramref name="src"/>.Length</c> greater than <see cref="Capacity" />
         /// </exception>
         IByteBuffer SetBytes(int index, byte[] src);
 
         /// <summary>
-        ///     Transfers the <see cref="src" /> byte buffer's contents starting at the specified absolute <see cref="index" />.
+        ///     Transfers the <paramref name="src" /> byte buffer's contents starting at the specified absolute <paramref name="index" />.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <see cref="index" /> is less than <c>0</c> or
-        ///     <c>index + 1</c> greater than <see cref="Capacity" />
+        ///     if the specified <paramref name="index"/> is less than <c>0</c> or
+        ///     <paramref name="srcIndex"/> is less than <c>0</c> or
+        ///     <paramref name="length"/> is less than <c>0</c> or
+        ///     <c><paramref name="index"/> + <paramref name="length"/></c> greater than <see cref="Capacity" /> or
+        ///     <c><paramref name="srcIndex"/> + <paramref name="length"/></c> greater than <c><paramref name="src" />.Length</c>
         /// </exception>
         IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length);
 
         /// <summary>
         ///     Transfers the content of the specified source stream to this buffer
-        ///     starting at the specified absolute {@code index}.
-        ///     This method does not modify {@code readerIndex} or {@code writerIndex} of
+        ///     starting at the specified absolute <paramref name="index"/>.
+        ///     This method does not modify <see cref="ReaderIndex"/> or <see cref="WriterIndex"/> of
         ///     this buffer.
         /// </summary>
         /// <param name="index">absolute index in this byte buffer to start writing to</param>
@@ -501,10 +763,36 @@ namespace DotNetty.Buffers
         /// <param name="cancellationToken">cancellation token</param>
         /// <returns>the actual number of bytes read in from the specified channel.</returns>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if the specified <c>index</c> is less than {@code 0} or
+        ///     if the specified <c>index</c> is less than <c>0</c> or
         ///     if <c>index + length</c> is greater than <c>this.capacity</c>
         /// </exception>
         Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Fills this buffer with NULL (0x00) starting at the specified
+        ///     absolute index. This method does not modify reader index
+        ///     or writer index of this buffer
+        /// </summary>
+        /// <param name="index">absolute index in this byte buffer to start writing to</param>
+        /// <param name="length">length the number of <tt>NUL</tt>s to write to the buffer</param>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified index is less than 0 or if index + length
+        ///     is greater than capacity.
+        /// </exception>
+        IByteBuffer SetZero(int index, int length);
+
+        /// <summary>
+        ///     Writes the specified string at the current writer index and increases
+        ///     the  writer index by the written bytes.
+        /// </summary>
+        /// <param name="index">Index on which the string should be written</param>
+        /// <param name="value">The string value.</param>
+        /// <param name="encoding">Encoding that should be used.</param>
+        /// <returns>The written number of bytes.</returns>
+        /// <exception cref="IndexOutOfRangeException">
+        ///    if writable bytes is not large enough to write the whole string.
+        /// </exception>
+        int SetString(int index, string value, Encoding encoding);
 
         /// <summary>
         ///     Gets a boolean at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
@@ -528,11 +816,53 @@ namespace DotNetty.Buffers
         short ReadShort();
 
         /// <summary>
+        ///     Gets a short at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and increases 
+        ///     the <see cref="ReaderIndex" /> by <c>2</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>2</c></exception>
+        short ReadShortLE();
+
+        /// <summary>
+        ///     Gets a 24-bit medium integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
+        ///     by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadMedium();
+
+        /// <summary>
+        ///     Gets a 24-bit medium integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and 
+        ///     increases the <see cref="ReaderIndex" /> by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadMediumLE();
+
+        /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
+        ///     by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadUnsignedMedium();
+
+        /// <summary>
+        ///     Gets an unsigned 24-bit medium integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order 
+        ///     and increases the <see cref="ReaderIndex" /> by <c>3</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>3</c></exception>
+        int ReadUnsignedMediumLE();
+
+        /// <summary>
         ///     Gets an unsigned short at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
         ///     by <c>2</c> in this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>2</c></exception>
         ushort ReadUnsignedShort();
+
+        /// <summary>
+        ///     Gets an unsigned short at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and 
+        ///     increases the <see cref="ReaderIndex" /> by <c>2</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>2</c></exception>
+        ushort ReadUnsignedShortLE();
 
         /// <summary>
         ///     Gets an integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
@@ -542,13 +872,39 @@ namespace DotNetty.Buffers
         int ReadInt();
 
         /// <summary>
+        ///     Gets an integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and increases 
+        ///     the <see cref="ReaderIndex" />  by <c>4</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        int ReadIntLE();
+
+        /// <summary>
         ///     Gets an unsigned integer at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
         ///     by <c>4</c> in this buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
         uint ReadUnsignedInt();
 
+        /// <summary>
+        ///     Gets an unsigned integer at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and
+        ///     increases the <see cref="ReaderIndex" /> by <c>4</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        uint ReadUnsignedIntLE();
+
+        /// <summary>
+        ///     Gets an long at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" /> 
+        ///     by <c>8</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
         long ReadLong();
+
+        /// <summary>
+        ///     Gets an long at the current <see cref="ReaderIndex" /> in the Little Endian Byte Order and
+        ///     increases the <see cref="ReaderIndex" /> by <c>8</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        long ReadLongLE();
 
         /// <summary>
         ///     Gets a 2-byte UTF-16 character at the current <see cref="ReaderIndex" /> and increases the
@@ -567,10 +923,32 @@ namespace DotNetty.Buffers
         double ReadDouble();
 
         /// <summary>
-        ///     Reads <see cref="length" /> bytes from this buffer into a new destination buffer.
+        ///     Gets an 8-byte Decimaling integer at the current <see cref="ReaderIndex" /> and increases the
+        ///     <see cref="ReaderIndex" /> by <c>8</c> in this buffer in Little Endian Byte Order.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>8</c></exception>
+        double ReadDoubleLE();
+
+        /// <summary>
+        ///     Gets an 4-byte Decimaling integer at the current <see cref="ReaderIndex" /> and increases the
+        ///     <see cref="ReaderIndex" />
+        ///     by <c>4</c> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        float ReadFloat();
+
+        /// <summary>
+        ///     Gets an 4-byte Decimaling integer at the current <see cref="ReaderIndex" /> and increases the
+        ///     <see cref="ReaderIndex" /> by <c>4</c> in this buffer in Little Endian Byte Order.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException">if <see cref="ReadableBytes" /> is less than <c>4</c></exception>
+        float ReadFloatLE();
+
+        /// <summary>
+        ///     Reads <paramref name="length" /> bytes from this buffer into a new destination buffer.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
-        ///     if <see cref="ReadableBytes" /> is less than <see cref="length" />
+        ///     if <see cref="ReadableBytes" /> is less than <paramref name="length" />
         /// </exception>
         IByteBuffer ReadBytes(int length);
 
@@ -596,9 +974,18 @@ namespace DotNetty.Buffers
         IByteBuffer ReadBytes(Stream destination, int length);
 
         /// <summary>
-        ///     Increases the current <see cref="ReaderIndex" /> by the specified <see cref="length" /> in this buffer.
+        ///     Gets a string with the given length at the current reader index
+        ///     and increases the reader index by the given length.
         /// </summary>
-        /// <exception cref="IndexOutOfRangeException"> if <see cref="length" /> is greater than <see cref="ReadableBytes" />.</exception>
+        /// <param name="length">The length to read</param>
+        /// <param name="encoding">Encoding that should be used</param>
+        /// <returns>The string value</returns>
+        string ReadString(int length, Encoding encoding);
+
+        /// <summary>
+        ///     Increases the current <see cref="ReaderIndex" /> by the specified <paramref name="length" /> in this buffer.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException"> if <paramref name="length" /> is greater than <see cref="ReadableBytes" />.</exception>
         IByteBuffer SkipBytes(int length);
 
         IByteBuffer WriteBoolean(bool value);
@@ -607,17 +994,33 @@ namespace DotNetty.Buffers
 
         IByteBuffer WriteShort(int value);
 
+        IByteBuffer WriteShortLE(int value);
+
         IByteBuffer WriteUnsignedShort(ushort value);
+
+        IByteBuffer WriteUnsignedShortLE(ushort value);
+
+        IByteBuffer WriteMedium(int value);
+
+        IByteBuffer WriteMediumLE(int value);
 
         IByteBuffer WriteInt(int value);
 
-        IByteBuffer WriteUnsignedInt(uint value);
+        IByteBuffer WriteIntLE(int value);
 
         IByteBuffer WriteLong(long value);
+
+        IByteBuffer WriteLongLE(long value);
 
         IByteBuffer WriteChar(char value);
 
         IByteBuffer WriteDouble(double value);
+
+        IByteBuffer WriteDoubleLE(double value);
+
+        IByteBuffer WriteFloat(float value);
+
+        IByteBuffer WriteFloatLE(float value);
 
         IByteBuffer WriteBytes(IByteBuffer src);
 
@@ -637,7 +1040,7 @@ namespace DotNetty.Buffers
         /// </summary>
         /// <returns>
         ///     <c>-1</c> if this buffer cannot represent its content as <see cref="ArraySegment{T}" /> of <see cref="Byte" />.
-        ///     the number of the underlying {@link ByteBuffer}s if this buffer has at least one underlying segment.
+        ///     the number of the underlying <see cref="IByteBuffer"/>s if this buffer has at least one underlying segment.
         ///     Note that this method does not return <c>0</c> to avoid confusion.
         /// </returns>
         /// <seealso cref="GetIoBuffer()" />
@@ -721,44 +1124,79 @@ namespace DotNetty.Buffers
         /// <summary>
         ///     Grabs the underlying byte array for this buffer
         /// </summary>
-        /// <value></value>
         byte[] Array { get; }
 
         /// <summary>
-        ///     Converts the readable contents of the buffer into an array.
-        ///     Does not affect the <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of the <see cref="IByteBuffer" />
+        /// Returns {@code true} if and only if this buffer has a reference to the low-level memory address that points
+        /// to the backing data.
         /// </summary>
-        byte[] ToArray();
+        bool HasMemoryAddress { get; }
+
+        /// <summary>
+        ///  Returns the low-level memory address that point to the first byte of ths backing data.
+        /// </summary>
+        /// <returns>The low-level memory address</returns>
+        ref byte GetPinnableMemoryAddress();
+
+        /// <summary>
+        /// Returns the pointer address of the buffer if the memory is pinned.
+        /// </summary>
+        /// <returns>IntPtr.Zero if not pinned.</returns>
+        IntPtr AddressOfPinnedMemory();
 
         /// <summary>
         ///     Creates a deep clone of the existing byte array and returns it
         /// </summary>
         IByteBuffer Duplicate();
 
+        IByteBuffer RetainedDuplicate();
+
         /// <summary>
         ///     Unwraps a nested buffer
         /// </summary>
         IByteBuffer Unwrap();
 
-        ByteOrder Order { get; }
-
-        IByteBuffer WithOrder(ByteOrder order);
-
+        /// <summary>
+        ///     Returns a copy of this buffer's readable bytes. Modifying the content of the 
+        ///     returned buffer or this buffer does not affect each other at all.This method is 
+        ///     identical to {@code buf.copy(buf.readerIndex(), buf.readableBytes())}.
+        ///     This method does not modify {@code readerIndex} or {@code writerIndex} of this buffer.
+        ///</summary>
         IByteBuffer Copy();
 
         IByteBuffer Copy(int index, int length);
 
         IByteBuffer Slice();
 
+        IByteBuffer RetainedSlice();
+
         IByteBuffer Slice(int index, int length);
+
+        IByteBuffer RetainedSlice(int index, int length);
 
         int ArrayOffset { get; }
 
         IByteBuffer ReadSlice(int length);
 
+        IByteBuffer ReadRetainedSlice(int length);
+
         Task WriteBytesAsync(Stream stream, int length);
 
         Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
+
+        IByteBuffer WriteZero(int length);
+
+        int WriteString(string value, Encoding encoding);
+
+        int IndexOf(int fromIndex, int toIndex, byte value);
+
+        int BytesBefore(byte value);
+
+        int BytesBefore(int length, byte value);
+
+        int BytesBefore(int index, int length, byte value);
+
+        string ToString();
 
         string ToString(Encoding encoding);
 
@@ -768,46 +1206,46 @@ namespace DotNetty.Buffers
         ///     Iterates over the readable bytes of this buffer with the specified <c>processor</c> in ascending order.
         /// </summary>
         /// <returns>
-        ///     <c>1</c> if the processor iterated to or beyond the end of the readable bytes.
-        ///     The last-visited index If the <see cref="ByteProcessor.Process(byte)" /> returned <c>false</c>.
+        ///     <c>-1</c> if the processor iterated to or beyond the end of the readable bytes.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)" /> returned <c>false</c>.
         /// </returns>
         /// <param name="processor">Processor.</param>
-        int ForEachByte(ByteProcessor processor);
+        int ForEachByte(IByteProcessor processor);
 
         /// <summary>
-        ///     Iterates over the specified area of this buffer with the specified {@code processor} in ascending order.
-        ///     (i.e. {@code index}, {@code (index + 1)},  .. {@code (index + length - 1)})
+        ///     Iterates over the specified area of this buffer with the specified <paramref name="processor"/> in ascending order.
+        ///     (i.e. <paramref name="index"/>, <c>(index + 1)</c>,  .. <c>(index + length - 1)</c>)
         /// </summary>
         /// <returns>
-        ///     {@code -1} if the processor iterated to or beyond the end of the specified area.
-        ///     The last-visited index If the {@link ByteProcessor#process(byte)} returned {@code false}.
+        ///     <c>-1</c> if the processor iterated to or beyond the end of the specified area.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)"/> returned <c>false</c>.
         /// </returns>
         /// <param name="index">Index.</param>
         /// <param name="length">Length.</param>
         /// <param name="processor">Processor.</param>
-        int ForEachByte(int index, int length, ByteProcessor processor);
+        int ForEachByte(int index, int length, IByteProcessor processor);
 
         /// <summary>
-        ///     Iterates over the readable bytes of this buffer with the specified {@code processor} in descending order.
+        ///     Iterates over the readable bytes of this buffer with the specified <paramref name="processor"/> in descending order.
         /// </summary>
         /// <returns>
-        ///     {@code -1} if the processor iterated to or beyond the beginning of the readable bytes.
-        ///     The last-visited index If the {@link ByteProcessor#process(byte)} returned {@code false}.
+        ///     <c>-1</c> if the processor iterated to or beyond the beginning of the readable bytes.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)"/> returned <c>false</c>.
         /// </returns>
         /// <param name="processor">Processor.</param>
-        int ForEachByteDesc(ByteProcessor processor);
+        int ForEachByteDesc(IByteProcessor processor);
 
         /// <summary>
-        ///     Iterates over the specified area of this buffer with the specified {@code processor} in descending order.
-        ///     (i.e. {@code (index + length - 1)}, {@code (index + length - 2)}, ... {@code index})
+        ///     Iterates over the specified area of this buffer with the specified <paramref name="processor"/> in descending order.
+        ///     (i.e. <c>(index + length - 1)</c>, <c>(index + length - 2)</c>, ... <paramref name="index"/>)
         /// </summary>
         /// <returns>
-        ///     {@code -1} if the processor iterated to or beyond the beginning of the specified area.
-        ///     The last-visited index If the {@link ByteProcessor#process(byte)} returned {@code false}.
+        ///     <c>-1</c> if the processor iterated to or beyond the beginning of the specified area.
+        ///     The last-visited index If the <see cref="IByteProcessor.Process(byte)"/> returned <c>false</c>.
         /// </returns>
         /// <param name="index">Index.</param>
         /// <param name="length">Length.</param>
         /// <param name="processor">Processor.</param>
-        int ForEachByteDesc(int index, int length, ByteProcessor processor);
+        int ForEachByteDesc(int index, int length, IByteProcessor processor);
     }
 }

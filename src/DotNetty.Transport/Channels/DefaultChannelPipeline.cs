@@ -14,9 +14,9 @@ namespace DotNetty.Transport.Channels
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
-    using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
+    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public class DefaultChannelPipeline : IChannelPipeline
     {
@@ -710,8 +710,13 @@ namespace DotNetty.Transport.Channels
         ///     the handlers are removed after all events are handled.
         ///     See: https://github.com/netty/netty/issues/3156
         /// </summary>
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        void Destroy() => this.DestroyUp(this.head.Next, false);
+        void Destroy()
+        {
+            lock (this)
+            {
+                this.DestroyUp(this.head.Next, false);
+            }
+        }
 
         void DestroyUp(AbstractChannelHandlerContext ctx, bool inEventLoop)
         {
@@ -1182,7 +1187,7 @@ namespace DotNetty.Transport.Channels
             public void ChannelWritabilityChanged(IChannelHandlerContext context) => context.FireChannelWritabilityChanged();
         }
 
-        abstract class PendingHandlerCallback : OneTimeTask
+        abstract class PendingHandlerCallback : IRunnable
         {
             protected readonly DefaultChannelPipeline Pipeline;
             protected readonly AbstractChannelHandlerContext Ctx;
@@ -1193,6 +1198,8 @@ namespace DotNetty.Transport.Channels
                 this.Pipeline = pipeline;
                 this.Ctx = ctx;
             }
+
+            public abstract void Run();
 
             internal abstract void Execute();
         }

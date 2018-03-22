@@ -19,7 +19,7 @@ namespace DotNetty.Common
         IReferenceCounted Retain();
 
         /// <summary>
-        ///     Increases the reference count by <see cref="increment" />.
+        ///     Increases the reference count by <paramref name="increment" />
         /// </summary>
         IReferenceCounted Retain(int increment);
 
@@ -46,7 +46,7 @@ namespace DotNetty.Common
         bool Release();
 
         /// <summary>
-        ///     Decreases the reference count by <see cref="decrement" /> and deallocates this object if the reference count
+        ///     Decreases the reference count by <paramref name="decrement" /> and deallocates this object if the reference count
         ///     reaches 0.
         /// </summary>
         /// <returns>true if and only if the reference count is 0 and this object has been deallocated</returns>

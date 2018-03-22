@@ -5,17 +5,20 @@ namespace DotNetty.Handlers.Tests
 {
     using System;
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class MediationStream : Stream
     {
         readonly Func<ArraySegment<byte>, Task<int>> readDataFunc;
-        readonly Action<ArraySegment<byte>> writeDataFunc;
+        readonly Func<ArraySegment<byte>, Task> writeDataFunc;
+        readonly Action disposeFunc;
 
-        public MediationStream(Func<ArraySegment<byte>, Task<int>> readDataFunc, Action<ArraySegment<byte>> writeDataFunc)
+        public MediationStream(Func<ArraySegment<byte>, Task<int>> readDataFunc, Func<ArraySegment<byte>, Task> writeDataFunc, Action disposeFunc = null)
         {
             this.readDataFunc = readDataFunc;
             this.writeDataFunc = writeDataFunc;
+            this.disposeFunc = disposeFunc;
         }
 
         public override void Flush()
@@ -32,9 +35,60 @@ namespace DotNetty.Handlers.Tests
             throw new NotSupportedException();
         }
 
-        public override int Read(byte[] buffer, int offset, int count) => this.readDataFunc(new ArraySegment<byte>(buffer, offset, count)).Result;
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => this.readDataFunc(new ArraySegment<byte>(buffer, offset, count));
 
-        public override void Write(byte[] buffer, int offset, int count) => this.writeDataFunc(new ArraySegment<byte>(buffer, offset, count));
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => this.writeDataFunc(new ArraySegment<byte>(buffer, offset, count));
+
+#if !NETCOREAPP1_1
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            var tcs = new TaskCompletionSource<int>(state);
+            this.ReadAsync(buffer, offset, count, CancellationToken.None).ContinueWith(
+                t =>
+                {
+                    tcs.TrySetResult(t.Result);
+                    callback?.Invoke(tcs.Task);
+                }, 
+                TaskContinuationOptions.ExecuteSynchronously);
+            return tcs.Task;
+        }
+
+        public override int EndRead(IAsyncResult asyncResult) => ((Task<int>)asyncResult).Result;
+
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            var tcs = new TaskCompletionSource<int>(state);
+            this.WriteAsync(buffer, offset, count, CancellationToken.None).ContinueWith(
+                t =>
+                {
+                    tcs.TrySetResult(0);
+                    callback?.Invoke(tcs.Task);
+                },
+                TaskContinuationOptions.ExecuteSynchronously);
+            return tcs.Task;
+        }
+
+        public override void EndWrite(IAsyncResult asyncResult) => ((Task<int>)asyncResult).Wait();
+#endif
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                disposeFunc?.Invoke();
+            }
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
 
         public override bool CanRead => true;
 

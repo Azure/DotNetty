@@ -5,7 +5,6 @@ namespace DotNetty.Common.Concurrency
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using DotNetty.Common.Utilities;
 
     public sealed class ExecutorTaskScheduler : TaskScheduler
     {
@@ -46,7 +45,7 @@ namespace DotNetty.Common.Concurrency
 
         protected override bool TryDequeue(Task task) => false;
 
-        sealed class TaskQueueNode : MpscLinkedQueueNode<IRunnable>, IRunnable
+        sealed class TaskQueueNode : IRunnable
         {
             readonly ExecutorTaskScheduler scheduler;
             readonly Task task;
@@ -56,8 +55,6 @@ namespace DotNetty.Common.Concurrency
                 this.scheduler = scheduler;
                 this.task = task;
             }
-
-            public override IRunnable Value => this;
 
             public void Run() => this.scheduler.TryExecuteTask(this.task);
         }

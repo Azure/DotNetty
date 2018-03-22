@@ -5,64 +5,63 @@ namespace SecureChat.Server
 {
     using System;
     using System.Net;
-    using DotNetty.Transport.Channels.Groups;
     using DotNetty.Transport.Channels;
+    using DotNetty.Transport.Channels.Groups;
 
-    public class SecureChatServerHandler : SimpleChannelInboundHandler<String>
+    public class SecureChatServerHandler : SimpleChannelInboundHandler<string>
     {
-        static IChannelGroup group = null;
+        static volatile IChannelGroup group;
 
         public override void ChannelActive(IChannelHandlerContext contex)
         {
-            lock (this)
+            IChannelGroup g = group;
+            if (g == null)
             {
-                if (group == null)
+                lock (this)
                 {
-                    group = new DefaultChannelGroup(contex.Executor);
+                    if (group == null)
+                    {
+                        g = group = new DefaultChannelGroup(contex.Executor);
+                    }
                 }
             }
 
-            contex.WriteAndFlushAsync(String.Format("Welcome to {0} secure chat server!\n", Dns.GetHostName()));
-            group.Add(contex.Channel);
+            contex.WriteAndFlushAsync(string.Format("Welcome to {0} secure chat server!\n", Dns.GetHostName()));
+            g.Add(contex.Channel);
         }
 
         class EveryOneBut : IChannelMatcher
         {
-            IChannelId id;
+            readonly IChannelId id;
+
             public EveryOneBut(IChannelId id)
             {
                 this.id = id;
             }
 
-            public bool Matches(IChannel channel)
-            {
-                return channel.Id != this.id;
-            }
+            public bool Matches(IChannel channel) => channel.Id != this.id;
         }
 
         protected override void ChannelRead0(IChannelHandlerContext contex, string msg)
         {
             //send message to all but this one
-            string broadcast = String.Format("[{0}] {1}\n", contex.Channel.RemoteAddress, msg);
-            string response = String.Format("[you] {0}\n", msg);
+            string broadcast = string.Format("[{0}] {1}\n", contex.Channel.RemoteAddress, msg);
+            string response = string.Format("[you] {0}\n", msg);
             group.WriteAndFlushAsync(broadcast, new EveryOneBut(contex.Channel.Id));
             contex.WriteAndFlushAsync(response);
 
-            if ("bye" == msg.ToLower())
+            if (string.Equals("bye", msg, StringComparison.OrdinalIgnoreCase))
             {
                 contex.CloseAsync();
             }
         }
 
-        public override void ChannelReadComplete(IChannelHandlerContext contex)
-        {
-            contex.Flush();
-        }
+        public override void ChannelReadComplete(IChannelHandlerContext ctx) => ctx.Flush();
 
-        public override void ExceptionCaught(IChannelHandlerContext contex, Exception e)
+        public override void ExceptionCaught(IChannelHandlerContext ctx, Exception e)
         {
             Console.WriteLine("{0}", e.StackTrace);
-            contex.CloseAsync();
+            ctx.CloseAsync();
         }
 
         public override bool IsSharable => true;

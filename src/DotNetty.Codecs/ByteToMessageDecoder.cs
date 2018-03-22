@@ -151,6 +151,9 @@ namespace DotNetty.Codecs
         public override void HandlerRemoved(IChannelHandlerContext context)
         {
             IByteBuffer buf = this.InternalBuffer;
+
+            // Directly set this to null so we are sure we not access it in any other method here anymore.
+            this.cumulation = null;
             int readable = buf.ReadableBytes;
             if (readable > 0)
             {
@@ -162,7 +165,7 @@ namespace DotNetty.Codecs
             {
                 buf.Release();
             }
-            this.cumulation = null;
+
             context.FireChannelReadComplete();
             this.HandlerRemovedInternal(context);
         }
@@ -304,6 +307,10 @@ namespace DotNetty.Codecs
 
         protected virtual void CallDecode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
+            Contract.Requires(context != null);
+            Contract.Requires(input != null);
+            Contract.Requires(output != null);
+
             try
             {
                 while (input.IsReadable())

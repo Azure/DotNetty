@@ -14,6 +14,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
     using DotNetty.Buffers;
     using DotNetty.Codecs;
     using DotNetty.Handlers.Tls;
+    using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
@@ -27,7 +28,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
         const string OutboundThroughputCounterName = "outbound ops";
 
         // The number of times we're going to warmup + run each benchmark
-        public const int IterationCount = 5;
+        public const int IterationCount = 3;
         public const int WriteCount = 1000000;
 
         public const int MessagesPerMinute = 1000000;
@@ -73,8 +74,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.ServerGroup = new MultithreadEventLoopGroup(1);
             this.WorkerGroup = new MultithreadEventLoopGroup();
 
-            Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-            this.message = iso.GetBytes("ABC");
+            this.message = Encoding.UTF8.GetBytes("ABC");
 
             this.inboundThroughputCounter = context.GetCounter(InboundThroughputCounterName);
             this.outboundThroughputCounter = context.GetCounter(OutboundThroughputCounterName);
@@ -86,14 +86,7 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.clientBufferAllocator = new PooledByteBufferAllocator();
 
             Assembly assembly = typeof(TcpChannelPerfSpecs).Assembly;
-            byte[] certificateData;
-            using (Stream sourceStream = assembly.GetManifestResourceStream(assembly.GetManifestResourceNames()[0]))
-            using (var tempStream = new MemoryStream())
-            {
-                sourceStream.CopyTo(tempStream);
-                certificateData = tempStream.ToArray();
-            }
-            var tlsCertificate = new X509Certificate2(certificateData, "password");
+            var tlsCertificate = TestResourceHelper.GetTestCertificate();
             string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
 
             ServerBootstrap sb = new ServerBootstrap()
@@ -107,7 +100,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                         .AddLast(this.GetEncoder())
                         .AddLast(this.GetDecoder())
                         .AddLast(counterHandler)
-                        .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter))
                         .AddLast(new ReadFinishedHandler(this.signal, WriteCount));
                 }));
 
@@ -122,7 +114,6 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
                             //.AddLast(TlsHandler.Client(targetHost, null, (sender, certificate, chain, errors) => true))
                             .AddLast(this.GetEncoder())
                             .AddLast(this.GetDecoder())
-                            .AddLast(counterHandler)
                             .AddLast(new CounterHandlerOutbound(this.outboundThroughputCounter));
                     }));
 
@@ -133,23 +124,27 @@ namespace DotNetty.Transport.Tests.Performance.Sockets
             this.clientChannel = cb.ConnectAsync(this.serverChannel.LocalAddress).Result;
         }
 
-        [PerfBenchmark(Description = "Measures how quickly and with how much GC overhead a TcpSocketChannel --> TcpServerSocketChannel connection can decode / encode realistic messages, 100 writes per flush",
+        [PerfBenchmark(Description = "Measures how quickly and with how much GC overhead a TcpSocketChannel --> TcpServerSocketChannel connection can decode / encode realistic messages, 10 writes per flush",
             NumberOfIterations = IterationCount, RunMode = RunMode.Iterations)]
         [CounterMeasurement(InboundThroughputCounterName)]
         [CounterMeasurement(OutboundThroughputCounterName)]
         [GcMeasurement(GcMetric.TotalCollections, GcGeneration.AllGc)]
         [MemoryMeasurement(MemoryMetric.TotalBytesAllocated)]
-        public void TcpChannel_Duplex_Throughput_100_messages_per_flush(BenchmarkContext context)
+        public void TcpChannel_Duplex_Throughput_10_messages_per_flush(BenchmarkContext context)
         {
-            for (int i = 0; i < WriteCount; i++)
+            this.clientChannel.EventLoop.Execute(() =>
             {
-                this.clientChannel.WriteAsync(Unpooled.WrappedBuffer(this.message));
-                if (i % 100 == 0) // flush every 100 writes
+                for (int i = 0; i < WriteCount; i++)
                 {
-                    this.clientChannel.Flush();
+                    this.clientChannel.WriteAsync(Unpooled.WrappedBuffer(this.message));
+                    if (i % 10 == 0) // flush every 10 writes
+                    {
+                        this.clientChannel.Flush();
+                    }
                 }
-            }
-            this.clientChannel.Flush();
+                this.clientChannel.Flush();
+            });
+
             if (!this.ResetEvent.Wait(this.Timeout))
             {
                 Console.WriteLine("*** TIMED OUT ***");

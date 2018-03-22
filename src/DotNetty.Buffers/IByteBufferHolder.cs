@@ -22,12 +22,14 @@ namespace DotNetty.Buffers
         /// </summary>
         IByteBufferHolder Duplicate();
 
-        //IByteBufferHolder Retain();
+        /// <summary>
+        ///     Duplicates this {@link ByteBufHolder}. This method returns a retained duplicate unlike {@link #duplicate()}.
+        /// </summary>
+        IByteBufferHolder RetainedDuplicate();
 
-        //IByteBufferHolder Retain(int increment);
-
-        //IByteBufferHolder touch();
-
-        //IByteBufferHolder touch(object hint);
+        /// <summary>
+        ///    Returns a new {@link ByteBufHolder} which contains the specified {@code content}.
+        /// </summary>
+        IByteBufferHolder Replace(IByteBuffer content);
     }
 }

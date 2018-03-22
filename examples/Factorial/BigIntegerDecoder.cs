@@ -5,6 +5,7 @@ namespace Factorial
 {
     using System;
     using System.Collections.Generic;
+    using System.Numerics;
     using DotNetty.Buffers;
     using DotNetty.Codecs;
     using DotNetty.Transport.Channels;
@@ -31,10 +32,10 @@ namespace Factorial
                 input.ResetReaderIndex();
                 return;
             }
-            byte[] decoded = new byte[dataLength];
+            var decoded = new byte[dataLength];
             input.ReadBytes(decoded);
 
-            output.Add(new System.Numerics.BigInteger(decoded));
+            output.Add(new BigInteger(decoded));
         }
     }
 }

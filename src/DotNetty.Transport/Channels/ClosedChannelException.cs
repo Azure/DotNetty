@@ -3,9 +3,18 @@
 
 namespace DotNetty.Transport.Channels
 {
+    using System;
     using System.IO;
 
     public class ClosedChannelException : IOException
     {
+        public ClosedChannelException()
+        {
+        }
+
+        public ClosedChannelException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
     }
 }

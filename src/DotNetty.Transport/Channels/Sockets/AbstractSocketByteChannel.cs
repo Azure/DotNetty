@@ -16,6 +16,7 @@ namespace DotNetty.Transport.Channels.Sockets
     {
         static readonly string ExpectedTypes =
             $" (expected: {StringUtil.SimpleClassName<IByteBuffer>()})"; //+ ", " +
+
         // todo: FileRegion support        
         //typeof(FileRegion).Name + ')';
 
@@ -51,7 +52,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     //    key.interestOps(key.interestOps() & ~readInterestOp);
                     //    this.channel.Pipeline.FireUserEventTriggered(ChannelInputShutdownEvent.INSTANCE);
                     //} else {
-                    this.CloseAsync();
+                    this.CloseSafe();
                     //}
                 }
             }
@@ -83,7 +84,10 @@ namespace DotNetty.Transport.Channels.Sockets
             public override void FinishRead(SocketChannelAsyncOperation operation)
             {
                 AbstractSocketByteChannel ch = this.Channel;
-                ch.ResetState(StateFlags.ReadScheduled);
+                if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
+                {
+                    return; // read was signaled as a result of channel closure
+                }
                 IChannelConfiguration config = ch.Configuration;
                 IChannelPipeline pipeline = ch.Pipeline;
                 IByteBufferAllocator allocator = config.Allocator;
@@ -150,6 +154,9 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             SocketChannelAsyncOperation operation = this.ReadOperation;
             bool pending;
+#if NETSTANDARD1_3
+            pending = this.Socket.ReceiveAsync(operation);
+#else
             if (ExecutionContext.IsFlowSuppressed())
             {
                 pending = this.Socket.ReceiveAsync(operation);
@@ -161,6 +168,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     pending = this.Socket.ReceiveAsync(operation);
                 }
             }
+#endif
             if (!pending)
             {
                 // todo: potential allocation / non-static field?
@@ -293,7 +301,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 "unsupported message type: " + msg.GetType().Name + ExpectedTypes);
         }
 
-        protected void IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
+        protected bool IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
         {
             // Did not write completely.
             if (scheduleAsync)
@@ -301,6 +309,9 @@ namespace DotNetty.Transport.Channels.Sockets
                 this.SetState(StateFlags.WriteScheduled);
                 bool pending;
 
+#if NETSTANDARD1_3
+                pending = this.Socket.SendAsync(operation);
+#else
                 if (ExecutionContext.IsFlowSuppressed())
                 {
                     pending = this.Socket.SendAsync(operation);
@@ -312,16 +323,21 @@ namespace DotNetty.Transport.Channels.Sockets
                         pending = this.Socket.SendAsync(operation);
                     }
                 }
+#endif
 
                 if (!pending)
                 {
                     ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
                 }
+
+                return pending;
             }
             else
             {
                 // Schedule flush again later so other tasks can be picked up input the meantime
                 this.EventLoop.Execute(FlushAction, this);
+
+                return true;
             }
         }
 

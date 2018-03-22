@@ -75,7 +75,7 @@ namespace DotNetty.Common.Internal
             // the index visibility to poll() we would need to handle the case where the element is not visible.
 
             // Won CAS, move on to storing
-            long offset = CalcElementOffset(currentProducerIndex, mask);
+            long offset = RefArrayAccessUtil.CalcElementOffset(currentProducerIndex, mask);
             this.SoElement(offset, e); // StoreStore
             return true; // AWESOME :)
         }
@@ -112,7 +112,7 @@ namespace DotNetty.Common.Internal
             }
 
             // Won CAS, move on to storing
-            long offset = CalcElementOffset(currentTail, mask);
+            long offset = RefArrayAccessUtil.CalcElementOffset(currentTail, mask);
             this.SoElement(offset, e);
             return 0; // AWESOME :)
         }
@@ -123,7 +123,7 @@ namespace DotNetty.Common.Internal
         /// <br />
         /// Lock free poll using ordered loads/stores. As class name suggests access is limited to a single thread.
         /// @see java.util.Queue#poll()
-        public override T Dequeue()
+        public override bool TryDequeue(out T item)
         {
             long consumerIndex = this.ConsumerIndex; // LoadLoad
             long offset = this.CalcElementOffset(consumerIndex);
@@ -131,7 +131,7 @@ namespace DotNetty.Common.Internal
             T[] buffer = this.Buffer;
 
             // If we can't see the next available element we can't poll
-            T e = LvElement(buffer, offset); // LoadLoad
+            T e = RefArrayAccessUtil.LvElement(buffer, offset); // LoadLoad
             if (null == e)
             {
                 // NOTE: Queue may not actually be empty in the case of a producer (P1) being interrupted after
@@ -142,19 +142,21 @@ namespace DotNetty.Common.Internal
                 {
                     do
                     {
-                        e = LvElement(buffer, offset);
+                        e = RefArrayAccessUtil.LvElement(buffer, offset);
                     }
                     while (e == null);
                 }
                 else
                 {
-                    return default(T);
+                    item = default(T);
+                    return false;
                 }
             }
 
-            SpElement(buffer, offset, default(T));
+            RefArrayAccessUtil.SpElement(buffer, offset, default(T));
             this.ConsumerIndex = consumerIndex + 1; // StoreStore
-            return e;
+            item = e;
+            return true;
         }
 
         /// {@inheritDoc}
@@ -163,14 +165,14 @@ namespace DotNetty.Common.Internal
         /// <br />
         /// Lock free peek using ordered loads. As class name suggests access is limited to a single thread.
         /// @see java.util.Queue#poll()
-        public override T Peek()
+        public override bool TryPeek(out T item)
         {
             // Copy field to avoid re-reading after volatile load
             T[] buffer = this.Buffer;
 
             long consumerIndex = this.ConsumerIndex; // LoadLoad
             long offset = this.CalcElementOffset(consumerIndex);
-            T e = LvElement(buffer, offset);
+            T e = RefArrayAccessUtil.LvElement(buffer, offset);
             if (null == e)
             {
                 // NOTE: Queue may not actually be empty in the case of a producer (P1) being interrupted after
@@ -181,16 +183,18 @@ namespace DotNetty.Common.Internal
                 {
                     do
                     {
-                        e = LvElement(buffer, offset);
+                        e = RefArrayAccessUtil.LvElement(buffer, offset);
                     }
                     while (e == null);
                 }
                 else
                 {
-                    return default(T);
+                    item = default(T);
+                    return false;
                 }
             }
-            return e;
+            item = e;
+            return true;
         }
 
         /// {@inheritDoc}

@@ -5,11 +5,11 @@ namespace DotNetty.Common.Internal
 {
     public abstract class AbstractQueue<T> : IQueue<T>
     {
-        public abstract bool TryEnqueue(T element);
+        public abstract bool TryEnqueue(T item);
 
-        public abstract T Dequeue();
+        public abstract bool TryDequeue(out T item);
 
-        public abstract T Peek();
+        public abstract bool TryPeek(out T item);
 
         public abstract int Count { get; }
 

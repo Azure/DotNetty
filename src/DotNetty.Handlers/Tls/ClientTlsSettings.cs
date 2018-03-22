@@ -10,8 +10,6 @@ namespace DotNetty.Handlers.Tls
 
     public sealed class ClientTlsSettings : TlsSettings
     {
-        IReadOnlyCollection<X509Certificate2> certificates;
-
         public ClientTlsSettings(string targetHost)
             : this(targetHost, new List<X509Certificate>())
         {

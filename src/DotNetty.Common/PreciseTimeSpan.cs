@@ -10,7 +10,7 @@ namespace DotNetty.Common
     {
         static readonly long StartTime = Stopwatch.GetTimestamp();
         static readonly double PrecisionRatio = (double)Stopwatch.Frequency / TimeSpan.TicksPerSecond;
-        static readonly double ReversePrecisionRatio = 1.0 / PrecisionRatio;
+        static readonly double ReversePrecisionRatio = (double)TimeSpan.TicksPerSecond / Stopwatch.Frequency;
 
         readonly long ticks;
 
@@ -25,6 +25,8 @@ namespace DotNetty.Common
         public static readonly PreciseTimeSpan Zero = new PreciseTimeSpan(0);
 
         public static readonly PreciseTimeSpan MinusOne = new PreciseTimeSpan(-1);
+
+        public static PreciseTimeSpan FromTicks(long ticks) => new PreciseTimeSpan(ticks);
 
         public static PreciseTimeSpan FromStart => new PreciseTimeSpan(GetTimeChangeSinceStart());
 

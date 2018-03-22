@@ -236,7 +236,7 @@ namespace DotNetty.Codecs.Mqtt.Tests
 
             foreach (IByteBuffer message in output)
             {
-                MqttDecoder mqttDecoder = (useServer ? this.serverDecoder : this.clientDecoder);
+                MqttDecoder mqttDecoder = useServer ? this.serverDecoder : this.clientDecoder;
                 if (explodeForDecode)
                 {
                     while (message.IsReadable())

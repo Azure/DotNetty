@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Net;
+    using System.Runtime.ExceptionServices;
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Internal.Logging;
@@ -81,13 +82,17 @@ namespace DotNetty.Transport.Channels.Embedded
         ///     The <see cref="IChannelHandler" />s that will be added to the <see cref="IChannelPipeline" />
         /// </param>
         public EmbeddedChannel(IChannelId id, bool hasDisconnect, params IChannelHandler[] handlers)
+            : this(id, hasDisconnect, true, handlers)
+        { }
+
+        public EmbeddedChannel(IChannelId id, bool hasDisconnect, bool start, params IChannelHandler[] handlers)
             : base(null, id)
         {
             this.Metadata = hasDisconnect ? METADATA_DISCONNECT : METADATA_NO_DISCONNECT;
             this.Configuration = new DefaultChannelConfiguration(this);
             if (handlers == null)
             {
-                throw new NullReferenceException("handlers cannot be null");
+                throw new ArgumentNullException(nameof(handlers));
             }
 
             IChannelPipeline p = this.Pipeline;
@@ -104,9 +109,17 @@ namespace DotNetty.Transport.Channels.Embedded
                 }
             }));
 
+            if (start)
+            {
+                this.Start();
+            }
+        }
+
+        public void Start()
+        {
             Task future = this.loop.RegisterAsync(this);
             Debug.Assert(future.IsCompleted);
-            p.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
+            this.Pipeline.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
         }
 
         protected sealed override DefaultChannelPipeline NewChannelPipeline() => new EmbeddedChannelPipeline(this);
@@ -291,12 +304,8 @@ namespace DotNetty.Transport.Channels.Embedded
                     // The write may be delayed to run later by runPendingTasks()
                     future.ContinueWith(t => this.RecordException(t));
                 }
-                Debug.Assert(future.IsCompleted);
-                if (future.Exception != null)
-                {
-                    this.RecordException(future.Exception);
-                }
             }
+            futures.Return();
 
             this.RunPendingTasks();
             this.CheckException();
@@ -312,7 +321,7 @@ namespace DotNetty.Transport.Channels.Embedded
                     this.RecordException(future.Exception);
                     break;
                 default:
-                    break;  
+                    break;
             }
         }
 
@@ -350,7 +359,7 @@ namespace DotNetty.Transport.Channels.Embedded
          */
         bool Finish(bool releaseAll)
         {
-            this.CloseAsync();
+            this.CloseSafe();
             try
             {
                 this.CheckException();
@@ -380,7 +389,7 @@ namespace DotNetty.Transport.Channels.Embedded
 
         static bool ReleaseAll(Queue<object> queue)
         {
-            if (queue.Count > 0)
+            if (queue != null && queue.Count > 0)
             {
                 for (;;)
                 {
@@ -439,7 +448,7 @@ namespace DotNetty.Transport.Channels.Embedded
             }
 
             this.lastException = null;
-            throw e;
+            ExceptionDispatchInfo.Capture(e).Throw();
         }
 
         /// <summary>

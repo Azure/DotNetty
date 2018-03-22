@@ -39,7 +39,10 @@ namespace DotNetty.Transport.Channels.Sockets
                 Contract.Assert(this.channel.EventLoop.InEventLoop);
 
                 AbstractSocketMessageChannel ch = this.Channel;
-                ch.ResetState(StateFlags.ReadScheduled);
+                if ((ch.ResetState(StateFlags.ReadScheduled) & StateFlags.Active) == 0)
+                {
+                    return; // read was signaled as a result of channel closure
+                }
                 IChannelConfiguration config = ch.Configuration;
 
                 IChannelPipeline pipeline = ch.Pipeline;
@@ -101,7 +104,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     {
                         if (ch.Open)
                         {
-                            this.CloseAsync();
+                            this.CloseSafe();
                         }
                     }
                 }
@@ -168,26 +171,6 @@ namespace DotNetty.Transport.Channels.Sockets
         }
 
         protected abstract void ScheduleMessageWrite(object message);
-
-        //protected override void ScheduleMessageWrite(object message)
-        //{
-        //    // todo: move this impl to datagram channel impl
-
-        //    var buffer = message as IByteBuffer;
-        //    if (buffer == null)
-        //    {
-        //        throw new InvalidOperationException("Message has an unexpected type: " + message.GetType().FullName);
-        //    }
-
-        //    var operation = TakeWriteEventFromPool(this, buffer);
-        //    operation.EventArgs.RemoteEndPoint = this.RemoteAddress; // todo: get remote address the right way
-        //    this.SetState(StateFlags.WriteScheduled);
-        //    bool pending = this.Socket.SendToAsync(operation.EventArgs);
-        //    if (!pending)
-        //    {
-        //        ((AbstractSocketChannel.ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
-        //    }
-        //}
 
         /// <summary>
         /// Returns {@code true} if we should continue the write loop on a write error.

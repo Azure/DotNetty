@@ -21,9 +21,7 @@ namespace DotNetty.Codecs.Tests.Frame
                 Assert.Throws<TooLongFrameException>(() => ch.WriteInbound(Unpooled.WrappedBuffer(new byte[] { 0, 0 })));
                 ch.WriteInbound(Unpooled.WrappedBuffer(new byte[] { 0, 0, 0, 1, (byte)'A' }));
                 var buf = ch.ReadInbound<IByteBuffer>();
-                ReferenceCountUtil.ReleaseLater(buf);
-                Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-                Assert.Equal("A", buf.ToString(iso));
+                Assert.Equal("A", buf.ToString(Encoding.UTF8));
                 buf.Release();
             }
         }
@@ -39,8 +37,7 @@ namespace DotNetty.Codecs.Tests.Frame
 
                 ch.WriteInbound(Unpooled.WrappedBuffer(new byte[] { 0, 0, 0, 0, 0, 1, (byte)'A' }));
                 var buf = ch.ReadInbound<IByteBuffer>();
-                Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-                Assert.Equal("A", buf.ToString(iso));
+                Assert.Equal("A", buf.ToString(Encoding.UTF8));
                 buf.Release();
             }
         }

@@ -18,7 +18,6 @@ namespace DotNetty.Transport.Channels
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractChannel>();
 
-        protected static readonly ClosedChannelException ClosedChannelException = new ClosedChannelException();
         static readonly NotYetConnectedException NotYetConnectedException = new NotYetConnectedException();
 
         readonly IChannelUnsafe channelUnsafe;
@@ -356,7 +355,7 @@ namespace DotNetty.Transport.Channels
                     // call was outside of the eventLoop
                     if (!promise.SetUncancellable() || !this.EnsureOpen(promise))
                     {
-                        Util.SafeSetFailure(promise, ClosedChannelException, Logger);
+                        Util.SafeSetFailure(promise, new ClosedChannelException(), Logger);
                         return;
                     }
                     bool firstRegistration = this.neverRegistered;
@@ -467,10 +466,10 @@ namespace DotNetty.Transport.Channels
             {
                 this.AssertEventLoop();
 
-                return this.CloseAsync(ClosedChannelException, false);
+                return this.CloseAsync(new ClosedChannelException(), false);
             }
 
-            Task CloseAsync(Exception cause, bool notify)
+            protected Task CloseAsync(Exception cause, bool notify)
             {
                 var promise = new TaskCompletionSource();
                 if (!promise.SetUncancellable())
@@ -516,7 +515,7 @@ namespace DotNetty.Transport.Channels
                             {
                                 // Fail all the queued messages
                                 outboundBuffer.FailFlushed(cause, notify);
-                                outboundBuffer.Close(ClosedChannelException);
+                                outboundBuffer.Close(new ClosedChannelException());
                                 this.FireChannelInactiveAndDeregister(wasActive);
                             });
                         }
@@ -533,7 +532,7 @@ namespace DotNetty.Transport.Channels
                     {
                         // Fail all the queued messages.
                         outboundBuffer.FailFlushed(cause, notify);
-                        outboundBuffer.Close(ClosedChannelException);
+                        outboundBuffer.Close(new ClosedChannelException());
                     }
                     if (this.inFlush0)
                     {
@@ -664,7 +663,7 @@ namespace DotNetty.Transport.Channels
                 catch (Exception e)
                 {
                     this.InvokeLater(() => this.channel.pipeline.FireExceptionCaught(e));
-                    this.CloseAsync();
+                    this.CloseSafe();
                 }
             }
 
@@ -682,7 +681,7 @@ namespace DotNetty.Transport.Channels
 
                     // release message now to prevent resource-leak
                     ReferenceCountUtil.Release(msg);
-                    return TaskEx.FromException(ClosedChannelException);
+                    return TaskEx.FromException(new ClosedChannelException());
                 }
 
                 int size;
@@ -738,7 +737,7 @@ namespace DotNetty.Transport.Channels
                 this.inFlush0 = true;
 
                 // Mark all pending write requests as failure if the channel is inactive.
-                if (!this.channel.Active)
+                if (!this.CanWrite)
                 {
                     try
                     {
@@ -749,7 +748,7 @@ namespace DotNetty.Transport.Channels
                         else
                         {
                             // Do not trigger channelWritabilityChanged because the channel is closed already.
-                            outboundBuffer.FailFlushed(ClosedChannelException, false);
+                            outboundBuffer.FailFlushed(new ClosedChannelException(), false);
                         }
                     }
                     finally
@@ -763,15 +762,17 @@ namespace DotNetty.Transport.Channels
                 {
                     this.channel.DoWrite(outboundBuffer);
                 }
-                catch (Exception t)
+                catch (Exception ex)
                 {
-                    outboundBuffer.FailFlushed(t, true);
+                    Util.CompleteChannelCloseTaskSafely(this.channel, this.CloseAsync(new ClosedChannelException("Failed to write", ex), false));
                 }
                 finally
                 {
                     this.inFlush0 = false;
                 }
             }
+
+            protected virtual bool CanWrite => this.channel.Active;
 
             protected bool EnsureOpen(TaskCompletionSource promise)
             {
@@ -780,11 +781,11 @@ namespace DotNetty.Transport.Channels
                     return true;
                 }
 
-                Util.SafeSetFailure(promise, ClosedChannelException, Logger);
+                Util.SafeSetFailure(promise, new ClosedChannelException(), Logger);
                 return false;
             }
 
-            protected Task CreateClosedChannelExceptionTask() => TaskEx.FromException(ClosedChannelException);
+            protected Task CreateClosedChannelExceptionTask() => TaskEx.FromException(new ClosedChannelException());
 
             protected void CloseIfClosed()
             {
@@ -792,7 +793,7 @@ namespace DotNetty.Transport.Channels
                 {
                     return;
                 }
-                this.CloseAsync();
+                this.CloseSafe();
             }
 
             void InvokeLater(Action task)

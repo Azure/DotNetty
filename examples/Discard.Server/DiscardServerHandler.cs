@@ -4,9 +4,7 @@
 namespace Discard.Server
 {
     using System;
-    using DotNetty.Buffers;
     using DotNetty.Transport.Channels;
-
 
     public class DiscardServerHandler : SimpleChannelInboundHandler<object>
     {

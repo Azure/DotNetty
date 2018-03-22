@@ -79,7 +79,7 @@ namespace DotNetty.Handlers.Tests
                     {
                         this.channel.WriteInbound(this.pendingBuffer.ReadBytes(this.maxBatchSize));
                     }
-                    while (this.pendingBuffer.ReadableBytes > this.maxBatchSize);
+                    while (this.pendingBuffer.ReadableBytes >= this.maxBatchSize);
                     if (!this.pendingBuffer.IsReadable())
                     {
                         this.pendingBuffer = null;
@@ -116,6 +116,6 @@ namespace DotNetty.Handlers.Tests
             }
         }
 
-        public override string ToString() => $"batch({this.maxBatchSize}, {this.timeWindow})";
+        public override string ToString() => $"batch({this.maxBatchSize}, {this.timeWindow}, {this.forceSizing})";
     }
 }

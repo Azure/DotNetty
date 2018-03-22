@@ -10,7 +10,7 @@ namespace DotNetty.Common
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using DotNetty.Common.Utilities;
+    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public static class ThreadDeathWatcher
     {
@@ -143,8 +143,8 @@ namespace DotNetty.Common
             {
                 for (;;)
                 {
-                    Entry e = PendingEntries.Dequeue();
-                    if (e == null)
+                    Entry e;
+                    if (!PendingEntries.TryDequeue(out e))
                     {
                         break;
                     }
@@ -186,7 +186,7 @@ namespace DotNetty.Common
             }
         }
 
-        sealed class Entry : MpscLinkedQueueNode<Entry>
+        sealed class Entry
         {
             internal readonly Thread Thread;
             internal readonly Action Task;
@@ -198,8 +198,6 @@ namespace DotNetty.Common
                 this.Task = task;
                 this.IsWatch = isWatch;
             }
-
-            public override Entry Value => this;
 
             public override int GetHashCode() => this.Thread.GetHashCode() ^ this.Task.GetHashCode();
 
