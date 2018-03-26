@@ -239,7 +239,7 @@ namespace DotNetty.Buffers
 
             if (MathUtil.IsOutOfBounds(dstIndex, length, dst.Capacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}");
+                ThrowHelper.ThrowIndexOutOfRangeException_DstIndex(dstIndex);
             }
 
             if (dst.HasMemoryAddress)
@@ -273,7 +273,7 @@ namespace DotNetty.Buffers
 
             if (MathUtil.IsOutOfBounds(dstIndex, length, dst.Length))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}");
+                ThrowHelper.ThrowIndexOutOfRangeException_DstIndex(dstIndex);
             }
             if (length != 0)
             {
@@ -287,7 +287,7 @@ namespace DotNetty.Buffers
 
             if (MathUtil.IsOutOfBounds(srcIndex, length, src.Capacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"srcIndex: {srcIndex}");
+                ThrowHelper.ThrowIndexOutOfRangeException_SrcIndex(srcIndex);
             }
 
             if (length != 0)
