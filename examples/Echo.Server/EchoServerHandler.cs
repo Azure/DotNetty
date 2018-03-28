@@ -17,10 +17,20 @@ namespace Echo.Server
             {
                 Console.WriteLine("Received from client: " + buffer.ToString(Encoding.UTF8));
             }
-            context.WriteAsync(message);
+            var bf = Unpooled.Buffer();
+            byte[] messageBytes = Encoding.UTF8.GetBytes("Server Say Hi");
+            bf.WriteBytes(messageBytes);
+            // var Unpooled.Buffer(ClientSettings.Size);
+
+            context.WriteAsync(bf);
         }
 
-        public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
+        public override void ChannelReadComplete(IChannelHandlerContext context)
+        {
+            Console.WriteLine("ChannelReadComplete 读完事件！");
+            context.Flush();
+        }
+        //=> context.Flush();
 
         public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
         {

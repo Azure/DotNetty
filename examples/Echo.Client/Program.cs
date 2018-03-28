@@ -21,17 +21,17 @@ namespace Echo.Client
     {
         static async Task RunClientAsync()
         {
-            ExampleHelper.SetConsoleLogger();
+            //ExampleHelper.SetConsoleLogger();
 
             var group = new MultithreadEventLoopGroup();
 
             X509Certificate2 cert = null;
             string targetHost = null;
-            if (ClientSettings.IsSsl)
-            {
-                cert = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "dotnetty.com.pfx"), "password");
-                targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
-            }
+            //if (ClientSettings.IsSsl)
+            //{
+            //    cert = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "dotnetty.com.pfx"), "password");
+            //    targetHost = cert.GetNameInfo(X509NameType.DnsName, false);
+            //}
             try
             {
                 var bootstrap = new Bootstrap();
@@ -47,7 +47,7 @@ namespace Echo.Client
                         {
                             pipeline.AddLast("tls", new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(targetHost)));
                         }
-                        pipeline.AddLast(new LoggingHandler());
+                        //pipeline.AddLast(new LoggingHandler());
                         pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
                         pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 

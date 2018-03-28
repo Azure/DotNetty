@@ -20,7 +20,11 @@ namespace Echo.Client
             this.initialMessage.WriteBytes(messageBytes);
         }
 
-        public override void ChannelActive(IChannelHandlerContext context) => context.WriteAndFlushAsync(this.initialMessage);
+        public override void ChannelActive(IChannelHandlerContext context)
+        {
+            context.WriteAndFlushAsync(this.initialMessage);
+        }
+        //=> context.WriteAndFlushAsync(this.initialMessage);
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
@@ -29,7 +33,12 @@ namespace Echo.Client
             {
                 Console.WriteLine("Received from server: " + byteBuffer.ToString(Encoding.UTF8));
             }
-            context.WriteAsync(message);
+
+            var bf = Unpooled.Buffer(ClientSettings.Size);
+            byte[] messageBytes = Encoding.UTF8.GetBytes("Hello world");
+            bf.WriteBytes(messageBytes);
+
+            context.WriteAsync(bf);
         }
 
         public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
