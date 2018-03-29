@@ -17,7 +17,7 @@ namespace Echo.Server
             {
                 Console.WriteLine("Received from client: " + buffer.ToString(Encoding.UTF8));
             }
-            var bf = Unpooled.Buffer();
+            var bf = Unpooled.Buffer(256);
             byte[] messageBytes = Encoding.UTF8.GetBytes("Server Say Hi");
             bf.WriteBytes(messageBytes);
             // var Unpooled.Buffer(ClientSettings.Size);

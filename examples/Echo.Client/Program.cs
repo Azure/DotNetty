@@ -4,11 +4,15 @@
 namespace Echo.Client
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Net;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
+    using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Buffers;
     using DotNetty.Codecs;
     using DotNetty.Handlers.Logging;
     using DotNetty.Handlers.Tls;
@@ -56,6 +60,10 @@ namespace Echo.Client
 
                 IChannel clientChannel = await bootstrap.ConnectAsync(new IPEndPoint(ClientSettings.Host, ClientSettings.Port));
 
+                //await clientChannel.WriteAndFlushAsync(await MockMessageAsync());
+
+                await MockSendMessagesAsync(clientChannel);
+
                 Console.ReadLine();
 
                 await clientChannel.CloseAsync();
@@ -67,5 +75,56 @@ namespace Echo.Client
         }
 
         static void Main() => RunClientAsync().Wait();
+
+        const string HelloWorld = "Hello World!";
+        static Task<IByteBuffer> MockMessageAsync(string message = null)
+        {
+            if (string.IsNullOrEmpty(message))
+                message = HelloWorld;
+
+            var ubf = Unpooled.Buffer(ClientSettings.Size);
+            var messageBytes = Encoding.UTF8.GetBytes(message);
+            ubf.WriteBytes(messageBytes);
+
+            return Task.FromResult(ubf);
+        }
+
+        static int count = 100000;
+        static Task MockSendMessagesAsync(IChannel channel)
+        {
+            while (true)
+            {
+                var cde = new System.Threading.CountdownEvent(count);
+                var sw = new Stopwatch();
+                sw.Start();
+
+                for (int i = 0; i < count; i++)
+                {
+                    Task.Run(async () =>
+                    {
+                        await channel.WriteAndFlushAsync(await MockMessageAsync($"Hi DotNetty_{DateTime.Now}"));
+                    }).ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            Console.WriteLine(t.Exception);
+                        }
+
+                        cde.Signal();
+                    });
+                }
+
+                cde.Wait();
+                sw.Stop();
+
+                Console.WriteLine($"{count}================>{sw.ElapsedMilliseconds}");
+
+                Thread.Sleep(2000);
+
+            }
+
+        }
+
+
     }
 }
