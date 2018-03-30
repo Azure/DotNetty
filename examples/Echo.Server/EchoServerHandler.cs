@@ -27,7 +27,7 @@ namespace Echo.Server
 
         public override void ChannelReadComplete(IChannelHandlerContext context)
         {
-            Console.WriteLine("ChannelReadComplete 读完事件！");
+            //Console.WriteLine("ChannelReadComplete 读完事件！");
             context.Flush();
         }
         //=> context.Flush();
