@@ -12,13 +12,11 @@ namespace DotNetty.Transport.Channels.Pool
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Bootstrapping;
 
-    /**
- * Simple {@link ChannelPool} implementation which will create new {@link Channel}s if someone tries to acquire
- * a {@link Channel} but none is in the pool atm. No limit on the maximal concurrent {@link Channel}s is enforced.
- *
- * This implementation uses LIFO order for {@link Channel}s in the {@link ChannelPool}.
- *
- */
+    /// <summary>
+    /// Simple <see cref="IChannelPool"/> implementation which will create new <see cref="IChannel"/>s if someone tries to acquire
+    /// a <see cref="IChannel"/> but none is in the pool atm. No limit on the maximal concurrent <see cref="IChannel"/>s is enforced.
+    /// This implementation uses LIFO order for <see cref="IChannel"/>s in the <see cref="IChannelPool"/>.
+    /// </summary>
     public class SimpleChannelPool : IChannelPool
     {
         public static readonly AttributeKey<SimpleChannelPool> PoolKey = AttributeKey<SimpleChannelPool>.NewInstance("channelPool");
@@ -27,56 +25,70 @@ namespace DotNetty.Transport.Channels.Pool
 
         readonly IQueue<IChannel> store;
 
-        /**
-         * Creates a new instance using the {@link IChannelHealthChecker#ACTIVE}.
-         *
-         * @param bootstrap         the {@link Bootstrap} that is used for connections
-         * @param handler           the {@link IChannelPoolHandler} that will be notified for the different pool actions
-         */
+        /// <summary>
+        /// Creates a new <see cref="SimpleChannelPool"/> instance using the <see cref="ChannelActiveHealthChecker"/>.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrapping.Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.</param>
         public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler)
             : this(bootstrap, handler, ChannelActiveHealthChecker.Instance)
         {
         }
 
-        /**
-         * Creates a new instance.
-         *
-         * @param bootstrap         the {@link Bootstrap} that is used for connections
-         * @param handler           the {@link IChannelPoolHandler} that will be notified for the different pool actions
-         * @param healthCheck       the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is
-         *                          still healthy when obtain from the {@link ChannelPool}
-         */
+        /// <summary>
+        /// Creates a new <see cref="SimpleChannelPool"/> instance.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrapping.Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">
+        /// The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </param>
+        /// <param name="healthChecker">
+        /// The <see cref="IChannelHealthChecker"/> that will be used to check if a <see cref="IChannel"/> is still
+        /// healthy when obtained from the <see cref="IChannelPool"/>.
+        /// </param>
         public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker)
             : this(bootstrap, handler, healthChecker, true)
         {
         }
 
-        /**
-         * Creates a new instance.
-         *
-         * @param bootstrap          the {@link Bootstrap} that is used for connections
-         * @param handler            the {@link IChannelPoolHandler} that will be notified for the different pool actions
-         * @param healthCheck        the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is
-         *                           still healthy when obtain from the {@link ChannelPool}
-         * @param releaseHealthCheck will check channel health before offering back if this parameter set to {@code true};
-         *                           otherwise, channel health is only checked at acquisition time
-         */
+        /// <summary>
+        /// Creates a new <see cref="SimpleChannelPool"/> instance.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrapping.Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">
+        /// The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </param>
+        /// <param name="healthChecker">
+        /// The <see cref="IChannelHealthChecker"/> that will be used to check if a <see cref="IChannel"/> is still
+        /// healthy when obtained from the <see cref="IChannelPool"/>.
+        /// </param>
+        /// <param name="releaseHealthCheck">
+        /// If <c>true</c>, will check channel health before offering back. Otherwise, channel health is only checked
+        /// at acquisition time.
+        /// </param>
         public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, bool releaseHealthCheck)
             : this(bootstrap, handler, healthChecker, releaseHealthCheck, true)
         {
         }
 
-        /**
-         * Creates a new instance.
-         *
-         * @param bootstrap          the {@link Bootstrap} that is used for connections
-         * @param handler            the {@link IChannelPoolHandler} that will be notified for the different pool actions
-         * @param healthCheck        the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is
-         *                           still healthy when obtain from the {@link ChannelPool}
-         * @param releaseHealthCheck will check channel health before offering back if this parameter set to {@code true};
-         *                           otherwise, channel health is only checked at acquisition time
-         * @param lastRecentUsed    {@code true} {@link Channel} selection will be LIFO, if {@code false} FIFO.
-         */
+        /// <summary>
+        /// Creates a new <see cref="SimpleChannelPool"/> instance.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrapping.Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">
+        /// The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </param>
+        /// <param name="healthChecker">
+        /// The <see cref="IChannelHealthChecker"/> that will be used to check if a <see cref="IChannel"/> is still
+        /// healthy when obtained from the <see cref="IChannelPool"/>.
+        /// </param>
+        /// <param name="releaseHealthCheck">
+        /// If <c>true</c>, will check channel health before offering back. Otherwise, channel health is only checked
+        /// at acquisition time.
+        /// </param>
+        /// <param name="lastRecentUsed">
+        /// If <c>true</c>, <see cref="IChannel"/> selection will be LIFO. If <c>false</c>, it will be FIFO.
+        /// </param>
         public SimpleChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, bool releaseHealthCheck, bool lastRecentUsed)
         {
             Contract.Requires(handler != null);
@@ -102,33 +114,26 @@ namespace DotNetty.Transport.Channels.Pool
             this.Handler.ChannelCreated(channel);
         }
 
-        /**
-         * Returns the {@link Bootstrap} this pool will use to open new connections.
-         *
-         * @return the {@link Bootstrap} this pool will use to open new connections
-         */
+        /// <summary>
+        /// Returns the <see cref="Bootstrapping.Bootstrap"/> this pool will use to open new connections. 
+        /// </summary>
         internal Bootstrap Bootstrap { get; }
 
-        /**
-         * Returns the {@link IChannelPoolHandler} that will be notified for the different pool actions.
-         *
-         * @return the {@link IChannelPoolHandler} that will be notified for the different pool actions
-         */
+        /// <summary>
+        /// Returns the <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </summary>
         internal IChannelPoolHandler Handler { get; }
 
-        /**
-         * Returns the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is healthy.
-         *
-         * @return the {@link IChannelHealthChecker} that will be used to check if a {@link Channel} is healthy
-         */
+        /// <summary>
+        /// Returns the <see cref="IChannelHealthChecker"/> that will be used to check if an <see cref="IChannel"/> is healthy.
+        /// </summary>
         internal IChannelHealthChecker HealthChecker { get; }
 
-        /**
-         * Indicates whether this pool will check the health of channels before offering them back into the pool.
-         *
-         * @return {@code true} if this pool will check the health of channels before offering them back into the pool, or
-         * {@code false} if channel health is only checked at acquisition time
-         */
+        /// <summary>
+        /// Indicates whether this pool will check the health of channels before offering them back into the pool.
+        /// Returns <c>true</c> if this pool will check the health of channels before offering them back into the pool, or
+        /// <c>false</c> if channel health is only checked at acquisition time.
+        /// </summary>
         internal bool ReleaseHealthCheck { get; }
 
         public virtual ValueTask<IChannel> AcquireAsync()
@@ -198,13 +203,16 @@ namespace DotNetty.Transport.Channels.Pool
                 return await this.AcquireAsync();
             }
         }
-
-        /**
-         * Bootstrap a new {@link Channel}. The default implementation uses {@link Bootstrap#connect()}, sub-classes may
-         * override this.
-         * <p>
-         * The {@link Bootstrap} that is passed in here is cloned via {@link Bootstrap#clone()}, so it is safe to modify.
-         */
+        /// <summary>
+        /// Bootstrap a new <see cref="IChannel"/>. The default implementation uses
+        /// <see cref="Bootstrapping.Bootstrap.ConnectAsync()"/>, sub-classes may override this.
+        /// </summary>
+        /// <param name="bs">
+        /// The <see cref="Bootstrapping.Bootstrap"/> instance to use to bootstrap a new <see cref="IChannel"/>.
+        /// The <see cref="Bootstrapping.Bootstrap"/> passed here is cloned via
+        /// <see cref="Bootstrapping.Bootstrap.Clone()"/>, so it is safe to modify.
+        /// </param>
+        /// <returns>The newly connected <see cref="IChannel"/>.</returns>
         protected virtual Task<IChannel> ConnectChannel(Bootstrap bs) => bs.ConnectAsync();
 
         public virtual async ValueTask<bool> ReleaseAsync(IChannel channel)
@@ -278,13 +286,14 @@ namespace DotNetty.Transport.Channels.Pool
             }
         }
 
-        /**
-         * Adds the channel back to the pool only if the channel is healthy.
-         * @param channel the channel to put back to the pool
-         * @param promise offer operation promise.
-         * @param future the future that contains information fif channel is healthy or not.
-         * @throws Exception in case when failed to notify handler about release operation.
-         */
+        /// <summary>
+        /// Releases the channel back to the pool only if the channel is healthy.
+        /// </summary>
+        /// <param name="channel">The <see cref="IChannel"/> to put back to the pool.</param>
+        /// <returns>
+        /// <c>true</c> if the <see cref="IChannel"/> was healthy, released, and offered back to the pool.
+        /// <c>false</c> if the <see cref="IChannel"/> was NOT healthy and was simply released.
+        /// </returns>
         async ValueTask<bool> DoHealthCheckOnRelease(IChannel channel)
         {
             if (await this.HealthChecker.IsHealthyAsync(channel))
@@ -320,22 +329,30 @@ namespace DotNetty.Transport.Channels.Pool
             channel.CloseAsync();
         }
 
-        /**
-         * Poll a {@link Channel} out of the internal storage to reuse it. This will return {@code null} if no
-         * {@link Channel} is ready to be reused.
-         *
-         * Sub-classes may override {@link #pollChannel()} and {@link #offerChannel(Channel)}. Be aware that
-         * implementations of these methods needs to be thread-safe!
-         */
+        /// <summary>
+        /// Polls an <see cref="IChannel"/> out of the internal storage to reuse it.
+        /// </summary>
+        /// <remarks>
+        /// Sub-classes may override <see cref="TryPollChannel"/> and <see cref="TryOfferChannel"/>.
+        /// Be aware that implementations of these methods needs to be thread-safe!
+        /// </remarks>
+        /// <param name="channel">
+        /// An output parameter that will contain the <see cref="IChannel"/> obtained from the pool.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if an <see cref="IChannel"/> was retrieved from the pool, otherwise <c>false</c>.
+        /// </returns>
         protected virtual bool TryPollChannel(out IChannel channel) => this.store.TryDequeue(out channel);
 
-        /**
-         * Offer a {@link Channel} back to the internal storage. This will return {@code true} if the {@link Channel}
-         * could be added, {@code false} otherwise.
-         *
-         * Sub-classes may override {@link #pollChannel()} and {@link #offerChannel(Channel)}. Be aware that
-         * implementations of these methods needs to be thread-safe!
-         */
+        /// <summary>
+        /// Offers a <see cref="IChannel"/> back to the internal storage. This will return 
+        /// </summary>
+        /// <remarks>
+        /// Sub-classes may override <see cref="TryPollChannel"/> and <see cref="TryOfferChannel"/>.
+        /// Be aware that implementations of these methods needs to be thread-safe!
+        /// </remarks>
+        /// <param name="channel"></param>
+        /// <returns><c>true</c> if the <see cref="IChannel"/> could be added, otherwise <c>false</c>.</returns>
         protected virtual bool TryOfferChannel(IChannel channel) => this.store.TryEnqueue(channel);
 
         public virtual void Dispose()

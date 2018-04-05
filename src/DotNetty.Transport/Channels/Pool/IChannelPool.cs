@@ -6,27 +6,29 @@ namespace DotNetty.Transport.Channels.Pool
     using System;
     using System.Threading.Tasks;
 
-    /**
-     * Allows to acquire and release {@link Channel} and so act as a pool of these.
-     */
+    /// <summary>
+    /// Allows the acquisition and release of <see cref="IChannel"/> instances, and so act as a pool of these.
+    /// </summary>
     public interface IChannelPool : IDisposable
     {
-        /**
-         * Acquire a {@link Channel} from this {@link ChannelPool}. The returned {@link Future} is notified once
-         * the acquire is successful and failed otherwise.
-         *
-         * <strong>Its important that an acquired is always released to the pool again, even if the {@link Channel}
-         * is explicitly closed..</strong>
-         */
+        /// <summary>
+        /// Acquires an <see cref="IChannel"/> from this <see cref="IChannelPool"/>.
+        /// <para>
+        /// It is important that an acquired <see cref="IChannel"/> is always released to the pool again via the
+        /// <see cref="ReleaseAsync"/> method, even if the <see cref="IChannel"/> is explicitly closed.
+        /// </para>
+        /// </summary>
+        /// <returns>The aquired <see cref="IChannel"/>.</returns>
         ValueTask<IChannel> AcquireAsync();
-            
-        /**
-         * Acquire a {@link Channel} from this {@link ChannelPool}. The given {@link Promise} is notified once
-         * the acquire is successful and failed otherwise.
-         *
-         * <strong>Its important that an acquired is always released to the pool again, even if the {@link Channel}
-         * is explicitly closed..</strong>
-         */
+
+        /// <summary>
+        /// Releases a previously aquired <see cref="IChannel"/> from this <see cref="IChannelPool"/>, allowing it to
+        /// be aquired again by another caller.
+        /// </summary>
+        /// <param name="channel">The <see cref="IChannel"/> instance to be released.</param>
+        /// <returns>
+        /// <c>true</c> if the <see cref="IChannel"/> was successfully released, otherwise <c>false</c>.
+        /// </returns>
         ValueTask<bool> ReleaseAsync(IChannel channel);
     }
 }

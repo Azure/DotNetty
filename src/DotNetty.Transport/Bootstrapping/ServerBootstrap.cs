@@ -14,7 +14,7 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    ///     {@link Bootstrap} sub-class which allows easy bootstrap of {@link ServerChannel}
+    /// A <see cref="Bootstrap"/> sub-class which allows easy bootstrapping of <see cref="IServerChannel"/>.
     /// </summary>
     public class ServerBootstrap : AbstractBootstrap<ServerBootstrap, IServerChannel>
     {
@@ -41,14 +41,14 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Specify the {@link EventLoopGroup} which is used for the parent (acceptor) and the child (client).
+        /// Specifies the <see cref="IEventLoopGroup"/> which is used for the parent (acceptor) and the child (client).
         /// </summary>
         public override ServerBootstrap Group(IEventLoopGroup group) => this.Group(group, group);
 
         /// <summary>
-        ///     Set the {@link EventLoopGroup} for the parent (acceptor) and the child (client). These
-        ///     {@link EventLoopGroup}'s are used to handle all the events and IO for {@link ServerChannel} and
-        ///     {@link Channel}'s.
+        /// Sets the <see cref="IEventLoopGroup"/> for the parent (acceptor) and the child (client). These
+        /// <see cref="IEventLoopGroup"/>'s are used to handle all the events and IO for <see cref="IServerChannel"/>
+        /// and <see cref="IChannel"/>'s.
         /// </summary>
         public ServerBootstrap Group(IEventLoopGroup parentGroup, IEventLoopGroup childGroup)
         {
@@ -64,9 +64,9 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Allow to specify a {@link ChannelOption} which is used for the {@link Channel} instances once they get created
-        ///     (after the acceptor accepted the {@link Channel}). Use a value of {@code null} to remove a previous set
-        ///     {@link ChannelOption}.
+        /// Allows specification of a <see cref="ChannelOption"/> which is used for the <see cref="IChannel"/>
+        /// instances once they get created (after the acceptor accepted the <see cref="IChannel"/>). Use a
+        /// value of <c>null</c> to remove a previously set <see cref="ChannelOption"/>.
         /// </summary>
         public ServerBootstrap ChildOption<T>(ChannelOption<T> childOption, T value)
         {
@@ -85,8 +85,8 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Set the specific {@link AttributeKey} with the given value on every child {@link Channel}. If the value is
-        ///     {@code null} the {@link AttributeKey} is removed
+        /// Sets the specific <see cref="AttributeKey{T}"/> with the given value on every child <see cref="IChannel"/>.
+        /// If the value is <c>null</c>, the <see cref="AttributeKey{T}"/> is removed.
         /// </summary>
         public ServerBootstrap ChildAttribute<T>(AttributeKey<T> childKey, T value)
             where T : class
@@ -106,7 +106,7 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Set the {@link ChannelHandler} which is used to serve the request for the {@link Channel}'s.
+        /// Sets the <see cref="IChannelHandler"/> which is used to serve the request for the <see cref="IChannel"/>'s.
         /// </summary>
         public ServerBootstrap ChildHandler(IChannelHandler childHandler)
         {
@@ -117,8 +117,8 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Return the configured {@link EventLoopGroup} which will be used for the child channels or {@code null}
-        ///     if non is configured yet.
+        /// Returns the configured <see cref="IEventLoopGroup"/> which will be used for the child channels or <c>null</c>
+        /// if none is configured yet.
         /// </summary>
         public IEventLoopGroup ChildGroup() => this.childGroup;
 

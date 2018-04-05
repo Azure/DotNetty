@@ -15,10 +15,10 @@ namespace DotNetty.Transport.Channels.Pool
     using DotNetty.Common.Internal;
     using DotNetty.Transport.Bootstrapping;
 
-    /**
- * {@link ChannelPool} implementation that takes another {@link ChannelPool} implementation and enforce a maximum
- * number of concurrent connections.
- */
+    /// <summary>
+    /// An <see cref="IChannelPool"/> implementation that takes another <see cref="IChannelPool"/> implementation and
+    /// enforces a maximum number of concurrent connections.
+    /// </summary>
     public class FixedChannelPool : SimpleChannelPool
     {
         static readonly InvalidOperationException FullException = new InvalidOperationException("Too many outstanding acquire operations");
@@ -33,14 +33,14 @@ namespace DotNetty.Transport.Channels.Pool
         {
             None,
 
-            /**
-             * Create a new connection when the timeout is detected.
-             */
+            /// <summary>
+            /// Creates a new connection when the timeout is detected.
+            /// </summary>
             New,
 
-            /**
-             * Fail the {@link Future} of the acquire call with a {@link TimeoutException}.
-             */
+            /// <summary>
+            /// Fails the <see cref="TaskCompletionSource"/> of the acquire call with a <see cref="System.TimeoutException"/>.
+            /// </summary>
             Fail
         }
 
@@ -58,97 +58,118 @@ namespace DotNetty.Transport.Channels.Pool
         int pendingAcquireCount;
         bool closed;
 
-        /**
-         * Creates a new instance using the {@link ChannelHealthChecker#ACTIVE}.
-         *
-         * @param bootstrap         the {@link Bootstrap} that is used for connections
-         * @param handler           the {@link ChannelPoolHandler} that will be notified for the different pool actions
-         * @param maxConnections    the number of maximal active connections, once this is reached new tries to acquire
-         *                          a {@link Channel} will be delayed until a connection is returned to the pool again.
-         */
-
-        /**
-         * Creates a new instance using the {@link ChannelHealthChecker#ACTIVE}.
-         *
-         * @param bootstrap             the {@link Bootstrap} that is used for connections
-         * @param handler               the {@link ChannelPoolHandler} that will be notified for the different pool actions
-         * @param maxConnections        the number of maximal active connections, once this is reached new tries to
-         *                              acquire a {@link Channel} will be delayed until a connection is returned to the
-         *                              pool again.
-         * @param maxPendingAcquires    the maximum number of pending acquires. Once this is exceed acquire tries will
-         *                              be failed.
-         */
+        /// <summary>
+        /// Creates a new <see cref="FixedChannelPool"/> instance using the <see cref="ChannelActiveHealthChecker"/>.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">
+        /// The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </param>
+        /// <param name="maxConnections">
+        /// The number of maximal active connections. Once this is reached, new attempts to acquire an
+        /// <see cref="IChannel"/> will be delayed until a connection is returned to the pool again.
+        /// </param>
+        /// <param name="maxPendingAcquires">
+        /// The maximum number of pending acquires. Once this is exceeded, acquire attempts will be failed.
+        /// </param>
         public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, int maxConnections, int maxPendingAcquires = int.MaxValue)
             : this(bootstrap, handler, ChannelActiveHealthChecker.Instance, AcquireTimeoutAction.None, Timeout.InfiniteTimeSpan, maxConnections, maxPendingAcquires)
         {
         }
 
-        /**
-         * Creates a new instance.
-         *
-         * @param bootstrap             the {@link Bootstrap} that is used for connections
-         * @param handler               the {@link ChannelPoolHandler} that will be notified for the different pool actions
-         * @param healthCheck           the {@link ChannelHealthChecker} that will be used to check if a {@link Channel} is
-         *                              still healthy when obtain from the {@link ChannelPool}
-         * @param action                the {@link AcquireTimeoutAction} to use or {@code null} if non should be used.
-         *                              In this case {@param acquireTimeoutMillis} must be {@code -1}.
-         * @param acquireTimeoutMillis  the time (in milliseconds) after which an pending acquire must complete or
-         *                              the {@link AcquireTimeoutAction} takes place.
-         * @param maxConnections        the number of maximal active connections, once this is reached new tries to
-         *                              acquire a {@link Channel} will be delayed until a connection is returned to the
-         *                              pool again.
-         * @param maxPendingAcquires    the maximum number of pending acquires. Once this is exceed acquire tries will
-         *                              be failed.
-         */
+        /// <summary>
+        /// Creates a new <see cref="FixedChannelPool"/> instance.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">
+        /// The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </param>
+        /// <param name="healthChecker">
+        /// The <see cref="IChannelHealthChecker"/> that will be used to check if a <see cref="IChannel"/> is still
+        /// healthy when obtained from the <see cref="IChannelPool"/>.
+        /// </param>
+        /// <param name="action">
+        /// The <see cref="AcquireTimeoutAction"/> to use or <c>null</c> if none should be used. In this case,
+        /// <paramref name="acquireTimeout"/> must also be <c>null</c>.
+        /// </param>
+        /// <param name="acquireTimeout">
+        /// A <see cref="TimeSpan"/> after which an pending acquire must complete, or the
+        /// <see cref="AcquireTimeoutAction"/> takes place.
+        /// </param>
+        /// <param name="maxConnections">
+        /// The number of maximal active connections. Once this is reached, new attempts to acquire an
+        /// <see cref="IChannel"/> will be delayed until a connection is returned to the pool again.
+        /// </param>
+        /// <param name="maxPendingAcquires">
+        /// The maximum number of pending acquires. Once this is exceeded, acquire attempts will be failed.
+        /// </param>
         public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, AcquireTimeoutAction action, TimeSpan acquireTimeout, int maxConnections, int maxPendingAcquires)
             : this(bootstrap, handler, healthChecker, action, acquireTimeout, maxConnections, maxPendingAcquires, true)
         {
         }
 
-        /**
-         * Creates a new instance.
-         *
-         * @param bootstrap             the {@link Bootstrap} that is used for connections
-         * @param handler               the {@link ChannelPoolHandler} that will be notified for the different pool actions
-         * @param healthCheck           the {@link ChannelHealthChecker} that will be used to check if a {@link Channel} is
-         *                              still healthy when obtain from the {@link ChannelPool}
-         * @param action                the {@link AcquireTimeoutAction} to use or {@code null} if non should be used.
-         *                              In this case {@param acquireTimeoutMillis} must be {@code -1}.
-         * @param acquireTimeoutMillis  the time (in milliseconds) after which an pending acquire must complete or
-         *                              the {@link AcquireTimeoutAction} takes place.
-         * @param maxConnections        the number of maximal active connections, once this is reached new tries to
-         *                              acquire a {@link Channel} will be delayed until a connection is returned to the
-         *                              pool again.
-         * @param maxPendingAcquires    the maximum number of pending acquires. Once this is exceed acquire tries will
-         *                              be failed.
-         * @param releaseHealthCheck    will check channel health before offering back if this parameter set to
-         *                              {@code true}.
-         */
+        /// <summary>
+        /// Creates a new <see cref="FixedChannelPool"/> instance.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">
+        /// The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </param>
+        /// <param name="healthChecker">
+        /// The <see cref="IChannelHealthChecker"/> that will be used to check if a <see cref="IChannel"/> is still
+        /// healthy when obtained from the <see cref="IChannelPool"/>.
+        /// </param>
+        /// <param name="action">
+        /// The <see cref="AcquireTimeoutAction"/> to use or <c>null</c> if none should be used. In this case,
+        /// <paramref name="acquireTimeout"/> must also be <c>null</c>.
+        /// </param>
+        /// <param name="acquireTimeout">
+        /// A <see cref="TimeSpan"/> after which an pending acquire must complete, or the
+        /// <see cref="AcquireTimeoutAction"/> takes place.
+        /// </param>
+        /// <param name="maxConnections">
+        /// The number of maximal active connections. Once this is reached, new attempts to acquire an
+        /// <see cref="IChannel"/> will be delayed until a connection is returned to the pool again.
+        /// </param>
+        /// <param name="maxPendingAcquires">
+        /// The maximum number of pending acquires. Once this is exceeded, acquire attempts will be failed.
+        /// </param>
+        /// <param name="releaseHealthCheck">If <c>true</c>, will check channel health before offering it back.</param>
         public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, AcquireTimeoutAction action, TimeSpan acquireTimeout, int maxConnections, int maxPendingAcquires, bool releaseHealthCheck)
             : this(bootstrap, handler, healthChecker, action, acquireTimeout, maxConnections, maxPendingAcquires, releaseHealthCheck, true)
         {
         }
 
-        /**
-         * Creates a new instance.
-         *
-         * @param bootstrap             the {@link Bootstrap} that is used for connections
-         * @param handler               the {@link ChannelPoolHandler} that will be notified for the different pool actions
-         * @param healthCheck           the {@link ChannelHealthChecker} that will be used to check if a {@link Channel} is
-         *                              still healthy when obtain from the {@link ChannelPool}
-         * @param action                the {@link AcquireTimeoutAction} to use or {@code null} if non should be used.
-         *                              In this case {@param acquireTimeoutMillis} must be {@code -1}.
-         * @param acquireTimeoutMillis  the time (in milliseconds) after which an pending acquire must complete or
-         *                              the {@link AcquireTimeoutAction} takes place.
-         * @param maxConnections        the number of maximal active connections, once this is reached new tries to
-         *                              acquire a {@link Channel} will be delayed until a connection is returned to the
-         *                              pool again.
-         * @param maxPendingAcquires    the maximum number of pending acquires. Once this is exceed acquire tries will
-         *                              be failed.
-         * @param releaseHealthCheck    will check channel health before offering back if this parameter set to
-         *                              {@code true}.
-         * @param lastRecentUsed        {@code true} {@link Channel} selection will be LIFO, if {@code false} FIFO.
-         */
+        /// <summary>
+        /// Creates a new <see cref="FixedChannelPool"/> instance.
+        /// </summary>
+        /// <param name="bootstrap">The <see cref="Bootstrap"/> that is used for connections.</param>
+        /// <param name="handler">
+        /// The <see cref="IChannelPoolHandler"/> that will be notified for the different pool actions.
+        /// </param>
+        /// <param name="healthChecker">
+        /// The <see cref="IChannelHealthChecker"/> that will be used to check if a <see cref="IChannel"/> is still
+        /// healthy when obtained from the <see cref="IChannelPool"/>.
+        /// </param>
+        /// <param name="action">
+        /// The <see cref="AcquireTimeoutAction"/> to use or <c>null</c> if none should be used. In this case,
+        /// <paramref name="acquireTimeout"/> must also be <c>null</c>.
+        /// </param>
+        /// <param name="acquireTimeout">
+        /// A <see cref="TimeSpan"/> after which an pending acquire must complete, or the
+        /// <see cref="AcquireTimeoutAction"/> takes place.
+        /// </param>
+        /// <param name="maxConnections">
+        /// The number of maximal active connections. Once this is reached, new attempts to acquire an
+        /// <see cref="IChannel"/> will be delayed until a connection is returned to the pool again.
+        /// </param>
+        /// <param name="maxPendingAcquires">
+        /// The maximum number of pending acquires. Once this is exceeded, acquire attempts will be failed.
+        /// </param>
+        /// <param name="releaseHealthCheck">If <c>true</c>, will check channel health before offering it back.</param>
+        /// <param name="lastRecentUsed">
+        /// If <c>true</c>, <see cref="IChannel"/> selection will be LIFO. If <c>false</c>, it will be FIFO.
+        /// </param>
         public FixedChannelPool(Bootstrap bootstrap, IChannelPoolHandler handler, IChannelHealthChecker healthChecker, AcquireTimeoutAction action, TimeSpan acquireTimeout, int maxConnections, int maxPendingAcquires, bool releaseHealthCheck, bool lastRecentUsed)
             : base(bootstrap, handler, healthChecker, releaseHealthCheck, lastRecentUsed)
         {

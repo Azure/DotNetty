@@ -3,33 +3,29 @@
 
 namespace DotNetty.Transport.Channels.Pool
 {
- /**
-     * Allows to map {@link ChannelPool} implementations to a specific key.
-     *
-     * @param <K> the type of the key
-     * @param <P> the type of the {@link ChannelPool}
-     */    
+    /// <summary>
+    /// Allows the mapping of <see cref="IChannelPool"/> implementations to a specific key.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the key.</typeparam>
+    /// <typeparam name="TPool">The type of the <see cref="IChannelPool"/>.</typeparam>
     public interface IChannelPoolMap<TKey, TPool>
         where TPool : IChannelPool
     {
-        /**
-         * Return the {@link ChannelPool} for the {@code code}. This will never return {@code null},
-         * but create a new {@link ChannelPool} if non exists for they requested {@code key}.
-         *
-         * Please note that {@code null} keys are not allowed.
-         */
+        /// <summary>
+        /// Returns the <see cref="IChannelPool"/> for the <paramref name="key"/>. This will never return <c>null</c>,
+        /// but create a new <see cref="IChannelPool"/> if non exists for they requested <paramref name="key"/>.
+        /// Please note that <c>null</c> keys are not allowed.
+        /// </summary>
+        /// <param name="key">The key for the desired <see cref="IChannelPool"/></param>
+        /// <returns>The <see cref="IChannelPool"/> for the specified <paramref name="key"/>.</returns>
         TPool Get(TKey key);
 
-        /**
-         * Returns {@code true} if a {@link ChannelPool} exists for the given {@code key}.
-         *
-         * Please note that {@code null} keys are not allowed.
-         */
+        /// <summary>
+        /// Checks whether the <see cref="IChannelPoolMap{TKey,TPool}"/> contains an <see cref="IChannelPool"/> for the
+        /// given <paramref name="key"/>. Please note that <c>null</c> keys are not allowed.
+        /// </summary>
+        /// <param name="key">The key to search the <see cref="IChannelPoolMap{TKey,TPool}"/> for.</param>
+        /// <returns><c>true</c> if a <see cref="IChannelPool"/> exists for the given <paramref name="key"/>, otherwise <c>false</c>.</returns>
         bool Contains(TKey key);
     }
-    
-    /**
-     * Called before a {@link Channel} will be returned via {@link ChannelPool#acquire()} or
-     * {@link ChannelPool#acquire(Promise)}.
-     */
 }

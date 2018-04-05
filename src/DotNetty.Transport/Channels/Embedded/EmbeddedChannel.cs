@@ -343,20 +343,18 @@ namespace DotNetty.Transport.Channels.Embedded
         /// <returns>bufferReadable returns <c>true</c></returns>
         public bool Finish() => this.Finish(false);
 
-        /**
-         * Mark this {@link Channel} as finished and release all pending message in the inbound and outbound buffer.
-         * Any futher try to write data to it will fail.
-         *
-         * @return bufferReadable returns {@code true} if any of the used buffers has something left to read
-         */
+        /// <summary>
+        /// Marks this <see cref="IChannel"/> as finished and releases all pending message in the inbound and outbound
+        /// buffer. Any futher try to write data to it will fail.
+        /// </summary>
+        /// <returns><c>true</c> if any of the used buffers has something left to read, otherwise <c>false</c>.</returns>
         public bool FinishAndReleaseAll() => this.Finish(true);
 
-        /**
-         * Mark this {@link Channel} as finished. Any futher try to write data to it will fail.
-         *
-         * @param releaseAll if {@code true} all pending message in the inbound and outbound buffer are released.
-         * @return bufferReadable returns {@code true} if any of the used buffers has something left to read
-         */
+        /// <summary>
+        /// Marks this <see cref="IChannel"/> as finished. Any futher attempt to write data to it will fail.
+        /// </summary>
+        /// <param name="releaseAll">If <c>true</c>, all pending messages in the inbound and outbound buffer are released.</param>
+        /// <returns><c>true</c> if any of the used buffers has something left to read, otherwise <c>false</c>.</returns>
         bool Finish(bool releaseAll)
         {
             this.CloseSafe();
@@ -375,16 +373,16 @@ namespace DotNetty.Transport.Channels.Embedded
             }
         }
 
-        /**
-         * Release all buffered inbound messages and return {@code true} if any were in the inbound buffer, {@code false}
-         * otherwise.
-         */
+        /// <summary>
+        /// Releases all buffered inbound messages.
+        /// </summary>
+        /// <returns><c>true</c> if any were in the inbound buffer, otherwise <c>false</c>.</returns>
         public bool ReleaseInbound() => ReleaseAll(this.inboundMessages);
 
-        /**
-         * Release all buffered outbound messages and return {@code true} if any were in the outbound buffer, {@code false}
-         * otherwise.
-         */
+        /// <summary>
+        /// Releases all buffered outbound messages.
+        /// </summary>
+        /// <returns><c>true</c> if any were in the outbound buffer, otherwise <c>false</c>.</returns>
         public bool ReleaseOutbound() => ReleaseAll(this.outboundMessages);
 
         static bool ReleaseAll(Queue<object> queue)

@@ -32,12 +32,11 @@ namespace DotNetty.Transport.Channels.Pool
             return pool;
         }
 
-        /**
-         * Remove the {@link ChannelPool} from this {@link AbstractChannelPoolMap}. Returns {@code true} if removed,
-         * {@code false} otherwise.
-         *
-         * Please note that {@code null} keys are not allowed.
-         */
+        /// <summary>
+        /// Removes the <see cref="IChannelPool"/> from this <see cref="AbstractChannelPoolMap{TKey, TPool}"/>.
+        /// </summary>
+        /// <param name="key">The key to remove. Must not be null.</param>
+        /// <returns><c>true</c> if removed, otherwise <c>false</c>.</returns>
         public bool Remove(TKey key)
         {
             Contract.Requires(key != null);
@@ -53,14 +52,14 @@ namespace DotNetty.Transport.Channels.Pool
             return new ReadOnlyIterator<Entry<K, P>>(this.map.entrySet().iterator());
         }*/
 
-        /**
-         * Returns the number of {@link ChannelPool}s currently in this {@link AbstractChannelPoolMap}.
-         */
+        /// <summary>
+        /// Returns the number of <see cref="IChannelPool"/>s currently in this <see cref="AbstractChannelPoolMap{TKey, TPool}"/>.
+        /// </summary>
         public int Count => this.map.Count;
 
-        /**
-         * Returns {@code true} if the {@link AbstractChannelPoolMap} is empty, otherwise {@code false}.
-         */
+        /// <summary>
+        /// Returns <c>true</c> if the <see cref="AbstractChannelPoolMap{TKey, TPool}"/> is empty, otherwise <c>false</c>.
+        /// </summary>
         public bool IsEmpty => this.map.Count == 0;
 
         public bool Contains(TKey key)
@@ -69,9 +68,11 @@ namespace DotNetty.Transport.Channels.Pool
             return this.map.ContainsKey(key);
         }
 
-        /**
-         * Called once a new {@link ChannelPool} needs to be created as non exists yet for the {@code key}.
-         */
+        /// <summary>
+        /// Called once a new <see cref="IChannelPool"/> needs to be created as none exists yet for the <paramref name="key"/>.
+        /// </summary>
+        /// <param name="key">The <typeparamref name="TKey"/> to create a new <typeparamref name="TPool"/> for.</param>
+        /// <returns>The new <typeparamref name="TPool"/> corresponding to the given <typeparamref name="TKey"/>.</returns>
         protected abstract TPool NewPool(TKey key);
 
         public void Dispose()

@@ -42,22 +42,17 @@ namespace DotNetty.Transport.Channels
         private IMessageSizeEstimatorHandle estimatorHandle;
 
         /// <summary>
-        ///     This is the head of a linked list that is processed by <see cref="CallHandlerAddedForAllHandlers" /> and so process
-        ///     all the pending <see cref="CallHandlerAdded0" />.
-        ///     We only keep the head because it is expected that the list is used infrequently and its size is small.
-        ///     Thus full iterations to do insertions is assumed to be a good compromised to saving memory and tail management
-        ///     complexity.
+        /// This is the head of a linked list that is processed by <see cref="CallHandlerAddedForAllHandlers" /> and so
+        /// process all the pending <see cref="CallHandlerAdded0" />. We only keep the head because it is expected that
+        /// the list is used infrequently and its size is small. Thus full iterations to do insertions is assumed to be
+        /// a good compromised to saving memory and tail management complexity.
         /// </summary>
         PendingHandlerCallback pendingHandlerCallbackHead;
 
-        /// Set to
-        /// <c>true</c>
-        /// once the
-        /// <see cref="AbstractChannel" />
-        /// is registered.Once set to
-        /// <c>true</c>
-        /// the value will never
-        /// change.
+        /// <summary>
+        /// Set to <c>true</c> once the <see cref="AbstractChannel" /> is registered. Once set to <c>true</c>, the
+        /// value will never change.
+        /// </summary>
         bool registered;
 
         public DefaultChannelPipeline(IChannel channel)
@@ -576,21 +571,6 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        /// <summary>
-        ///     Waits for a future to finish.  If the task is interrupted, then the current thread will be interrupted.
-        ///     It is expected that the task performs any appropriate locking.
-        ///     <p>
-        ///         If the internal call throws a {@link Throwable}, but it is not an instance of {@link LogError} or
-        ///         {@link RuntimeException}, then it is wrapped inside a {@link ChannelPipelineException} and that is
-        ///         thrown instead.
-        ///     </p>
-        ///     @param future wait for this future
-        ///     @see Future#get()
-        ///     @throws LogError if the task threw this.
-        ///     @throws RuntimeException if the task threw this.
-        ///     @throws ChannelPipelineException with a {@link Throwable} as a cause, if the task threw another type of
-        ///     {@link Throwable}.
-        /// </summary>
         public IChannelHandler First() => this.FirstContext()?.Handler;
 
         public IChannelHandlerContext FirstContext()
@@ -657,7 +637,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Returns the {@link String} representation of this pipeline.
+        /// Returns the string representation of this pipeline.
         /// </summary>
         public sealed override string ToString()
         {
@@ -703,12 +683,11 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Removes all handlers from the pipeline one by one from tail (exclusive) to head (exclusive) to trigger
-        ///     handlerRemoved().
-        ///     Note that we traverse up the pipeline <see cref="DestroyUp" />
-        ///     before traversing down <see cref="DestroyDown" /> so that
-        ///     the handlers are removed after all events are handled.
-        ///     See: https://github.com/netty/netty/issues/3156
+        /// Removes all handlers from the pipeline one by one from tail (exclusive) to head (exclusive) to trigger
+        /// <see cref="IChannelHandler.HandlerRemoved"/>. Note that we traverse up the pipeline <see cref="DestroyUp"/>
+        /// before traversing down <see cref="DestroyDown"/> so that the handlers are removed after all events are
+        /// handled.
+        /// See: https://github.com/netty/netty/issues/3156
         /// </summary>
         void Destroy()
         {
@@ -968,8 +947,8 @@ namespace DotNetty.Transport.Channels
         IEventExecutor ExecutorSafe(IEventExecutor eventExecutor) => eventExecutor ?? (this.channel.Registered || this.registered ? this.channel.EventLoop : null);
 
         /// <summary>
-        ///     Called once a <see cref="Exception" /> hit the end of the <see cref="IChannelPipeline" /> without been handled by
-        ///     the user in <see cref="IChannelHandler.ExceptionCaught(IChannelHandlerContext, Exception)" />.
+        /// Called once an <see cref="Exception" /> hits the end of the <see cref="IChannelPipeline" /> without being
+        /// handled by the user in <see cref="IChannelHandler.ExceptionCaught(IChannelHandlerContext, Exception)" />.
         /// </summary>
         protected virtual void OnUnhandledInboundException(Exception cause)
         {
@@ -986,9 +965,9 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Called once a message hit the end of the <see cref="IChannelPipeline" /> without been handled by the user
-        ///     in <see cref="IChannelHandler.ChannelRead(IChannelHandlerContext, object)" />. This method is responsible
-        ///     to call <see cref="ReferenceCountUtil.Release(object)" /> on the given msg at some point.
+        /// Called once a message hits the end of the <see cref="IChannelPipeline" /> without being handled by the user
+        /// in <see cref="IChannelHandler.ChannelRead(IChannelHandlerContext, object)" />. This method is responsible
+        /// for calling <see cref="ReferenceCountUtil.Release(object)" /> on the given msg at some point.
         /// </summary>
         protected virtual void OnUnhandledInboundMessage(object msg)
         {
