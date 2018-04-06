@@ -6,9 +6,9 @@ namespace DotNetty.Transport.Channels.Pool
     using System.Threading.Tasks;
     using DotNetty.Common.Utilities;
 
-    /**
-     * {@link ChannelHealthChecker} implementation that checks if {@link Channel#isActive()} returns {@code true}.
-     */
+    /// <summary>
+    /// <see cref="IChannelHealthChecker"/> implementation that checks if <see cref="IChannel.Active"/> returns <c>true</c>.
+    /// </summary>
     public class ChannelActiveHealthChecker : IChannelHealthChecker
     {
         public static readonly IChannelHealthChecker Instance;

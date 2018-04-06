@@ -10,12 +10,14 @@ namespace DotNetty.Transport.Channels
     public interface IChannelHandler
     {
         /// <summary>
-        ///     The {@link Channel} of the {@link ChannelHandlerContext} was registered with its {@link EventLoop}
+        /// The <see cref="IChannel"/> of the <see cref="IChannelHandlerContext"/> was registered with its
+        /// <see cref="IEventLoop"/>.
         /// </summary>
         void ChannelRegistered(IChannelHandlerContext context);
 
         /// <summary>
-        ///     The {@link Channel} of the {@link ChannelHandlerContext} was unregistered from its {@link EventLoop}
+        /// The <see cref="IChannel"/> of the <see cref="IChannelHandlerContext"/> was unregistered from its
+        /// <see cref="IEventLoop"/>.
         /// </summary>
         void ChannelUnregistered(IChannelHandlerContext context);
 
@@ -28,8 +30,8 @@ namespace DotNetty.Transport.Channels
         void ChannelReadComplete(IChannelHandlerContext context);
 
         /// <summary>
-        ///     Gets called once the writable state of a {@link Channel} changed. You can check the state with
-        ///     {@link Channel#isWritable()}.
+        /// Gets called once the writable state of a <see cref="IChannel"/> changed. You can check the state with
+        /// <see cref="IChannel.IsWritable"/>.
         /// </summary>
         void ChannelWritabilityChanged(IChannelHandlerContext context);
 
@@ -42,30 +44,33 @@ namespace DotNetty.Transport.Channels
         void Flush(IChannelHandlerContext context);
 
         /// <summary>
-        ///     Called once a bind operation is made.
-        ///     @param context           the {@link ChannelHandlerContext} for which the bind operation is made
-        ///     @param localAddress  the {@link java.net.SocketAddress} to which it should bound
-        ///     @param promise       the {@link ChannelPromise} to notify once the operation completes
-        ///     @throws Exception    thrown if an error accour
+        /// Called once a bind operation is made.
         /// </summary>
+        /// <param name="context">
+        /// The <see cref="IChannelHandlerContext"/> for which the bind operation is made.
+        /// </param>
+        /// <param name="localAddress">The <see cref="EndPoint"/> to which it should bind.</param>
+        /// <returns>An await-able task.</returns>
         Task BindAsync(IChannelHandlerContext context, EndPoint localAddress);
 
         /// <summary>
-        ///     Called once a connect operation is made.
-        ///     @param context               the {@link ChannelHandlerContext} for which the connect operation is made
-        ///     @param remoteAddress     the {@link SocketAddress} to which it should connect
-        ///     @param localAddress      the {@link SocketAddress} which is used as source on connect
-        ///     @param promise           the {@link ChannelPromise} to notify once the operation completes
-        ///     @throws Exception        thrown if an error accour
+        /// Called once a connect operation is made.
         /// </summary>
+        /// <param name="context">
+        /// The <see cref="IChannelHandlerContext"/> for which the connect operation is made.
+        /// </param>
+        /// <param name="remoteAddress">The <see cref="EndPoint"/> to which it should connect.</param>
+        /// <param name="localAddress">The <see cref="EndPoint"/> which is used as source on connect.</param>
+        /// <returns>An await-able task.</returns>
         Task ConnectAsync(IChannelHandlerContext context, EndPoint remoteAddress, EndPoint localAddress);
 
         /// <summary>
-        ///     Called once a disconnect operation is made.
-        ///     @param context               the {@link ChannelHandlerContext} for which the disconnect operation is made
-        ///     @param promise           the {@link ChannelPromise} to notify once the operation completes
-        ///     @throws Exception        thrown if an error accour
+        /// Called once a disconnect operation is made.
         /// </summary>
+        /// <param name="context">
+        /// The <see cref="IChannelHandlerContext"/> for which the disconnect operation is made.
+        /// </param>
+        /// <returns>An await-able task.</returns>
         Task DisconnectAsync(IChannelHandlerContext context);
 
         Task CloseAsync(IChannelHandlerContext context);

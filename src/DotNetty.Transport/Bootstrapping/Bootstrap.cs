@@ -15,12 +15,11 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Transport.Channels;
 
     /// <summary>
-    ///     A {@link Bootstrap} that makes it easy to bootstrap a {@link Channel} to use
-    ///     for clients.
-    ///     <p>
-    ///         The {@link #bind()} methods are useful in combination with connectionless transports such as datagram (UDP).
-    ///         For regular TCP connections, please use the provided {@link #connect()} methods.
-    ///     </p>
+    /// A <see cref="Bootstrap"/> that makes it easy to bootstrap an <see cref="IChannel"/> to use for clients.
+    /// 
+    /// The <see cref="AbstractBootstrap{TBootstrap,TChannel}.BindAsync(EndPoint)"/> methods are useful
+    /// in combination with connectionless transports such as datagram (UDP). For regular TCP connections,
+    /// please use the provided <see cref="ConnectAsync(EndPoint,EndPoint)"/> methods.
     /// </summary>
     public class Bootstrap : AbstractBootstrap<Bootstrap, IChannel>
     {
@@ -43,8 +42,10 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Sets the {@link NameResolver} which will resolve the address of the unresolved named address.
+        /// Sets the <see cref="INameResolver"/> which will resolve the address of the unresolved named address.
         /// </summary>
+        /// <param name="resolver">The <see cref="INameResolver"/> which will resolve the address of the unresolved named address.</param>
+        /// <returns>The <see cref="Bootstrap"/> instance.</returns>
         public Bootstrap Resolver(INameResolver resolver)
         {
             Contract.Requires(resolver != null);
@@ -53,9 +54,10 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     The {@link SocketAddress} to connect to once the {@link #connect()} method
-        ///     is called.
+        /// Assigns the remote <see cref="EndPoint"/> to connect to once the <see cref="ConnectAsync()"/> method is called.
         /// </summary>
+        /// <param name="remoteAddress">The remote <see cref="EndPoint"/> to connect to.</param>
+        /// <returns>The <see cref="Bootstrap"/> instance.</returns>
         public Bootstrap RemoteAddress(EndPoint remoteAddress)
         {
             this.remoteAddress = remoteAddress;
@@ -63,8 +65,11 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     @see {@link #remoteAddress(SocketAddress)}
+        /// Assigns the remote <see cref="EndPoint"/> to connect to once the <see cref="ConnectAsync()"/> method is called.
         /// </summary>
+        /// <param name="inetHost">The hostname of the endpoint to connect to.</param>
+        /// <param name="inetPort">The port at the remote host to connect to.</param>
+        /// <returns>The <see cref="Bootstrap"/> instance.</returns>
         public Bootstrap RemoteAddress(string inetHost, int inetPort)
         {
             this.remoteAddress = new DnsEndPoint(inetHost, inetPort);
@@ -72,8 +77,11 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     @see {@link #remoteAddress(SocketAddress)}
+        /// Assigns the remote <see cref="EndPoint"/> to connect to once the <see cref="ConnectAsync()"/> method is called.
         /// </summary>
+        /// <param name="inetHost">The <see cref="IPAddress"/> of the endpoint to connect to.</param>
+        /// <param name="inetPort">The port at the remote host to connect to.</param>
+        /// <returns>The <see cref="Bootstrap"/> instance.</returns>
         public Bootstrap RemoteAddress(IPAddress inetHost, int inetPort)
         {
             this.remoteAddress = new IPEndPoint(inetHost, inetPort);
@@ -81,8 +89,9 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Connect a {@link Channel} to the remote peer.
+        /// Connects an <see cref="IChannel"/> to the remote peer.
         /// </summary>
+        /// <returns>The <see cref="IChannel"/>.</returns>
         public Task<IChannel> ConnectAsync()
         {
             this.Validate();
@@ -96,18 +105,26 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Connect a {@link Channel} to the remote peer.
+        /// Connects an <see cref="IChannel"/> to the remote peer.
         /// </summary>
+        /// <param name="inetHost">The hostname of the endpoint to connect to.</param>
+        /// <param name="inetPort">The port at the remote host to connect to.</param>
+        /// <returns>The <see cref="IChannel"/>.</returns>
         public Task<IChannel> ConnectAsync(string inetHost, int inetPort) => this.ConnectAsync(new DnsEndPoint(inetHost, inetPort));
 
         /// <summary>
-        ///     Connect a {@link Channel} to the remote peer.
+        /// Connects an <see cref="IChannel"/> to the remote peer.
         /// </summary>
+        /// <param name="inetHost">The <see cref="IPAddress"/> of the endpoint to connect to.</param>
+        /// <param name="inetPort">The port at the remote host to connect to.</param>
+        /// <returns>The <see cref="IChannel"/>.</returns>
         public Task<IChannel> ConnectAsync(IPAddress inetHost, int inetPort) => this.ConnectAsync(new IPEndPoint(inetHost, inetPort));
 
         /// <summary>
-        ///     Connect a {@link Channel} to the remote peer.
+        /// Connects an <see cref="IChannel"/> to the remote peer.
         /// </summary>
+        /// <param name="remoteAddress">The remote <see cref="EndPoint"/> to connect to.</param>
+        /// <returns>The <see cref="IChannel"/>.</returns>
         public Task<IChannel> ConnectAsync(EndPoint remoteAddress)
         {
             Contract.Requires(remoteAddress != null);
@@ -117,8 +134,11 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     Connect a {@link Channel} to the remote peer.
+        /// Connects an <see cref="IChannel"/> to the remote peer.
         /// </summary>
+        /// <param name="remoteAddress">The remote <see cref="EndPoint"/> to connect to.</param>
+        /// <param name="localAddress">The local <see cref="EndPoint"/> to connect to.</param>
+        /// <returns>The <see cref="IChannel"/>.</returns>
         public Task<IChannel> ConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
             Contract.Requires(remoteAddress != null);
@@ -128,8 +148,11 @@ namespace DotNetty.Transport.Bootstrapping
         }
 
         /// <summary>
-        ///     @see {@link #connect()}
+        /// Performs DNS resolution for the remote endpoint and connects to it.
         /// </summary>
+        /// <param name="remoteAddress">The remote <see cref="EndPoint"/> to connect to.</param>
+        /// <param name="localAddress">The local <see cref="EndPoint"/> to connect the remote to.</param>
+        /// <returns>The <see cref="IChannel"/>.</returns>
         async Task<IChannel> DoResolveAndConnectAsync(EndPoint remoteAddress, EndPoint localAddress)
         {
             IChannel channel = await this.InitAndRegisterAsync();
@@ -220,9 +243,9 @@ namespace DotNetty.Transport.Bootstrapping
         public override Bootstrap Clone() => new Bootstrap(this);
 
         /// <summary>
-        ///     Returns a deep clone of this bootstrap which has the identical configuration except that it uses
-        ///     the given {@link EventLoopGroup}. This method is useful when making multiple {@link Channel}s with similar
-        ///     settings.
+        /// Returns a deep clone of this bootstrap which has the identical configuration except that it uses
+        /// the given <see cref="IEventLoopGroup"/>. This method is useful when making multiple <see cref="IChannel"/>s with similar
+        /// settings.
         /// </summary>
         public Bootstrap Clone(IEventLoopGroup group)
         {

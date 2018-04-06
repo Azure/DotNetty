@@ -14,9 +14,9 @@ namespace DotNetty.Transport.Channels.Local
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
-    /**
- * A {@link Channel} for the local transport.
- */
+    /// <summary>
+    /// A <see cref="IChannel"/> for the local transport.
+    /// </summary>
     public class LocalChannel : AbstractChannel
     {
         enum State

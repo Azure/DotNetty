@@ -8,9 +8,9 @@ namespace DotNetty.Transport.Channels.Local
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal;
 
-    /**
- * A {@link ServerChannel} for the local transport which allows in VM communication.
- */
+    /// <summary>
+    /// A <see cref="IServerChannel"/> for the local transport which allows in VM communication.
+    /// </summary>
     public class LocalServerChannel : AbstractServerChannel
     {
         readonly IQueue<object> inboundBuffer = PlatformDependent.NewMpscQueue<object>();
@@ -111,10 +111,11 @@ namespace DotNetty.Transport.Channels.Local
             return child;
         }
 
-        /**
-         * A factory method for {@link LocalChannel}s. Users may override it
-         * to create custom instances of {@link LocalChannel}s.
-         */
+        /// <summary>
+        /// A factory method for <see cref="LocalChannel"/>s. Users may override it to create custom instances of <see cref="LocalChannel"/>s.
+        /// </summary>
+        /// <param name="peer">An existing <see cref="LocalChannel"/> that will act as a peer for the new channel.</param>
+        /// <returns>The newly created <see cref="LocalChannel"/> instance.</returns>
         protected LocalChannel NewLocalChannel(LocalChannel peer) => new LocalChannel(this, peer);
 
         void Serve0(LocalChannel child)

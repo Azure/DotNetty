@@ -5,18 +5,17 @@ namespace DotNetty.Transport.Channels.Pool
 {
     using System.Threading.Tasks;
 
-    /**
-     * Called before a {@link Channel} will be returned via {@link ChannelPool#acquire()} or
-     * {@link ChannelPool#acquire(Promise)}.
-     */
+    /// <summary>
+    /// Called before an <see cref="IChannel"/> will be returned via <see cref="IChannelPool.AcquireAsync"/>.
+    /// </summary>
     public interface IChannelHealthChecker
     {
-        /**
-       * Check if the given channel is healthy which means it can be used. The returned {@link Future} is notified once
-       * the check is complete. If notified with {@link Boolean#TRUE} it can be used {@link Boolean#FALSE} otherwise.
-       *
-       * This method will be called by the {@link EventLoop} of the {@link Channel}.
-       */
+        /// <summary>
+        /// Checks if the given channel is healthy (which means it can be used). This method will be called by the
+        /// <see cref="IEventLoop"/> of the given <see cref="IChannel"/>
+        /// </summary>
+        /// <param name="channel">The <see cref="IChannel"/> to check for healthiness.</param>
+        /// <returns><c>true</c> if the given <see cref="IChannel"/> is healthy, otherwise <c>false</c>.</returns>
         ValueTask<bool> IsHealthyAsync(IChannel channel);
     }
 }

@@ -10,7 +10,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Utilities;
 
     /// <summary>
-    ///     {@link AbstractNioChannel} base class for {@link Channel}s that operate on bytes.
+    /// <see cref="AbstractSocketChannel"/> base class for <see cref="IChannel"/>s that operate on bytes.
     /// </summary>
     public abstract class AbstractSocketByteChannel : AbstractSocketChannel
     {
@@ -351,13 +351,17 @@ namespace DotNetty.Transport.Channels.Sockets
         //protected abstract long doWriteFileRegion(FileRegion region);
 
         /// <summary>
-        ///     Read bytes into the given {@link ByteBuf} and return the amount.
+        /// Reads bytes into the given <see cref="IByteBuffer"/> and returns the number of bytes that were read.
         /// </summary>
+        /// <param name="buf">The <see cref="IByteBuffer"/> to read bytes into.</param>
+        /// <returns>The number of bytes that were read into the buffer.</returns>
         protected abstract int DoReadBytes(IByteBuffer buf);
 
-        /// <summary>Write bytes form the given <see cref="IByteBuffer"/> to the underlying <see cref="IChannel"/>.</summary>
-        /// <param name="buf">the <see cref="IByteBuffer"/> from which the bytes should be written</param>
-        /// <returns>the amount of written bytes</returns>
+        /// <summary>
+        /// Writes bytes from the given <see cref="IByteBuffer"/> to the underlying <see cref="IChannel"/>.
+        /// </summary>
+        /// <param name="buf">The <see cref="IByteBuffer"/> from which the bytes should be written.</param>
+        /// <returns>The number of bytes that were written from the buffer.</returns>
         protected abstract int DoWriteBytes(IByteBuffer buf);
     }
 }
