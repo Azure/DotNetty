@@ -20,7 +20,7 @@ namespace Echo.Server
     {
         static async Task RunServerAsync()
         {
-            ExampleHelper.SetConsoleLogger();
+            //ExampleHelper.SetConsoleLogger();
 
             IEventLoopGroup bossGroup;
             IEventLoopGroup workerGroup;
@@ -37,11 +37,11 @@ namespace Echo.Server
                 workerGroup = new MultithreadEventLoopGroup();
             }
 
-            X509Certificate2 tlsCertificate = null;
-            if (ServerSettings.IsSsl)
-            {
-                tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "dotnetty.com.pfx"), "password");
-            }
+            //X509Certificate2 tlsCertificate = null;
+            //if (ServerSettings.IsSsl)
+            //{
+            //    tlsCertificate = new X509Certificate2(Path.Combine(ExampleHelper.ProcessDirectory, "dotnetty.com.pfx"), "password");
+            //}
             try
             {
                 var bootstrap = new ServerBootstrap();
@@ -57,16 +57,16 @@ namespace Echo.Server
                 }
 
                 bootstrap
-                    .Option(ChannelOption.SoBacklog, 100)
-                    .Handler(new LoggingHandler("SRV-LSTN"))
+                    //.Option(ChannelOption.SoBacklog, 100)
+                    //.Handler(new LoggingHandler("SRV-LSTN"))
                     .ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
-                        if (tlsCertificate != null)
-                        {
-                            pipeline.AddLast("tls", TlsHandler.Server(tlsCertificate));
-                        }
-                        pipeline.AddLast(new LoggingHandler("SRV-CONN"));
+                        //if (tlsCertificate != null)
+                        //{
+                        //    pipeline.AddLast("tls", TlsHandler.Server(tlsCertificate));
+                        //}
+                        //pipeline.AddLast(new LoggingHandler("SRV-CONN"));
                         pipeline.AddLast("framing-enc", new LengthFieldPrepender(2));
                         pipeline.AddLast("framing-dec", new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
 
@@ -75,6 +75,7 @@ namespace Echo.Server
 
                 IChannel boundChannel = await bootstrap.BindAsync(ServerSettings.Port);
 
+                Console.WriteLine($"Dotnetty启动成功....{boundChannel.LocalAddress}");
                 Console.ReadLine();
 
                 await boundChannel.CloseAsync();

@@ -15,21 +15,30 @@ namespace Echo.Client
 
         public EchoClientHandler()
         {
-            this.initialMessage = Unpooled.Buffer(ClientSettings.Size);
-            byte[] messageBytes = Encoding.UTF8.GetBytes("Hello world");
-            this.initialMessage.WriteBytes(messageBytes);
+            //this.initialMessage = Unpooled.Buffer(ClientSettings.Size);
+            //byte[] messageBytes = Encoding.UTF8.GetBytes("Hello world");
+            //this.initialMessage.WriteBytes(messageBytes);
         }
 
-        public override void ChannelActive(IChannelHandlerContext context) => context.WriteAndFlushAsync(this.initialMessage);
+        public override void ChannelActive(IChannelHandlerContext context)
+        {
+            //context.WriteAndFlushAsync(this.initialMessage);
+        }
+        //=> context.WriteAndFlushAsync(this.initialMessage);
 
         public override void ChannelRead(IChannelHandlerContext context, object message)
         {
-            var byteBuffer = message as IByteBuffer;
-            if (byteBuffer != null)
-            {
-                Console.WriteLine("Received from server: " + byteBuffer.ToString(Encoding.UTF8));
-            }
-            context.WriteAsync(message);
+            //var byteBuffer = message as IByteBuffer;
+            //if (byteBuffer != null)
+            //{
+            //    Console.WriteLine("Received from server: " + byteBuffer.ToString(Encoding.UTF8));
+            //}
+
+            ////var bf = Unpooled.Buffer(ClientSettings.Size);
+            //byte[] messageBytes = Encoding.UTF8.GetBytes("Hello world");
+            //bf.WriteBytes(messageBytes);
+
+            //context.WriteAsync(bf);
         }
 
         public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
