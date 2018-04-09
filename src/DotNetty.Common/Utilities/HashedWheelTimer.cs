@@ -574,7 +574,7 @@ namespace DotNetty.Common.Utilities
             HashedWheelTimeout tail;
 
             /// <summary>
-            /// Add {@link HashedWheelTimeout} to this bucket.
+            /// Add a <see cref="HashedWheelTimeout"/> to this bucket.
             /// </summary>
             public void AddTimeout(HashedWheelTimeout timeout)
             {

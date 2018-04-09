@@ -20,7 +20,7 @@ namespace DotNetty.Common.Utilities
         ITimerTask Task { get; }
 
         /// <summary>
-        /// Returns {@code true} if and only if the <see cref="ITimerTask"/> associated
+        /// Returns <c>true</c> if and only if the <see cref="ITimerTask"/> associated
         /// with this handle has been expired.
         /// </summary>
         bool Expired { get; }
@@ -35,9 +35,8 @@ namespace DotNetty.Common.Utilities
         /// Attempts to cancel the <see cref="ITimerTask"/> associated with this handle.
         /// If the task has been executed or canceled already, it will return with
         /// no side effect.
-        ///
-        /// @return True if the cancellation completed successfully, otherwise false
         /// </summary>
+        /// <returns><c>true</c> if the cancellation completed successfully, otherwise <c>false</c>.</returns>
         bool Cancel();
     }
 }
