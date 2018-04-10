@@ -44,7 +44,6 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.0-preview2-26312-02" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.0-preview2-26312-02" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.0-preview2-26406-04" />
   </ItemGroup>
 </Project>
