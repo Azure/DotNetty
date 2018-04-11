@@ -24,28 +24,28 @@ namespace DotNetty.Buffers
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetUnsignedMedium(byte* bytes) =>
-            *bytes << 16 | 
-            *(bytes + 1) << 8 | 
+            *bytes << 16 |
+            *(bytes + 1) << 8 |
             *(bytes + 2);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetUnsignedMediumLE(byte* bytes) =>
-            *bytes | 
-            *(bytes + 1) << 8 | 
+            *bytes |
+            *(bytes + 1) << 8 |
             *(bytes + 2) << 16;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetInt(byte* bytes) =>
-            (*bytes << 24) | 
-            (*(bytes + 1) << 16) | 
-            (*(bytes + 2) << 8) | 
+            (*bytes << 24) |
+            (*(bytes + 1) << 16) |
+            (*(bytes + 2) << 8) |
             (*(bytes + 3));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetIntLE(byte* bytes) =>
-            *bytes | 
+            *bytes |
             (*(bytes + 1) << 8) |
-            (*(bytes + 2) << 16) | 
+            (*(bytes + 2) << 16) |
             (*(bytes + 3) << 24);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

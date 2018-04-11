@@ -144,6 +144,17 @@ namespace DotNetty.Buffers
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void ThrowIndexOutOfRangeException_Src(int srcIndex, int length, int count)
+        {
+            throw GetIndexOutOfRangeException();
+
+            IndexOutOfRangeException GetIndexOutOfRangeException()
+            {
+                return new IndexOutOfRangeException(string.Format("expected: 0 <= srcIdx({0}) <= srcIdx + length({1}) <= srcLen({2})", srcIndex, length, count));
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void ThrowIllegalReferenceCountException(int count)
         {
             throw GetIllegalReferenceCountException();
@@ -228,6 +239,17 @@ namespace DotNetty.Buffers
             ArgumentOutOfRangeException GetArgumentOutOfRangeException()
             {
                 return new ArgumentOutOfRangeException("newCapacity", string.Format($"newCapacity: {0} (expected: 0-{1})", newCapacity, maxCapacity));
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void ThrowArgumentNullException_Dst()
+        {
+            throw GetArgumentOutOfRangeException();
+
+            ArgumentNullException GetArgumentOutOfRangeException()
+            {
+                return new ArgumentNullException("dst");
             }
         }
     }

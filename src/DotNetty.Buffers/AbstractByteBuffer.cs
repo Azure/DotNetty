@@ -491,6 +491,42 @@ namespace DotNetty.Buffers
             return value;
         }
 
+        public virtual unsafe ICharSequence GetCharSequence(int index, int length, Encoding encoding)
+        {
+            this.CheckIndex0(index, length);
+            if (length == 0)
+            {
+                return StringCharSequence.Empty;
+            }
+
+            if (this.HasMemoryAddress)
+            {
+                IntPtr ptr = this.AddressOfPinnedMemory();
+                if (ptr != IntPtr.Zero)
+                {
+                    return new StringCharSequence(UnsafeByteBufferUtil.GetString((byte*)(ptr + index), length, encoding));
+                }
+                else
+                {
+                    fixed (byte* p = &this.GetPinnableMemoryAddress())
+                        return new StringCharSequence(UnsafeByteBufferUtil.GetString(p + index, length, encoding));
+                }
+            }
+            if (this.HasArray)
+            {
+                return new StringCharSequence(encoding.GetString(this.Array, this.ArrayOffset + index, length));
+            }
+
+            return new StringCharSequence(this.ToString(index, length, encoding));
+        }
+
+        public virtual ICharSequence ReadCharSequence(int length, Encoding encoding)
+        {
+            ICharSequence sequence = this.GetCharSequence(this.readerIndex, length, encoding);
+            this.readerIndex += length;
+            return sequence;
+        }
+
         public virtual IByteBuffer SetByte(int index, int value)
         {
             this.CheckIndex(index);
@@ -633,6 +669,7 @@ namespace DotNetty.Buffers
             this.SetBytes(index, src, 0, src.Length);
             return this;
         }
+
         public abstract IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length);
 
         public virtual IByteBuffer SetBytes(int index, IByteBuffer src)
@@ -735,6 +772,48 @@ namespace DotNetty.Buffers
                 return ByteBufferUtil.WriteAscii(this, index, value, length);
             }
             byte[] bytes = encoding.GetBytes(value);
+            if (expand)
+            {
+                this.EnsureWritable0(bytes.Length);
+                // setBytes(...) will take care of checking the indices.
+            }
+            this.SetBytes(index, bytes);
+            return bytes.Length;
+        }
+
+        public virtual int SetCharSequence(int index, ICharSequence sequence, Encoding encoding) => this.SetCharSequence0(index, sequence, encoding, false);
+
+        int SetCharSequence0(int index, ICharSequence sequence, Encoding encoding, bool expand)
+        {
+            if (ReferenceEquals(encoding, Encoding.UTF8))
+            {
+                int length = ByteBufferUtil.Utf8MaxBytes(sequence);
+                if (expand)
+                {
+                    this.EnsureWritable0(length);
+                    this.CheckIndex0(index, length);
+                }
+                else
+                {
+                    this.CheckIndex(index, length);
+                }
+                return ByteBufferUtil.WriteUtf8(this, index, sequence, sequence.Count);
+            }
+            if (ReferenceEquals(encoding, Encoding.ASCII))
+            {
+                int length = sequence.Count;
+                if (expand)
+                {
+                    this.EnsureWritable0(length);
+                    this.CheckIndex0(index, length);
+                }
+                else
+                {
+                    this.CheckIndex(index, length);
+                }
+                return ByteBufferUtil.WriteAscii(this, index, sequence, length);
+            }
+            byte[] bytes = encoding.GetBytes(sequence.ToString());
             if (expand)
             {
                 this.EnsureWritable0(bytes.Length);
@@ -1182,6 +1261,13 @@ namespace DotNetty.Buffers
 
             this.writerIndex = wIndex;
             return this;
+        }
+
+        public virtual int WriteCharSequence(ICharSequence sequence, Encoding encoding)
+        {
+            int written = this.SetCharSequence0(this.writerIndex, sequence, encoding, true);
+            this.writerIndex += written;
+            return written;
         }
 
         public virtual int WriteString(string value, Encoding encoding)

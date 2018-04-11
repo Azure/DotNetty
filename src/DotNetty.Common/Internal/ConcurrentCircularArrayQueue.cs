@@ -20,8 +20,6 @@ namespace DotNetty.Common.Internal
     /// parameter are provided to allow the prevention of field reload after a
     /// LoadLoad barrier.
     /// <p />
-    /// @param
-    /// <E>
     abstract class ConcurrentCircularArrayQueue<T> : ConcurrentCircularArrayQueueL0Pad<T>
         where T : class
     {
@@ -62,8 +60,7 @@ namespace DotNetty.Common.Internal
 
         public override void Clear()
         {
-            T item;
-            while (this.TryDequeue(out item) || !this.IsEmpty)
+            while (this.TryDequeue(out T _) || !this.IsEmpty)
             {
                 // looping
             }

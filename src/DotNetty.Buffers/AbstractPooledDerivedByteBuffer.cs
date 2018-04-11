@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System;
     using System.Diagnostics;
     using DotNetty.Common;
 

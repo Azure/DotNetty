@@ -5,7 +5,7 @@ namespace DotNetty.Codecs
 {
     using System;
 
-    public class DecoderException : Exception
+    public class DecoderException : CodecException
     {
         public DecoderException(string message)
             : base(message)
@@ -14,6 +14,11 @@ namespace DotNetty.Codecs
 
         public DecoderException(Exception cause)
             : base(null, cause)
+        {
+        }
+
+        public DecoderException(string message, Exception cause)
+            : base(message, cause)
         {
         }
     }
