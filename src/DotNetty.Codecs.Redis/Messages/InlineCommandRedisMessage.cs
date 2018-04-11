@@ -3,9 +3,9 @@
 
 namespace DotNetty.Codecs.Redis.Messages
 {
-    public sealed class ErrorRedisMessage : AbstractStringRedisMessage
+    public sealed class InlineCommandRedisMessage : AbstractStringRedisMessage
     {
-        public ErrorRedisMessage(string content)
+        public InlineCommandRedisMessage(string content)
             : base(content)
         {
         }

@@ -8,6 +8,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.Runtime.CompilerServices;
+    using DotNetty.Common.Utilities;
 
     static class ThrowHelper
     {

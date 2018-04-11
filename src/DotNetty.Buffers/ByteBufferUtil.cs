@@ -504,7 +504,7 @@ namespace DotNetty.Buffers
 
         internal static int Utf8MaxBytes(ICharSequence seq) => Utf8MaxBytes(seq.Count);
 
-        internal static int Utf8MaxBytes(string seq) => Utf8MaxBytes(seq.Length);
+        public static int Utf8MaxBytes(string seq) => Utf8MaxBytes(seq.Length);
 
         internal static int Utf8MaxBytes(int seqLength) => seqLength * MaxBytesPerCharUtf8;
 

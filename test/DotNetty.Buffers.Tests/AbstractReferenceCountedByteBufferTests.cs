@@ -7,6 +7,7 @@ namespace DotNetty.Buffers.Tests
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Utilities;
     using Xunit;
 
     public sealed class AbstractReferenceCountedByteBufferTests
