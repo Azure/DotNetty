@@ -856,7 +856,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public ValueTask WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, true);
+        public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, true).AsTask();
         
         public ValueTask WriteAndFlushAsync(object message, bool notifyComplete)
         {

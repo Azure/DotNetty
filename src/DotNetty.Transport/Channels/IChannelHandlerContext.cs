@@ -71,7 +71,7 @@ namespace DotNetty.Transport.Channels
 
         IChannelHandlerContext Flush();
 
-        ValueTask WriteAndFlushAsync(object message);
+        Task WriteAndFlushAsync(object message);
         
         ValueTask WriteAndFlushAsync(object message, bool notifyComplete);
 

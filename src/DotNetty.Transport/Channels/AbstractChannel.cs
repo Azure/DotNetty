@@ -191,7 +191,7 @@ namespace DotNetty.Transport.Channels
 
         public ValueTask WriteAsync(object msg) => this.pipeline.WriteAsync(msg);
 
-        public ValueTask WriteAndFlushAsync(object message) => this.pipeline.WriteAndFlushAsync(message);
+        public Task WriteAndFlushAsync(object message) => this.pipeline.WriteAndFlushAsync(message);
         
         public ValueTask WriteAndFlushAsync(object message, bool notifyComplete) => this.pipeline.WriteAndFlushAsync(message, notifyComplete);
 

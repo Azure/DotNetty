@@ -694,7 +694,7 @@ namespace DotNetty.Transport.Channels
         /// <summary>
         /// Shortcut for calling both <see cref="WriteAsync"/> and <see cref="Flush"/>.
         /// </summary>
-        ValueTask WriteAndFlushAsync(object msg);
+        Task WriteAndFlushAsync(object msg);
         
         ValueTask WriteAndFlushAsync(object msg, bool notifyComplete);
     }
