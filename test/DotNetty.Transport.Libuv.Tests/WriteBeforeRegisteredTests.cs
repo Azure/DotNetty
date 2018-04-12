@@ -42,7 +42,7 @@ namespace DotNetty.Transport.Libuv.Tests
             this.clientChannel = task.Result;
 
             Task connectTask = this.clientChannel.ConnectAsync(LoopbackAnyPort);
-            Task writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[] { 1 })).AsTask();
+            Task writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[] { 1 }));
             var error = Assert.Throws<AggregateException>(() => writeTask.Wait(DefaultTimeout));
 
             Assert.Single(error.InnerExceptions);

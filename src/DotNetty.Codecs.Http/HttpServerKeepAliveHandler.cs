@@ -31,7 +31,7 @@ namespace DotNetty.Codecs.Http
             base.ChannelRead(context, message);
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
             // modify message on way out to add headers if needed
             if (message is IHttpResponse response)
@@ -52,16 +52,9 @@ namespace DotNetty.Codecs.Http
             }
             if (message is ILastHttpContent && !this.ShouldKeepAlive())
             {
-                return base.WriteAsync(context, message)
-                    .ContinueWith(CloseOnComplete, context, TaskContinuationOptions.ExecuteSynchronously);
+                return new ValueTask(base.WriteAsync(context, message).CloseOnComplete(context));
             }
             return base.WriteAsync(context, message);
-        }
-
-        static Task CloseOnComplete(Task task, object state)
-        {
-            var context = (IChannelHandlerContext)state;
-            return context.CloseAsync();
         }
 
         void TrackResponse(IHttpResponse response)

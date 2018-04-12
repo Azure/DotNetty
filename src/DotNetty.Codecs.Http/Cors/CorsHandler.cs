@@ -167,7 +167,7 @@ namespace DotNetty.Codecs.Http.Cors
 
         void SetMaxAge(IHttpResponse response) => response.Headers.Set(HttpHeaderNames.AccessControlMaxAge, this.config.MaxAge);
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
             if (this.config.IsCorsSupportEnabled && message is IHttpResponse response)
             {
@@ -177,7 +177,7 @@ namespace DotNetty.Codecs.Http.Cors
                     this.SetExposeHeaders(response);
                 }
             }
-            return context.WriteAndFlushAsync(message);
+            return context.WriteAndFlushAsync(message, true);
         }
 
         static void Forbidden(IChannelHandlerContext ctx, IHttpRequest request)
@@ -197,15 +197,8 @@ namespace DotNetty.Codecs.Http.Cors
             Task task = ctx.WriteAndFlushAsync(response);
             if (!keepAlive)
             {
-                task.ContinueWith(CloseOnComplete, ctx, 
-                    TaskContinuationOptions.ExecuteSynchronously);
+                task.CloseOnComplete(ctx);
             }
-        }
-
-        static void CloseOnComplete(Task task, object state)
-        {
-            var ctx = (IChannelHandlerContext)state;
-            ctx.CloseAsync();
         }
     }
 }

@@ -241,8 +241,7 @@ namespace DotNetty.Codecs.Compression
                 this.z.next_out = null;
             }
 
-            return context.WriteAndFlushAsync(footer)
-                .ContinueWith(_ => context.CloseAsync());
+            return context.WriteAndFlushAsync(footer).CloseOnComplete(context);
         }
 
         public override void HandlerAdded(IChannelHandlerContext context) => this.ctx = context;

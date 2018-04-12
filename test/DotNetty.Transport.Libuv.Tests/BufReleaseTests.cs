@@ -107,7 +107,7 @@ namespace DotNetty.Transport.Libuv.Tests
                 // call retain on it so it can't be put back on the pool
                 this.buf.WriteBytes(data).Retain();
 
-                this.writeTask = ctx.Channel.WriteAndFlushAsync(this.buf).AsTask();
+                this.writeTask = ctx.Channel.WriteAndFlushAsync(this.buf);
             }
 
             protected override void ChannelRead0(IChannelHandlerContext ctx, object msg)

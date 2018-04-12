@@ -7,6 +7,7 @@ namespace DotNetty.Handlers.Streams
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
@@ -39,11 +40,11 @@ namespace DotNetty.Handlers.Streams
             }
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
-            var pendingWrite = new PendingWrite(message);
+            var pendingWrite =  PendingWrite.NewInstance(context.Executor, message);
             this.queue.Enqueue(pendingWrite);
-            return pendingWrite.PendingTask;
+            return pendingWrite;
         }
 
         public override void Flush(IChannelHandlerContext context) => this.DoFlush(context);
@@ -97,16 +98,16 @@ namespace DotNetty.Handlers.Streams
                                 cause = new ClosedChannelException();
                             }
 
-                            current.Fail(cause);
+                            current.TrySetException(cause);
                         }
                         else
                         {
-                            current.Success();
+                            current.TryComplete();
                         }
                     }
                     catch (Exception exception)
                     {
-                        current.Fail(exception);
+                        current.TrySetException(exception);
                         Logger.Warn($"{StringUtil.SimpleClassName(typeof(ChunkedWriteHandler<T>))}.IsEndOfInput failed", exception);
                     }
                     finally
@@ -121,7 +122,7 @@ namespace DotNetty.Handlers.Streams
                         cause = new ClosedChannelException();
                     }
 
-                    current.Fail(cause);
+                    current.TrySetException(cause);
                 }
             }
         }
@@ -197,7 +198,7 @@ namespace DotNetty.Handlers.Streams
                             ReferenceCountUtil.Release(message);
                         }
 
-                        current.Fail(exception);
+                        current.TrySetException(exception);
                         CloseInput(chunks);
 
                         break;
@@ -218,7 +219,7 @@ namespace DotNetty.Handlers.Streams
                         message = Unpooled.Empty;
                     }
 
-                    Task future = context.WriteAsync(message);
+                    ValueTask writeFuture = context.WriteAsync(message);
                     if (endOfInput)
                     {
                         this.currentWrite = null;
@@ -228,54 +229,62 @@ namespace DotNetty.Handlers.Streams
                         // be closed before its not written.
                         //
                         // See https://github.com/netty/netty/issues/303
-                        future.ContinueWith((_, state) =>
+                        CloseOnComplete(writeFuture, current, chunks);
+
+                        async void CloseOnComplete(ValueTask future, PendingWrite promise, IChunkedInput<T> input)
+                        {
+                            try
                             {
-                                var pendingTask = (PendingWrite)state;
-                                CloseInput((IChunkedInput<T>)pendingTask.Message);
-                                pendingTask.Success();
-                            },
-                            current, 
-                            TaskContinuationOptions.ExecuteSynchronously);
+                                await future;
+                            }
+                            finally
+                            {
+                                promise.Progress(input.Progress, input.Length);
+                                promise.TryComplete();
+                                CloseInput(input);
+                            }
+                        }
                     }
                     else if (channel.IsWritable)
                     {
-                        future.ContinueWith((task, state) =>
+                        ProgressOnComplete(writeFuture, current, chunks);
+                        
+                        async void ProgressOnComplete(ValueTask future, PendingWrite promise, IChunkedInput<T> input)
+                        {
+                            try
                             {
-                                var pendingTask = (PendingWrite)state;
-                                if (task.IsFaulted)
-                                {
-                                    CloseInput((IChunkedInput<T>)pendingTask.Message);
-                                    pendingTask.Fail(task.Exception);
-                                }
-                                else
-                                {
-                                    pendingTask.Progress(chunks.Progress, chunks.Length);
-                                }
-                            },
-                            current,
-                            TaskContinuationOptions.ExecuteSynchronously);
+                                await future;
+                                promise.Progress(input.Progress, input.Length);
+                            }
+                            catch(Exception ex)
+                            {
+                                CloseInput((IChunkedInput<T>)promise.Message);
+                                promise.TrySetException(ex);
+                            }
+                        }
                     }
                     else
                     {
-                        future.ContinueWith((task, state) =>
+                        ProgressAndResumeOnComplete(writeFuture, this, channel, chunks);
+                                                
+                        async void ProgressAndResumeOnComplete(ValueTask future, ChunkedWriteHandler<T> handler, IChannel ch, IChunkedInput<T> input)
                         {
-                            var handler = (ChunkedWriteHandler<T>) state;
-                            if (task.IsFaulted)
+                            PendingWrite promise = handler.currentWrite;
+                            try
                             {
-                                CloseInput((IChunkedInput<T>)handler.currentWrite.Message);
-                                handler.currentWrite.Fail(task.Exception);
-                            }
-                            else
-                            {
-                                handler.currentWrite.Progress(chunks.Progress, chunks.Length);
-                                if (channel.IsWritable)
+                                await future;
+                                promise.Progress(input.Progress, input.Length);
+                                if (ch.IsWritable)
                                 {
                                     handler.ResumeTransfer();
                                 }
                             }
-                        },
-                        this,
-                        TaskContinuationOptions.ExecuteSynchronously);
+                            catch(Exception ex)
+                            {
+                                CloseInput((IChunkedInput<T>)promise.Message);
+                                promise.TrySetException(ex);
+                            }
+                        }
                     }
 
                     // Flush each chunk to conserve memory
@@ -284,22 +293,7 @@ namespace DotNetty.Handlers.Streams
                 }
                 else
                 {
-                    context.WriteAsync(pendingMessage)
-                        .ContinueWith((task, state) =>
-                            {
-                                var pendingTask = (PendingWrite)state;
-                                if (task.IsFaulted)
-                                {
-                                    pendingTask.Fail(task.Exception);
-                                }
-                                else
-                                {
-                                    pendingTask.Success();
-                                }
-                            },
-                            current,
-                            TaskContinuationOptions.ExecuteSynchronously);
-
+                    context.WriteAsync(pendingMessage).LinkOutcome(current);
                     this.currentWrite = null;
                     requiresFlush = true;
                 }
@@ -332,37 +326,48 @@ namespace DotNetty.Handlers.Streams
             }
         }
 
-        sealed class PendingWrite
+        sealed class PendingWrite : AbstractRecyclablePromise
         {
-            readonly TaskCompletionSource promise;
-
-            public PendingWrite(object msg)
+            static readonly ThreadLocalPool<PendingWrite> Pool = new ThreadLocalPool<PendingWrite>(h => new PendingWrite(h));
+            
+            PendingWrite(ThreadLocalPool.Handle handle) 
+                : base(handle)
             {
-                this.Message = msg;
-                this.promise = new TaskCompletionSource();
+            }
+            
+            public static PendingWrite NewInstance(IEventExecutor executor, object msg)
+            {
+                PendingWrite entry = Pool.Take();
+                entry.Init(executor);
+                entry.Message = msg;
+                return entry;
             }
 
-            public object Message { get; }
+            public object Message { get; private set; }
 
-            public void Success() => this.promise.TryComplete();
-
-            public void Fail(Exception error)
+            protected override bool TryComplete0(Exception exception, out bool continuationInvoked)
             {
-                ReferenceCountUtil.Release(this.Message);
-                this.promise.TrySetException(error);
+                if (exception != CompletedSentinel)
+                {
+                    ReferenceCountUtil.Release(this.Message);    
+                }
+                
+                return base.TryComplete0(exception, out continuationInvoked);
             }
 
             public void Progress(long progress, long total)
             {
-                if (progress < total)
+                /*if (progress < total)
                 {
                     return;
-                }
-
-                this.Success();
+                }*/
             }
 
-            public Task PendingTask => this.promise.Task;
+            protected override void Recycle()
+            {
+                this.Message = null;
+                base.Recycle();
+            }
         }
     }
 }

@@ -217,12 +217,12 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                 for (int i = 0; i < count; i++)
                 {
                     var packet = new DatagramPacket((IByteBuffer)source.Retain(), new IPEndPoint(address, endPoint.Port));
-                    clientChannel.WriteAndFlushAsync(packet).AsTask().Wait();
+                    clientChannel.WriteAndFlushAsync(packet).Wait();
                     Assert.True(handler.WaitForResult());
 
                     var duplicatedPacket = (DatagramPacket)packet.Duplicate();
                     duplicatedPacket.Retain();
-                    clientChannel.WriteAndFlushAsync(duplicatedPacket).AsTask().Wait();
+                    clientChannel.WriteAndFlushAsync(duplicatedPacket).Wait();
                     Assert.True(handler.WaitForResult());
                 }
             }

@@ -8,6 +8,7 @@ namespace DotNetty.Transport.Libuv.Tests
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Codecs;
     using DotNetty.Common.Concurrency;
     using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;

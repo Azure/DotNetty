@@ -130,13 +130,10 @@ namespace DotNetty.Codecs
                     bool closeAfterWrite = this.CloseAfterContinueResponse(continueResponse);
                     this.handlingOversizedMessage = this.IgnoreContentAfterContinueResponse(continueResponse);
 
-                    Task task = context
-                        .WriteAndFlushAsync(continueResponse)
-                        .ContinueWith(ContinueResponseWriteAction, context, TaskContinuationOptions.ExecuteSynchronously);
+                    WriteContinueResponse(context, continueResponse, closeAfterWrite);
 
                     if (closeAfterWrite)
                     {
-                        task.ContinueWith(CloseAfterWriteAction, context, TaskContinuationOptions.ExecuteSynchronously);
                         return;
                     }
 
@@ -245,19 +242,21 @@ namespace DotNetty.Codecs
                 throw new MessageAggregationException("Unknown aggregation state.");
             }
         }
-
-        static void CloseAfterWriteAction(Task task, object state)
+        
+        static async void WriteContinueResponse(IChannelHandlerContext ctx, object message, bool closeAfterWrite)
         {
-            var ctx = (IChannelHandlerContext)state;
-            ctx.Channel.CloseAsync();
-        }
-
-        static void ContinueResponseWriteAction(Task task, object state)
-        {
-            if (task.IsFaulted)
+            try
             {
-                var ctx = (IChannelHandlerContext)state;
-                ctx.FireExceptionCaught(task.Exception);
+                await ctx.WriteAndFlushAsync(message);
+            }
+            catch (Exception ex)
+            {
+                ctx.FireExceptionCaught(ex);
+            }
+            
+            if (closeAfterWrite)
+            {
+                ctx.Channel.CloseAsync();
             }
         }
 

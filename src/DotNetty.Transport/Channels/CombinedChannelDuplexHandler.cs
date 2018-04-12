@@ -354,7 +354,7 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
             Contract.Assert(context == this.outboundCtx.InnerContext);
 
@@ -491,7 +491,7 @@ namespace DotNetty.Transport.Channels
                 return this;
             }
 
-            public Task WriteAsync(object message) => this.ctx.WriteAsync(message);
+            public ValueTask WriteAsync(object message) => this.ctx.WriteAsync(message);
 
             public IChannelHandlerContext Flush()
             {
@@ -500,6 +500,8 @@ namespace DotNetty.Transport.Channels
             }
 
             public Task WriteAndFlushAsync(object message) => this.ctx.WriteAndFlushAsync(message);
+            
+            public ValueTask WriteAndFlushAsync(object message, bool notifyComplete) => this.ctx.WriteAndFlushAsync(message, notifyComplete);
 
             public IAttribute<T> GetAttribute<T>(AttributeKey<T> key) where T : class => this.ctx.GetAttribute(key);
 

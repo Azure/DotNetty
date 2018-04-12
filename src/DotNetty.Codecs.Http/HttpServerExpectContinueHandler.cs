@@ -39,27 +39,15 @@ namespace DotNetty.Codecs.Http
                         // the expectation failed so we refuse the request.
                         IHttpResponse rejection = this.RejectResponse(req);
                         ReferenceCountUtil.Release(message);
-                        context.WriteAndFlushAsync(rejection)
-                            .ContinueWith(CloseOnFailure, context, TaskContinuationOptions.ExecuteSynchronously);
+                        context.WriteAndFlushAsync(rejection).CloseOnFailure(context);
                         return;
                     }
 
-                    context.WriteAndFlushAsync(accept)
-                        .ContinueWith(CloseOnFailure, context, TaskContinuationOptions.ExecuteSynchronously);
+                    context.WriteAndFlushAsync(accept).CloseOnFailure(context);
                     req.Headers.Remove(HttpHeaderNames.Expect);
                 }
                 base.ChannelRead(context, message);
             }
-        }
-
-        static Task CloseOnFailure(Task task, object state)
-        {
-            if (task.IsFaulted)
-            {
-                var context = (IChannelHandlerContext)state;
-                return context.CloseAsync();
-            }
-            return TaskEx.Completed;
         }
     }
 }

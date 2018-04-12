@@ -50,7 +50,7 @@ namespace DotNetty.Codecs
         public sealed override void ChannelRead(IChannelHandlerContext context, object message) => 
             this.decoder.ChannelRead(context, message);
 
-        public sealed override Task WriteAsync(IChannelHandlerContext context, object message) => 
+        public sealed override ValueTask WriteAsync(IChannelHandlerContext context, object message) => 
             this.encoder.WriteAsync(context, message);
 
         public virtual bool AcceptInboundMessage(object msg) => msg is TInbound;

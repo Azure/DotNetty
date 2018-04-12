@@ -22,7 +22,7 @@ namespace DotNetty.Common.Concurrency
         static readonly Action<object> TaskSchedulerCallback = Execute;
         static readonly Action<object> TaskScheduleCallbackWithExecutionContext = ExecuteWithExecutionContext;
         
-        static readonly Exception CompletedSentinel = new Exception();
+        protected static readonly Exception CompletedSentinel = new Exception();
 
         short currentId;
         protected Exception exception;
