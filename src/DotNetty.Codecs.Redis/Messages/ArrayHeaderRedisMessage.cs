@@ -3,14 +3,17 @@
 
 namespace DotNetty.Codecs.Redis.Messages
 {
-    using System.Diagnostics.Contracts;
+    using System.Text;
+    using DotNetty.Common.Utilities;
 
-    public sealed class ArrayHeaderRedisMessage : IRedisMessage
+    public class ArrayHeaderRedisMessage : IRedisMessage
     {
         public ArrayHeaderRedisMessage(long length)
         {
-            Contract.Requires(length >= RedisConstants.NullValue);
-
+            if (length < RedisConstants.NullValue)
+            {
+                throw new RedisCodecException($"length: {length} (expected: >= {RedisConstants.NullValue})");
+            }
             this.Length = length;
         }
 
@@ -18,6 +21,12 @@ namespace DotNetty.Codecs.Redis.Messages
 
         public bool IsNull => this.Length == RedisConstants.NullValue;
 
-        public override string ToString() => $"{nameof(ArrayHeaderRedisMessage)}[length={this.Length}]";
+        public override string ToString() =>
+            new StringBuilder(StringUtil.SimpleClassName(this))
+                .Append('[')
+                .Append("length=")
+                .Append(this.Length)
+                .Append(']')
+                .ToString();
     }
 }

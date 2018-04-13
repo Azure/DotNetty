@@ -8,6 +8,7 @@ namespace DotNetty.Buffers
     using System.Diagnostics.Contracts;
     using System.Threading;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
 
     public abstract class AbstractReferenceCountedByteBuffer : AbstractByteBuffer
     {

@@ -6,6 +6,7 @@ namespace DotNetty.Codecs.Http.Tests
     using System;
     using System.Text;
     using DotNetty.Buffers;
+    using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels.Embedded;
     using Xunit;
 

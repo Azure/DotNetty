@@ -9,6 +9,7 @@ namespace DotNetty.Codecs.Http
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Common;
+    using DotNetty.Common.Utilities;
 
     public class DefaultFullHttpRequest : DefaultHttpRequest, IFullHttpRequest
     {

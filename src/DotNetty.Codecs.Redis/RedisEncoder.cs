@@ -6,7 +6,6 @@ namespace DotNetty.Codecs.Redis
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
-    using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Redis.Messages;
     using DotNetty.Transport.Channels;
@@ -15,8 +14,7 @@ namespace DotNetty.Codecs.Redis
     {
         readonly IRedisMessagePool messagePool;
 
-        public RedisEncoder()
-            : this(FixedRedisMessagePool.Default)
+        public RedisEncoder() : this(FixedRedisMessagePool.Instance)
         {
         }
 
@@ -29,13 +27,9 @@ namespace DotNetty.Codecs.Redis
 
         protected override void Encode(IChannelHandlerContext context, IRedisMessage message, List<object> output)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
             try
             {
-                this.Write(context.Allocator, message, output);
+                this.WriteRedisMessage(context.Allocator, message, output);
             }
             catch (CodecException)
             {
@@ -47,262 +41,171 @@ namespace DotNetty.Codecs.Redis
             }
         }
 
-        void Write(IByteBufferAllocator allocator, IRedisMessage message, ICollection<object> output)
+        void WriteRedisMessage(IByteBufferAllocator allocator, IRedisMessage message, List<object> output)
         {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            if (message is SimpleStringRedisMessage)
+            if (message is InlineCommandRedisMessage inlineCommandRedisMessage)
             {
-                Write(allocator, (SimpleStringRedisMessage)message, output);
-                return;
+                WriteInlineCommandMessage(allocator, inlineCommandRedisMessage, output);
             }
-
-            if (message is ErrorRedisMessage)
+            else if (message is SimpleStringRedisMessage stringRedisMessage)
             {
-                Write(allocator, (ErrorRedisMessage)message, output);
-                return;
+                WriteSimpleStringMessage(allocator, stringRedisMessage, output);
             }
-
-            if (message is IntegerRedisMessage)
+            else if (message is ErrorRedisMessage errorRedisMessage)
             {
-                this.Write(allocator, (IntegerRedisMessage)message, output);
-                return;
+                WriteErrorMessage(allocator, errorRedisMessage, output);
             }
-
-            if (message is FullBulkStringRedisMessage)
+            else if (message is IntegerRedisMessage integerRedisMessage)
             {
-                this.Write(allocator, (FullBulkStringRedisMessage)message, output);
-                return;
+                this.WriteIntegerMessage(allocator, integerRedisMessage, output);
             }
-
-            if (message is IBulkStringRedisContent)
+            else if (message is FullBulkStringRedisMessage fullBulkStringRedisMessage)
             {
-                Write(allocator, (IBulkStringRedisContent)message, output);
-                return;
+                this.WriteFullBulkStringMessage(allocator, fullBulkStringRedisMessage, output);
             }
-
-            if (message is BulkStringHeaderRedisMessage)
+            else if (message is IBulkStringRedisContent bulkStringRedisContent)
             {
-                this.Write(allocator, (BulkStringHeaderRedisMessage)message, output);
-                return;
+                WriteBulkStringContent(allocator, bulkStringRedisContent, output);
             }
-
-            if (message is ArrayHeaderRedisMessage)
+            else if (message is BulkStringHeaderRedisMessage bulkStringHeaderRedisMessage)
             {
-                this.Write(allocator, (ArrayHeaderRedisMessage)message, output);
-                return;
+                this.WriteBulkStringHeader(allocator, bulkStringHeaderRedisMessage, output);
             }
-
-            if (message is ArrayRedisMessage)
+            else if (message is ArrayHeaderRedisMessage arrayHeaderRedisMessage)
             {
-                this.Write(allocator, (ArrayRedisMessage)message, output);
-                return;
+                this.WriteArrayHeader(allocator, arrayHeaderRedisMessage, output);
             }
-
-            throw new CodecException($"Unknown message type: {message}");
-        }
-
-        void Write(IByteBufferAllocator allocator, FullBulkStringRedisMessage message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer buffer = allocator.Buffer(
-                RedisConstants.TypeLength
-                + (message.IsNull ? RedisConstants.NullLength : RedisConstants.LongValueMaximumLength)
-                + RedisConstants.EndOfLineLength);
-
-            buffer.WriteByte((char)RedisMessageType.BulkString);
-            if (message.IsNull)
+            else if (message is IArrayRedisMessage arrayRedisMessage)
             {
-                buffer.WriteShort(RedisConstants.Null);
-                buffer.WriteShort(RedisConstants.EndOfLine);
-
-                output.Add(buffer);
+                this.WriteArrayMessage(allocator, arrayRedisMessage, output);
             }
             else
             {
-                int readableBytes = message.Content.ReadableBytes;
-                byte[] bytes = this.NumberToBytes(readableBytes);
-                buffer.WriteBytes(bytes);
-                buffer.WriteShort(RedisConstants.EndOfLine);
-
-                output.Add(buffer);
-                output.Add(message.Content.Retain());
-                output.Add(allocator
-                    .Buffer(RedisConstants.EndOfLineLength)
-                    .WriteShort(RedisConstants.EndOfLine));
+                throw new CodecException($"Unknown message type: {message}");
             }
         }
 
-        static void Write(IByteBufferAllocator allocator, IBulkStringRedisContent message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
+        static void WriteInlineCommandMessage(IByteBufferAllocator allocator, InlineCommandRedisMessage msg, List<object> output) =>
+            WriteString(allocator, RedisMessageType.InlineCommand, msg.Content, output);
 
-            output.Add(message.Content.Retain());
-            if (message is ILastBulkStringRedisContent)
+        static void WriteSimpleStringMessage(IByteBufferAllocator allocator, SimpleStringRedisMessage msg, List<object> output) =>
+            WriteString(allocator, RedisMessageType.SimpleString, msg.Content, output);
+
+        static void WriteErrorMessage(IByteBufferAllocator allocator, ErrorRedisMessage msg, List<object> output) =>
+            WriteString(allocator, RedisMessageType.Error, msg.Content, output);
+
+        static void WriteString(IByteBufferAllocator allocator, RedisMessageType type, string content, List<object> output)
+        {
+            IByteBuffer buf = allocator.Buffer(type.Length + ByteBufferUtil.Utf8MaxBytes(content) + 
+                RedisConstants.EndOfLineLength);
+            type.WriteTo(buf);
+            ByteBufferUtil.WriteUtf8(buf, content);
+            buf.WriteShort(RedisConstants.EndOfLineShort);
+            output.Add(buf);
+        }
+
+        void WriteIntegerMessage(IByteBufferAllocator allocator, IntegerRedisMessage msg, List<object> output)
+        {
+            IByteBuffer buf = allocator.Buffer(RedisConstants.TypeLength + RedisConstants.LongMaxLength + 
+                RedisConstants.EndOfLineLength);
+            RedisMessageType.Integer.WriteTo(buf);
+            buf.WriteBytes(this.NumberToBytes(msg.Value));
+            buf.WriteShort(RedisConstants.EndOfLineShort);
+            output.Add(buf);
+        }
+
+        void WriteBulkStringHeader(IByteBufferAllocator allocator, BulkStringHeaderRedisMessage msg, List<object> output)
+        {
+            IByteBuffer buf = allocator.Buffer(RedisConstants.TypeLength +
+                (msg.IsNull ? RedisConstants.NullLength : RedisConstants.LongMaxLength + RedisConstants.EndOfLineLength));
+            RedisMessageType.BulkString.WriteTo(buf);
+            if (msg.IsNull)
             {
-                output.Add(allocator
-                    .Buffer(RedisConstants.EndOfLineLength)
-                    .WriteShort(RedisConstants.EndOfLine));
-            }
-        }
-
-        void Write(IByteBufferAllocator allocator, BulkStringHeaderRedisMessage message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer buffer = allocator.Buffer(
-                RedisConstants.TypeLength
-                + (message.IsNull ? RedisConstants.NullLength : RedisConstants.LongValueMaximumLength)
-                + RedisConstants.EndOfLineLength);
-
-            buffer.WriteByte((char)RedisMessageType.BulkString);
-
-            if (!message.IsNull)
-            {
-                byte[] bytes = this.NumberToBytes(message.BulkStringLength);
-                buffer.WriteBytes(bytes);
-            }
-
-            buffer.WriteShort(RedisConstants.EndOfLine);
-            output.Add(buffer);
-        }
-
-        static void Write(IByteBufferAllocator allocator, SimpleStringRedisMessage message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer buffer = WriteString(allocator, RedisMessageType.SimpleString, message.Content);
-            output.Add(buffer);
-        }
-
-        static void Write(IByteBufferAllocator allocator, ErrorRedisMessage message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer buffer = WriteString(allocator, RedisMessageType.Error, message.Content);
-            output.Add(buffer);
-        }
-
-        void Write(IByteBufferAllocator allocator, IntegerRedisMessage message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer buffer = allocator.Buffer(
-                RedisConstants.TypeLength
-                + RedisConstants.LongValueMaximumLength
-                + RedisConstants.EndOfLineLength);
-
-            // Header
-            buffer.WriteByte((char)RedisMessageType.Integer);
-
-            // Content
-            byte[] bytes = this.NumberToBytes(message.Value);
-            buffer.WriteBytes(bytes);
-
-            // EOL
-            buffer.WriteShort(RedisConstants.EndOfLine);
-
-            output.Add(buffer);
-        }
-
-        void Write(IByteBufferAllocator allocator, ArrayHeaderRedisMessage message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            this.WriteArrayHeader(allocator, message.IsNull ? default(long?) : message.Length, output);
-        }
-
-        void Write(IByteBufferAllocator allocator, ArrayRedisMessage message, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
-            this.WriteArrayHeader(allocator, message.IsNull ? default(long?) : message.Children.Count, output);
-            if (message.IsNull)
-            {
-                return;
-            }
-
-            foreach (IRedisMessage childMessage in message.Children)
-            {
-                this.Write(allocator, childMessage, output);
-            }
-        }
-
-        void WriteArrayHeader(IByteBufferAllocator allocator, long? length, ICollection<object> output)
-        {
-            Contract.Requires(allocator != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer buffer = allocator.Buffer(
-                RedisConstants.TypeLength
-                + (!length.HasValue ? RedisConstants.NullLength : RedisConstants.LongValueMaximumLength)
-                + RedisConstants.EndOfLineLength);
-
-            buffer.WriteByte((char)RedisMessageType.ArrayHeader);
-
-            if (!length.HasValue)
-            {
-                buffer.WriteShort(RedisConstants.Null);
+                buf.WriteShort(RedisConstants.NullShort);
             }
             else
             {
-                byte[] bytes = this.NumberToBytes(length.Value);
-                buffer.WriteBytes(bytes);
+                buf.WriteBytes(this.NumberToBytes(msg.BulkStringLength));
+                buf.WriteShort(RedisConstants.EndOfLineShort);
             }
-
-            buffer.WriteShort(RedisConstants.EndOfLine);
-            output.Add(buffer);
+            output.Add(buf);
         }
 
-        static IByteBuffer WriteString(IByteBufferAllocator allocator, RedisMessageType messageType, string content)
+        static void WriteBulkStringContent(IByteBufferAllocator allocator, IBulkStringRedisContent msg, List<object> output)
         {
-            Contract.Requires(allocator != null);
-
-            IByteBuffer buffer = allocator.Buffer(
-                RedisConstants.TypeLength
-                + Encoding.UTF8.GetMaxByteCount(content.Length)
-                + RedisConstants.EndOfLineLength);
-
-            // Header
-            buffer.WriteByte((char)messageType);
-
-            // Content
-            buffer.WriteBytes(Encoding.UTF8.GetBytes(content));
-
-            // EOL
-            buffer.WriteShort(RedisConstants.EndOfLine);
-
-            return buffer;
-        }
-
-        byte[] NumberToBytes(long value)
-        {
-            byte[] bytes;
-            if (!this.messagePool.TryGetBytes(value, out bytes))
+            output.Add(msg.Content.Retain());
+            if (msg is ILastBulkStringRedisContent)
             {
-                bytes = RedisCodecUtil.LongToAsciiBytes(value);
+                output.Add(allocator.Buffer(RedisConstants.EndOfLineLength).WriteShort(RedisConstants.EndOfLineShort));
             }
-
-            return bytes;
         }
+
+        void WriteFullBulkStringMessage(IByteBufferAllocator allocator, FullBulkStringRedisMessage msg, List<object> output)
+        {
+            if (msg.IsNull)
+            {
+                IByteBuffer buf = allocator.Buffer(RedisConstants.TypeLength + RedisConstants.NullLength +
+                    RedisConstants.EndOfLineLength);
+                RedisMessageType.BulkString.WriteTo(buf);
+                buf.WriteShort(RedisConstants.NullShort);
+                buf.WriteShort(RedisConstants.EndOfLineShort);
+                output.Add(buf);
+            }
+            else
+            {
+                IByteBuffer headerBuf = allocator.Buffer(RedisConstants.TypeLength + RedisConstants.LongMaxLength +
+                    RedisConstants.EndOfLineLength);
+                RedisMessageType.BulkString.WriteTo(headerBuf);
+                headerBuf.WriteBytes(this.NumberToBytes(msg.Content.ReadableBytes));
+                headerBuf.WriteShort(RedisConstants.EndOfLineShort);
+                output.Add(headerBuf);
+                output.Add(msg.Content.Retain());
+                output.Add(allocator.Buffer(RedisConstants.EndOfLineLength).WriteShort(RedisConstants.EndOfLineShort));
+            }
+        }
+
+        void WriteArrayHeader(IByteBufferAllocator allocator, ArrayHeaderRedisMessage msg, List<object> output) =>
+            this.WriteArrayHeader(allocator, msg.IsNull, msg.Length, output);
+
+        void WriteArrayMessage(IByteBufferAllocator allocator, IArrayRedisMessage msg, List<object> output)
+        {
+            if (msg.IsNull)
+            {
+                this.WriteArrayHeader(allocator, msg.IsNull, RedisConstants.NullValue, output);
+            }
+            else
+            {
+                this.WriteArrayHeader(allocator, msg.IsNull, msg.Children.Count, output);
+                foreach (IRedisMessage child in msg.Children)
+                {
+                    this.WriteRedisMessage(allocator, child, output);
+                }
+            }
+        }
+
+        void WriteArrayHeader(IByteBufferAllocator allocator, bool isNull, long length, List<object> output)
+        {
+            if (isNull)
+            {
+                IByteBuffer buf = allocator.Buffer(RedisConstants.TypeLength + RedisConstants.NullLength +
+                    RedisConstants.EndOfLineLength);
+                RedisMessageType.ArrayHeader.WriteTo(buf);
+                buf.WriteShort(RedisConstants.NullShort);
+                buf.WriteShort(RedisConstants.EndOfLineShort);
+                    output.Add(buf);
+            }
+            else
+            {
+                IByteBuffer buf = allocator.Buffer(RedisConstants.TypeLength + RedisConstants.LongMaxLength +
+                    RedisConstants.EndOfLineLength);
+                RedisMessageType.ArrayHeader.WriteTo(buf);
+                buf.WriteBytes(this.NumberToBytes(length));
+                buf.WriteShort(RedisConstants.EndOfLineShort);
+                    output.Add(buf);
+            }
+        }
+
+        byte[] NumberToBytes(long value) =>
+            this.messagePool.TryGetByteBufferOfInteger(value, out byte[] bytes) ? bytes : RedisCodecUtil.LongToAsciiBytes(value);
     }
 }

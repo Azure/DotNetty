@@ -4,22 +4,23 @@
 namespace DotNetty.Codecs.Redis.Messages
 {
     using System.Text;
+    using DotNetty.Buffers;
     using DotNetty.Common.Utilities;
 
-    public sealed class IntegerRedisMessage : IRedisMessage
+    public class DefaultBulkStringRedisContent : DefaultByteBufferHolder, IBulkStringRedisContent
     {
-        public IntegerRedisMessage(long value)
+        public DefaultBulkStringRedisContent(IByteBuffer buffer)
+            : base(buffer)
         {
-            this.Value = value;
         }
 
-        public long Value { get; }
+        public override IByteBufferHolder Replace(IByteBuffer content) => new DefaultBulkStringRedisContent(content);
 
         public override string ToString() =>
             new StringBuilder(StringUtil.SimpleClassName(this))
                 .Append('[')
-                .Append("value=")
-                .Append(this.Value)
+                .Append("content=")
+                .Append(this.Content)
                 .Append(']')
                 .ToString();
     }

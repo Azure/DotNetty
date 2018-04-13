@@ -3,19 +3,19 @@
 
 namespace DotNetty.Codecs.Redis.Messages
 {
-    using System.Diagnostics.Contracts;
-
-    public sealed class BulkStringHeaderRedisMessage : IRedisMessage
+    public class BulkStringHeaderRedisMessage : IRedisMessage
     {
         public BulkStringHeaderRedisMessage(int bulkStringLength)
         {
-            Contract.Requires(bulkStringLength > 0);
-
+            if (bulkStringLength <= 0)
+            {
+                throw new RedisCodecException($"bulkStringLength: {bulkStringLength} (expected: > 0)");
+            }
             this.BulkStringLength = bulkStringLength;
         }
 
         public int BulkStringLength { get; }
 
-        public bool IsNull => false;
+        public bool IsNull => this.BulkStringLength == RedisConstants.NullValue;
     }
 }

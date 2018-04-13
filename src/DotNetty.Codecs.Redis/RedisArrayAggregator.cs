@@ -4,7 +4,6 @@
 namespace DotNetty.Codecs.Redis
 {
     using System.Collections.Generic;
-    using System.Diagnostics.Contracts;
     using DotNetty.Codecs.Redis.Messages;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
@@ -15,10 +14,6 @@ namespace DotNetty.Codecs.Redis
 
         protected override void Decode(IChannelHandlerContext context, IRedisMessage message, List<object> output)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(message != null);
-            Contract.Requires(output != null);
-
             if (message is ArrayHeaderRedisMessage)
             {
                 message = this.DecodeRedisArrayHeader((ArrayHeaderRedisMessage)message);
@@ -59,19 +54,16 @@ namespace DotNetty.Codecs.Redis
             {
                 return ArrayRedisMessage.Null;
             }
-
-            if (header.Length == 0)
+            else if (header.Length == 0)
             {
                 return ArrayRedisMessage.Empty;
             }
-
-            if (header.Length > 0)
+            else if (header.Length > 0)
             {
                 // Currently, this codec doesn't support `long` length for arrays because Java's List.size() is int.
                 if (header.Length > int.MaxValue)
                 {
-                    throw new CodecException(
-                        $"This codec doesn't support longer length than {int.MaxValue}");
+                    throw new CodecException($"This codec doesn't support longer length than {int.MaxValue}");
                 }
 
                 // start aggregating array
@@ -82,7 +74,7 @@ namespace DotNetty.Codecs.Redis
             throw new CodecException($"Bad length: {header.Length}");
         }
 
-        class AggregateState
+        sealed class AggregateState
         {
             internal int Length { get; }
 
