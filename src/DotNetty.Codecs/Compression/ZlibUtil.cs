@@ -46,7 +46,11 @@ namespace DotNetty.Codecs.Compression
             int overhead;
             switch (wrapper)
             {
+                case ZlibWrapper.None:
+                    overhead = 0;
+                    break;
                 case ZlibWrapper.Zlib:
+                case ZlibWrapper.ZlibOrNone:
                     overhead = 2;
                     break;
                 case ZlibWrapper.Gzip:

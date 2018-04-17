@@ -9,6 +9,12 @@ namespace DotNetty.Codecs.Http
 
     public sealed class HttpScheme
     {
+        // Scheme for non-secure HTTP connection.
+        public static readonly HttpScheme Http = new HttpScheme(80, "http");
+
+        // Scheme for secure HTTP connection.
+        public static readonly HttpScheme Https = new HttpScheme(443, "https");
+
         readonly int port;
         readonly AsciiString name;
 

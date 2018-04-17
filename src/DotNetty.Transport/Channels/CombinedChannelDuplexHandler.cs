@@ -66,7 +66,6 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-
         void CheckAdded()
         {
             if (!this.handlerAdded)

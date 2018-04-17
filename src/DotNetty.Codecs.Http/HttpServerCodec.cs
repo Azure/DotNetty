@@ -98,7 +98,6 @@ namespace DotNetty.Codecs.Http
                 base.SanitizeHeadersBeforeEncode(msg, isAlwaysEmpty);
             }
 
-
             protected override bool IsContentAlwaysEmpty(IHttpResponse msg)
             {
                 this.method = this.serverCodec.queue.Count > 0 ? this.serverCodec.queue.Dequeue() : null;

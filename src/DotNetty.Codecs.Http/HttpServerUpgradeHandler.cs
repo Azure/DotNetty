@@ -219,7 +219,6 @@ namespace DotNetty.Codecs.Http
             }
 
             // Make sure the CONNECTION header is present.
-            ;
             if (!request.Headers.TryGet(HttpHeaderNames.Connection, out ICharSequence connectionHeader))
             {
                 return false;
@@ -310,7 +309,6 @@ namespace DotNetty.Codecs.Http
                 }
                 if (c == ',')
                 {
-                    // Add the string and reset the builder for the next protocol.
                     // Add the string and reset the builder for the next protocol.
                     protocols.Add(new AsciiString(builder.ToString()));
                     builder.Length = 0;

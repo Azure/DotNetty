@@ -72,6 +72,7 @@ namespace DotNetty.Codecs.Compression
 
             this.wrapperOverhead = ZlibUtil.WrapperOverhead(wrapper);
         }
+
         public JZlibEncoder(byte[] dictionary) : this(6, dictionary)
         {
         }
