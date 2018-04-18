@@ -27,7 +27,7 @@ namespace DotNetty.Transport.Channels.Sockets
         readonly IPEndPoint anyRemoteEndPoint;
 
         public SocketDatagramChannel()
-            : this(new Socket(SocketType.Dgram, ProtocolType.Udp))
+            : this(new Socket(DefaultAddressFamily, SocketType.Dgram, ProtocolType.Udp) { DualMode = UseDualMode })
         {
         }
 
@@ -48,6 +48,9 @@ namespace DotNetty.Transport.Channels.Sockets
         public override IChannelConfiguration Configuration => this.config;
 
         public override ChannelMetadata Metadata => ChannelMetadata;
+
+        static AddressFamily DefaultAddressFamily => Socket.OSSupportsIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+        static bool UseDualMode => Socket.OSSupportsIPv6;
 
         protected override EndPoint LocalAddressInternal => this.Socket.LocalEndPoint;
 
