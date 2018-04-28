@@ -179,7 +179,6 @@ namespace DotNetty.Codecs.Http.Multipart
                 this.fileStream = null;
                 throw new IOException($"Out of size: {this.Size} > {this.DefinedSize}");
             }
-            this.isRenamed = true;
             this.SetCompleted();
         }
 
