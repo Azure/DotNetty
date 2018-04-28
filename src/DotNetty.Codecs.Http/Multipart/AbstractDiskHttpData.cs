@@ -109,7 +109,7 @@ namespace DotNetty.Codecs.Http.Multipart
                     buffer.SetReaderIndex(buffer.ReaderIndex + localsize);
                     this.fileStream.Flush();
 
-                    this.Size += buffer.ReadableBytes;
+                    this.Size += localsize;
                 }
                 finally
                 {
@@ -124,6 +124,7 @@ namespace DotNetty.Codecs.Http.Multipart
                 {
                     this.fileStream = this.TempFile();
                 }
+                this.fileStream.Position = 0;
                 this.SetCompleted();
             }
             else
