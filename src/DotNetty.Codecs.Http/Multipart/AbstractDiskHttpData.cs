@@ -16,6 +16,7 @@ namespace DotNetty.Codecs.Http.Multipart
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<AbstractDiskHttpData>();
 
+        bool isRenamed;
         FileStream fileStream;
 
         protected AbstractDiskHttpData(string name, Encoding charset, long size) : base(name, charset, size)
@@ -178,24 +179,27 @@ namespace DotNetty.Codecs.Http.Multipart
                 this.fileStream = null;
                 throw new IOException($"Out of size: {this.Size} > {this.DefinedSize}");
             }
-            //isRenamed = true;
+            this.isRenamed = true;
             this.SetCompleted();
         }
 
         public override void Delete()
         {
-            if (this.fileStream != null)
+            if (!this.isRenamed)
             {
-                try
+                if (this.fileStream != null)
                 {
-                    Delete(this.fileStream);
-                }
-                catch (IOException error)
-                {
-                    Logger.Warn("Failed to delete file.", error);
-                }
+                    try
+                    {
+                        Delete(this.fileStream);
+                    }
+                    catch (IOException error)
+                    {
+                        Logger.Warn("Failed to delete file.", error);
+                    }
 
-                this.fileStream = null;
+                    this.fileStream = null;
+                }
             }
         }
 
@@ -300,6 +304,7 @@ namespace DotNetty.Codecs.Http.Multipart
                     Logger.Warn("Failed to delete file.", exception);
                 }
                 this.fileStream = destination;
+                this.isRenamed = true;
                 return true;
             }
             else
