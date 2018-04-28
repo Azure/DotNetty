@@ -78,6 +78,7 @@ namespace DotNetty.Codecs.Http.Multipart
                 buffer.GetBytes(buffer.ReaderIndex, this.fileStream, buffer.ReadableBytes);
                 buffer.SetReaderIndex(buffer.ReaderIndex + buffer.ReadableBytes);
                 this.fileStream.Flush();
+                this.fileStream.Position = 0;
                 this.SetCompleted();
             }
             finally
