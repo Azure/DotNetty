@@ -271,27 +271,9 @@ namespace DotNetty.Codecs.Http.Multipart
                 throw new InvalidOperationException("No file defined so cannot be renamed");
             }
 
-            // must copy
-            long chunkSize = 8196;
-            int position = 0;
-            while (position < this.Size)
-            {
-                if (chunkSize < this.Size - position)
-                {
-                    chunkSize = this.Size - position;
-                }
+            this.fileStream.CopyTo(destination, 8196);
 
-                var buffer = new byte[chunkSize];
-                int read = this.fileStream.Read(buffer, 0, (int)chunkSize);
-                if (read <= 0)
-                {
-                    break;
-                }
-
-                destination.Write(buffer, 0, read);
-                position += read;
-            }
-
+            long position = this.fileStream.Position;
             if (position == this.Size)
             {
                 try
