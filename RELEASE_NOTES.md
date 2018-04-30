@@ -1,3 +1,16 @@
+#### 0.4.8 April 24, 2018
+- Unsafe direct buffers
+- HTTP 1.1 codec
+- FlowControlHandler
+- Channel pool
+- Better Buffer-String integration
+- Better shutdown handling for sockets
+- Realigned Redis codec
+- Fixes to LenghtFieldPrepender, LengthFieldBasedDecoder
+- Fixes to libuv-based transport
+- Fixes to buffer management on flush for .NET Core
+- Fixes to ResourceLeakDetector
+
 #### 0.4.6 August 2 2017
 - Small fixes (#259, #260, #264, #266)
 - Properly handling handshake with AutoRead = false when Read is not issued by upstream handlers in pipeline (#263)
