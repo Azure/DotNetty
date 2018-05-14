@@ -7,6 +7,7 @@ namespace DotNetty.Buffers.Tests
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using DotNetty.Common.Utilities;
     using Xunit;
 
     public sealed class AbstractReferenceCountedByteBufferTests
@@ -128,9 +129,9 @@ namespace DotNetty.Buffers.Tests
 
             public override bool HasMemoryAddress => throw new NotSupportedException();
 
-            public override ref byte GetPinnableMemoryAddress() => throw new NotSupportedException();
-
             public override IntPtr AddressOfPinnedMemory() => throw new NotSupportedException();
+
+            public override ref byte GetPinnableMemoryAddress() => throw new NotSupportedException();
 
             public override IByteBuffer Unwrap() => throw new NotSupportedException();
 

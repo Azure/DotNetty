@@ -17,17 +17,17 @@ namespace DotNetty.Transport.Channels
         IByteBufferAllocator Allocator { get; }
 
         /// <summary>
-        ///     Returns the {@link EventExecutor} which is used to execute an arbitrary task.
+        /// Returns the <see cref="IEventExecutor"/> which is used to execute an arbitrary task.
         /// </summary>
         IEventExecutor Executor { get; }
 
         /// <summary>
-        ///     The unique name of the {@link IChannelHandlerContext}.
+        /// The unique name of the <see cref="IChannelHandlerContext"/>.
         /// </summary>
         /// <remarks>
-        ///     The name was used when the {@link IChannelHandler}
-        ///     was added to the {@link IChannelPipeline}. This name can also be used to access the registered
-        ///     {@link IChannelHandler} from the {@link IChannelPipeline}.
+        /// The name was used when the <see cref="IChannelHandler"/> was added to the <see cref="IChannelPipeline"/>.
+        /// This name can also be used to access the registered <see cref="IChannelHandler"/> from the
+        /// <see cref="IChannelPipeline"/>.
         /// </remarks>
         string Name { get; }
 
@@ -36,19 +36,19 @@ namespace DotNetty.Transport.Channels
         bool Removed { get; }
 
         /// <summary>
-        ///     A {@link Channel} was registered to its {@link EventLoop}.
-        ///     This will result in having the {@link ChannelHandler#channelRegistered(ChannelHandlerContext)} method
-        ///     called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///     {@link Channel}.
+        /// A <see cref="IChannel"/> was registered to its <see cref="IEventLoop"/>. This will result in having the
+        /// <see cref="IChannelHandler.ChannelRegistered"/> method called of the next <see cref="IChannelHandler"/>
+        /// contained in the <see cref="IChannelPipeline"/> of the <see cref="IChannel"/>.
         /// </summary>
+        /// <returns>The current <see cref="IChannelHandlerContext"/>.</returns>
         IChannelHandlerContext FireChannelRegistered();
 
         /// <summary>
-        ///     A {@link Channel} was unregistered from its {@link EventLoop}.
-        ///     This will result in having the {@link ChannelHandler#channelUnregistered(ChannelHandlerContext)} method
-        ///     called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///     {@link Channel}.
+        /// A <see cref="IChannel"/> was unregistered from its <see cref="IEventLoop"/>. This will result in having the
+        /// <see cref="IChannelHandler.ChannelUnregistered"/> method called of the next <see cref="IChannelHandler"/>
+        /// contained in the <see cref="IChannelPipeline"/> of the <see cref="IChannel"/>.
         /// </summary>
+        /// <returns>The current <see cref="IChannelHandlerContext"/>.</returns>
         IChannelHandlerContext FireChannelUnregistered();
 
         IChannelHandlerContext FireChannelActive();
@@ -74,67 +74,64 @@ namespace DotNetty.Transport.Channels
         Task WriteAndFlushAsync(object message);
 
         /// <summary>
-        ///     Request to bind to the given {@link SocketAddress} and notify the {@link ChannelFuture} once the operation
-        ///     completes, either because the operation was successful or because of an error.
-        ///     <p />
-        ///     This will result in having the
-        ///     {@link ChannelHandler#bind(ChannelHandlerContext, SocketAddress, ChannelPromise)} method
-        ///     called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///     {@link Channel}.
+        /// Request to bind to the given <see cref="EndPoint"/>.
+        /// <para>
+        /// This will result in having the <see cref="IChannelHandler.BindAsync"/> method called of the next
+        /// <see cref="IChannelHandler"/> contained in the <see cref="IChannelPipeline"/> of the
+        /// <see cref="IChannel"/>.
+        /// </para>
         /// </summary>
+        /// <param name="localAddress">The <see cref="EndPoint"/> to bind to.</param>
+        /// <returns>An await-able task.</returns>
         Task BindAsync(EndPoint localAddress);
 
         /// <summary>
-        ///     Request to connect to the given {@link SocketAddress} and notify the {@link ChannelFuture} once the operation
-        ///     completes, either because the operation was successful or because of an error.
-        ///     <p />
-        ///     If the connection fails because of a connection timeout, the {@link ChannelFuture} will get failed with
-        ///     a {@link ConnectTimeoutException}. If it fails because of connection refused a {@link ConnectException}
-        ///     will be used.
-        ///     <p />
-        ///     This will result in having the
-        ///     {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)}
-        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///     {@link Channel}.
+        /// Request to connect to the given <see cref="EndPoint"/>.
+        /// <para>
+        /// This will result in having the <see cref="IChannelHandler.ConnectAsync"/> method called of the next
+        /// <see cref="IChannelHandler"/> contained in the <see cref="IChannelPipeline"/> of the
+        /// <see cref="IChannel"/>.
+        /// </para>
         /// </summary>
+        /// <param name="remoteAddress">The <see cref="EndPoint"/> to connect to.</param>
+        /// <returns>An await-able task.</returns>
         Task ConnectAsync(EndPoint remoteAddress);
 
         /// <summary>
-        ///     Request to connect to the given {@link SocketAddress} while bind to the localAddress and notify the
-        ///     {@link ChannelFuture} once the operation completes, either because the operation was successful or because of
-        ///     an error.
-        ///     <p />
-        ///     This will result in having the
-        ///     {@link ChannelHandler#connect(ChannelHandlerContext, SocketAddress, SocketAddress, ChannelPromise)}
-        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///     {@link Channel}.
+        /// Request to connect to the given <see cref="EndPoint"/> while also binding to the localAddress.
+        /// <para>
+        /// This will result in having the <see cref="IChannelHandler.ConnectAsync"/> method called of the next
+        /// <see cref="IChannelHandler"/> contained in the <see cref="IChannelPipeline"/> of the
+        /// <see cref="IChannel"/>.
+        /// </para>
         /// </summary>
+        /// <param name="remoteAddress">The <see cref="EndPoint"/> to connect to.</param>
+        /// <param name="localAddress">The <see cref="EndPoint"/> to bind to.</param>
+        /// <returns>An await-able task.</returns>
         Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress);
 
         /// <summary>
-        ///     Request to disconnect from the remote peer and notify the {@link ChannelFuture} once the operation completes,
-        ///     either because the operation was successful or because of an error.
-        ///     <p />
-        ///     This will result in having the
-        ///     {@link ChannelHandler#disconnect(ChannelHandlerContext, ChannelPromise)}
-        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///     {@link Channel}.
+        /// Request to disconnect from the remote peer.
+        /// <para>
+        /// This will result in having the <see cref="IChannelHandler.DisconnectAsync"/> method called of the next
+        /// <see cref="IChannelHandler"/> contained in the <see cref="IChannelPipeline"/> of the
+        /// <see cref="IChannel"/>.
+        /// </para>
         /// </summary>
+        /// <returns>An await-able task.</returns>
         Task DisconnectAsync();
 
         Task CloseAsync();
 
         /// <summary>
-        ///     Request to deregister from the previous assigned {@link EventExecutor} and notify the
-        ///     {@link ChannelFuture} once the operation completes, either because the operation was successful or because of
-        ///     an error.
-        ///     The given {@link ChannelPromise} will be notified.
-        ///     <p />
-        ///     This will result in having the
-        ///     {@link ChannelHandler#deregister(ChannelHandlerContext, ChannelPromise)}
-        ///     method called of the next {@link ChannelHandler} contained in the {@link ChannelPipeline} of the
-        ///     {@link Channel}.
+        /// Request to deregister from the previous assigned <see cref="IEventExecutor"/>.
+        /// <para>
+        /// This will result in having the <see cref="IChannelHandler.DeregisterAsync"/> method called of the next
+        /// <see cref="IChannelHandler"/> contained in the <see cref="IChannelPipeline"/> of the
+        /// <see cref="IChannel"/>.
+        /// </para>
         /// </summary>
+        /// <returns>An await-able task.</returns>
         Task DeregisterAsync();
     }
 }

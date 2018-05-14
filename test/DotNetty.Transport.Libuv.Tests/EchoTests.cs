@@ -29,6 +29,7 @@ namespace DotNetty.Transport.Libuv.Tests
         {
             this.output = output;
             this.group = new EventLoopGroup(1);
+            this.random.NextBytes(this.data);
         }
 
         [Fact]
@@ -149,6 +150,8 @@ namespace DotNetty.Transport.Libuv.Tests
                 var actual = new byte[msg.ReadableBytes];
                 msg.ReadBytes(actual);
                 int lastIdx = this.counter;
+
+                Assert.True(lastIdx + actual.Length <= this.expected.Length);
                 for (int i = 0; i < actual.Length; i++)
                 {
                     Assert.Equal(this.expected[i + lastIdx], actual[i]);

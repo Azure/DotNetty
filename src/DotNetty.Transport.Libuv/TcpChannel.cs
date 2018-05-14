@@ -13,8 +13,6 @@ namespace DotNetty.Transport.Libuv
     {
         static readonly ChannelMetadata TcpMetadata = new ChannelMetadata(false);
 
-        static readonly Action<object> FlushAction = c => ((TcpChannel)c).Flush();
-
         readonly TcpChannelConfig config;
         Tcp tcp;
         bool isBound;
@@ -138,32 +136,12 @@ namespace DotNetty.Transport.Libuv
 
         protected override void DoWrite(ChannelOutboundBuffer input)
         {
-            int writeSpinCount = this.config.WriteSpinCount;
-            var loopExecutor = (LoopExecutor)this.EventLoop;
-
-            long writtenBytes = 0;
-            int inputCount = input.Size;
-            do
+            if (input.Size > 0)
             {
-                if (inputCount == 0)
-                {
-                    break;
-                }
-
+                this.SetState(StateFlags.WriteScheduled);
+                var loopExecutor = (LoopExecutor)this.EventLoop;
                 WriteRequest request = loopExecutor.WriteRequestPool.Take();
-                int bytes = request.Prepare((TcpChannelUnsafe)this.Unsafe, input);
-                int flushed = request.DoWrite();
-
-                writtenBytes += bytes;
-                inputCount -= flushed;
-                writeSpinCount--;
-            }
-            while (writeSpinCount > 0);
-            input.RemoveBytes(writtenBytes, false);
-
-            if (inputCount > 0)
-            {
-                loopExecutor.Execute(FlushAction, this);
+                request.DoWrite((TcpChannelUnsafe)this.Unsafe, input);
             }
         }
 

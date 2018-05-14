@@ -3,7 +3,6 @@
 
 namespace DotNetty.Handlers.Tests
 {
-    using System.Threading.Tasks;
     using DotNetty.Tests.Common;
     using Xunit;
     using Xunit.Abstractions;
@@ -18,8 +17,8 @@ namespace DotNetty.Handlers.Tests
 
     public class IdleStateHandlerTest : TestBase
     {
-        private readonly TimeSpan oneSecond = TimeSpan.FromSeconds(1);
-        private readonly TimeSpan zeroSecond = TimeSpan.Zero;
+        readonly TimeSpan oneSecond = TimeSpan.FromSeconds(1);
+        readonly TimeSpan zeroSecond = TimeSpan.Zero;
 
         public IdleStateHandlerTest(ITestOutputHelper output)
             : base(output)
@@ -29,35 +28,35 @@ namespace DotNetty.Handlers.Tests
         [Fact]
         public void TestReaderIdle()
         {
-            TestableIdleStateHandler idleStateHandler = new TestableIdleStateHandler(
-                    false, oneSecond, zeroSecond, zeroSecond);
+            var idleStateHandler = new TestableIdleStateHandler(
+                    false, this.oneSecond, this.zeroSecond, this.zeroSecond);
 
             // We start with one FIRST_READER_IDLE_STATE_EVENT, followed by an infinite number of READER_IDLE_STATE_EVENTs
-            AnyIdle(idleStateHandler, IdleStateEvent.FirstReaderIdleStateEvent,
+            this.AnyIdle(idleStateHandler, IdleStateEvent.FirstReaderIdleStateEvent,
                     IdleStateEvent.ReaderIdleStateEvent, IdleStateEvent.ReaderIdleStateEvent);
         }
 
         [Fact]
         public void TestWriterIdle()
         {
-            TestableIdleStateHandler idleStateHandler = new TestableIdleStateHandler(
-                    false, zeroSecond, oneSecond, zeroSecond);
+            var idleStateHandler = new TestableIdleStateHandler(
+                    false, this.zeroSecond, this.oneSecond, this.zeroSecond);
 
-            AnyIdle(idleStateHandler, IdleStateEvent.FirstWriterIdleStateEvent,
+            this.AnyIdle(idleStateHandler, IdleStateEvent.FirstWriterIdleStateEvent,
                     IdleStateEvent.WriterIdleStateEvent, IdleStateEvent.WriterIdleStateEvent);
         }
 
         [Fact]
         public void TestAllIdle()
         {
-            TestableIdleStateHandler idleStateHandler = new TestableIdleStateHandler(
-                    false, zeroSecond, zeroSecond, oneSecond);
+            var idleStateHandler = new TestableIdleStateHandler(
+                    false, this.zeroSecond, this.zeroSecond, this.oneSecond);
 
-            AnyIdle(idleStateHandler, IdleStateEvent.FirstAllIdleStateEvent,
+            this.AnyIdle(idleStateHandler, IdleStateEvent.FirstAllIdleStateEvent,
                     IdleStateEvent.AllIdleStateEvent, IdleStateEvent.AllIdleStateEvent);
         }
 
-        private void AnyIdle(TestableIdleStateHandler idleStateHandler, params object[] expected)
+        void AnyIdle(TestableIdleStateHandler idleStateHandler, params object[] expected)
         {
             Assert.True(expected.Length >= 1, "The number of expected events must be >= 1");
 
@@ -80,7 +79,7 @@ namespace DotNetty.Handlers.Tests
                 // Compare the expected with the actual IdleStateEvents
                 for (int i = 0; i < expected.Length; i++)
                 {
-                    Object evt = events[i];
+                    object evt = events[i];
                     Assert.Same(expected[i], evt);//"Element " + i + " is not matching"
                 }
             }
@@ -93,46 +92,46 @@ namespace DotNetty.Handlers.Tests
         [Fact]
         public void TestReaderNotIdle()
         {
-            TestableIdleStateHandler idleStateHandler = new TestableIdleStateHandler(
-                    false, oneSecond, zeroSecond, zeroSecond);
+            var idleStateHandler = new TestableIdleStateHandler(
+                    false, this.oneSecond, this.zeroSecond, this.zeroSecond);
 
             Action<EmbeddedChannel> action = (channel) => channel.WriteInbound("Hello, World!");
 
-            AnyNotIdle(idleStateHandler, action, IdleStateEvent.FirstReaderIdleStateEvent);
+            this.AnyNotIdle(idleStateHandler, action, IdleStateEvent.FirstReaderIdleStateEvent);
         }
 
         [Fact]
         public void TestWriterNotIdle()
         {
-            TestableIdleStateHandler idleStateHandler = new TestableIdleStateHandler(
-                    false, zeroSecond, oneSecond, zeroSecond);
+            var idleStateHandler = new TestableIdleStateHandler(
+                    false, this.zeroSecond, this.oneSecond, this.zeroSecond);
 
             Action<EmbeddedChannel> action = (channel) => channel.WriteAndFlushAsync("Hello, World!");
 
-            AnyNotIdle(idleStateHandler, action, IdleStateEvent.FirstWriterIdleStateEvent);
+            this.AnyNotIdle(idleStateHandler, action, IdleStateEvent.FirstWriterIdleStateEvent);
         }
 
         [Fact]
         public void TestAllNotIdle()
         {
             // Reader...
-            TestableIdleStateHandler idleStateHandler = new TestableIdleStateHandler(
-                    false, zeroSecond, zeroSecond, oneSecond);
+            var idleStateHandler = new TestableIdleStateHandler(
+                    false, this.zeroSecond, this.zeroSecond, this.oneSecond);
 
             Action<EmbeddedChannel> reader = (channel) => channel.WriteInbound("Hello, World!");
 
-            AnyNotIdle(idleStateHandler, reader, IdleStateEvent.FirstAllIdleStateEvent);
+            this.AnyNotIdle(idleStateHandler, reader, IdleStateEvent.FirstAllIdleStateEvent);
 
             // Writer...
             idleStateHandler = new TestableIdleStateHandler(
-                    false, zeroSecond, zeroSecond, oneSecond);
+                    false, this.zeroSecond, this.zeroSecond, this.oneSecond);
 
             Action<EmbeddedChannel> writer = (channel) => channel.WriteAndFlushAsync("Hello, World!");
 
-            AnyNotIdle(idleStateHandler, writer, IdleStateEvent.FirstAllIdleStateEvent);
+            this.AnyNotIdle(idleStateHandler, writer, IdleStateEvent.FirstAllIdleStateEvent);
         }
 
-        private void AnyNotIdle(TestableIdleStateHandler idleStateHandler,
+        void AnyNotIdle(TestableIdleStateHandler idleStateHandler,
             Action<EmbeddedChannel> action, object expected)
         {
             var events = new List<object>();
@@ -150,15 +149,15 @@ namespace DotNetty.Handlers.Tests
                 // we've just performed an action on the channel that is meant
                 // to reset the idle task.
                 TimeSpan delayInNanos = idleStateHandler.Delay;
-                Assert.NotEqual(zeroSecond, delayInNanos);
+                Assert.NotEqual(this.zeroSecond, delayInNanos);
 
                 idleStateHandler.TickRun(TimeSpan.FromTicks(delayInNanos.Ticks / 2));
-                Assert.Equal(0, events.Count);
+                Assert.Empty(events);
 
                 // Advance the ticker by the full amount and it should yield
                 // in an IdleStateEvent.
                 idleStateHandler.TickRun();
-                Assert.Equal(1, events.Count);
+                Assert.Single(events);
                 Assert.Same(expected, events[0]);
             }
             finally
@@ -168,15 +167,15 @@ namespace DotNetty.Handlers.Tests
         }
 
         [Fact]
-        public void TestObserveWriterIdle() => ObserveOutputIdle(true);
+        public void TestObserveWriterIdle() => this.ObserveOutputIdle(true);
 
         [Fact]
-        public void TestObserveAllIdle() => ObserveOutputIdle(false);
+        public void TestObserveAllIdle() => this.ObserveOutputIdle(false);
 
-        private void ObserveOutputIdle(bool writer)
+        void ObserveOutputIdle(bool writer)
         {
-            TimeSpan writerIdleTime = zeroSecond;
-            TimeSpan allIdleTime = zeroSecond;
+            TimeSpan writerIdleTime = this.zeroSecond;
+            TimeSpan allIdleTime = this.zeroSecond;
             IdleStateEvent expected;
 
             if (writer)
@@ -190,13 +189,13 @@ namespace DotNetty.Handlers.Tests
                 expected = IdleStateEvent.FirstAllIdleStateEvent;
             }
 
-            TestableIdleStateHandler idleStateHandler = new TestableIdleStateHandler(
-                    true, zeroSecond, writerIdleTime, allIdleTime);
+            var idleStateHandler = new TestableIdleStateHandler(
+                    true, this.zeroSecond, writerIdleTime, allIdleTime);
 
             var events = new List<object>();
             var handler = new TestEventChannelInboundHandlerAdapter(events);
 
-            ObservableChannel channel = new ObservableChannel(idleStateHandler, handler);
+            var channel = new ObservableChannel(idleStateHandler, handler);
             try
             {
                 // We're writing 3 messages that will be consumed at different rates!
@@ -206,7 +205,7 @@ namespace DotNetty.Handlers.Tests
 
                 // Establish a baseline. We're not consuming anything and let it idle once.
                 idleStateHandler.TickRun();
-                Assert.Equal(1, events.Count);
+                Assert.Single(events);
                 Assert.Same(expected, events[0]);
                 events.Clear();
 
@@ -220,7 +219,7 @@ namespace DotNetty.Handlers.Tests
                 AssertNotNullAndRelease(channel.Consume());
 
                 idleStateHandler.TickRun(TimeSpan.FromSeconds(2));
-                Assert.Equal(0, events.Count);
+                Assert.Empty(events);
                 Assert.Equal(TimeSpan.FromSeconds(11), idleStateHandler.Tick); // 5s + 4s + 2s
 
                 // Consume one message in 3 seconds, then be idle for 4 seconds,
@@ -230,13 +229,13 @@ namespace DotNetty.Handlers.Tests
                 AssertNotNullAndRelease(channel.Consume());
 
                 idleStateHandler.TickRun(TimeSpan.FromSeconds(4));
-                Assert.Equal(0, events.Count);
+                Assert.Empty(events);
                 Assert.Equal(TimeSpan.FromSeconds(18), idleStateHandler.Tick); // 11s + 3s + 4s
 
                 // Don't consume a message and be idle for 5 seconds.
                 // We should get an IdleStateEvent!
                 idleStateHandler.TickRun(TimeSpan.FromSeconds(5));
-                Assert.Equal(1, events.Count);
+                Assert.Single(events);
                 Assert.Equal(TimeSpan.FromSeconds(23), idleStateHandler.Tick); // 18s + 5s
                 events.Clear();
 
@@ -247,7 +246,7 @@ namespace DotNetty.Handlers.Tests
                 AssertNotNullAndRelease(channel.Consume());
 
                 idleStateHandler.TickRun(TimeSpan.FromSeconds(1));
-                Assert.Equal(0, events.Count);
+                Assert.Empty(events);
                 Assert.Equal(TimeSpan.FromSeconds(26), idleStateHandler.Tick); // 23s + 2s + 1s
 
                 // There are no messages left! Advance the ticker by 3 seconds,
@@ -258,7 +257,7 @@ namespace DotNetty.Handlers.Tests
                 Assert.Null(channel.Consume());
 
                 idleStateHandler.TickRun(TimeSpan.FromSeconds(2));
-                Assert.Equal(1, events.Count);
+                Assert.Single(events);
                 Assert.Equal(TimeSpan.FromSeconds(31), idleStateHandler.Tick); // 26s + 3s + 2s
 
                 // q.e.d.
@@ -269,7 +268,7 @@ namespace DotNetty.Handlers.Tests
             }
         }
 
-        private static void AssertNotNullAndRelease(Object msg)
+        static void AssertNotNullAndRelease(object msg)
         {
             Assert.NotNull(msg);
             ReferenceCountUtil.Release(msg);
@@ -292,9 +291,9 @@ namespace DotNetty.Handlers.Tests
             {
             }
 
-            public void Run() => task.Invoke();
+            void Run() => this.task.Invoke();
 
-            public void TickRun() => this.TickRun(Delay);
+            public void TickRun() => this.TickRun(this.Delay);
 
             public void TickRun(TimeSpan delay)
             {
@@ -328,7 +327,7 @@ namespace DotNetty.Handlers.Tests
 
             public override void UserEventTriggered(IChannelHandlerContext context, object evt)
             {
-                events.Add(evt);
+                this.events.Add(evt);
             }
         }
 
@@ -347,16 +346,13 @@ namespace DotNetty.Handlers.Tests
 
             public object Consume()
             {
-                ChannelOutboundBuffer buf = Unsafe.OutboundBuffer;
-                if (buf != null)
+                ChannelOutboundBuffer buf = this.Unsafe.OutboundBuffer;
+                object msg = buf?.Current;
+                if (msg != null)
                 {
-                    Object msg = buf.Current;
-                    if (msg != null)
-                    {
-                        ReferenceCountUtil.Retain(msg);
-                        buf.Remove();
-                        return msg;
-                    }
+                    ReferenceCountUtil.Retain(msg);
+                    buf.Remove();
+                    return msg;
                 }
                 return null;
             }

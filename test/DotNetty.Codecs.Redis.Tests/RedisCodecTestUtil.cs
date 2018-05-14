@@ -10,26 +10,21 @@ namespace DotNetty.Codecs.Redis.Tests
 
     static class RedisCodecTestUtil
     {
-        internal static byte[] Bytes(this IByteBuffer byteBuffer)
+        internal static byte[] BytesOf(long value) => Encoding.ASCII.GetBytes(Convert.ToString(value, CultureInfo.InvariantCulture));
+
+        internal static byte[] BytesOf(string value) => Encoding.UTF8.GetBytes(value);
+
+        internal static byte[] BytesOf(IByteBuffer byteBuffer)
         {
             var data = new byte[byteBuffer.ReadableBytes];
             byteBuffer.ReadBytes(data);
-
             return data;
         }
-        internal static byte[] Bytes(this long value) => 
-            Encoding.ASCII.GetBytes(Convert.ToString(value, CultureInfo.InvariantCulture));
 
-        internal static IByteBuffer Buffer(this long value) => 
-            Buffer(value.Bytes());
+        internal static string StringOf(IByteBuffer buf) => Encoding.UTF8.GetString(BytesOf(buf));
 
-        internal static IByteBuffer Buffer(this string value) => 
-            Buffer(Bytes(value));
+        internal static IByteBuffer ByteBufOf(string s) => ByteBufOf(BytesOf(s));
 
-        internal static byte[] Bytes(this string value) => 
-            Encoding.UTF8.GetBytes(value);
-
-        internal static IByteBuffer Buffer(this byte[] data) => 
-            Unpooled.WrappedBuffer(data);
+        internal static IByteBuffer ByteBufOf(byte[] data) => Unpooled.WrappedBuffer(data);
     }
 }

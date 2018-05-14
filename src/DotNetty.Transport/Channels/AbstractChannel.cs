@@ -36,9 +36,9 @@ namespace DotNetty.Transport.Channels
         string strVal;
 
         /// <summary>
-        ///     Creates a new instance.
+        /// Creates a new instance.
         /// </summary>
-        /// <param name="parent">the parent of this channel. <c>null</c> if there's no parent.</param>
+        /// <param name="parent">The parent of this channel. Pass <c>null</c> if there's no parent.</param>
         protected AbstractChannel(IChannel parent)
         {
             this.Parent = parent;
@@ -48,9 +48,10 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Creates a new instance.
+        /// Creates a new instance.
         /// </summary>
-        /// <param name="parent">the parent of this channel. <c>null</c> if there's no parent.</param>
+        /// <param name="parent">The parent of this channel. Pass <c>null</c> if there's no parent.</param>
+        /// <param name="id">An <see cref="IChannelId"/> for the new channel.</param>
         protected AbstractChannel(IChannel parent, IChannelId id)
         {
             this.Parent = parent;
@@ -134,6 +135,9 @@ namespace DotNetty.Transport.Channels
 
         protected abstract EndPoint RemoteAddressInternal { get; }
 
+        /// <summary>
+        /// Resets the stored <see cref="RemoteAddress"/>.
+        /// </summary>
         protected void InvalidateRemoteAddress() => this.remoteAddress = null;
 
         protected EndPoint CacheRemoteAddress()
@@ -149,13 +153,13 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        /// <summary>
-        ///     Reset the stored remoteAddress
-        /// </summary>
         public bool Registered => this.registered;
 
+        /// <summary>
         /// Returns a new <see cref="DefaultChannelId"/> instance. Subclasses may override this method to assign custom
         /// <see cref="IChannelId"/>s to <see cref="IChannel"/>s that use the <see cref="AbstractChannel"/> constructor.
+        /// </summary>
+        /// <returns>A new <see cref="DefaultChannelId"/> instance.</returns>
         protected virtual IChannelId NewId() => DefaultChannelId.NewInstance();
 
         /// <summary>Returns a new pipeline instance.</summary>
@@ -194,29 +198,28 @@ namespace DotNetty.Transport.Channels
         public IChannelUnsafe Unsafe => this.channelUnsafe;
 
         /// <summary>
-        ///     Create a new <see cref="AbstractUnsafe" /> instance which will be used for the life-time of the
-        ///     <see cref="IChannel" />
+        /// Create a new <see cref="AbstractUnsafe" /> instance which will be used for the life-time of the
+        /// <see cref="IChannel" />
         /// </summary>
         protected abstract IChannelUnsafe NewUnsafe();
 
         /// <summary>
-        ///     Returns the ID of this channel.
+        /// Returns the ID of this channel.
         /// </summary>
         public override int GetHashCode() => this.Id.GetHashCode();
 
         /// <summary>
-        ///     Returns <c>true</c> if and only if the specified object is identical
-        ///     with this channel (i.e. <c>this == o</c>).
+        /// Returns <c>true</c> if and only if the specified object is identical
+        /// with this channel (i.e. <c>this == o</c>).
         /// </summary>
         public override bool Equals(object o) => this == o;
 
         public int CompareTo(IChannel o) => ReferenceEquals(this, o) ? 0 : this.Id.CompareTo(o.Id);
 
         /// <summary>
-        ///     Returns the string representation of this channel.  The returned
-        ///     string contains the {@linkplain #hashCode()} ID}, {@linkplain #localAddress() local address},
-        ///     and {@linkplain #remoteAddress() remote address} of this channel for
-        ///     easier identification.
+        /// Returns the string representation of this channel. The returned string contains a hex dump of the
+        /// <see cref="IChannelId"/>, the <see cref="LocalAddress"/>, and the <see cref="RemoteAddress"/> of this
+        /// channel for easier identification.
         /// </summary>
         public override string ToString()
         {
@@ -277,7 +280,7 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     <see cref="IChannelUnsafe" /> implementation which sub-classes must extend and use.
+        /// <see cref="IChannelUnsafe" /> implementation which sub-classes must extend and use.
         /// </summary>
         protected abstract class AbstractUnsafe : IChannelUnsafe
         {
@@ -469,7 +472,7 @@ namespace DotNetty.Transport.Channels
                 return this.CloseAsync(new ClosedChannelException(), false);
             }
 
-            Task CloseAsync(Exception cause, bool notify)
+            protected Task CloseAsync(Exception cause, bool notify)
             {
                 var promise = new TaskCompletionSource();
                 if (!promise.SetUncancellable())
@@ -579,11 +582,11 @@ namespace DotNetty.Transport.Channels
             }
 
             /// <summary>
-            ///     This method must NEVER be called directly, but be executed as an
-            ///     extra task with a clean call stack instead. The reason for this
-            ///     is that this method calls {@link ChannelPipeline#fireChannelUnregistered()}
-            ///     directly, which might lead to an unfortunate nesting of independent inbound/outbound
-            ///     events. See the comments input {@link #invokeLater(Runnable)} for more details.
+            /// This method must NEVER be called directly, but be executed as an
+            /// extra task with a clean call stack instead. The reason for this
+            /// is that this method calls <see cref="IChannelPipeline.FireChannelUnregistered"/>
+            /// directly, which might lead to an unfortunate nesting of independent inbound/outbound
+            /// events. See the comments input <see cref="InvokeLater"/> for more details.
             /// </summary>
             public Task DeregisterAsync()
             {
@@ -762,9 +765,9 @@ namespace DotNetty.Transport.Channels
                 {
                     this.channel.DoWrite(outboundBuffer);
                 }
-                catch (Exception t)
+                catch (Exception ex)
                 {
-                    outboundBuffer.FailFlushed(t, true);
+                    Util.CompleteChannelCloseTaskSafely(this.channel, this.CloseAsync(new ClosedChannelException("Failed to write", ex), false));
                 }
                 finally
                 {
@@ -839,13 +842,18 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Return {@code true} if the given {@link EventLoop} is compatible with this instance.
+        /// Checks whether a given <see cref="IEventLoop"/> is compatible with the <see cref="AbstractChannel"/>.
         /// </summary>
+        /// <param name="eventLoop">The <see cref="IEventLoop"/> to check compatibility.</param>
+        /// <returns>
+        /// <c>true</c> if the given <see cref="IEventLoop"/> is compatible with this <see cref="AbstractChannel"/>
+        /// instance, otherwise <c>false</c>.
+        /// </returns>
         protected abstract bool IsCompatible(IEventLoop eventLoop);
 
         /// <summary>
-        ///     Is called after the {@link Channel} is registered with its {@link EventLoop} as part of the register process.
-        ///     Sub-classes may override this method
+        /// Is called after the <see cref="IChannel"/> is registered with its <see cref="IEventLoop"/> as part of the
+        /// register process. Sub-classes may override this method.
         /// </summary>
         protected virtual void DoRegister()
         {
@@ -853,23 +861,24 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Bind the {@link Channel} to the {@link EndPoint}
+        /// Binds the <see cref="IChannel"/> to the <see cref="EndPoint"/>.
         /// </summary>
+        /// <param name="localAddress">The <see cref="EndPoint"/> to bind.</param>
         protected abstract void DoBind(EndPoint localAddress);
 
         /// <summary>
-        ///     Disconnect this {@link Channel} from its remote peer
+        /// Disconnects this <see cref="IChannel"/> from its remote peer.
         /// </summary>
         protected abstract void DoDisconnect();
 
         /// <summary>
-        ///     Close the {@link Channel}
+        /// Closes the <see cref="IChannel"/>.
         /// </summary>
         protected abstract void DoClose();
 
         /// <summary>
-        ///     Deregister the {@link Channel} from its {@link EventLoop}.
-        ///     Sub-classes may override this method
+        /// Deregisters the <see cref="IChannel"/> from its <see cref="IEventLoop"/>. Sub-classes may override this
+        /// method.
         /// </summary>
         protected virtual void DoDeregister()
         {
@@ -877,19 +886,22 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     ScheduleAsync a read operation.
+        /// ScheduleAsync a read operation.
         /// </summary>
         protected abstract void DoBeginRead();
 
         /// <summary>
-        ///     Flush the content of the given buffer to the remote peer.
+        /// Flush the content of the given buffer to the remote peer.
         /// </summary>
         protected abstract void DoWrite(ChannelOutboundBuffer input);
 
         /// <summary>
-        ///     Invoked when a new message is added to a {@link ChannelOutboundBuffer} of this {@link AbstractChannel}, so that
-        ///     the {@link Channel} implementation converts the message to another. (e.g. heap buffer -> direct buffer)
+        /// Invoked when a new message is added to a <see cref="ChannelOutboundBuffer"/> of this
+        /// <see cref="AbstractChannel"/>, so that the <see cref="IChannel"/> implementation converts the message to
+        /// another. (e.g. heap buffer -> direct buffer).
         /// </summary>
+        /// <param name="msg">The message to be filtered.</param>
+        /// <returns>The filtered message.</returns>
         protected virtual object FilterOutboundMessage(object msg) => msg;
     }
 }

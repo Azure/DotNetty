@@ -32,10 +32,10 @@ namespace DotNetty.Transport.Libuv.Tests
             Bootstrap cb = new Bootstrap()
                 .Group(this.group)
                 .Channel<TcpChannel>();
-            ConnectTimeout(cb);
+            ConnectTimeout0(cb);
         }
 
-        static void ConnectTimeout(Bootstrap cb)
+        static void ConnectTimeout0(Bootstrap cb)
         {
             var handler = new TestHandler();
             cb.Handler(handler)
@@ -46,7 +46,7 @@ namespace DotNetty.Transport.Libuv.Tests
             Task<IChannel> task = cb.ConnectAsync(badAddress);
             var error = Assert.Throws<AggregateException>(() => task.Wait(DefaultTimeout));
 
-            Assert.Equal(1, error.InnerExceptions.Count);
+            Assert.Single(error.InnerExceptions);
             Assert.IsType<ConnectTimeoutException>(error.InnerException);
             Assert.Equal(0, handler.Active);
             Assert.Null(handler.Error);
@@ -58,10 +58,10 @@ namespace DotNetty.Transport.Libuv.Tests
             Bootstrap cb = new Bootstrap()
                 .Group(this.group)
                 .Channel<TcpChannel>();
-            ConnectRefused(cb);
+            ConnectRefused0(cb);
         }
 
-        static void ConnectRefused(Bootstrap cb)
+        static void ConnectRefused0(Bootstrap cb)
         {
             var handler = new TestHandler();
             cb.Handler(handler);
@@ -69,7 +69,7 @@ namespace DotNetty.Transport.Libuv.Tests
             Task<IChannel> task = cb.ConnectAsync(badAddress);
             var error = Assert.Throws<AggregateException>(() => task.Wait(DefaultTimeout));
 
-            Assert.Equal(1, error.InnerExceptions.Count);
+            Assert.Single(error.InnerExceptions);
             Assert.IsType<ChannelException>(error.InnerException);
             var exception = (ChannelException)error.InnerException;
             Assert.IsType<OperationException>(exception.InnerException);

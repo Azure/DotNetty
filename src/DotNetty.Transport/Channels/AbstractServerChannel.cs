@@ -8,24 +8,19 @@ namespace DotNetty.Transport.Channels
     using System.Threading.Tasks;
     using DotNetty.Common.Utilities;
 
-    /**
-     * A skeletal server-side {@link Channel} implementation.  A server-side
-     * {@link Channel} does not allow the following operations:
-     * <ul>
-     * <li>{@link #connect(EndPoint, ChannelPromise)}</li>
-     * <li>{@link #disconnect(ChannelPromise)}</li>
-     * <li>{@link #write(Object, ChannelPromise)}</li>
-     * <li>{@link #flush()}</li>
-     * <li>and the shortcut methods which calls the methods mentioned above
-     * </ul>
-     */
+    /// <summary>
+    /// A skeletal server-side <see cref="IChannel"/> implementation. A server-side <see cref="IChannel"/> does not
+    /// allow the following operations: <see cref="IChannel.ConnectAsync(EndPoint)"/>,
+    /// <see cref="IChannel.DisconnectAsync()"/>, <see cref="IChannel.WriteAsync(object)"/>,
+    /// <see cref="IChannel.Flush()"/>.
+    /// </summary>
     public abstract class AbstractServerChannel : AbstractChannel, IServerChannel
     {
         static readonly ChannelMetadata METADATA = new ChannelMetadata(false, 16);
 
-        /**
-         * Creates a new instance.
-         */
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
         protected AbstractServerChannel()
             : base(null)
         {

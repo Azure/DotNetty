@@ -29,10 +29,10 @@ namespace DotNetty.Transport.Libuv.Tests
             Bootstrap cb = new Bootstrap()
                 .Group(this.group)
                 .Channel<TcpChannel>();
-            this.WriteBeforeConnect(cb);
+            this.WriteBeforeConnect0(cb);
         }
 
-        void WriteBeforeConnect(Bootstrap cb)
+        void WriteBeforeConnect0(Bootstrap cb)
         {
             var h = new TestHandler();
             cb.Handler(h);
@@ -45,13 +45,13 @@ namespace DotNetty.Transport.Libuv.Tests
             Task writeTask = this.clientChannel.WriteAndFlushAsync(Unpooled.WrappedBuffer(new byte[] { 1 }));
             var error = Assert.Throws<AggregateException>(() => writeTask.Wait(DefaultTimeout));
 
-            Assert.Equal(1, error.InnerExceptions.Count);
+            Assert.Single(error.InnerExceptions);
             Assert.IsType<NotYetConnectedException>(error.InnerException);
             Assert.Null(h.Error);
 
             // Connect task should fail
             error = Assert.Throws<AggregateException>(() => connectTask.Wait(DefaultTimeout));
-            Assert.Equal(1, error.InnerExceptions.Count);
+            Assert.Single(error.InnerExceptions);
             Assert.IsType<OperationException>(error.InnerException);
             var exception = (OperationException)error.InnerException;
             Assert.Equal("EADDRNOTAVAIL", exception.Name); // address not available (port : 0)

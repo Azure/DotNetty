@@ -415,8 +415,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
                 catch (Exception ex)
                 {
-                    input.FailFlushed(ex, true);
-                    throw;
+                    Util.CompleteChannelCloseTaskSafely(this.channel, this.CloseAsync(new ClosedChannelException("Failed to write", ex), false));
                 }
 
                 // Double check if there's no pending flush

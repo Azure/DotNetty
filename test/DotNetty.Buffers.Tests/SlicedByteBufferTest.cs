@@ -107,6 +107,15 @@ namespace DotNetty.Buffers.Tests
         }
 
         [Fact]
+        public override void WriteUsAsciiCharSequenceExpand() => Assert.Throws<IndexOutOfRangeException>(() => base.WriteUsAsciiCharSequenceExpand());
+
+        [Fact]
+        public override void WriteUtf8CharSequenceExpand() => Assert.Throws<IndexOutOfRangeException>(() => base.WriteUtf8CharSequenceExpand());
+
+        [Fact]
+        public override void WriteUtf16CharSequenceExpand() => Assert.Throws<IndexOutOfRangeException>(() => base.WriteUtf16CharSequenceExpand());
+
+        [Fact]
         public void EnsureWritableWithEnoughSpaceShouldNotThrow()
         {
             IByteBuffer slice = this.NewBuffer(10);

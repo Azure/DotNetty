@@ -41,7 +41,7 @@ namespace DotNetty.Handlers.Tls
         Task<int> pendingSslStreamReadFuture;
 
         public TlsHandler(TlsSettings settings)
-            : this(stream => new SslStream(stream, true), settings)
+            : this(stream => new SslStream(stream, false), settings)
         {
         }
 
@@ -147,7 +147,7 @@ namespace DotNetty.Handlers.Tls
                     {
                         // ReSharper disable once AssignNullToNotNullAttribute -- task.Exception will be present as task is faulted
                         TlsHandlerState oldState = self.state;
-                        Contract.Assert(!oldState.HasAny(TlsHandlerState.AuthenticationCompleted));
+                        Contract.Assert(!oldState.HasAny(TlsHandlerState.Authenticated));
                         self.HandleFailure(task.Exception);
                         break;
                     }
@@ -637,6 +637,10 @@ namespace DotNetty.Handlers.Tls
                 //    //Logger.Debug("{} SSLEngine.closeInbound() raised an exception.", ctx.channel(), e);
                 //}
             }
+            this.pendingSslStreamReadBuffer?.SafeRelease();
+            this.pendingSslStreamReadBuffer = null;
+            this.pendingSslStreamReadFuture = null;
+
             this.NotifyHandshakeFailure(cause);
             this.pendingUnencryptedWrites.RemoveAndFailAll(cause);
         }
@@ -882,6 +886,17 @@ namespace DotNetty.Handlers.Tls
             public override void Flush()
             {
                 // NOOP: called on SslStream.Close
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                base.Dispose(disposing);
+                if (disposing)
+                {
+                    TaskCompletionSource<int> p = this.readCompletionSource;
+                    this.readCompletionSource = null;
+                    p?.TrySetResult(0);
+                }
             }
 
 #region plumbing
