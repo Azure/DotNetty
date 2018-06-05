@@ -3,7 +3,7 @@
   <PropertyGroup Label="NuGet">
     <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
     <IsPackable>true</IsPackable>
-    <PackageId>DotNetty.Transport.Libuv.Experimental</PackageId>
+    <PackageId>DotNetty.Transport.Libuv</PackageId>
     <Description>Libuv transport model in DotNetty</Description>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <AssemblyTitle>DotNetty: libuv transport model Experimental</AssemblyTitle>
