@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // ReSharper disable ForCanBeConvertedToForeach
+
 namespace DotNetty.Transport.Libuv
 {
     using System;
@@ -15,7 +16,7 @@ namespace DotNetty.Transport.Libuv
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Libuv.Native;
 
-    public sealed class WorkerEventLoopGroup : IEventLoopGroup
+    public sealed class WorkerEventLoopGroup : AbstractEventExecutorGroup, IEventLoopGroup
     {
         static readonly int DefaultEventLoopThreadCount = Environment.ProcessorCount;
         static readonly TimeSpan StartTimeout = TimeSpan.FromMilliseconds(500);
@@ -24,7 +25,15 @@ namespace DotNetty.Transport.Libuv
         readonly DispatcherEventLoop dispatcherLoop;
         int requestId;
 
-        public WorkerEventLoopGroup(DispatcherEventLoopGroup eventLoopGroup) 
+        public override bool IsShutdown => this.eventLoops.All(eventLoop => eventLoop.IsShutdown);
+
+        public override bool IsTerminated => this.eventLoops.All(eventLoop => eventLoop.IsTerminated);
+
+        public override bool IsShuttingDown => this.eventLoops.All(eventLoop => eventLoop.IsShuttingDown);
+
+        public override Task TerminationCompletion { get; }
+
+        public WorkerEventLoopGroup(DispatcherEventLoopGroup eventLoopGroup)
             : this(eventLoopGroup, DefaultEventLoopThreadCount)
         {
         }
@@ -81,15 +90,13 @@ namespace DotNetty.Transport.Libuv
             this.dispatcherLoop.Accept(handle);
         }
 
-        public Task TerminationCompletion { get; }
+        IEventLoop IEventLoopGroup.GetNext() => (IEventLoop)this.GetNext();
 
-        public IEventLoop GetNext()
+        public override IEventExecutor GetNext()
         {
             int id = Interlocked.Increment(ref this.requestId);
             return this.eventLoops[Math.Abs(id % this.eventLoops.Length)];
         }
-
-        IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
 
         public Task RegisterAsync(IChannel channel)
         {
@@ -100,7 +107,7 @@ namespace DotNetty.Transport.Libuv
 
             NativeHandle handle = nativeChannel.GetHandle();
             IntPtr loopHandle = handle.LoopHandle();
-            for (int i=0; i <this.eventLoops.Length; i++)
+            for (int i = 0; i < this.eventLoops.Length; i++)
             {
                 if (this.eventLoops[i].UnsafeLoop.Handle == loopHandle)
                 {
@@ -111,16 +118,7 @@ namespace DotNetty.Transport.Libuv
             throw new InvalidOperationException($"Loop {loopHandle} does not exist");
         }
 
-        public Task ShutdownGracefullyAsync()
-        {
-            foreach (WorkerEventLoop eventLoop in this.eventLoops)
-            {
-                eventLoop.ShutdownGracefullyAsync();
-            }
-            return this.TerminationCompletion;
-        }
-
-        public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
+        public override Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
         {
             foreach (WorkerEventLoop eventLoop in this.eventLoops)
             {

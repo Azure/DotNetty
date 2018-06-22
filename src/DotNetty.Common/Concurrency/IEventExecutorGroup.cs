@@ -9,17 +9,12 @@ namespace DotNetty.Common.Concurrency
     /// <summary>
     /// Provides an access to a set of <see cref="IEventExecutor"/>s it manages.
     /// </summary>
-    public interface IEventExecutorGroup
+    public interface IEventExecutorGroup : IScheduledExecutorService
     {
         /// <summary>
-        /// A <see cref="Task"/> for completion of termination. <see cref="ShutdownGracefullyAsync()"/>.
+        ///     Returns <c>true</c> if and only if this executor is being shut down via <see cref="ShutdownGracefullyAsync()" />.
         /// </summary>
-        Task TerminationCompletion { get; }
-
-        /// <summary>
-        /// Returns <see cref="IEventExecutor"/>.
-        /// </summary>
-        IEventExecutor GetNext();
+        bool IsShuttingDown { get; }
 
         /// <summary>
         /// Terminates this <see cref="IEventExecutorGroup"/> and all its <see cref="IEventExecutor"/>s.
@@ -32,5 +27,15 @@ namespace DotNetty.Common.Concurrency
         /// </summary>
         /// <returns><see cref="Task"/> for completion of termination.</returns>
         Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
+
+        /// <summary>
+        /// A <see cref="Task"/> for completion of termination. <see cref="ShutdownGracefullyAsync()"/>.
+        /// </summary>
+        Task TerminationCompletion { get; }
+
+        /// <summary>
+        /// Returns <see cref="IEventExecutor"/>.
+        /// </summary>
+        IEventExecutor GetNext();
     }
 }

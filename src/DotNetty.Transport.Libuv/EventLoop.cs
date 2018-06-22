@@ -14,6 +14,8 @@ namespace DotNetty.Transport.Libuv
             this.Start();
         }
 
+        public new IEventLoop GetNext() => (IEventLoop)base.GetNext();
+
         public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
 
         public new IEventLoopGroup Parent => (IEventLoopGroup)base.Parent;

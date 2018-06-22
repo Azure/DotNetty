@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // ReSharper disable ForCanBeConvertedToForeach
+
 namespace DotNetty.Transport.Libuv
 {
     using System;
@@ -12,13 +13,22 @@ namespace DotNetty.Transport.Libuv
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Libuv.Native;
 
-    public sealed class EventLoopGroup : IEventLoopGroup
+    public sealed class EventLoopGroup : AbstractEventExecutorGroup, IEventLoopGroup
     {
         static readonly int DefaultEventLoopCount = Environment.ProcessorCount;
         readonly EventLoop[] eventLoops;
         int requestId;
 
-        public EventLoopGroup() : this(DefaultEventLoopCount)
+        public override bool IsShutdown => this.eventLoops.All(eventLoop => eventLoop.IsShutdown);
+
+        public override bool IsTerminated => this.eventLoops.All(eventLoop => eventLoop.IsTerminated);
+
+        public override bool IsShuttingDown => this.eventLoops.All(eventLoop => eventLoop.IsShuttingDown);
+
+        public override Task TerminationCompletion { get; }
+
+        public EventLoopGroup()
+            : this(DefaultEventLoopCount)
         {
         }
 
@@ -43,9 +53,10 @@ namespace DotNetty.Transport.Libuv
                 {
                     if (!success)
                     {
-                        Task.WhenAll(this.eventLoops
-                                .Take(i)
-                                .Select(loop => loop.ShutdownGracefullyAsync()))
+                        Task.WhenAll(
+                                this.eventLoops
+                                    .Take(i)
+                                    .Select(loop => loop.ShutdownGracefullyAsync()))
                             .Wait();
                     }
                 }
@@ -53,14 +64,11 @@ namespace DotNetty.Transport.Libuv
                 this.eventLoops[i] = eventLoop;
                 terminationTasks[i] = eventLoop.TerminationCompletion;
             }
+
             this.TerminationCompletion = Task.WhenAll(terminationTasks);
         }
 
-        public Task TerminationCompletion { get; }
-
-        IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
-
-        public IEventLoop GetNext()
+        public override IEventExecutor GetNext()
         {
             // Attempt to select event loop based on thread first
             int threadId = XThread.CurrentThread.Id;
@@ -78,6 +86,8 @@ namespace DotNetty.Transport.Libuv
             i = Interlocked.Increment(ref this.requestId);
             return this.eventLoops[Math.Abs(i % this.eventLoops.Length)];
         }
+
+        IEventLoop IEventLoopGroup.GetNext() => (IEventLoop)this.GetNext();
 
         public Task RegisterAsync(IChannel channel)
         {
@@ -101,16 +111,7 @@ namespace DotNetty.Transport.Libuv
             throw new InvalidOperationException($"Loop {loopHandle} does not exist");
         }
 
-        public Task ShutdownGracefullyAsync()
-        {
-            foreach (EventLoop eventLoop in this.eventLoops)
-            {
-                eventLoop.ShutdownGracefullyAsync();
-            }
-            return this.TerminationCompletion;
-        }
-
-        public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
+        public override Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
         {
             foreach (EventLoop eventLoop in this.eventLoops)
             {
