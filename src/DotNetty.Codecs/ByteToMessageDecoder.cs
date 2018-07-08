@@ -249,7 +249,7 @@ namespace DotNetty.Codecs
                 // See:
                 // - https://github.com/netty/netty/issues/2327
                 // - https://github.com/netty/netty/issues/1764
-                this.cumulation.DiscardReadBytes(); // todo: use discardSomeReadBytes
+                this.cumulation.DiscardSomeReadBytes();
             }
         }
 
