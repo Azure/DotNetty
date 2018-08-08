@@ -126,6 +126,10 @@ namespace DotNetty.Transport.Channels.Sockets
                 var eventPayload = new SocketChannelAsyncOperation(this, false);
                 eventPayload.RemoteEndPoint = remoteAddress;
                 bool connected = !this.Socket.ConnectAsync(eventPayload);
+                if(connected)
+                {
+                    this.DoFinishConnect(eventPayload);
+                }
                 success = true;
                 return connected;
             }
