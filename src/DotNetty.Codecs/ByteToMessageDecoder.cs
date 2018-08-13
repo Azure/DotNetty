@@ -363,6 +363,14 @@ namespace DotNetty.Codecs
             }
         }
 
-        protected virtual void DecodeLast(IChannelHandlerContext context, IByteBuffer input, List<object> output) => this.Decode(context, input, output);
+        protected virtual void DecodeLast(IChannelHandlerContext context, IByteBuffer input, List<object> output)
+        {
+            if (input.IsReadable())
+            {
+                // Only call decode() if there is something left in the buffer to decode.
+                // See https://github.com/netty/netty/issues/4386
+                this.Decode(context, input, output);
+            }
+        }
     }
 }

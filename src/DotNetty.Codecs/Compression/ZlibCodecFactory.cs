@@ -1,10 +1,13 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoProperty
 namespace DotNetty.Codecs.Compression
 {
     public static class ZlibCodecFactory
     {
+        public static bool IsSupportingWindowSizeAndMemLevel => true;
+
         public static ZlibEncoder NewZlibEncoder(int compressionLevel) => new JZlibEncoder(compressionLevel);
 
         public static ZlibEncoder NewZlibEncoder(ZlibWrapper wrapper) => new JZlibEncoder(wrapper);

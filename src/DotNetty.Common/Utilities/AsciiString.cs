@@ -757,6 +757,37 @@ namespace DotNetty.Common.Utilities
             return new AsciiString(this.value, start, end - start + 1, false);
         }
 
+        public unsafe bool ContentEquals(string a)
+        {
+            if (a == null)
+            {
+                return false;
+            }
+            if (this.stringValue != null)
+            {
+                return this.stringValue.Equals(a);
+            }
+            if (this.length != a.Length)
+            {
+                return false;
+            }
+
+            if (this.length > 0)
+            {
+                fixed (char* p = a)
+                    fixed (byte* b = &this.value[this.offset])
+                        for (int i = 0; i < this.length; ++i)
+                        {
+                            if (CharToByte(*(p + i)) != *(b + i) )
+                            {
+                                return false;
+                            }
+                        }
+            }
+
+            return true;
+        }
+
         public bool ContentEquals(ICharSequence a)
         {
             if (a == null || a.Count != this.length)
