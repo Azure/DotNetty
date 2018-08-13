@@ -24,7 +24,7 @@ namespace DotNetty.Common.Utilities
         ITimeout NewTimeout(ITimerTask task, TimeSpan delay);
 
         /// <summary>
-        /// Releases all resources acquired by this {@link Timer} and cancels all
+        /// Releases all resources acquired by this <see cref="ITimer"/> and cancels all
         /// tasks which were scheduled but not executed yet.
         /// </summary>
         /// <returns>the handles associated with the tasks which were canceled by

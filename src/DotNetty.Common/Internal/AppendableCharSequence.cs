@@ -176,8 +176,10 @@ namespace DotNetty.Common.Internal
             return this;
         }
 
-        // Reset the {@link AppendableCharSequence}. Be aware this will only reset the current internal position and not
-        // shrink the internal char array.
+        /// <summary>
+        /// Resets the <see cref="AppendableCharSequence"/>. Be aware this will only reset the current internal
+        /// position and not shrink the internal char array.
+        /// </summary>
         public void Reset() => this.pos = 0;
 
         public string ToString(int start)
@@ -190,8 +192,10 @@ namespace DotNetty.Common.Internal
 
         public AsciiString ToAsciiString() => this.pos == 0 ? AsciiString.Empty : new AsciiString(this.chars, 0, this.pos, true);
 
-        // Create a new ascii string, this method assumes all chars has been sanitized
-        // to ascii chars when appending to the array
+        /// <summary>
+        /// Create a new ascii string, this method assumes all chars has been sanitized to ascii chars when appending
+        /// to the array.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe AsciiString SubStringUnsafe(int start, int end)
         {

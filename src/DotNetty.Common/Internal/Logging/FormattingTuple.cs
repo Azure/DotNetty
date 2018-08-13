@@ -7,7 +7,7 @@ namespace DotNetty.Common.Internal.Logging
     using System.Diagnostics.Contracts;
 
     /// <summary>
-    ///     Holds the results of formatting done by {@link MessageFormatter}.
+    /// Holds the results of formatting done by <see cref="MessageFormatter"/>.
     /// </summary>
     public struct FormattingTuple
     {

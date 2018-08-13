@@ -11,9 +11,9 @@ namespace DotNetty.Common
     using DotNetty.Common.Utilities;
 
     /// <summary>
-    ///     The internal data structure that stores the thread-local variables for Netty and all {@link FastThreadLocal}s.
-    ///     Note that this class is for internal use only and is subject to change at any time.  Use {@link FastThreadLocal}
-    ///     unless you know what you are doing.
+    /// The internal data structure that stores the thread-local variables for DotNetty and all
+    /// <see cref="FastThreadLocal"/>s. Note that this class is for internal use only and is subject to change at any
+    /// time. Use <see cref="FastThreadLocal"/> unless you know what you are doing.
     /// </summary>
     public sealed class InternalThreadLocalMap
     {
@@ -25,7 +25,9 @@ namespace DotNetty.Common
 
         static int nextIndex;
 
-        /// Used by {@link FastThreadLocal}
+        /// <summary>
+        /// Used by <see cref="FastThreadLocal"/>.
+        /// </summary>
         object[] indexedVariables;
 
         // Core thread-locals
@@ -186,9 +188,12 @@ namespace DotNetty.Common
             return index < lookup.Length ? lookup[index] : Unset;
         }
 
-        /**
-          * @return {@code true} if and only if a new thread-local variable has been created
-         */
+        /// <summary>
+        /// Sets a value at the given index in this <see cref="InternalThreadLocalMap"/>.
+        /// </summary>
+        /// <param name="index">The desired index at which a value should be set.</param>
+        /// <param name="value">The value to set at the given index.</param>
+        /// <returns><c>true</c> if and only if a new thread-local variable has been created.</returns>
         public bool SetIndexedVariable(int index, object value)
         {
             object[] lookup = this.indexedVariables;

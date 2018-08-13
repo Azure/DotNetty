@@ -3,7 +3,9 @@
 
 namespace DotNetty.Common.Internal.Logging
 {
-    /// <summary>The log level that {@link IInternalLogger} can log at.</summary>
+    /// <summary>
+    /// The log level that <see cref="IInternalLogger"/> can log at.
+    /// </summary>
     public enum InternalLogLevel
     {
         /// <summary>

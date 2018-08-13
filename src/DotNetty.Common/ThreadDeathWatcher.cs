@@ -31,12 +31,9 @@ namespace DotNetty.Common
             }
         }
 
-        /// Schedules the specified {@code task} to run when the specified {@code thread} dies.
-        /// 
-        /// @param thread the {@link Thread} to watch
-        /// @param task the {@link Runnable} to run when the {@code thread} dies
-        /// 
-        /// @throws IllegalArgumentException if the specified {@code thread} is not alive
+        /// <summary>
+        /// Schedules the specified <see cref="Action"/> to run when the specified <see cref="Thread"/> dies.
+        /// </summary>
         public static void Watch(Thread thread, Action task)
         {
             Contract.Requires(thread != null);
@@ -46,7 +43,9 @@ namespace DotNetty.Common
             Schedule(thread, task, true);
         }
 
-        /// Cancels the task scheduled via {@link #watch(Thread, Runnable)}.
+        /// <summary>
+        /// Cancels the task scheduled via <see cref="Watch"/>.
+        /// </summary>
         public static void Unwatch(Thread thread, Action task)
         {
             Contract.Requires(thread != null);
@@ -67,14 +66,15 @@ namespace DotNetty.Common
             }
         }
 
+        /// <summary>
         /// Waits until the thread of this watcher has no threads to watch and terminates itself.
-        /// Because a new watcher thread will be started again on {@link #watch(Thread, Runnable)},
+        /// Because a new watcher thread will be started again on <see cref="Watch"/>,
         /// this operation is only useful when you want to ensure that the watcher thread is terminated
-        /// <strong>after</strong>
-        /// your application is shut down and there's no chance of calling
-        /// {@link #watch(Thread, Runnable)} afterwards.
-        /// 
-        /// @return {@code true} if and only if the watcher thread has been terminated
+        /// <strong>after</strong> your application is shut down and there's no chance of calling <see cref="Watch"/>
+        /// afterwards.
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <returns><c>true</c> if and only if the watcher thread has been terminated.</returns>
         public static bool AwaitInactivity(TimeSpan timeout)
         {
             Thread watcherThread = ThreadDeathWatcher.watcherThread;

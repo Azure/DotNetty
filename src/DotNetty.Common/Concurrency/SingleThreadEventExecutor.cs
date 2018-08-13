@@ -147,10 +147,11 @@ namespace DotNetty.Common.Concurrency
                 this.Execute(WAKEUP_TASK);
             }
         }
-        
-        /**
-          * Add a {@link Runnable} which will be executed on shutdown of this instance
-          */
+
+        /// <summary>
+        /// Adds an <see cref="Action"/> which will be executed on shutdown of this instance.
+        /// </summary>
+        /// <param name="action">The <see cref="Action"/> to run on shutdown.</param>
         public void AddShutdownHook(Action action) 
         {
             if (this.InEventLoop) 
@@ -163,9 +164,11 @@ namespace DotNetty.Common.Concurrency
             }
         }
 
-        /**
-         * Remove a previous added {@link Runnable} as a shutdown hook
-         */
+        /// <summary>
+        /// Removes a previously added <see cref="Action"/> from the collection of <see cref="Action"/>s which will be
+        /// executed on shutdown of this instance.
+        /// </summary>
+        /// <param name="action">The <see cref="Action"/> to remove.</param>
         public void RemoveShutdownHook(Action action) 
         {
             if (this.InEventLoop) 
