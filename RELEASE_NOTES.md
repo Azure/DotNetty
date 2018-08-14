@@ -1,3 +1,11 @@
+#### 0.4.9 August 14, 2018
+- Web Socket support
+- Aligned execution service model
+- Fix for synchronous socket connection establishment on .NET Core 2.1
+- TlsHandler fixes
+- Fix to scheduled task cancellation
+- XML Doc updates
+
 #### 0.4.8 April 24, 2018
 - Unsafe direct buffers
 - HTTP 1.1 codec
