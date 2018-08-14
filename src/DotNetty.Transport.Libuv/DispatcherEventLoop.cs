@@ -22,8 +22,9 @@ namespace DotNetty.Transport.Libuv
             Contract.Requires(parent != null);
 
             string pipeName = "DotNetty_" + Guid.NewGuid().ToString("n");
-            this.PipeName = (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) 
-                ? @"\\.\pipe\" : "/tmp/") + pipeName;
+            this.PipeName = (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? @"\\.\pipe\"
+                : "/tmp/") + pipeName;
             this.Start();
         }
 
@@ -62,6 +63,8 @@ namespace DotNetty.Transport.Libuv
         }
 
         internal void Accept(NativeHandle handle) => this.nativeUnsafe.Accept(handle);
+
+        public new IEventLoop GetNext() => (IEventLoop)base.GetNext();
 
         public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
 

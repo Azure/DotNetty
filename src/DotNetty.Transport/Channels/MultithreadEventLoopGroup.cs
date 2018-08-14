@@ -12,13 +12,22 @@ namespace DotNetty.Transport.Channels
     /// <summary>
     /// <see cref="IEventLoopGroup"/> backed by a set of <see cref="SingleThreadEventLoop"/> instances.
     /// </summary>
-    public sealed class MultithreadEventLoopGroup : IEventLoopGroup
+    public sealed class MultithreadEventLoopGroup : AbstractEventExecutorGroup, IEventLoopGroup
     {
         static readonly int DefaultEventLoopThreadCount = Environment.ProcessorCount * 2;
         static readonly Func<IEventLoopGroup, IEventLoop> DefaultEventLoopFactory = group => new SingleThreadEventLoop(group);
 
         readonly IEventLoop[] eventLoops;
         int requestId;
+
+        public override bool IsShutdown => eventLoops.All(eventLoop => eventLoop.IsShutdown);
+
+        public override bool IsTerminated => eventLoops.All(eventLoop => eventLoop.IsTerminated);
+
+        public override bool IsShuttingDown => eventLoops.All(eventLoop => eventLoop.IsShuttingDown);
+
+        /// <inheritdoc />
+        public override Task TerminationCompletion { get; }
 
         /// <summary>Creates a new instance of <see cref="MultithreadEventLoopGroup"/>.</summary>
         public MultithreadEventLoopGroup()
@@ -60,9 +69,10 @@ namespace DotNetty.Transport.Channels
                 {
                     if (!success)
                     {
-                        Task.WhenAll(this.eventLoops
-                                .Take(i)
-                                .Select(loop => loop.ShutdownGracefullyAsync()))
+                        Task.WhenAll(
+                                this.eventLoops
+                                    .Take(i)
+                                    .Select(loop => loop.ShutdownGracefullyAsync()))
                             .Wait();
                     }
                 }
@@ -74,32 +84,19 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <inheritdoc />
-        public Task TerminationCompletion { get; }
+        IEventLoop IEventLoopGroup.GetNext() => (IEventLoop)this.GetNext();
 
         /// <inheritdoc />
-        public IEventLoop GetNext()
+        public override IEventExecutor GetNext()
         {
             int id = Interlocked.Increment(ref this.requestId);
             return this.eventLoops[Math.Abs(id % this.eventLoops.Length)];
         }
 
-        /// <inheritdoc />
-        IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
+        public Task RegisterAsync(IChannel channel) => ((IEventLoop)this.GetNext()).RegisterAsync(channel);
 
-        public Task RegisterAsync(IChannel channel) => this.GetNext().RegisterAsync(channel);
-
-        /// <inheritdoc />
-        public Task ShutdownGracefullyAsync()
-        {
-            foreach (IEventLoop eventLoop in this.eventLoops)
-            {
-                eventLoop.ShutdownGracefullyAsync();
-            }
-            return this.TerminationCompletion;
-        }
-
-        /// <inheritdoc />
-        public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
+        /// <inheritdoc cref="IEventExecutorGroup.ShutdownGracefullyAsync()" />
+        public override Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout)
         {
             foreach (IEventLoop eventLoop in this.eventLoops)
             {
