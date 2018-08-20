@@ -1,4 +1,4 @@
-#### 0.4.9 August 14, 2018
+#### 0.5.0 August 14, 2018
 - Web Socket support
 - Aligned execution service model
 - Fix for synchronous socket connection establishment on .NET Core 2.1
