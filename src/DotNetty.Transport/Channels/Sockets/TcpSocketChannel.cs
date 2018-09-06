@@ -316,7 +316,12 @@ namespace DotNetty.Transport.Channels.Sockets
 
                     if (!done)
                     {
-                        SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(bufferList);
+                        IList<ArraySegment<byte>> asyncBufferList = bufferList;
+                        if (object.ReferenceEquals(sharedBufferList, asyncBufferList))
+                        {
+                            asyncBufferList = sharedBufferList.ToArray(); // copying buffers to
+                        }
+                        SocketChannelAsyncOperation asyncOperation = this.PrepareWriteOperation(asyncBufferList);
 
                         // Did not write all buffers completely.
                         if (this.IncompleteWrite(true, asyncOperation))
