@@ -118,7 +118,7 @@ namespace DotNetty.Transport.Channels
             }
             else if (ChannelOption.WriteBufferHighWaterMark.Equals(option))
             {
-                this.writeBufferHighWaterMark = (int)(object)value;
+                this.WriteBufferHighWaterMark = (int)(object)value;
             }
             else if (ChannelOption.WriteBufferLowWaterMark.Equals(option))
             {
