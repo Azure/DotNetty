@@ -309,6 +309,10 @@ namespace DotNetty.Transport.Channels
                     // readableBytes > writtenBytes
                     if (writtenBytes != 0)
                     {
+                        //Invalid nio buffer cache for partial writen, see https://github.com/Azure/DotNetty/issues/422
+                        this.flushedEntry.Buffer = new ArraySegment<byte>();
+                        this.flushedEntry.Buffers = null;
+
                         buf.SetReaderIndex(readerIndex + (int)writtenBytes);
                         this.Progress(writtenBytes);
                     }

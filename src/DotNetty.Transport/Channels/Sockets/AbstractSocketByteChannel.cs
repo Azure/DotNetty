@@ -231,9 +231,8 @@ namespace DotNetty.Transport.Channels.Sockets
                     {
                         input.Remove();
                     }
-                    else
+                    else if (this.IncompleteWrite(scheduleAsync, this.PrepareWriteOperation(buf.GetIoBuffer())))
                     {
-                        this.IncompleteWrite(scheduleAsync, this.PrepareWriteOperation(buf.GetIoBuffer()));
                         break;
                     }
                 } /*else if (msg is FileRegion) { todo: FileRegion support
