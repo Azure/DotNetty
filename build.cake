@@ -66,7 +66,7 @@ Task("Compile")
   .Does(() =>
 {
 
-  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "msbuild dotnetty.sln /p:Configuration=" + configuration } );
+  int result = StartProcess("dotnet", new ProcessSettings { Arguments = "msbuild DotNetty.sln /p:Configuration=" + configuration } );
   if (result != 0)
   {
     throw new CakeException($"Compilation failed.");
