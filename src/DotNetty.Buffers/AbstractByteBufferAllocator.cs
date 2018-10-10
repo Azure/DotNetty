@@ -113,11 +113,11 @@ namespace DotNetty.Buffers
             return this.NewHeapBuffer(initialCapacity, maxCapacity);
         }
 
-        public IByteBuffer DirectBuffer() => this.DirectBuffer(DefaultInitialCapacity, DefaultMaxCapacity);
+        public unsafe IByteBuffer DirectBuffer() => this.DirectBuffer(DefaultInitialCapacity, DefaultMaxCapacity);
 
-        public IByteBuffer DirectBuffer(int initialCapacity) => this.DirectBuffer(initialCapacity, DefaultMaxCapacity);
+        public unsafe IByteBuffer DirectBuffer(int initialCapacity) => this.DirectBuffer(initialCapacity, DefaultMaxCapacity);
 
-        public IByteBuffer DirectBuffer(int initialCapacity, int maxCapacity)
+        public unsafe IByteBuffer DirectBuffer(int initialCapacity, int maxCapacity)
         {
             if (initialCapacity == 0 && maxCapacity == 0)
             {
@@ -138,9 +138,9 @@ namespace DotNetty.Buffers
         public virtual CompositeByteBuffer CompositeHeapBuffer(int maxNumComponents) => 
             ToLeakAwareBuffer(new CompositeByteBuffer(this, false, maxNumComponents));
 
-        public CompositeByteBuffer CompositeDirectBuffer() => this.CompositeDirectBuffer(DefaultMaxComponents);
+        public unsafe CompositeByteBuffer CompositeDirectBuffer() => this.CompositeDirectBuffer(DefaultMaxComponents);
 
-        public virtual CompositeByteBuffer CompositeDirectBuffer(int maxNumComponents) => 
+        public unsafe virtual CompositeByteBuffer CompositeDirectBuffer(int maxNumComponents) => 
             ToLeakAwareBuffer(new CompositeByteBuffer(this, true, maxNumComponents));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -159,7 +159,7 @@ namespace DotNetty.Buffers
 
         protected abstract IByteBuffer NewHeapBuffer(int initialCapacity, int maxCapacity);
 
-        protected abstract IByteBuffer NewDirectBuffer(int initialCapacity, int maxCapacity);
+        protected unsafe abstract IByteBuffer NewDirectBuffer(int initialCapacity, int maxCapacity);
 
         public abstract bool IsDirectBufferPooled { get; }
 

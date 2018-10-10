@@ -1,3 +1,8 @@
+#### 0.6.0 October 9, 2018
+- Clearly marks Unsafe Buffer management routines as `unsafe`
+- Changes defaults for Unpooled and Pooled buffer allocators to safe versions
+- Fixes write buffer handling (#423)
+
 #### 0.5.0 August 14, 2018
 - Web Socket support
 - Aligned execution service model

@@ -19,16 +19,16 @@ namespace DotNetty.Buffers
             new UnpooledByteBufferAllocator(PlatformDependent.DirectBufferPreferred);
 
         public UnpooledByteBufferAllocator()
-            : this(PlatformDependent.DirectBufferPreferred, false)
+            : this(false, false)
         {
         }
 
-        public UnpooledByteBufferAllocator(bool preferDirect)
+        public unsafe UnpooledByteBufferAllocator(bool preferDirect)
             : this(preferDirect, false)
         {
         }
 
-        public UnpooledByteBufferAllocator(bool preferDirect, bool disableLeakDetector)
+        public unsafe UnpooledByteBufferAllocator(bool preferDirect, bool disableLeakDetector)
             : base(preferDirect)
         {
             this.disableLeakDetector = disableLeakDetector;
@@ -37,7 +37,7 @@ namespace DotNetty.Buffers
         protected override IByteBuffer NewHeapBuffer(int initialCapacity, int maxCapacity) =>
             new InstrumentedUnpooledHeapByteBuffer(this, initialCapacity, maxCapacity);
 
-        protected override IByteBuffer NewDirectBuffer(int initialCapacity, int maxCapacity)
+        protected unsafe override IByteBuffer NewDirectBuffer(int initialCapacity, int maxCapacity)
         {
             IByteBuffer buf = new InstrumentedUnpooledUnsafeDirectByteBuffer(this, initialCapacity, maxCapacity);
             return this.disableLeakDetector ? buf : ToLeakAwareBuffer(buf);
@@ -49,7 +49,7 @@ namespace DotNetty.Buffers
             return this.disableLeakDetector ? buf : ToLeakAwareBuffer(buf);
         }
 
-        public override CompositeByteBuffer CompositeDirectBuffer(int maxNumComponents)
+        public unsafe override CompositeByteBuffer CompositeDirectBuffer(int maxNumComponents)
         {
             var buf = new CompositeByteBuffer(this, true, maxNumComponents);
             return this.disableLeakDetector ? buf : ToLeakAwareBuffer(buf);
