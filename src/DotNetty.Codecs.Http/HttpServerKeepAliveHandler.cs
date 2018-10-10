@@ -52,7 +52,9 @@ namespace DotNetty.Codecs.Http
             }
             if (message is ILastHttpContent && !this.ShouldKeepAlive())
             {
-                return new ValueTask(base.WriteAsync(context, message).CloseOnComplete(context));
+                Task task = base.WriteAsync(context, message).AsTask();
+                task.CloseOnComplete(context.Channel);
+                return new ValueTask(task);
             }
             return base.WriteAsync(context, message);
         }
