@@ -254,34 +254,28 @@ namespace DotNetty.Codecs.Http
             var upgradeEvent = new UpgradeEvent(upgradeProtocol, request);
 
             IUpgradeCodec finalUpgradeCodec = upgradeCodec;
-            ctx.WriteAndFlushAsync(upgradeResponse).ContinueWith(t =>
-                {
-                    try
-                    {
-                        if (t.Status == TaskStatus.RanToCompletion)
-                        {
-                            // Perform the upgrade to the new protocol.
-                            this.sourceCodec.UpgradeFrom(ctx);
-                            finalUpgradeCodec.UpgradeTo(ctx, request);
+            try
+            {
+                Task writeTask = ctx.WriteAndFlushAsync(upgradeResponse);
+                
+                // Perform the upgrade to the new protocol.
+                this.sourceCodec.UpgradeFrom(ctx);
+                finalUpgradeCodec.UpgradeTo(ctx, request);
 
-                            // Notify that the upgrade has occurred. Retain the event to offset
-                            // the release() in the finally block.
-                            ctx.FireUserEventTriggered(upgradeEvent.Retain());
+                // Remove this handler from the pipeline.
+                ctx.Channel.Pipeline.Remove(this);
+            
+                // Notify that the upgrade has occurred. Retain the event to offset
+                // the release() in the finally block.
+                ctx.FireUserEventTriggered(upgradeEvent.Retain());
 
-                            // Remove this handler from the pipeline.
-                            ctx.Channel.Pipeline.Remove(this);
-                        }
-                        else
-                        {
-                            ctx.Channel.CloseAsync();
-                        }
-                    }
-                    finally
-                    {
-                        // Release the event if the upgrade event wasn't fired.
-                        upgradeEvent.Release();
-                    }
-                }, TaskContinuationOptions.ExecuteSynchronously);
+                writeTask.CloseOnFailure(ctx.Channel);
+            }
+            finally
+            {
+                // Release the event if the upgrade event wasn't fired.
+                upgradeEvent.Release();
+            }
             return true;
         }
 

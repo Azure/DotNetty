@@ -33,6 +33,9 @@ namespace DotNetty.Codecs
         
         public static Task CloseOnFailure(this Task task, IChannelHandlerContext ctx) 
             => task.ContinueWith(CloseOnFailureContinuation, ctx, TaskContinuationOptions.ExecuteSynchronously);
+        
+        public static Task CloseOnFailure(this Task task, IChannel channel) 
+            => task.ContinueWith(CloseOnFailureContinuation, channel, TaskContinuationOptions.ExecuteSynchronously);
 
         static Task Close(Task task, object state)
         {

@@ -95,7 +95,7 @@ namespace DotNetty.Codecs.Http.WebSockets.Extensions
                 }
 
                 Task task = base.WriteAsync(ctx, msg).AsTask();
-                task.ContinueWith(this.upgradeCompletedContinuation, ctx);
+                task.ContinueWith(this.upgradeCompletedContinuation, ctx, TaskContinuationOptions.ExecuteSynchronously);
                 return new ValueTask(task);
             }
 
