@@ -3525,6 +3525,28 @@ namespace DotNetty.Buffers.Tests
             }
         }
 
+        [Fact]
+        public void ReadZeroBytesAtEnd()
+        {
+            IByteBuffer buf = this.NewBuffer(3);
+            buf.SetWriterIndex(buf.Capacity);
+            buf.SkipBytes(buf.ReadableBytes);
+            buf.ReadBytes(new byte[0]);
+            buf.Release();
+        }
+
+        [Fact]
+        public void GetMemoryAddressWithZeroLengthBuffer()
+        {
+            IByteBuffer buf = this.NewBuffer(0, 1);
+            if (buf.HasMemoryAddress)
+            {
+                buf.AddressOfPinnedMemory();
+                buf.GetPinnableMemoryAddress();
+            }
+            buf.Release();
+        }
+
         protected IByteBuffer ReleaseLater(IByteBuffer buf)
         {
             this.buffers.Enqueue(buf);
