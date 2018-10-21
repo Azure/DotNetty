@@ -296,8 +296,12 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             int read;
             fixed (byte* addr = &this.Addr(index))
+            {
                 read = UnsafeByteBufferUtil.SetBytes(this, addr, index, src, length);
-            return Task.FromResult(read);
+
+                // See https://github.com/Azure/DotNetty/issues/436
+                return Task.FromResult(read);
+            }
         }
 
         public override int IoBufferCount => 1;
