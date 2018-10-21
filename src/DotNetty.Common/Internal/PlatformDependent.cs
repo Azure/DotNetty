@@ -278,5 +278,26 @@ namespace DotNetty.Common.Internal
                 Unsafe.InitBlockUnaligned(ref src[srcIndex], value, unchecked((uint)length));
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe ref byte Add(ref byte source, int offset)
+        {
+            ref byte zero = ref Unsafe.AsRef<byte>(null);
+            if (!Unsafe.AreSame(ref source, ref zero))
+            {
+                return ref Unsafe.Add(ref source, offset);
+            }
+            return ref zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe ref byte AsRef(this byte[] source, int offset = 0)
+        {
+            if (offset < source.Length)
+            {
+                return ref source[offset];
+            }
+            return ref Unsafe.AsRef<byte>(null);
+        }
     }
 }

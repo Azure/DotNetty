@@ -143,7 +143,7 @@ namespace DotNetty.Buffers
         public override ref byte GetPinnableMemoryAddress()
         {
             this.EnsureAccessible();
-            return ref this.buffer[0];
+            return ref this.buffer.AsRef();
         }
 
         public override IntPtr AddressOfPinnedMemory() => IntPtr.Zero;
@@ -340,7 +340,7 @@ namespace DotNetty.Buffers
         public override IByteBuffer Unwrap() => null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        ref byte Addr(int index) => ref this.buffer[index];
+        ref byte Addr(int index) => ref this.buffer.AsRef(index);
 
         public override IByteBuffer SetZero(int index, int length)
         {

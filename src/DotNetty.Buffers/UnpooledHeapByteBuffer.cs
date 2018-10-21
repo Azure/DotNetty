@@ -124,7 +124,7 @@ namespace DotNetty.Buffers
         public override ref byte GetPinnableMemoryAddress()
         {
             this.EnsureAccessible();
-            return ref this.array[0];
+            return ref this.array.AsRef();
         }
 
         public override IntPtr AddressOfPinnedMemory() => IntPtr.Zero;
