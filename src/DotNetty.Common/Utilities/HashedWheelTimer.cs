@@ -353,7 +353,7 @@ namespace DotNetty.Common.Utilities
                         continue;
                     }
 
-                    long calculated = (timeout.Deadline.Ticks + this.owner.tickDuration - 1) / this.owner.tickDuration; // ceiling to timeout later rather than earlier
+                    long calculated = timeout.Deadline.Ticks / this.owner.tickDuration;
                     timeout.RemainingRounds = (calculated - this.tick) / this.owner.wheel.Length;
 
                     long ticks = Math.Max(calculated, this.tick); // Ensure we don't schedule for past.
