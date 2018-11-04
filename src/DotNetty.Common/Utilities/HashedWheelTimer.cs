@@ -615,7 +615,7 @@ namespace DotNetty.Common.Utilities
                             // The timeout was placed into a wrong slot. This should never happen.
                             throw new InvalidOperationException(
                                 string.Format(
-                                    "timeout.deadline (%d) > deadline (%d)",
+                                    "timeout.deadline {0} > deadline {1}",
                                     timeout.Deadline,
                                     deadline));
                         }
