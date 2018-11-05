@@ -366,12 +366,9 @@ namespace DotNetty.Codecs.Http.Tests
                 ch.WriteOutbound(new DefaultFullHttpResponse(HttpVersion.Http11, HttpResponseStatus.OK, Unpooled.Empty));
                 Assert.True(false, "Should not get here, expecting exception thrown");
             }
-            catch (AggregateException e)
+            catch (EncoderException e)
             {
-                Assert.Single(e.InnerExceptions);
-                Assert.IsType<EncoderException>(e.InnerExceptions[0]);
-                Exception exception = e.InnerExceptions[0];
-                Assert.IsType<InvalidOperationException>(exception.InnerException);
+                Assert.IsType<InvalidOperationException>(e.InnerException);
             }
 
             Assert.True(ch.Finish());

@@ -140,10 +140,10 @@ namespace DotNetty.Codecs.Http.Tests.WebSockets
                 this.owner = owner;
             }
 
-            public override Task WriteAsync(IChannelHandlerContext ctx, object msg)
+            public override ValueTask WriteAsync(IChannelHandlerContext ctx, object msg)
             {
                 this.owner.responses.Enqueue((IFullHttpResponse)msg);
-                return TaskEx.Completed;
+                return new ValueTask();
             }
 
             public override void Flush(IChannelHandlerContext ctx)

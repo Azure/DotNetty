@@ -131,10 +131,17 @@ namespace DotNetty.Transport.Libuv.Tests
 
         sealed class ServerHandler : ChannelHandlerAdapter
         {
-            public override void ChannelActive(IChannelHandlerContext ctx) =>
-                ctx.WriteAndFlushAsync(NewCompositeBuffer(ctx.Allocator))
-                   .ContinueWith((t, s) => ((IChannelHandlerContext)s).CloseAsync(), 
-                        ctx, TaskContinuationOptions.ExecuteSynchronously);
+            public override async void ChannelActive(IChannelHandlerContext ctx)
+            {
+                try
+                {
+                    await ctx.WriteAndFlushAsync(NewCompositeBuffer(ctx.Allocator));
+                }
+                finally
+                {
+                    ctx.CloseAsync();
+                }
+            }
         }
 
         static IByteBuffer NewCompositeBuffer(IByteBufferAllocator alloc)

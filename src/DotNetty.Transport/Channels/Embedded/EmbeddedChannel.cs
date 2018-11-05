@@ -11,6 +11,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using System.Runtime.ExceptionServices;
     using System.Threading.Tasks;
     using DotNetty.Common;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
@@ -294,52 +295,33 @@ namespace DotNetty.Transport.Channels.Embedded
                 return IsNotEmpty(this.outboundMessages);
             }
 
-            ThreadLocalObjectList futures = ThreadLocalObjectList.NewInstance(msgs.Length);
-
             foreach (object m in msgs)
             {
                 if (m == null)
                 {
                     break;
                 }
-                futures.Add(this.WriteAsync(m));
+                WriteAsync(m);
             }
             // We need to call RunPendingTasks first as a IChannelHandler may have used IEventLoop.Execute(...) to
             // delay the write on the next event loop run.
             this.RunPendingTasks();
             this.Flush();
-
-            int size = futures.Count;
-            for (int i = 0; i < size; i++)
-            {
-                var future = (Task)futures[i];
-                if (future.IsCompleted)
-                {
-                    this.RecordException(future);
-                }
-                else
-                {
-                    // The write may be delayed to run later by runPendingTasks()
-                    future.ContinueWith(t => this.RecordException(t));
-                }
-            }
-            futures.Return();
-
             this.RunPendingTasks();
             this.CheckException();
             return IsNotEmpty(this.outboundMessages);
-        }
 
-        void RecordException(Task future)
-        {
-            switch (future.Status)
+            async void WriteAsync(object message)
             {
-                case TaskStatus.Canceled:
-                case TaskStatus.Faulted:
-                    this.RecordException(future.Exception);
-                    break;
-                default:
-                    break;
+                try
+                {
+                    //context capturing not required since callback executed synchrounusly on completion in eventloop
+                    await this.WriteAsync(message).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    this.RecordException(e);
+                }
             }
         }
 

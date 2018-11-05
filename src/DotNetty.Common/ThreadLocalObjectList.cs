@@ -5,7 +5,7 @@ namespace DotNetty.Common
 {
     using System.Collections.Generic;
 
-    public class ThreadLocalObjectList : List<object>
+    public sealed class ThreadLocalObjectList : List<object>
     {
         const int DefaultInitialCapacity = 8;
 
@@ -13,7 +13,7 @@ namespace DotNetty.Common
 
         readonly ThreadLocalPool.Handle returnHandle;
 
-        ThreadLocalObjectList(ThreadLocalPool.Handle returnHandle)
+        protected ThreadLocalObjectList(ThreadLocalPool.Handle returnHandle)
         {
             this.returnHandle = returnHandle;
         }
@@ -28,7 +28,6 @@ namespace DotNetty.Common
                 ret.Capacity = minCapacity;
             }
             return ret;
-
         }
 
         public void Return()

@@ -10,6 +10,7 @@ namespace DotNetty.Transport.Libuv.Tests
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
+    using DotNetty.Tests.Common;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using Xunit;

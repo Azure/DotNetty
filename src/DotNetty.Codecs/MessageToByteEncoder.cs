@@ -7,6 +7,7 @@ namespace DotNetty.Codecs
     using System.Diagnostics.Contracts;
     using System.Threading.Tasks;
     using DotNetty.Buffers;
+    using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
@@ -14,12 +15,12 @@ namespace DotNetty.Codecs
     {
         public virtual bool AcceptOutboundMessage(object message) => message is T;
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
             Contract.Requires(context != null);
 
             IByteBuffer buffer = null;
-            Task result;
+            ValueTask result;
             try
             {
                 if (this.AcceptOutboundMessage(message))
@@ -52,13 +53,13 @@ namespace DotNetty.Codecs
                     return context.WriteAsync(message);
                 }
             }
-            catch (EncoderException e)
+            catch (EncoderException)
             {
-                return TaskEx.FromException(e);
+                throw;
             }
             catch (Exception ex)
             {
-                return TaskEx.FromException(new EncoderException(ex));
+                throw new EncoderException(ex);
             }
             finally
             {

@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Common.Concurrency;
 
     public interface IChannelHandler
     {
@@ -39,7 +40,7 @@ namespace DotNetty.Transport.Channels
 
         void HandlerRemoved(IChannelHandlerContext context);
 
-        Task WriteAsync(IChannelHandlerContext context, object message);
+        ValueTask WriteAsync(IChannelHandlerContext context, object message);
 
         void Flush(IChannelHandlerContext context);
 

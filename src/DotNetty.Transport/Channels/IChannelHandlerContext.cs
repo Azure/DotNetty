@@ -67,11 +67,13 @@ namespace DotNetty.Transport.Channels
 
         IChannelHandlerContext Read();
 
-        Task WriteAsync(object message); // todo: optimize: add flag saying if handler is interested in task, do not produce task if it isn't needed
+        ValueTask WriteAsync(object message); // todo: optimize: add flag saying if handler is interested in task, do not produce task if it isn't needed
 
         IChannelHandlerContext Flush();
 
         Task WriteAndFlushAsync(object message);
+        
+        ValueTask WriteAndFlushAsync(object message, bool notifyComplete);
 
         /// <summary>
         /// Request to bind to the given <see cref="EndPoint"/>.

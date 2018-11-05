@@ -4,11 +4,14 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Collections;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Reflection;
     using System.Runtime.CompilerServices;
     using System.Threading.Tasks;
+    using System.Threading.Tasks.Sources;
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
@@ -793,16 +796,16 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAsync(object msg)
+        public ValueTask WriteAsync(object msg)
         {
             Contract.Requires(msg != null);
             // todo: check for cancellation
-            return this.WriteAsync(msg, false);
+            return this.WriteAsync(msg, FlushMode.NoFlush);
         }
 
-        Task InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
+        ValueTask InvokeWriteAsync(object msg) => this.Added ? this.InvokeWriteAsync0(msg) : this.WriteAsync(msg);
 
-        Task InvokeWriteAsync0(object msg)
+        ValueTask InvokeWriteAsync0(object msg)
         {
             try
             {
@@ -810,7 +813,7 @@ namespace DotNetty.Transport.Channels
             }
             catch (Exception ex)
             {
-                return ComposeExceptionTask(ex);
+                return ex.ToValueTask();
             }
         }
 
@@ -853,44 +856,64 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public Task WriteAndFlushAsync(object message)
+        public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, true).AsTask();
+        
+        public ValueTask WriteAndFlushAsync(object message, bool notifyComplete)
         {
             Contract.Requires(message != null);
             // todo: check for cancellation
 
-            return this.WriteAsync(message, true);
+            return this.WriteAsync(message, notifyComplete ? FlushMode.Flush : FlushMode.VoidFlush);
         }
 
-        Task InvokeWriteAndFlushAsync(object msg)
+        ValueTask InvokeWriteAndFlushAsync(object msg, bool notifyComplete)
         {
             if (this.Added)
             {
-                Task task = this.InvokeWriteAsync0(msg);
+                ValueTask task = this.InvokeWriteAsync0(msg);
+                //flush can synchronously complete write, hence Task allocation required to capture result
+                task = notifyComplete ? task.Preserve() : default(ValueTask);
                 this.InvokeFlush0();
                 return task;
             }
-            return this.WriteAndFlushAsync(msg);
+            return this.WriteAndFlushAsync(msg, notifyComplete);
         }
 
-        Task WriteAsync(object msg, bool flush)
+        ValueTask WriteAsync(object msg, FlushMode mode)
         {
             AbstractChannelHandlerContext next = this.FindContextOutbound();
             object m = this.pipeline.Touch(msg, next);
             IEventExecutor nextExecutor = next.Executor;
             if (nextExecutor.InEventLoop)
             {
-                return flush
-                    ? next.InvokeWriteAndFlushAsync(m)
-                    : next.InvokeWriteAsync(m);
+                return mode == FlushMode.NoFlush
+                    ? next.InvokeWriteAsync(m)
+                    : next.InvokeWriteAndFlushAsync(m, mode == FlushMode.Flush);
             }
             else
             {
-                var promise = new TaskCompletionSource();
-                AbstractWriteTask task = flush 
-                    ? WriteAndFlushTask.NewInstance(next, m, promise)
-                    : (AbstractWriteTask)WriteTask.NewInstance(next, m, promise);
-                SafeExecuteOutbound(nextExecutor, task, promise, msg);
-                return promise.Task;
+                AbstractWriteTask task = mode == FlushMode.NoFlush 
+                    ? WriteTask.NewInstance(next, m)
+                    : (AbstractWriteTask)WriteAndFlushTask.NewInstance(next, m, mode == FlushMode.Flush);
+
+                ValueTask result;
+                switch (mode)
+                {
+                    case FlushMode.NoFlush:
+                        result = task;
+                        break;
+                    case FlushMode.Flush:
+                        //flush can synchronously complete write, hence Task allocation required to capture result
+                        result = ((ValueTask)task).Preserve();
+                        break;
+                    case FlushMode.VoidFlush:
+                    default:
+                        result = default(ValueTask);
+                        break;
+                }
+                
+                SafeExecuteOutbound(nextExecutor, task, msg);
+                return result;
             }
         }
 
@@ -952,7 +975,7 @@ namespace DotNetty.Transport.Channels
             return promise.Task;
         }
 
-        static void SafeExecuteOutbound(IEventExecutor executor, IRunnable task, TaskCompletionSource promise, object msg)
+        static void SafeExecuteOutbound(IEventExecutor executor, AbstractWriteTask task, object msg)
         {
             try
             {
@@ -962,7 +985,7 @@ namespace DotNetty.Transport.Channels
             {
                 try
                 {
-                    promise.TrySetException(cause);
+                    task.TrySetException(cause);
                 }
                 finally
                 {
@@ -975,8 +998,14 @@ namespace DotNetty.Transport.Channels
 
         public override string ToString() => $"{typeof(IChannelHandlerContext).Name} ({this.Name}, {this.Channel})";
 
+        enum FlushMode : byte
+        {
+            NoFlush = 0,
+            VoidFlush = 1,
+            Flush = 2
+        }
 
-        abstract class AbstractWriteTask : IRunnable
+        abstract class AbstractWriteTask : AbstractRecyclablePromise, IRunnable
         {
             static readonly bool EstimateTaskSizeOnSubmit =
                 SystemPropertyUtil.GetBoolean("io.netty.transport.estimateSizeOnSubmit", true);
@@ -985,17 +1014,15 @@ namespace DotNetty.Transport.Channels
             static readonly int WriteTaskOverhead =
                 SystemPropertyUtil.GetInt("io.netty.transport.writeTaskSizeOverhead", 56);
 
-            ThreadLocalPool.Handle handle;
             AbstractChannelHandlerContext ctx;
             object msg;
-            TaskCompletionSource promise;
             int size;
 
-            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            protected static void Init(AbstractWriteTask task, AbstractChannelHandlerContext ctx, object msg)
             {
+                task.Init(ctx.Executor);
                 task.ctx = ctx;
                 task.msg = msg;
-                task.promise = promise;
 
                 if (EstimateTaskSizeOnSubmit)
                 {
@@ -1018,9 +1045,9 @@ namespace DotNetty.Transport.Channels
                 }
             }
 
-            protected AbstractWriteTask(ThreadLocalPool.Handle handle)
+            protected AbstractWriteTask(ThreadLocalPool.Handle handle) : base(handle)
             {
-                this.handle = handle;
+
             }
 
             public void Run()
@@ -1033,28 +1060,42 @@ namespace DotNetty.Transport.Channels
                     {
                         buffer?.DecrementPendingOutboundBytes(this.size);
                     }
-                    this.WriteAsync(this.ctx, this.msg).LinkOutcome(this.promise);
+
+                    this.WriteAsync(this.ctx, this.msg).LinkOutcome(this);
+                }
+                catch (Exception ex)
+                {
+                    this.TrySetException(ex);
                 }
                 finally
                 {
                     // Set to null so the GC can collect them directly
                     this.ctx = null;
                     this.msg = null;
-                    this.promise = null;
-                    this.handle.Release(this);
+                    
+                    //this.Recycle();
+                    //this.handle.Release(this);
                 }
             }
 
-            protected virtual Task WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
-        }
-        sealed class WriteTask : AbstractWriteTask {
+            protected abstract ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg);
 
+            /*public override void Recycle()
+            {
+                base.Recycle();
+                this.handle.Release(this);
+            }*/
+        }
+        
+        
+        sealed class WriteTask : AbstractWriteTask 
+        {
             static readonly ThreadLocalPool<WriteTask> Recycler = new ThreadLocalPool<WriteTask>(handle => new WriteTask(handle));
 
-            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg, TaskCompletionSource promise)
+            public static WriteTask NewInstance(AbstractChannelHandlerContext ctx, object msg)
             {
                 WriteTask task = Recycler.Take();
-                Init(task, ctx, msg, promise);
+                Init(task, ctx, msg);
                 return task;
             }
 
@@ -1062,17 +1103,21 @@ namespace DotNetty.Transport.Channels
                 : base(handle)
             {
             }
+
+            protected override ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAsync(msg);
         }
 
         sealed class WriteAndFlushTask : AbstractWriteTask
-    {
-
+        {
+            bool notifyComplete;
+            
             static readonly ThreadLocalPool<WriteAndFlushTask> Recycler = new ThreadLocalPool<WriteAndFlushTask>(handle => new WriteAndFlushTask(handle));
 
-            public static WriteAndFlushTask NewInstance(
-                    AbstractChannelHandlerContext ctx, object msg,  TaskCompletionSource promise) {
+            public static WriteAndFlushTask NewInstance(AbstractChannelHandlerContext ctx, object msg, bool notifyComplete) 
+            {
                 WriteAndFlushTask task = Recycler.Take();
-                Init(task, ctx, msg, promise);
+                Init(task, ctx, msg);
+                task.notifyComplete = notifyComplete;
                 return task;
             }
 
@@ -1080,13 +1125,10 @@ namespace DotNetty.Transport.Channels
                 : base(handle)
             {
             }
+            
+            //notifyComplete is always true since continuation triggers WriteAndFlushTask completion 
+            protected override ValueTask WriteAsync(AbstractChannelHandlerContext ctx, object msg) => ctx.InvokeWriteAndFlushAsync(msg, this.notifyComplete);
 
-            protected override Task WriteAsync(AbstractChannelHandlerContext ctx, object msg)
-            {
-                Task result = base.WriteAsync(ctx, msg);
-                ctx.InvokeFlush();
-                return result;
-            }
         }
     }
 }

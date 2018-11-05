@@ -83,16 +83,19 @@ namespace DotNetty.Handlers.Timeout
                  : TimeSpan.Zero;
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
-            Task task = context.WriteAsync(message);
+            ValueTask future = context.WriteAsync(message);
 
             if (this.timeout.Ticks > 0)
             {
+                //allocating task cause we need to attach continuation
+                Task task = future.AsTask();
                 this.ScheduleTimeout(context, task);
+                return new ValueTask(task);
             }
 
-            return task;
+            return future;
         }
 
         public override void HandlerRemoved(IChannelHandlerContext context)

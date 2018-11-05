@@ -54,13 +54,13 @@ namespace DotNetty.Transport.Channels.Groups
             }
         }
 
-        public Task WriteAsync(object message) => this.WriteAsync(message, ChannelMatchers.All());
+        public ValueTask WriteAsync(object message) => this.WriteAsync(message, ChannelMatchers.All());
 
-        public Task WriteAsync(object message, IChannelMatcher matcher)
+        public ValueTask WriteAsync(object message, IChannelMatcher matcher)
         {
             Contract.Requires(message != null);
             Contract.Requires(matcher != null);
-            var futures = new Dictionary<IChannel, Task>();
+            var futures = new Dictionary<IChannel, ValueTask>();
             foreach (IChannel c in this.nonServerChannels.Values)
             {
                 if (matcher.Matches(c))
@@ -70,7 +70,7 @@ namespace DotNetty.Transport.Channels.Groups
             }
 
             ReferenceCountUtil.Release(message);
-            return new DefaultChannelGroupCompletionSource(this, futures /*, this.executor*/).Task;
+            return new DefaultChannelGroupPromise(futures);
         }
 
         public IChannelGroup Flush(IChannelMatcher matcher)
@@ -144,23 +144,23 @@ namespace DotNetty.Transport.Channels.Groups
         IEnumerator IEnumerable.GetEnumerator() => new CombinedEnumerator<IChannel>(this.serverChannels.Values.GetEnumerator(),
             this.nonServerChannels.Values.GetEnumerator());
 
-        public Task WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, ChannelMatchers.All());
+        public ValueTask WriteAndFlushAsync(object message) => this.WriteAndFlushAsync(message, ChannelMatchers.All());
 
-        public Task WriteAndFlushAsync(object message, IChannelMatcher matcher)
+        public ValueTask WriteAndFlushAsync(object message, IChannelMatcher matcher)
         {
             Contract.Requires(message != null);
             Contract.Requires(matcher != null);
-            var futures = new Dictionary<IChannel, Task>();
+            var futures = new Dictionary<IChannel, ValueTask>();
             foreach (IChannel c in this.nonServerChannels.Values)
             {
                 if (matcher.Matches(c))
                 {
-                    futures.Add(c, c.WriteAndFlushAsync(SafeDuplicate(message)));
+                    futures.Add(c, c.WriteAndFlushAsync(SafeDuplicate(message), true));
                 }
             }
 
             ReferenceCountUtil.Release(message);
-            return new DefaultChannelGroupCompletionSource(this, futures /*, this.executor*/).Task;
+            return new DefaultChannelGroupPromise(futures);
         }
 
         public Task DisconnectAsync() => this.DisconnectAsync(ChannelMatchers.All());

@@ -11,8 +11,14 @@ namespace DotNetty.Transport.Channels
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.ComponentModel;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
+    using System.Runtime.ExceptionServices;
+    using System.Security.Cryptography;
     using System.Threading;
+    using System.Threading.Tasks;
+    using System.Threading.Tasks.Sources;
     using DotNetty.Buffers;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
@@ -53,15 +59,14 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        /// Adds the given message to this <see cref="ChannelOutboundBuffer"/>. The given
-        /// <see cref="TaskCompletionSource"/> will be notified once the message was written.
+        /// Adds the given message to this <see cref="ChannelOutboundBuffer"/>. Returned
+        /// <see cref="ValueTask"/> will be notified once the message was written.
         /// </summary>
         /// <param name="msg">The message to add to the buffer.</param>
         /// <param name="size">The size of the message.</param>
-        /// <param name="promise">The <see cref="TaskCompletionSource"/> to notify once the message is written.</param>
-        public void AddMessage(object msg, int size, TaskCompletionSource promise)
+        public ValueTask AddMessage(object msg, int size)
         {
-            Entry entry = Entry.NewInstance(msg, size, promise);
+            Entry entry = Entry.NewInstance(this.channel.EventLoop, msg, size);
             if (this.tailEntry == null)
             {
                 this.flushedEntry = null;
@@ -81,6 +86,8 @@ namespace DotNetty.Transport.Channels
             // increment pending bytes after adding message to the unflushed arrays.
             // See https://github.com/netty/netty/issues/1619
             this.IncrementPendingOutboundBytes(size, false);
+            
+            return entry;
         }
 
         /// <summary>
@@ -104,7 +111,7 @@ namespace DotNetty.Transport.Channels
                 do
                 {
                     this.flushed++;
-                    if (!entry.Promise.SetUncancellable())
+                    if (!entry.SetUncancellable())
                     {
                         // Was cancelled so make sure we free up memory and notify about the freed bytes
                         int pending = entry.Cancel();
@@ -201,7 +208,6 @@ namespace DotNetty.Transport.Channels
             }
             object msg = e.Message;
 
-            TaskCompletionSource promise = e.Promise;
             int size = e.PendingSize;
 
             this.RemoveEntry(e);
@@ -210,12 +216,9 @@ namespace DotNetty.Transport.Channels
             {
                 // only release message, notify and decrement if it was not canceled before.
                 ReferenceCountUtil.SafeRelease(msg);
-                SafeSuccess(promise);
+                Util.SafeSetSuccess(e, Logger);
                 this.DecrementPendingOutboundBytes(size, false, true);
             }
-
-            // recycle the entry
-            e.Recycle();
 
             return true;
         }
@@ -239,7 +242,7 @@ namespace DotNetty.Transport.Channels
             }
             object msg = e.Message;
 
-            TaskCompletionSource promise = e.Promise;
+            //TaskCompletionSource promise = e.Promise;
             int size = e.PendingSize;
 
             this.RemoveEntry(e);
@@ -248,12 +251,14 @@ namespace DotNetty.Transport.Channels
             {
                 // only release message, fail and decrement if it was not canceled before.
                 ReferenceCountUtil.SafeRelease(msg);
-                SafeFail(promise, cause);
+
+                Util.SafeSetFailure(e, cause, Logger);
+
                 this.DecrementPendingOutboundBytes(size, false, notifyWritability);
             }
 
             // recycle the entry
-            e.Recycle();
+            //e.Recycle();
 
             return true;
         }
@@ -665,7 +670,7 @@ namespace DotNetty.Transport.Channels
                     if (!e.Cancelled)
                     {
                         ReferenceCountUtil.SafeRelease(e.Message);
-                        SafeFail(e.Promise, cause);
+                        Util.SafeSetFailure(e, cause, Logger);
                     }
                     e = e.RecycleAndGetNext();
                 }
@@ -783,31 +788,29 @@ namespace DotNetty.Transport.Channels
             bool ProcessMessage(object msg);
         }
 
-        sealed class Entry
+        sealed class Entry : AbstractRecyclablePromise
         {
             static readonly ThreadLocalPool<Entry> Pool = new ThreadLocalPool<Entry>(h => new Entry(h));
 
-            readonly ThreadLocalPool.Handle handle;
             public Entry Next;
             public object Message;
             public ArraySegment<byte>[] Buffers;
             public ArraySegment<byte> Buffer;
-            public TaskCompletionSource Promise;
             public int PendingSize;
             public int Count = -1;
             public bool Cancelled;
 
-            Entry(ThreadLocalPool.Handle handle)
+            Entry(ThreadLocalPool.Handle handle) 
+                : base(handle)
             {
-                this.handle = handle;
             }
 
-            public static Entry NewInstance(object msg, int size, TaskCompletionSource promise)
+            public static Entry NewInstance(IEventExecutor executor, object msg, int size)
             {
                 Entry entry = Pool.Take();
+                entry.Init(executor);
                 entry.Message = msg;
                 entry.PendingSize = size;
-                entry.Promise = promise;
                 return entry;
             }
 
@@ -830,23 +833,23 @@ namespace DotNetty.Transport.Channels
                 return 0;
             }
 
-            public void Recycle()
+            protected override void Recycle()
             {
                 this.Next = null;
                 this.Buffers = null;
                 this.Buffer = new ArraySegment<byte>();
                 this.Message = null;
-                this.Promise = null;
                 this.PendingSize = 0;
                 this.Count = -1;
                 this.Cancelled = false;
-                this.handle.Release(this);
+                
+                base.Recycle();
             }
 
             public Entry RecycleAndGetNext()
             {
                 Entry next = this.Next;
-                this.Recycle();
+                //this.Recycle();
                 return next;
             }
         }

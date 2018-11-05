@@ -19,7 +19,7 @@ namespace DotNetty.Codecs.Http.WebSockets.Extensions
             this.extensionHandshakers = new List<IWebSocketClientExtensionHandshaker>(extensionHandshakers);
         }
 
-        public override Task WriteAsync(IChannelHandlerContext ctx, object msg)
+        public override ValueTask WriteAsync(IChannelHandlerContext ctx, object msg)
         {
             if (msg is IHttpRequest request && WebSocketExtensionUtil.IsWebsocketUpgrade(request.Headers))
             {

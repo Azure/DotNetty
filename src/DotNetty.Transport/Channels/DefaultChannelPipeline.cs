@@ -822,7 +822,7 @@ namespace DotNetty.Transport.Channels
             return this;
         }
 
-        public Task WriteAsync(object msg) => this.tail.WriteAsync(msg);
+        public ValueTask WriteAsync(object msg) => this.tail.WriteAsync(msg);
 
         public IChannelPipeline Flush()
         {
@@ -831,6 +831,8 @@ namespace DotNetty.Transport.Channels
         }
 
         public Task WriteAndFlushAsync(object msg) => this.tail.WriteAndFlushAsync(msg);
+        
+        public ValueTask WriteAndFlushAsync(object msg, bool notifyComplete) => this.tail.WriteAndFlushAsync(msg, notifyComplete);
 
         string FilterName(string name, IChannelHandler handler)
         {
@@ -1049,7 +1051,7 @@ namespace DotNetty.Transport.Channels
             public void UserEventTriggered(IChannelHandlerContext context, object evt) => ReferenceCountUtil.Release(evt);
 
             [Skip]
-            public Task WriteAsync(IChannelHandlerContext ctx, object message) => ctx.WriteAsync(message);
+            public ValueTask WriteAsync(IChannelHandlerContext ctx, object message) => ctx.WriteAsync(message);
 
             [Skip]
             public void Flush(IChannelHandlerContext context) => context.Flush();
@@ -1092,7 +1094,7 @@ namespace DotNetty.Transport.Channels
 
             public void Read(IChannelHandlerContext context) => this.channelUnsafe.BeginRead();
 
-            public Task WriteAsync(IChannelHandlerContext context, object message) => this.channelUnsafe.WriteAsync(message);
+            public ValueTask WriteAsync(IChannelHandlerContext context, object message) => this.channelUnsafe.WriteAsync(message);
 
             [Skip]
             public void HandlerAdded(IChannelHandlerContext context)

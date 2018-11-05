@@ -201,7 +201,7 @@ namespace DotNetty.Handlers.Timeout
                 ? TimeUtil.Max(allIdleTime, IdleStateHandler.MinTimeout)
                 : TimeSpan.Zero;
 
-            this.writeListener = new Action<Task>(antecedent =>
+            this.writeListener = new Action<Task>(t =>
                 {
                     this.lastWriteTime = this.Ticks();
                     this.firstWriterIdleEvent = this.firstAllIdleEvent = true;
@@ -303,17 +303,17 @@ namespace DotNetty.Handlers.Timeout
             context.FireChannelReadComplete();
         }
 
-        public override Task WriteAsync(IChannelHandlerContext context, object message)
+        public override ValueTask WriteAsync(IChannelHandlerContext context, object message)
         {
+            ValueTask future = context.WriteAsync(message);
             if (this.writerIdleTime.Ticks > 0 || this.allIdleTime.Ticks > 0)
             {
-                Task task = context.WriteAsync(message);
+                //task allocation since we attach continuation and returning task to a caller       
+                Task task = future.AsTask();
                 task.ContinueWith(this.writeListener, TaskContinuationOptions.ExecuteSynchronously);
-
-                return task;
+                return new ValueTask(task);
             }
-
-            return context.WriteAsync(message);
+            return future;
         }
 
         void Initialize(IChannelHandlerContext context)
