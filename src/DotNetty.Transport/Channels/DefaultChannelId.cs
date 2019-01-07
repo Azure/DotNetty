@@ -123,7 +123,7 @@ namespace DotNetty.Transport.Channels
             var machineId = new byte[MachineIdLen];
             for (int i = 0; i < value.Length; i += 2)
             {
-                machineId[i] = (byte)int.Parse(value.Substring(i, i + 2), NumberStyles.AllowHexSpecifier);
+                machineId[i] = (byte)int.Parse(value.Substring(i, 2), NumberStyles.AllowHexSpecifier);
             }
             return machineId;
         }
