@@ -198,6 +198,11 @@ namespace DotNetty.Common.Utilities
                 // 8 colons is valid only if compression in start or end
                 wordLen > 0 && (colons < 8 || compressBegin <= start);
         }
+		
+		public static bool IsValidIpV4Address(string ip)
+        {
+            return IsValidIpV4Address(ip, 0, ip.Length);
+        }
 
         static bool IsValidIpV4Address(string ip, int from, int toExcluded)
         {
