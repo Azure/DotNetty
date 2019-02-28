@@ -3,219 +3,171 @@
 
 namespace DotNetty.Codecs.Redis.Tests
 {
+    using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using Transport.Channels.Embedded;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Redis.Messages;
+    using DotNetty.Transport.Channels.Embedded;
     using Xunit;
 
-    public sealed class RedisEncoderTests
+    using static RedisCodecTestUtil;
+
+    public sealed class RedisEncoderTests : IDisposable
     {
-        [Theory]
-        [InlineData("simple")]
-        public void EncodeSimpleString(string value)
+        readonly EmbeddedChannel channel;
+
+        public RedisEncoderTests()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
-            var message = new SimpleStringRedisMessage(value);
-            Assert.True(channel.WriteOutbound(message));
+            this.channel = new EmbeddedChannel(new RedisEncoder());
+        }
 
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = $"+{value}\r\n".Bytes();
+        [Fact]
+        public void EncodeInlineCommand()
+        {
+            var msg = new InlineCommandRedisMessage("ping");
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("ping\r\n"), BytesOf(written));
             written.Release();
         }
 
-        [Theory]
-        [InlineData("error1")]
-        public void EncodeError(string value)
+        [Fact]
+        public void EncodeSimpleString()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
-            var message = new ErrorRedisMessage(value);
-            Assert.True(channel.WriteOutbound(message));
+            var msg = new SimpleStringRedisMessage("simple");
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = $"-{value}\r\n".Bytes();
-
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("+simple\r\n"), BytesOf(written));
             written.Release();
         }
 
-        [Theory]
-        [InlineData(1234L)]
-        public void EncodeInteger(long value)
+        [Fact]
+        public void EncodeError()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
-            var message = new IntegerRedisMessage(value);
-            Assert.True(channel.WriteOutbound(message));
+            var msg = new ErrorRedisMessage("error1");
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = $":{value}\r\n".Bytes();
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("-error1\r\n"), BytesOf(written));
+            written.Release();
+        }
 
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+        [Fact]
+        public void EncodeInteger()
+        {
+            var msg = new IntegerRedisMessage(1234L);
+            Assert.True(this.channel.WriteOutbound(msg));
+
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf(":1234\r\n"), BytesOf(written));
             written.Release();
         }
 
         [Fact]
         public void EncodeBulkStringContent()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
-
             var header = new BulkStringHeaderRedisMessage(16);
+            var body1 = new DefaultBulkStringRedisContent((IByteBuffer)ByteBufOf("bulk\nstr").Retain());
+            var body2 = new DefaultLastBulkStringRedisContent((IByteBuffer)ByteBufOf("ing\ntest").Retain());
+            Assert.True(this.channel.WriteOutbound(header));
+            Assert.True(this.channel.WriteOutbound(body1));
+            Assert.True(this.channel.WriteOutbound(body2));
 
-            IByteBuffer buffer1 = "bulk\nstr".Buffer();
-            buffer1.Retain();
-            var body1 = new BulkStringRedisContent(buffer1);
-
-            IByteBuffer buffer2 = "ing\ntest".Buffer();
-            buffer1.Retain();
-            var body2 = new LastBulkStringRedisContent(buffer2);
-
-            Assert.True(channel.WriteOutbound(header));
-            Assert.True(channel.WriteOutbound(body1));
-            Assert.True(channel.WriteOutbound(body2));
-            IByteBuffer written = ReadAll(channel);
-
-            byte[] output = written.Bytes();
-            byte[] expected = "$16\r\nbulk\nstring\ntest\r\n".Bytes();
-
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("$16\r\nbulk\nstring\ntest\r\n"), BytesOf(written));
             written.Release();
         }
 
-        [Theory]
-        [InlineData(@"bulk\nstring\ntest")]
-        public void EncodeFullBulkString(string value)
+        [Fact]
+        public void EncodeFullBulkString()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
+            var bulkString = (IByteBuffer)ByteBufOf("bulk\nstring\ntest").Retain();
+            int length = bulkString.ReadableBytes;
+            var msg = new FullBulkStringRedisMessage(bulkString);
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            // Content
-            IByteBuffer bulkStringBuffer = value.Buffer();
-            bulkStringBuffer.Retain();
-            int length = bulkStringBuffer.ReadableBytes;
-            var message = new FullBulkStringRedisMessage(bulkStringBuffer);
-            Assert.True(channel.WriteOutbound(message));
-
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = $"${length}\r\n{value}\r\n".Bytes();
-
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("$" + length + "\r\nbulk\nstring\ntest\r\n"), BytesOf(written));
             written.Release();
         }
 
         [Fact]
         public void EncodeSimpleArray()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
+            var children = new List<IRedisMessage>();
+            children.Add(new FullBulkStringRedisMessage((IByteBuffer)ByteBufOf("foo").Retain()));
+            children.Add(new FullBulkStringRedisMessage((IByteBuffer)ByteBufOf("bar").Retain()));
+            var msg = new ArrayRedisMessage(children);
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            var messages = new List<IRedisMessage>();
-            IByteBuffer buffer = "foo".Buffer();
-            buffer.Retain();
-            messages.Add(new FullBulkStringRedisMessage(buffer));
-
-            buffer = "bar".Buffer();
-            buffer.Retain();
-            messages.Add(new FullBulkStringRedisMessage(buffer));
-
-            IRedisMessage message = new ArrayRedisMessage(messages);
-            Assert.True(channel.WriteOutbound(message));
-
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n".Bytes();
-
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n"), BytesOf(written));
             written.Release();
         }
 
         [Fact]
         public void EncodeNullArray()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
-            IRedisMessage message = ArrayRedisMessage.Null;
+            IArrayRedisMessage msg = ArrayRedisMessage.Null;
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            Assert.True(channel.WriteOutbound(message));
-
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = "*-1\r\n".Bytes();
-
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("*-1\r\n"), BytesOf(written));
             written.Release();
         }
 
         [Fact]
         public void EncodeEmptyArray()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
-            IRedisMessage message = ArrayRedisMessage.Empty;
+            IArrayRedisMessage msg = ArrayRedisMessage.Empty;
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            Assert.True(channel.WriteOutbound(message));
-
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = "*0\r\n".Bytes();
-
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("*0\r\n"), BytesOf(written));
             written.Release();
         }
 
         [Fact]
         public void EncodeNestedArray()
         {
-            var channel = new EmbeddedChannel(new RedisEncoder());
+            var grandChildren = new List<IRedisMessage>();
+            grandChildren.Add(new FullBulkStringRedisMessage(ByteBufOf("bar")));
+            grandChildren.Add(new IntegerRedisMessage(-1234L));
+            var children = new List<IRedisMessage>();
+            children.Add(new SimpleStringRedisMessage("foo"));
+            children.Add(new ArrayRedisMessage(grandChildren));
+            var msg = new ArrayRedisMessage(children);
+            Assert.True(this.channel.WriteOutbound(msg));
 
-            var grandChildren = new List<IRedisMessage>
-            {
-                new FullBulkStringRedisMessage("bar".Buffer()),
-                new IntegerRedisMessage(-1234L)
-            };
-
-            var children = new List<IRedisMessage>
-            {
-                new SimpleStringRedisMessage("foo"),
-                new ArrayRedisMessage(grandChildren)
-            };
-
-            IRedisMessage message = new ArrayRedisMessage(children);
-
-            Assert.True(channel.WriteOutbound(message));
-
-            IByteBuffer written = ReadAll(channel);
-            byte[] output = written.Bytes();
-            byte[] expected = "*2\r\n+foo\r\n*2\r\n$3\r\nbar\r\n:-1234\r\n".Bytes();
-
-            Assert.Equal(expected.Length, output.Length);
-            Assert.True(output.SequenceEqual(expected));
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("*2\r\n+foo\r\n*2\r\n$3\r\nbar\r\n:-1234\r\n"), BytesOf(written));
             written.Release();
         }
 
         static IByteBuffer ReadAll(EmbeddedChannel channel)
         {
-            Assert.NotNull(channel);
-
-            IByteBuffer buffer = Unpooled.Buffer();
-
+            IByteBuffer buf = Unpooled.Buffer();
             IByteBuffer read;
             while ((read = channel.ReadOutbound<IByteBuffer>()) != null)
             {
-                buffer.WriteBytes(read);
+                buf.WriteBytes(read);
+                read.Release();
             }
+            return buf;
+        }
 
-            return buffer;
+        public void Dispose()
+        {
+            try
+            {
+                Assert.False(this.channel.Finish());
+            }
+            finally 
+            {
+                this.channel.CloseAsync().Wait(TimeSpan.FromSeconds(10));
+            }
         }
     }
 }

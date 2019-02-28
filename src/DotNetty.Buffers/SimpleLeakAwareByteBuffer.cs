@@ -3,6 +3,7 @@
 
 namespace DotNetty.Buffers
 {
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using DotNetty.Common;
 
@@ -71,7 +72,8 @@ namespace DotNetty.Buffers
         {
             // Close the ResourceLeakTracker with the tracked ByteBuf as argument. This must be the same that was used when
             // calling DefaultResourceLeak.track(...).
-            this.Leak.Close(this.trackedByteBuf);
+            bool closed = this.Leak.Close(this.trackedByteBuf);
+            Debug.Assert(closed);
         }
 
         IByteBuffer UnwrappedDerived(IByteBuffer derived)

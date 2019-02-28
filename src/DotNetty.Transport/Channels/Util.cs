@@ -13,8 +13,11 @@ namespace DotNetty.Transport.Channels
         static readonly IInternalLogger Log = InternalLoggerFactory.GetInstance<IChannel>();
 
         /// <summary>
-        ///     Marks the specified {@code promise} as success.  If the {@code promise} is done already, log a message.
+        /// Marks the specified <see cref="TaskCompletionSource"/> as success. If the
+        /// <see cref="TaskCompletionSource"/> is done already, logs a message.
         /// </summary>
+        /// <param name="promise">The <see cref="TaskCompletionSource"/> to complete.</param>
+        /// <param name="logger">The <see cref="IInternalLogger"/> to use to log a failure message.</param>
         public static void SafeSetSuccess(TaskCompletionSource promise, IInternalLogger logger)
         {
             if (promise != TaskCompletionSource.Void && !promise.TryComplete())
@@ -24,8 +27,12 @@ namespace DotNetty.Transport.Channels
         }
 
         /// <summary>
-        ///     Marks the specified {@code promise} as failure.  If the {@code promise} is done already, log a message.
+        /// Marks the specified <see cref="TaskCompletionSource"/> as failure. If the
+        /// <see cref="TaskCompletionSource"/> is done already, log a message.
         /// </summary>
+        /// <param name="promise">The <see cref="TaskCompletionSource"/> to complete.</param>
+        /// <param name="cause">The <see cref="Exception"/> to fail the <see cref="TaskCompletionSource"/> with.</param>
+        /// <param name="logger">The <see cref="IInternalLogger"/> to use to log a failure message.</param>
         public static void SafeSetFailure(TaskCompletionSource promise, Exception cause, IInternalLogger logger)
         {
             if (promise != TaskCompletionSource.Void && !promise.TrySetException(cause))
@@ -34,29 +41,21 @@ namespace DotNetty.Transport.Channels
             }
         }
 
-        public static async void CloseSafe(this IChannel channel)
+        public static void CloseSafe(this IChannel channel)
         {
-            try
-            {
-                await channel.CloseAsync();
-            }
-            catch (TaskCanceledException)
-            {
-            }
-            catch (Exception ex) 
-            {
-                if (Log.DebugEnabled)
-                {
-                    Log.Debug("Failed to close channel " + channel + " cleanly.", ex);
-                }
-            }
+            CompleteChannelCloseTaskSafely(channel, channel.CloseAsync());
         }
 
-        public static async void CloseSafe(this IChannelUnsafe u)
+        public static void CloseSafe(this IChannelUnsafe u)
+        {
+            CompleteChannelCloseTaskSafely(u, u.CloseAsync());
+        }
+
+        internal static async void CompleteChannelCloseTaskSafely(object channelObject, Task closeTask)
         {
             try
             {
-                await u.CloseAsync();
+                await closeTask;
             }
             catch (TaskCanceledException)
             {
@@ -65,7 +64,7 @@ namespace DotNetty.Transport.Channels
             {
                 if (Log.DebugEnabled)
                 {
-                    Log.Debug("Failed to close channel " + u + " cleanly.", ex);
+                    Log.Debug("Failed to close channel " + channelObject + " cleanly.", ex);
                 }
             }
         }

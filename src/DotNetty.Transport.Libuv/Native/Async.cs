@@ -4,7 +4,7 @@
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
-    using System.Diagnostics.Contracts;
+    using System.Diagnostics;
     using System.Runtime.InteropServices;
 
     sealed unsafe class Async : NativeHandle
@@ -17,26 +17,19 @@ namespace DotNetty.Transport.Libuv.Native
         public Async(Loop loop, Action<object> callback, object state)
             : base(uv_handle_type.UV_ASYNC)
         {
-            Contract.Requires(loop != null);
-            Contract.Requires(callback != null);
+            Debug.Assert(loop != null);
+            Debug.Assert(callback != null);
 
-            int size = NativeMethods.uv_handle_size(uv_handle_type.UV_ASYNC).ToInt32();
-            IntPtr handle = Marshal.AllocHGlobal(size);
-
-            int result;
+            IntPtr handle = NativeMethods.Allocate(uv_handle_type.UV_ASYNC);
             try
             {
-                result = NativeMethods.uv_async_init(loop.Handle, handle, WorkCallback);
+                int result = NativeMethods.uv_async_init(loop.Handle, handle, WorkCallback);
+                NativeMethods.ThrowIfError(result);
             }
-            catch (Exception)
+            catch
             {
-                Marshal.FreeHGlobal(handle);
+                NativeMethods.FreeMemory(handle);
                 throw;
-            }
-            if (result < 0)
-            {
-                Marshal.FreeHGlobal(handle);
-                throw NativeMethods.CreateError((uv_err_code)result);
             }
 
             GCHandle gcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
@@ -55,10 +48,7 @@ namespace DotNetty.Transport.Libuv.Native
             }
 
             int result = NativeMethods.uv_async_send(this.Handle);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            NativeMethods.ThrowIfError(result);
         }
 
         void OnWorkCallback()

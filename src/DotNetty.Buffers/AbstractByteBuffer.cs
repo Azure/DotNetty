@@ -72,7 +72,7 @@ namespace DotNetty.Buffers
         {
             if (index < 0 || index > this.writerIndex)
             {
-                throw new IndexOutOfRangeException($"ReaderIndex: {index} (expected: 0 <= readerIndex <= writerIndex({this.WriterIndex})");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReaderIndex(index, this.WriterIndex);
             }
 
             this.readerIndex = index;
@@ -85,7 +85,7 @@ namespace DotNetty.Buffers
         {
             if (index < this.readerIndex || index > this.Capacity)
             {
-                throw new IndexOutOfRangeException($"WriterIndex: {index} (expected: 0 <= readerIndex({this.readerIndex}) <= writerIndex <= capacity ({this.Capacity})");
+                ThrowHelper.ThrowIndexOutOfRangeException_WriterIndex(index, this.readerIndex, this.Capacity);
             }
 
             this.SetWriterIndex0(index);
@@ -101,7 +101,7 @@ namespace DotNetty.Buffers
         {
             if (readerIdx < 0 || readerIdx > writerIdx || writerIdx > this.Capacity)
             {
-                throw new IndexOutOfRangeException($"ReaderIndex: {readerIdx}, WriterIndex: {writerIdx} (expected: 0 <= readerIndex <= writerIndex <= capacity ({this.Capacity})");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReaderWriterIndex(readerIdx, writerIdx, this.Capacity);
             }
 
             this.SetIndex0(readerIdx, writerIdx);
@@ -235,14 +235,14 @@ namespace DotNetty.Buffers
         {
             if (minWritableBytes < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(minWritableBytes),
-                    "expected minWritableBytes to be greater than zero");
+                ThrowHelper.ThrowArgumentOutOfRangeException_MinWritableBytes();
             }
 
             this.EnsureWritable0(minWritableBytes);
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected internal void EnsureWritable0(int minWritableBytes)
         {
             this.EnsureAccessible();
@@ -253,7 +253,7 @@ namespace DotNetty.Buffers
 
             if (minWritableBytes > this.MaxCapacity - this.writerIndex)
             {
-                throw new IndexOutOfRangeException($"writerIndex({this.writerIndex}) + minWritableBytes({minWritableBytes}) exceeds maxCapacity({this.MaxCapacity}): {this}");
+                ThrowHelper.ThrowIndexOutOfRangeException_WriterIndex(minWritableBytes, this.writerIndex, this.MaxCapacity, this);
             }
 
             // Normalize the current capacity to the power of 2.
@@ -455,6 +455,78 @@ namespace DotNetty.Buffers
 
         public abstract IByteBuffer GetBytes(int index, Stream destination, int length);
 
+        public virtual unsafe string GetString(int index, int length, Encoding encoding)
+        {
+            this.CheckIndex0(index, length);
+            if (length == 0)
+            {
+                return string.Empty;
+            }
+
+            if (this.HasMemoryAddress)
+            {
+                IntPtr ptr = this.AddressOfPinnedMemory();
+                if (ptr != IntPtr.Zero)
+                {
+                    return UnsafeByteBufferUtil.GetString((byte*)(ptr + index), length, encoding);
+                }
+                else 
+                {
+                    fixed (byte* p = &this.GetPinnableMemoryAddress())
+                        return UnsafeByteBufferUtil.GetString(p + index, length, encoding);
+                }
+            }
+            if (this.HasArray)
+            {
+                return encoding.GetString(this.Array, this.ArrayOffset + index, length);
+            }
+
+            return this.ToString(index, length, encoding);
+        }
+
+        public virtual string ReadString(int length, Encoding encoding)
+        {
+            string value = this.GetString(this.readerIndex, length, encoding);
+            this.readerIndex += length;
+            return value;
+        }
+
+        public virtual unsafe ICharSequence GetCharSequence(int index, int length, Encoding encoding)
+        {
+            this.CheckIndex0(index, length);
+            if (length == 0)
+            {
+                return StringCharSequence.Empty;
+            }
+
+            if (this.HasMemoryAddress)
+            {
+                IntPtr ptr = this.AddressOfPinnedMemory();
+                if (ptr != IntPtr.Zero)
+                {
+                    return new StringCharSequence(UnsafeByteBufferUtil.GetString((byte*)(ptr + index), length, encoding));
+                }
+                else
+                {
+                    fixed (byte* p = &this.GetPinnableMemoryAddress())
+                        return new StringCharSequence(UnsafeByteBufferUtil.GetString(p + index, length, encoding));
+                }
+            }
+            if (this.HasArray)
+            {
+                return new StringCharSequence(encoding.GetString(this.Array, this.ArrayOffset + index, length));
+            }
+
+            return new StringCharSequence(this.ToString(index, length, encoding));
+        }
+
+        public virtual ICharSequence ReadCharSequence(int length, Encoding encoding)
+        {
+            ICharSequence sequence = this.GetCharSequence(this.readerIndex, length, encoding);
+            this.readerIndex += length;
+            return sequence;
+        }
+
         public virtual IByteBuffer SetByte(int index, int value)
         {
             this.CheckIndex(index);
@@ -597,6 +669,7 @@ namespace DotNetty.Buffers
             this.SetBytes(index, src, 0, src.Length);
             return this;
         }
+
         public abstract IByteBuffer SetBytes(int index, byte[] src, int srcIndex, int length);
 
         public virtual IByteBuffer SetBytes(int index, IByteBuffer src)
@@ -612,7 +685,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (length > src.ReadableBytes)
             {
-                throw new IndexOutOfRangeException($"length({length}) exceeds src.readableBytes({src.ReadableBytes}) where src is: {src}");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReadableBytes(length, src);
             }
             this.SetBytes(index, src, src.ReaderIndex, length);
             src.SetReaderIndex(src.ReaderIndex + length);
@@ -664,6 +737,90 @@ namespace DotNetty.Buffers
             }
 
             return this;
+        }
+
+        public virtual int SetString(int index, string value, Encoding encoding) => this.SetString0(index, value, encoding, false);
+
+        int SetString0(int index, string value, Encoding encoding, bool expand)
+        {
+            if (ReferenceEquals(encoding, Encoding.UTF8))
+            {
+                int length = ByteBufferUtil.Utf8MaxBytes(value);
+                if (expand)
+                {
+                    this.EnsureWritable0(length);
+                    this.CheckIndex0(index, length);
+                }
+                else
+                {
+                    this.CheckIndex(index, length);
+                }
+                return ByteBufferUtil.WriteUtf8(this, index, value, value.Length);
+            }
+            if (ReferenceEquals(encoding, Encoding.ASCII))
+            {
+                int length = value.Length;
+                if (expand)
+                {
+                    this.EnsureWritable0(length);
+                    this.CheckIndex0(index, length);
+                }
+                else
+                {
+                    this.CheckIndex(index, length);
+                }
+                return ByteBufferUtil.WriteAscii(this, index, value, length);
+            }
+            byte[] bytes = encoding.GetBytes(value);
+            if (expand)
+            {
+                this.EnsureWritable0(bytes.Length);
+                // setBytes(...) will take care of checking the indices.
+            }
+            this.SetBytes(index, bytes);
+            return bytes.Length;
+        }
+
+        public virtual int SetCharSequence(int index, ICharSequence sequence, Encoding encoding) => this.SetCharSequence0(index, sequence, encoding, false);
+
+        int SetCharSequence0(int index, ICharSequence sequence, Encoding encoding, bool expand)
+        {
+            if (ReferenceEquals(encoding, Encoding.UTF8))
+            {
+                int length = ByteBufferUtil.Utf8MaxBytes(sequence);
+                if (expand)
+                {
+                    this.EnsureWritable0(length);
+                    this.CheckIndex0(index, length);
+                }
+                else
+                {
+                    this.CheckIndex(index, length);
+                }
+                return ByteBufferUtil.WriteUtf8(this, index, sequence, sequence.Count);
+            }
+            if (ReferenceEquals(encoding, Encoding.ASCII))
+            {
+                int length = sequence.Count;
+                if (expand)
+                {
+                    this.EnsureWritable0(length);
+                    this.CheckIndex0(index, length);
+                }
+                else
+                {
+                    this.CheckIndex(index, length);
+                }
+                return ByteBufferUtil.WriteAscii(this, index, sequence, length);
+            }
+            byte[] bytes = encoding.GetBytes(sequence.ToString());
+            if (expand)
+            {
+                this.EnsureWritable0(bytes.Length);
+                // setBytes(...) will take care of checking the indices.
+            }
+            this.SetBytes(index, bytes);
+            return bytes.Length;
         }
 
         public virtual byte ReadByte()
@@ -859,7 +1016,7 @@ namespace DotNetty.Buffers
         {
             if (length > dst.WritableBytes)
             {
-                throw new IndexOutOfRangeException($"length({length}) exceeds destination.WritableBytes({dst.WritableBytes}) where destination is: {dst}");
+                ThrowHelper.ThrowIndexOutOfRangeException_WritableBytes(length, dst);
             }
             this.ReadBytes(dst, dst.WriterIndex, length);
             dst.SetWriterIndex(dst.WriterIndex + length);
@@ -1028,7 +1185,7 @@ namespace DotNetty.Buffers
         {
             if (length > src.ReadableBytes)
             {
-                throw new IndexOutOfRangeException($"length({length}) exceeds src.readableBytes({src.ReadableBytes}) where src is: {src}");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReadableBytes(length, src);
             }
             this.WriteBytes(src, src.ReaderIndex, length);
             src.SetReaderIndex(src.ReaderIndex + length);
@@ -1104,6 +1261,20 @@ namespace DotNetty.Buffers
 
             this.writerIndex = wIndex;
             return this;
+        }
+
+        public virtual int WriteCharSequence(ICharSequence sequence, Encoding encoding)
+        {
+            int written = this.SetCharSequence0(this.writerIndex, sequence, encoding, true);
+            this.writerIndex += written;
+            return written;
+        }
+
+        public virtual int WriteString(string value, Encoding encoding)
+        {
+            int written = this.SetString0(this.writerIndex, value, encoding, true);
+            this.writerIndex += written;
+            return written;
         }
 
         public virtual IByteBuffer Copy() => this.Copy(this.readerIndex, this.ReadableBytes);
@@ -1245,7 +1416,7 @@ namespace DotNetty.Buffers
         {
             if (MathUtil.IsOutOfBounds(index, fieldLength, this.Capacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"index: {index}, length: {fieldLength} (expected: range(0, {this.Capacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException_Index(index, fieldLength, this.Capacity);
             }
         }
 
@@ -1255,7 +1426,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(srcIndex, length, srcCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"srcIndex: {srcIndex}, length: {length} (expected: range(0, {srcCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException_SrcIndex(srcIndex, length, srcCapacity);
             }
         }
 
@@ -1265,7 +1436,7 @@ namespace DotNetty.Buffers
             this.CheckIndex(index, length);
             if (MathUtil.IsOutOfBounds(dstIndex, length, dstCapacity))
             {
-                ThrowHelper.ThrowIndexOutOfRangeException($"dstIndex: {dstIndex}, length: {length} (expected: range(0, {dstCapacity}))");
+                ThrowHelper.ThrowIndexOutOfRangeException_DstIndex(dstIndex, length, dstCapacity);
             }
         }
 
@@ -1273,7 +1444,7 @@ namespace DotNetty.Buffers
         {
             if (minimumReadableBytes < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(minimumReadableBytes), $"minimumReadableBytes: {minimumReadableBytes} (expected: >= 0)");
+                ThrowHelper.ThrowArgumentOutOfRangeException_MinimumReadableBytes(minimumReadableBytes);
             }
 
             this.CheckReadableBytes0(minimumReadableBytes);
@@ -1284,16 +1455,17 @@ namespace DotNetty.Buffers
             this.EnsureAccessible();
             if (newCapacity < 0 || newCapacity > this.MaxCapacity)
             {
-                throw new ArgumentOutOfRangeException(nameof(newCapacity), $"newCapacity: {newCapacity} (expected: 0-{this.MaxCapacity})");
+                ThrowHelper.ThrowArgumentOutOfRangeException_Capacity(newCapacity, this.MaxCapacity);
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CheckReadableBytes0(int minimumReadableBytes)
         {
             this.EnsureAccessible();
             if (this.readerIndex > this.writerIndex - minimumReadableBytes)
             {
-                throw new IndexOutOfRangeException($"readerIndex({this.readerIndex}) + length({minimumReadableBytes}) exceeds writerIndex({this.writerIndex}): {this}");
+                ThrowHelper.ThrowIndexOutOfRangeException_ReaderIndex(minimumReadableBytes, this.readerIndex, this.writerIndex, this);
             }
         }
 
@@ -1302,7 +1474,7 @@ namespace DotNetty.Buffers
         {
             if (CheckAccessible && this.ReferenceCount == 0)
             {
-                ThrowHelper.ThrowIllegalReferenceCountException();
+                ThrowHelper.ThrowIllegalReferenceCountException(0);
             }
         }
 

@@ -483,6 +483,21 @@ namespace DotNetty.Buffers
         /// </exception>
         IByteBuffer GetBytes(int index, Stream destination, int length);
 
+
+        ICharSequence GetCharSequence(int index, int length, Encoding encoding);
+
+        /// <summary>
+        ///     Gets a string with the given length at the given index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="length">length the length to read</param>
+        /// <param name="encoding">charset that should be use</param>
+        /// <returns>the string value.</returns>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if length is greater than readable bytes.
+        /// </exception>
+        string GetString(int index, int length, Encoding encoding);
+
         /// <summary>
         ///     Sets the specified boolean at the specified absolute <paramref name="index" /> in this buffer.
         ///     This method does not directly modify <see cref="ReaderIndex" /> or <see cref="WriterIndex" /> of this buffer.
@@ -756,7 +771,33 @@ namespace DotNetty.Buffers
         /// </exception>
         Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken);
 
+        /// <summary>
+        ///     Fills this buffer with NULL (0x00) starting at the specified
+        ///     absolute index. This method does not modify reader index
+        ///     or writer index of this buffer
+        /// </summary>
+        /// <param name="index">absolute index in this byte buffer to start writing to</param>
+        /// <param name="length">length the number of <tt>NUL</tt>s to write to the buffer</param>
+        /// <exception cref="IndexOutOfRangeException">
+        ///     if the specified index is less than 0 or if index + length
+        ///     is greater than capacity.
+        /// </exception>
         IByteBuffer SetZero(int index, int length);
+
+        int SetCharSequence(int index, ICharSequence sequence, Encoding encoding);
+
+        /// <summary>
+        ///     Writes the specified string at the current writer index and increases
+        ///     the  writer index by the written bytes.
+        /// </summary>
+        /// <param name="index">Index on which the string should be written</param>
+        /// <param name="value">The string value.</param>
+        /// <param name="encoding">Encoding that should be used.</param>
+        /// <returns>The written number of bytes.</returns>
+        /// <exception cref="IndexOutOfRangeException">
+        ///    if writable bytes is not large enough to write the whole string.
+        /// </exception>
+        int SetString(int index, string value, Encoding encoding);
 
         /// <summary>
         ///     Gets a boolean at the current <see cref="ReaderIndex" /> and increases the <see cref="ReaderIndex" />
@@ -936,6 +977,17 @@ namespace DotNetty.Buffers
         IByteBuffer ReadBytes(byte[] destination, int dstIndex, int length);
 
         IByteBuffer ReadBytes(Stream destination, int length);
+
+        ICharSequence ReadCharSequence(int length, Encoding encoding);
+
+        /// <summary>
+        ///     Gets a string with the given length at the current reader index
+        ///     and increases the reader index by the given length.
+        /// </summary>
+        /// <param name="length">The length to read</param>
+        /// <param name="encoding">Encoding that should be used</param>
+        /// <returns>The string value</returns>
+        string ReadString(int length, Encoding encoding);
 
         /// <summary>
         ///     Increases the current <see cref="ReaderIndex" /> by the specified <paramref name="length" /> in this buffer.
@@ -1140,6 +1192,10 @@ namespace DotNetty.Buffers
         Task WriteBytesAsync(Stream stream, int length, CancellationToken cancellationToken);
 
         IByteBuffer WriteZero(int length);
+
+        int WriteCharSequence(ICharSequence sequence, Encoding encoding);
+
+        int WriteString(string value, Encoding encoding);
 
         int IndexOf(int fromIndex, int toIndex, byte value);
 

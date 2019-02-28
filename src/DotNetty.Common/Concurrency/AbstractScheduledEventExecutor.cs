@@ -79,7 +79,7 @@ namespace DotNetty.Common.Concurrency
         protected PreciseTimeSpan NextScheduledTaskNanos()
         {
             IScheduledRunnable nextScheduledRunnable = this.PeekScheduledTask();
-            return nextScheduledRunnable == null ? PreciseTimeSpan.MinusOne : nextScheduledRunnable.Deadline;
+            return nextScheduledRunnable?.Deadline ?? PreciseTimeSpan.MinusOne;
         }
 
         protected IScheduledRunnable PeekScheduledTask()

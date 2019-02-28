@@ -6,6 +6,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Diagnostics.Contracts;
     using System.Net;
     using System.Runtime.ExceptionServices;
     using System.Threading.Tasks;
@@ -85,15 +86,30 @@ namespace DotNetty.Transport.Channels.Embedded
             : this(id, hasDisconnect, true, handlers)
         { }
 
-        public EmbeddedChannel(IChannelId id, bool hasDisconnect, bool start, params IChannelHandler[] handlers)
+        public EmbeddedChannel(IChannelId id, bool hasDisconnect, bool register, params IChannelHandler[] handlers)
             : base(null, id)
         {
-            this.Metadata = hasDisconnect ? METADATA_DISCONNECT : METADATA_NO_DISCONNECT;
+            this.Metadata = GetMetadata(hasDisconnect);
             this.Configuration = new DefaultChannelConfiguration(this);
-            if (handlers == null)
-            {
-                throw new ArgumentNullException(nameof(handlers));
-            }
+            this.Setup(register, handlers);
+        }
+
+        public EmbeddedChannel(IChannelId id, bool hasDisconnect, IChannelConfiguration config, 
+            params IChannelHandler[] handlers)
+            : base(null, id)
+        {
+            Contract.Requires(config != null);
+
+            this.Metadata = GetMetadata(hasDisconnect);
+            this.Configuration = config;
+            this.Setup(true, handlers);
+        }
+
+        static ChannelMetadata GetMetadata(bool hasDisconnect) => hasDisconnect ? METADATA_DISCONNECT : METADATA_NO_DISCONNECT;
+
+        void Setup(bool register, params IChannelHandler[] handlers)
+        {
+            Contract.Requires(handlers != null);
 
             IChannelPipeline p = this.Pipeline;
             p.AddLast(new ActionChannelInitializer<IChannel>(channel =>
@@ -104,18 +120,20 @@ namespace DotNetty.Transport.Channels.Embedded
                     if (h == null)
                     {
                         break;
+                        
                     }
                     pipeline.AddLast(h);
                 }
             }));
 
-            if (start)
+            if (register)
             {
-                this.Start();
+                Task future = this.loop.RegisterAsync(this);
+                Debug.Assert(future.IsCompleted);
             }
         }
 
-        public void Start()
+        public void Register()
         {
             Task future = this.loop.RegisterAsync(this);
             Debug.Assert(future.IsCompleted);
@@ -304,11 +322,8 @@ namespace DotNetty.Transport.Channels.Embedded
                     // The write may be delayed to run later by runPendingTasks()
                     future.ContinueWith(t => this.RecordException(t));
                 }
-                if (future.Exception != null)
-                {
-                    this.RecordException(future.Exception);
-                }
             }
+            futures.Return();
 
             this.RunPendingTasks();
             this.CheckException();
@@ -346,20 +361,18 @@ namespace DotNetty.Transport.Channels.Embedded
         /// <returns>bufferReadable returns <c>true</c></returns>
         public bool Finish() => this.Finish(false);
 
-        /**
-         * Mark this {@link Channel} as finished and release all pending message in the inbound and outbound buffer.
-         * Any futher try to write data to it will fail.
-         *
-         * @return bufferReadable returns {@code true} if any of the used buffers has something left to read
-         */
+        /// <summary>
+        /// Marks this <see cref="IChannel"/> as finished and releases all pending message in the inbound and outbound
+        /// buffer. Any futher try to write data to it will fail.
+        /// </summary>
+        /// <returns><c>true</c> if any of the used buffers has something left to read, otherwise <c>false</c>.</returns>
         public bool FinishAndReleaseAll() => this.Finish(true);
 
-        /**
-         * Mark this {@link Channel} as finished. Any futher try to write data to it will fail.
-         *
-         * @param releaseAll if {@code true} all pending message in the inbound and outbound buffer are released.
-         * @return bufferReadable returns {@code true} if any of the used buffers has something left to read
-         */
+        /// <summary>
+        /// Marks this <see cref="IChannel"/> as finished. Any futher attempt to write data to it will fail.
+        /// </summary>
+        /// <param name="releaseAll">If <c>true</c>, all pending messages in the inbound and outbound buffer are released.</param>
+        /// <returns><c>true</c> if any of the used buffers has something left to read, otherwise <c>false</c>.</returns>
         bool Finish(bool releaseAll)
         {
             this.CloseSafe();
@@ -378,16 +391,16 @@ namespace DotNetty.Transport.Channels.Embedded
             }
         }
 
-        /**
-         * Release all buffered inbound messages and return {@code true} if any were in the inbound buffer, {@code false}
-         * otherwise.
-         */
+        /// <summary>
+        /// Releases all buffered inbound messages.
+        /// </summary>
+        /// <returns><c>true</c> if any were in the inbound buffer, otherwise <c>false</c>.</returns>
         public bool ReleaseInbound() => ReleaseAll(this.inboundMessages);
 
-        /**
-         * Release all buffered outbound messages and return {@code true} if any were in the outbound buffer, {@code false}
-         * otherwise.
-         */
+        /// <summary>
+        /// Releases all buffered outbound messages.
+        /// </summary>
+        /// <returns><c>true</c> if any were in the outbound buffer, otherwise <c>false</c>.</returns>
         public bool ReleaseOutbound() => ReleaseAll(this.outboundMessages);
 
         static bool ReleaseAll(Queue<object> queue)

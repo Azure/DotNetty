@@ -8,7 +8,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Net.Sockets;
 
     /// <summary>
-    ///     The default {@link ServerSocketChannelConfig} implementation.
+    /// The default <see cref="IServerSocketChannelConfiguration"/> implementation.
     /// </summary>
     public class DefaultServerSocketChannelConfig : DefaultChannelConfiguration, IServerSocketChannelConfiguration
     {

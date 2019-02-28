@@ -162,7 +162,7 @@ namespace DotNetty.Codecs.Tests.Protobuf
 
         static readonly object[][] EncodeVarint32SizeCases = GetVarint32Data().ToArray();
 
-        static IEnumerable<object[]> GetVarint32DataAliases()
+        public static IEnumerable<object[]> GetVarint32DataAliases()
         {
             return Enumerable.Range(0, EncodeVarint32SizeCases.Length).Select(i => new object[] { i });
         }

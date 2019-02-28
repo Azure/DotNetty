@@ -4,33 +4,35 @@
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
+    using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Net;
     using System.Runtime.InteropServices;
 
     abstract unsafe class TcpHandle : NativeHandle
     {
-        protected TcpHandle(Loop loop) : base(uv_handle_type.UV_TCP)
+        protected TcpHandle(Loop loop, uint flags) : base(uv_handle_type.UV_TCP)
         {
-            Contract.Requires(loop != null);
+            Debug.Assert(loop != null);
 
-            int size = NativeMethods.uv_handle_size(uv_handle_type.UV_TCP).ToInt32();
-            IntPtr handle = Marshal.AllocHGlobal(size);
+            IntPtr handle = NativeMethods.Allocate(uv_handle_type.UV_TCP);
 
-            int result;
             try
             {
-                result = NativeMethods.uv_tcp_init(loop.Handle, handle);
+                // if flags is specified as AF_INET or AF_INET6, Libuv 
+                // creates the socket when tcp handle is created.
+                // Otherwise the socket is created when bind to an address.
+                //  
+                // This is for TcpListener to create socket early before bind
+                int result = flags == 0 
+                    ? NativeMethods.uv_tcp_init(loop.Handle, handle) 
+                    : NativeMethods.uv_tcp_init_ex(loop.Handle, handle, flags);
+                NativeMethods.ThrowIfError(result);
             }
-            catch (Exception)
+            catch
             {
-                Marshal.FreeHGlobal(handle);
+                NativeMethods.FreeMemory(handle);
                 throw;
-            }
-            if (result < 0)
-            {
-                Marshal.FreeHGlobal(handle);
-                throw NativeMethods.CreateError((uv_err_code)result);
             }
 
             GCHandle gcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
@@ -40,15 +42,12 @@ namespace DotNetty.Transport.Libuv.Native
 
         internal void Bind(IPEndPoint endPoint, bool dualStack = false)
         {
-            Contract.Requires(endPoint != null);
+            Debug.Assert(endPoint != null);
 
             this.Validate();
             NativeMethods.GetSocketAddress(endPoint, out sockaddr addr);
             int result = NativeMethods.uv_tcp_bind(this.Handle, ref addr, (uint)(dualStack ? 1 : 0));
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            NativeMethods.ThrowIfError(result);
         }
 
         public IPEndPoint GetLocalEndPoint()
@@ -57,83 +56,50 @@ namespace DotNetty.Transport.Libuv.Native
             return NativeMethods.TcpGetSocketName(this.Handle);
         }
 
-        public void NoDelay(bool value)
+        public void NoDelay(int value)
         {
             this.Validate();
-
-            int result = NativeMethods.uv_tcp_nodelay(this.Handle, value ? 1 : 0);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            int result = NativeMethods.uv_tcp_nodelay(this.Handle, value);
+            NativeMethods.ThrowIfError(result);
         }
 
-        public void SendBufferSize(int value)
+        public int SendBufferSize(int value)
         {
-            Contract.Requires(value > 0);
+            Contract.Requires(value >= 0);
 
             this.Validate();
-
-            int bufferSize = 0; // 0 to get the current value
-            var size = (IntPtr)bufferSize;
+            var size = (IntPtr)value;
             int result = NativeMethods.uv_send_buffer_size(this.Handle, ref size);
-            if (result == value)
-            {
-                return;
-            }
+            NativeMethods.ThrowIfError(result);
 
-            bufferSize = value;
-            size = (IntPtr)bufferSize;
-            result = NativeMethods.uv_send_buffer_size(this.Handle, ref size);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            return size.ToInt32();
         }
 
-        public void ReceiveBufferSize(int value)
+        public int ReceiveBufferSize(int value)
         {
-            Contract.Requires(value > 0);
+            Contract.Requires(value >= 0);
 
             this.Validate();
+            var size = (IntPtr)value;
 
-            int bufferSize = 0; // 0 to get the current value
-            var size = (IntPtr)bufferSize;
             int result = NativeMethods.uv_recv_buffer_size(this.Handle, ref size);
-            if (result == value)
-            {
-                return;
-            }
+            NativeMethods.ThrowIfError(result);
 
-            bufferSize = value;
-            size = (IntPtr)bufferSize;
-            result = NativeMethods.uv_recv_buffer_size(this.Handle, ref size);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            return size.ToInt32();
         }
 
-        public void KeepAlive(bool value, int delay)
+        public void KeepAlive(int value, int delay)
         {
             this.Validate();
-
-            int result = NativeMethods.uv_tcp_keepalive(this.Handle, value ? 1 : 0, delay);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            int result = NativeMethods.uv_tcp_keepalive(this.Handle, value, delay);
+            NativeMethods.ThrowIfError(result);
         }
 
         public void SimultaneousAccepts(bool value)
         {
             this.Validate();
-
             int result = NativeMethods.uv_tcp_simultaneous_accepts(this.Handle, value ? 1 : 0);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            NativeMethods.ThrowIfError(result);
         }
     }
 }

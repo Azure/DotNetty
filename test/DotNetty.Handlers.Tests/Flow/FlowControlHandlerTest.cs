@@ -106,8 +106,7 @@ namespace DotNetty.Handlers.Tests.Flow
             }
             finally
             {
-                client.CloseAsync();
-                server.CloseAsync();
+                Task.WhenAll(client.CloseAsync(), server.CloseAsync()).Wait(TimeSpan.FromSeconds(5));
             }
         }
 
@@ -165,8 +164,7 @@ namespace DotNetty.Handlers.Tests.Flow
             }
             finally
             {
-                client.CloseAsync();
-                server.CloseAsync();
+                Task.WhenAll(client.CloseAsync(), server.CloseAsync()).Wait(TimeSpan.FromSeconds(5));
             }
         }
 
@@ -195,8 +193,7 @@ namespace DotNetty.Handlers.Tests.Flow
             }
             finally
             {
-                client.CloseAsync();
-                server.CloseAsync();
+                Task.WhenAll(client.CloseAsync(), server.CloseAsync()).Wait(TimeSpan.FromSeconds(5));
             }
         }
 
@@ -286,8 +283,7 @@ namespace DotNetty.Handlers.Tests.Flow
             }
             finally
             {
-                client.CloseAsync();
-                server.CloseAsync();
+                Task.WhenAll(client.CloseAsync(), server.CloseAsync()).Wait(TimeSpan.FromSeconds(5));
             }
         }
 
@@ -349,8 +345,7 @@ namespace DotNetty.Handlers.Tests.Flow
             }
             finally
             {
-                client.CloseAsync();
-                server.CloseAsync();
+                Task.WhenAll(client.CloseAsync(), server.CloseAsync()).Wait(TimeSpan.FromSeconds(5));
             }
 
             void Signal(CountdownEvent evt)

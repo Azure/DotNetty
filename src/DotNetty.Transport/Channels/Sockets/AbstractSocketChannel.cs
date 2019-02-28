@@ -318,16 +318,6 @@ namespace DotNetty.Transport.Channels.Sockets
 
             void FulfillConnectPromise(bool wasActive)
             {
-                TaskCompletionSource promise = this.Channel.connectPromise;
-                if (promise == null)
-                {
-                    // Closed via cancellation and the promise has been notified already.
-                    return;
-                }
-
-                // trySuccess() will return false if a user cancelled the connection attempt.
-                bool promiseSet = promise.TryComplete();
-
                 // Regardless if the connection attempt was cancelled, channelActive() event should be triggered,
                 // because what happened is what happened.
                 if (!wasActive && this.channel.Active)
@@ -335,10 +325,19 @@ namespace DotNetty.Transport.Channels.Sockets
                     this.channel.Pipeline.FireChannelActive();
                 }
 
-                // If a user cancelled the connection attempt, close the channel, which is followed by channelInactive().
-                if (!promiseSet)
+                TaskCompletionSource promise = this.Channel.connectPromise;
+                // If promise is null, then it the channel was Closed via cancellation and the promise has been notified already.
+                if (promise != null)
                 {
-                    this.CloseSafe();
+                    // trySuccess() will return false if a user cancelled the connection attempt.
+                    bool promiseSet = promise.TryComplete();
+
+                    // If a user cancelled the connection attempt, close the channel, which is followed by channelInactive().
+                    if (!promiseSet)
+                    {
+                        this.CloseSafe();
+                    }
+
                 }
             }
 
@@ -415,8 +414,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 }
                 catch (Exception ex)
                 {
-                    input.FailFlushed(ex, true);
-                    throw;
+                    Util.CompleteChannelCloseTaskSafely(this.channel, this.CloseAsync(new ClosedChannelException("Failed to write", ex), false));
                 }
 
                 // Double check if there's no pending flush

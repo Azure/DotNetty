@@ -4,11 +4,11 @@
     <IsPackable>true</IsPackable>
     <PackageId>DotNetty.Codecs</PackageId>
     <Description>General purpose codecs for DotNetty</Description>
-    <Copyright>Copyright © Microsoft Corporation</Copyright>
+    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <AssemblyTitle>DotNetty: codecs</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.4.7</VersionPrefix>
-    <Authors>Microsoft Azure</Authors>
+    <VersionPrefix>0.6.0</VersionPrefix>
+    <Authors>Microsoft</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -21,12 +21,16 @@
     <PackageTags>socket;tcp;protocol;netty;dotnetty;network;codec</PackageTags>
     <PackageProjectUrl>https://github.com/Azure/DotNetty/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <RequireLicenseAcceptance>true</RequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.1</NetStandardImplicitPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\shared\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetty.Common\DotNetty.Common.csproj" />

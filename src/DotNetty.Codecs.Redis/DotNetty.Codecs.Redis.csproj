@@ -4,11 +4,11 @@
     <IsPackable>true</IsPackable>
     <PackageId>DotNetty.Codecs.Redis</PackageId>
     <Description>Redis codec for DotNetty</Description>
-    <Copyright>Copyright © Microsoft Corporation</Copyright>
+    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <AssemblyTitle>DotNetty: Redis codec</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.4.7</VersionPrefix>
-    <Authors>Microsoft Azure</Authors>
+    <VersionPrefix>0.6.0</VersionPrefix>
+    <Authors>Microsoft</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -19,6 +19,7 @@
     <PackageTags>socket;tcp;protocol;netty;dotnetty;network;redis</PackageTags>
     <PackageProjectUrl>https://github.com/Azure/DotNetty/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <RequireLicenseAcceptance>true</RequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.1</NetStandardImplicitPackageVersion>

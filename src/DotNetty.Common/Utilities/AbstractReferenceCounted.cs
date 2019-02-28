@@ -1,8 +1,8 @@
 ﻿
 namespace DotNetty.Common.Utilities
 {
-    using System;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
     using System.Threading;
 
     public abstract class AbstractReferenceCounted : IReferenceCounted
@@ -20,7 +20,7 @@ namespace DotNetty.Common.Utilities
             return this.RetainCore(increment);
         }
 
-        IReferenceCounted RetainCore(int increment)
+        protected virtual IReferenceCounted RetainCore(int increment)
         {
             while (true)
             {
@@ -30,7 +30,7 @@ namespace DotNetty.Common.Utilities
                 // Ensure we not resurrect (which means the refCnt was 0) and also that we encountered an overflow.
                 if (nextCount <= increment)
                 {
-                    throw new InvalidOperationException($"refCnt: {count}" + (increment > 0 ? $"increment: {increment}" : $"decrement: -{increment}"));
+                    ThrowIllegalReferenceCountException(count, increment);
                 }
 
                 if (Interlocked.CompareExchange(ref this.referenceCount, nextCount, count) == count)
@@ -62,7 +62,7 @@ namespace DotNetty.Common.Utilities
                 int count = this.referenceCount;
                 if (count < decrement)
                 {
-                    throw new InvalidOperationException($"refCnt: {count}" + (decrement > 0 ? $"increment: {decrement}" : $"decrement: -{decrement}"));
+                    ThrowIllegalReferenceCountException(count, decrement);
                 }
 
                 if (Interlocked.CompareExchange(ref this.referenceCount, count - decrement, count) == decrement)
@@ -72,6 +72,17 @@ namespace DotNetty.Common.Utilities
                 }
 
                 return false;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowIllegalReferenceCountException(int count, int increment)
+        {
+            throw GetIllegalReferenceCountException();
+
+            IllegalReferenceCountException GetIllegalReferenceCountException()
+            {
+                return new IllegalReferenceCountException(count, increment);
             }
         }
 

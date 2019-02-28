@@ -5,6 +5,7 @@ namespace DotNetty.Buffers
 {
     using System;
     using System.Diagnostics.Contracts;
+    using System.Runtime.CompilerServices;
     using System.Text;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
@@ -12,6 +13,9 @@ namespace DotNetty.Buffers
 
     public static class ByteBufferUtil
     {
+        const char WriteUtfUnknown = '?';
+        static readonly int MaxBytesPerCharUtf8 = Encoding.UTF8.GetMaxByteCount(1);
+
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance(typeof(ByteBufferUtil));
 
         public static readonly IByteBufferAllocator DefaultAllocator;
@@ -65,8 +69,8 @@ namespace DotNetty.Buffers
         /// </summary>
         public static string HexDump(byte[] array, int fromIndex, int length) => HexUtil.DoHexDump(array, fromIndex, length);
 
-        public static bool EnsureWritableSuccess(int ensureWritableResult) =>  ensureWritableResult == 0 || ensureWritableResult == 2;
-        
+        public static bool EnsureWritableSuccess(int ensureWritableResult) => ensureWritableResult == 0 || ensureWritableResult == 2;
+
         /// <summary>
         ///     Calculates the hash code of the specified buffer.  This method is
         ///     useful when implementing a new buffer type.
@@ -295,6 +299,379 @@ namespace DotNetty.Buffers
             return buffer.ForEachByteDesc(toIndex, fromIndex - toIndex, new IndexOfProcessor(value));
         }
 
+        public static IByteBuffer WriteUtf8(IByteBufferAllocator alloc, ICharSequence seq)
+        {
+            // UTF-8 uses max. 3 bytes per char, so calculate the worst case.
+            IByteBuffer buf = alloc.Buffer(Utf8MaxBytes(seq));
+            WriteUtf8(buf, seq);
+            return buf;
+        }
+
+        public static int WriteUtf8(IByteBuffer buf, ICharSequence seq) => ReserveAndWriteUtf8(buf, seq, Utf8MaxBytes(seq));
+
+        public static int ReserveAndWriteUtf8(IByteBuffer buf, ICharSequence seq, int reserveBytes)
+        {
+            for (;;)
+            {
+                if (buf is AbstractByteBuffer byteBuf)
+                {
+                    byteBuf.EnsureWritable0(reserveBytes);
+                    int written = WriteUtf8(byteBuf, byteBuf.WriterIndex, seq, seq.Count);
+                    byteBuf.SetWriterIndex(byteBuf.WriterIndex + written);
+                    return written;
+                }
+                else if (buf is WrappedByteBuffer)
+                {
+                    // Unwrap as the wrapped buffer may be an AbstractByteBuf and so we can use fast-path.
+                    buf = buf.Unwrap();
+                }
+                else
+                {
+                    byte[] bytes = Encoding.UTF8.GetBytes(seq.ToString());
+                    buf.WriteBytes(bytes);
+                    return bytes.Length;
+                }
+            }
+        }
+
+        // Fast-Path implementation
+        internal static int WriteUtf8(AbstractByteBuffer buffer, int writerIndex, ICharSequence value, int len)
+        {
+            int oldWriterIndex = writerIndex;
+
+            // We can use the _set methods as these not need to do any index checks and reference checks.
+            // This is possible as we called ensureWritable(...) before.
+            for (int i = 0; i < len; i++)
+            {
+                char c = value[i];
+                if (c < 0x80)
+                {
+                    buffer._SetByte(writerIndex++, (byte)c);
+                }
+                else if (c < 0x800)
+                {
+                    buffer._SetByte(writerIndex++, (byte)(0xc0 | (c >> 6)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | (c & 0x3f)));
+                }
+                else if (char.IsSurrogate(c))
+                {
+                    if (!char.IsHighSurrogate(c))
+                    {
+                        buffer._SetByte(writerIndex++, WriteUtfUnknown);
+                        continue;
+                    }
+                    char c2;
+                    try
+                    {
+                        // Surrogate Pair consumes 2 characters. Optimistically try to get the next character to avoid
+                        // duplicate bounds checking with charAt. If an IndexOutOfBoundsException is thrown we will
+                        // re-throw a more informative exception describing the problem.
+                        c2 = value[++i];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        buffer._SetByte(writerIndex++, WriteUtfUnknown);
+                        break;
+                    }
+                    if (!char.IsLowSurrogate(c2))
+                    {
+                        buffer._SetByte(writerIndex++, WriteUtfUnknown);
+                        buffer._SetByte(writerIndex++, char.IsHighSurrogate(c2) ? WriteUtfUnknown : c2);
+                        continue;
+                    }
+                    int codePoint = CharUtil.ToCodePoint(c, c2);
+                    // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630.
+                    buffer._SetByte(writerIndex++, (byte)(0xf0 | (codePoint >> 18)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | ((codePoint >> 12) & 0x3f)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | ((codePoint >> 6) & 0x3f)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | (codePoint & 0x3f)));
+                }
+                else
+                {
+                    buffer._SetByte(writerIndex++, (byte)(0xe0 | (c >> 12)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | ((c >> 6) & 0x3f)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | (c & 0x3f)));
+                }
+            }
+
+            return writerIndex - oldWriterIndex;
+        }
+
+        public static IByteBuffer WriteUtf8(IByteBufferAllocator alloc, string value)
+        {
+            // UTF-8 uses max. 3 bytes per char, so calculate the worst case.
+            IByteBuffer buf = alloc.Buffer(Utf8MaxBytes(value));
+            WriteUtf8(buf, value);
+            return buf;
+        }
+
+        public static int WriteUtf8(IByteBuffer buf, string seq) => ReserveAndWriteUtf8(buf, seq, Utf8MaxBytes(seq));
+
+        ///<summary>
+        /// Encode a string in http://en.wikipedia.org/wiki/UTF-8 and write it into reserveBytes of 
+        /// a byte buffer. The reserveBytes must be computed (ie eagerly using {@link #utf8MaxBytes(string)}
+        /// or exactly with #utf8Bytes(string)}) to ensure this method not to not: for performance reasons
+        /// the index checks will be performed using just reserveBytes.
+        /// </summary>
+        /// <returns> This method returns the actual number of bytes written.</returns>
+        public static int ReserveAndWriteUtf8(IByteBuffer buf, string value, int reserveBytes)
+        {
+            for (;;)
+            {
+                if (buf is AbstractByteBuffer byteBuf)
+                {
+                    byteBuf.EnsureWritable0(reserveBytes);
+                    int written = WriteUtf8(byteBuf, byteBuf.WriterIndex, value, value.Length);
+                    byteBuf.SetWriterIndex(byteBuf.WriterIndex + written);
+                    return written;
+                }
+                else if (buf is WrappedByteBuffer)
+                {
+                    // Unwrap as the wrapped buffer may be an AbstractByteBuf and so we can use fast-path.
+                    buf = buf.Unwrap();
+                }
+                else
+                {
+                    byte[] bytes = Encoding.UTF8.GetBytes(value);
+                    buf.WriteBytes(bytes);
+                    return bytes.Length;
+                }
+            }
+        }
+
+        // Fast-Path implementation
+        internal static int WriteUtf8(AbstractByteBuffer buffer, int writerIndex, string value, int len)
+        {
+            int oldWriterIndex = writerIndex;
+
+            // We can use the _set methods as these not need to do any index checks and reference checks.
+            // This is possible as we called ensureWritable(...) before.
+            for (int i = 0; i < len; i++)
+            {
+                char c = value[i];
+                if (c < 0x80)
+                {
+                    buffer._SetByte(writerIndex++, (byte)c);
+                }
+                else if (c < 0x800)
+                {
+                    buffer._SetByte(writerIndex++, (byte)(0xc0 | (c >> 6)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | (c & 0x3f)));
+                }
+                else if (char.IsSurrogate(c))
+                {
+                    if (!char.IsHighSurrogate(c))
+                    {
+                        buffer._SetByte(writerIndex++, WriteUtfUnknown);
+                        continue;
+                    }
+                    char c2;
+                    try
+                    {
+                        // Surrogate Pair consumes 2 characters. Optimistically try to get the next character to avoid
+                        // duplicate bounds checking with charAt. If an IndexOutOfBoundsException is thrown we will
+                        // re-throw a more informative exception describing the problem.
+                        c2 = value[++i];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        buffer._SetByte(writerIndex++, WriteUtfUnknown);
+                        break;
+                    }
+                    if (!char.IsLowSurrogate(c2))
+                    {
+                        buffer._SetByte(writerIndex++, WriteUtfUnknown);
+                        buffer._SetByte(writerIndex++, char.IsHighSurrogate(c2) ? WriteUtfUnknown : c2);
+                        continue;
+                    }
+                    int codePoint = CharUtil.ToCodePoint(c, c2);
+                    // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630.
+                    buffer._SetByte(writerIndex++, (byte)(0xf0 | (codePoint >> 18)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | ((codePoint >> 12) & 0x3f)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | ((codePoint >> 6) & 0x3f)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | (codePoint & 0x3f)));
+                }
+                else
+                {
+                    buffer._SetByte(writerIndex++, (byte)(0xe0 | (c >> 12)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | ((c >> 6) & 0x3f)));
+                    buffer._SetByte(writerIndex++, (byte)(0x80 | (c & 0x3f)));
+                }
+            }
+
+            return writerIndex - oldWriterIndex;
+        }
+
+        internal static int Utf8MaxBytes(ICharSequence seq) => Utf8MaxBytes(seq.Count);
+
+        public static int Utf8MaxBytes(string seq) => Utf8MaxBytes(seq.Length);
+
+        internal static int Utf8MaxBytes(int seqLength) => seqLength * MaxBytesPerCharUtf8;
+
+        internal static int Utf8Bytes(string seq)
+        {
+            int seqLength = seq.Length;
+            int i = 0;
+            // ASCII fast path
+            while (i < seqLength && seq[i] < 0x80)
+            {
+                ++i;
+            }
+            // !ASCII is packed in a separate method to let the ASCII case be smaller
+            return i < seqLength ? i + Utf8Bytes(seq, i, seqLength) : i;
+        }
+
+        static int Utf8Bytes(string seq, int start, int length)
+        {
+            int encodedLength = 0;
+            for (int i = start; i < length; i++)
+            {
+                char c = seq[i];
+                // making it 100% branchless isn't rewarding due to the many bit operations necessary!
+                if (c < 0x800)
+                {
+                    // branchless version of: (c <= 127 ? 0:1) + 1
+                    encodedLength += ((0x7f - c).RightUShift(31)) + 1;
+                }
+                else if (char.IsSurrogate(c))
+                {
+                    if (!char.IsHighSurrogate(c))
+                    {
+                        encodedLength++;
+                        // WRITE_UTF_UNKNOWN
+                        continue;
+                    }
+                    char c2;
+                    try
+                    {
+                        // Surrogate Pair consumes 2 characters. Optimistically try to get the next character to avoid
+                        // duplicate bounds checking with charAt.
+                        c2 = seq[++i];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        encodedLength++;
+                        // WRITE_UTF_UNKNOWN
+                        break;
+                    }
+                    if (!char.IsLowSurrogate(c2))
+                    {
+                        // WRITE_UTF_UNKNOWN + (Character.isHighSurrogate(c2) ? WRITE_UTF_UNKNOWN : c2)
+                        encodedLength += 2;
+                        continue;
+                    }
+                    // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630.
+                    encodedLength += 4;
+                }
+                else
+                {
+                    encodedLength += 3;
+                }
+            }
+            return encodedLength;
+        }
+
+        public static IByteBuffer WriteAscii(IByteBufferAllocator alloc, ICharSequence seq)
+        {
+            // ASCII uses 1 byte per char
+            IByteBuffer buf = alloc.Buffer(seq.Count);
+            WriteAscii(buf, seq);
+            return buf;
+        }
+
+        public static int WriteAscii(IByteBuffer buf, ICharSequence seq)
+        {
+            // ASCII uses 1 byte per char
+            int len = seq.Count;
+            if (seq is AsciiString asciiString)
+            {
+                buf.WriteBytes(asciiString.Array, asciiString.Offset, len);
+            }
+            else
+            {
+                for (;;)
+                {
+                    if (buf is AbstractByteBuffer byteBuf)
+                    {
+                        byteBuf.EnsureWritable0(len);
+                        int written = WriteAscii(byteBuf, byteBuf.WriterIndex, seq, len);
+                        byteBuf.SetWriterIndex(byteBuf.WriterIndex + written);
+                        return written;
+                    }
+                    else if (buf is WrappedByteBuffer)
+                    {
+                        // Unwrap as the wrapped buffer may be an AbstractByteBuf and so we can use fast-path.
+                        buf = buf.Unwrap();
+                    }
+                    else
+                    {
+                        byte[] bytes = Encoding.ASCII.GetBytes(seq.ToString());
+                        buf.WriteBytes(bytes);
+                        return bytes.Length;
+                    }
+                }
+            }
+            return len;
+        }
+
+        // Fast-Path implementation
+        internal static int WriteAscii(AbstractByteBuffer buffer, int writerIndex, ICharSequence seq, int len)
+        {
+            // We can use the _set methods as these not need to do any index checks and reference checks.
+            // This is possible as we called ensureWritable(...) before.
+            for (int i = 0; i < len; i++)
+            {
+                buffer._SetByte(writerIndex++, AsciiString.CharToByte(seq[i]));
+            }
+            return len;
+        }
+
+        public static IByteBuffer WriteAscii(IByteBufferAllocator alloc, string value)
+        {
+            // ASCII uses 1 byte per char
+            IByteBuffer buf = alloc.Buffer(value.Length);
+            WriteAscii(buf, value);
+            return buf;
+        }
+
+        public static int WriteAscii(IByteBuffer buf, string value)
+        {
+            // ASCII uses 1 byte per char
+            int len = value.Length;
+            for (;;)
+            {
+                if (buf is AbstractByteBuffer byteBuf)
+                {
+                    byteBuf.EnsureWritable0(len);
+                    int written = WriteAscii(byteBuf, byteBuf.WriterIndex, value, len);
+                    byteBuf.SetWriterIndex(byteBuf.WriterIndex + written);
+                    return written;
+                }
+                else if (buf is WrappedByteBuffer)
+                {
+                    // Unwrap as the wrapped buffer may be an AbstractByteBuf and so we can use fast-path.
+                    buf = buf.Unwrap();
+                }
+                else
+                {
+                    byte[] bytes = Encoding.ASCII.GetBytes(value);
+                    buf.WriteBytes(bytes);
+                    return bytes.Length;
+                }
+            }
+        }
+
+        internal static int WriteAscii(AbstractByteBuffer buffer, int writerIndex, string value, int len)
+        {
+            // We can use the _set methods as these not need to do any index checks and reference checks.
+            // This is possible as we called ensureWritable(...) before.
+            for (int i = 0; i < len; i++)
+            {
+                buffer._SetByte(writerIndex++, (byte)value[i]);
+            }
+            return len;
+        }
+
         /// <summary>
         ///     Encode the given <see cref="string" /> using the given <see cref="Encoding" /> into a new
         ///     <see cref="IByteBuffer" /> which
@@ -369,6 +746,38 @@ namespace DotNetty.Buffers
                     buffer.Release();
                 }
             }
+        }
+
+        public static void Copy(AsciiString src, IByteBuffer dst) => Copy(src, 0, dst, src.Count);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Copy(AsciiString src, int srcIdx, IByteBuffer dst, int dstIdx, int length)
+        {
+            if (MathUtil.IsOutOfBounds(srcIdx, length, src.Count))
+            {
+                ThrowHelper.ThrowIndexOutOfRangeException_Src(srcIdx, length, src.Count);
+            }
+            if (dst == null)
+            {
+                ThrowHelper.ThrowArgumentNullException_Dst();
+            }
+            // ReSharper disable once PossibleNullReferenceException
+            dst.SetBytes(dstIdx, src.Array, srcIdx + src.Offset, length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Copy(AsciiString src, int srcIdx, IByteBuffer dst, int length)
+        {
+            if (MathUtil.IsOutOfBounds(srcIdx, length, src.Count))
+            {
+                ThrowHelper.ThrowIndexOutOfRangeException_Src(srcIdx, length, src.Count);
+            }
+            if (dst == null)
+            {
+                ThrowHelper.ThrowArgumentNullException_Dst();
+            }
+            // ReSharper disable once PossibleNullReferenceException
+            dst.WriteBytes(src.Array, srcIdx + src.Offset, length);
         }
 
         /// <summary>

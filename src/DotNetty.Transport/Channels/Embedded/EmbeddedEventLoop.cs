@@ -14,16 +14,13 @@ namespace DotNetty.Transport.Channels.Embedded
     {
         readonly Queue<IRunnable> tasks = new Queue<IRunnable>(2);
 
-        public IEventExecutor Executor => this;
+        public new IEventLoop GetNext() => this;
 
         public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
 
         public override bool IsShuttingDown => false;
 
-        public override Task TerminationCompletion
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override Task TerminationCompletion => throw new NotSupportedException();
 
         public override bool IsShutdown => false;
 

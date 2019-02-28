@@ -10,7 +10,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Utilities;
 
     /// <summary>
-    ///     {@link AbstractNioChannel} base class for {@link Channel}s that operate on bytes.
+    /// <see cref="AbstractSocketChannel"/> base class for <see cref="IChannel"/>s that operate on bytes.
     /// </summary>
     public abstract class AbstractSocketByteChannel : AbstractSocketChannel
     {
@@ -231,9 +231,8 @@ namespace DotNetty.Transport.Channels.Sockets
                     {
                         input.Remove();
                     }
-                    else
+                    else if (this.IncompleteWrite(scheduleAsync, this.PrepareWriteOperation(buf.GetIoBuffer())))
                     {
-                        this.IncompleteWrite(scheduleAsync, this.PrepareWriteOperation(buf.GetIoBuffer()));
                         break;
                     }
                 } /*else if (msg is FileRegion) { todo: FileRegion support
@@ -301,7 +300,7 @@ namespace DotNetty.Transport.Channels.Sockets
                 "unsupported message type: " + msg.GetType().Name + ExpectedTypes);
         }
 
-        protected void IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
+        protected bool IncompleteWrite(bool scheduleAsync, SocketChannelAsyncOperation operation)
         {
             // Did not write completely.
             if (scheduleAsync)
@@ -329,11 +328,15 @@ namespace DotNetty.Transport.Channels.Sockets
                 {
                     ((ISocketChannelUnsafe)this.Unsafe).FinishWrite(operation);
                 }
+
+                return pending;
             }
             else
             {
                 // Schedule flush again later so other tasks can be picked up input the meantime
                 this.EventLoop.Execute(FlushAction, this);
+
+                return true;
             }
         }
 
@@ -347,13 +350,17 @@ namespace DotNetty.Transport.Channels.Sockets
         //protected abstract long doWriteFileRegion(FileRegion region);
 
         /// <summary>
-        ///     Read bytes into the given {@link ByteBuf} and return the amount.
+        /// Reads bytes into the given <see cref="IByteBuffer"/> and returns the number of bytes that were read.
         /// </summary>
+        /// <param name="buf">The <see cref="IByteBuffer"/> to read bytes into.</param>
+        /// <returns>The number of bytes that were read into the buffer.</returns>
         protected abstract int DoReadBytes(IByteBuffer buf);
 
-        /// <summary>Write bytes form the given <see cref="IByteBuffer"/> to the underlying <see cref="IChannel"/>.</summary>
-        /// <param name="buf">the <see cref="IByteBuffer"/> from which the bytes should be written</param>
-        /// <returns>the amount of written bytes</returns>
+        /// <summary>
+        /// Writes bytes from the given <see cref="IByteBuffer"/> to the underlying <see cref="IChannel"/>.
+        /// </summary>
+        /// <param name="buf">The <see cref="IByteBuffer"/> from which the bytes should be written.</param>
+        /// <returns>The number of bytes that were written from the buffer.</returns>
         protected abstract int DoWriteBytes(IByteBuffer buf);
     }
 }

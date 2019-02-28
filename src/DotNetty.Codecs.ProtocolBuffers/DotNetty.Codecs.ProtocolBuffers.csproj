@@ -5,11 +5,11 @@
     <IsPackable>true</IsPackable>
     <PackageId>DotNetty.Codecs.ProtocolBuffers</PackageId>
     <Description>ProtocolBuffers Proto2 codec for DotNetty</Description>
-    <Copyright>Copyright © Microsoft Corporation</Copyright>
+    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <AssemblyTitle>DotNetty: ProtocolBuffers Proto2 codec</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.4.7</VersionPrefix>
-    <Authors>Microsoft Azure</Authors>
+    <VersionPrefix>0.6.0</VersionPrefix>
+    <Authors>Microsoft</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -20,6 +20,7 @@
     <PackageTags>socket;tcp;protocol;netty;dotnetty;network;ProtocolBuffers</PackageTags>
     <PackageProjectUrl>https://github.com/Azure/DotNetty/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <RequireLicenseAcceptance>true</RequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.3' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>

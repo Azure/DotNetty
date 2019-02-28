@@ -36,7 +36,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        public override int ArrayOffset  => this.Unwrap().ArrayOffset;
+        public override int ArrayOffset => this.Unwrap().ArrayOffset;
 
         public override ref byte GetPinnableMemoryAddress() => ref this.Unwrap().GetPinnableMemoryAddress();
 

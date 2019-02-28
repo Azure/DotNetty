@@ -2,15 +2,23 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TargetFrameworks>netcoreapp1.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.0;net46</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyOriginatorKeyFile>../../DotNetty.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.10.9" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.10.13" />
+    <PackageReference Include="BenchmarkDotNet.Core" Version="0.10.13" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.10.13" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\DotNetty.Codecs.Http\DotNetty.Codecs.Http.csproj" />
     <ProjectReference Include="..\..\src\DotNetty.Common\DotNetty.Common.csproj" />
     <ProjectReference Include="..\..\src\DotNetty.Buffers\DotNetty.Buffers.csproj" />
   </ItemGroup>

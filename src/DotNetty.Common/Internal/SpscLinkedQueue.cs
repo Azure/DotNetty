@@ -149,19 +149,26 @@ namespace DotNetty.Common.Internal
         long p10, p11, p12, p13, p14, p15, p16;
 #pragma warning restore 169
 
-        // Called from a producer thread subject to the restrictions appropriate to the implementation and
-        // according to the {@link Queue#offer(Object)} interface. return true if element was inserted 
-        // into the queue, false iff full
+        /// <summary>
+        /// Called from a producer thread subject to the restrictions appropriate to the implementation and
+        /// according to the <see cref="ILinkedQueue{T}.Offer"/> interface.
+        /// </summary>
+        /// <param name="e">The element to enqueue.</param>
+        /// <returns><c>true</c> if the element was inserted, <c>false</c> iff the queue is full.</returns>
         public abstract bool Offer(T e);
 
-        // Called from the consumer thread subject to the restrictions appropriate to the implementation and
-        // according to the {@link Queue#poll()} interface.
-        // return a message from the queue if one is available, null iff empty
+        /// <summary>
+        /// Called from the consumer thread subject to the restrictions appropriate to the implementation and
+        /// according to the <see cref="ILinkedQueue{T}.Poll"/> interface.
+        /// </summary>
+        /// <returns>A message from the queue if one is available, <c>null</c> iff the queue is empty.</returns>
         public abstract T Poll();
 
-        // Called from the consumer thread subject to the restrictions appropriate to the implementation and
-        // according to the {@link Queue#peek()} interface.
-        // return a message from the queue if one is available, null iff empty
+        /// <summary>
+        /// Called from the consumer thread subject to the restrictions appropriate to the implementation and
+        /// according to the <see cref="ILinkedQueue{T}.Peek"/> interface.
+        /// </summary>
+        /// <returns>A message from the queue if one is available, <c>null</c> iff the queue is empty.</returns>
         public abstract T Peek();
 
         public abstract int Count { get; }

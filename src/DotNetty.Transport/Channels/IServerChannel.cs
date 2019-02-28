@@ -3,10 +3,11 @@
 
 namespace DotNetty.Transport.Channels
 {
+    using DotNetty.Transport.Channels.Sockets;
+
     /// <summary>
-    ///     A {@link Channel} that accepts an incoming connection attempt and creates
-    ///     its child {@link Channel}s by accepting them.  {@link ServerSocketChannel} is
-    ///     a good example.
+    /// A <see cref="IChannel"/> that accepts an incoming connection attempt and creates its child
+    /// <see cref="IChannel"/>s by accepting them. <see cref="IServerSocketChannel"/> is a good example.
     /// </summary>
     public interface IServerChannel : IChannel
     {

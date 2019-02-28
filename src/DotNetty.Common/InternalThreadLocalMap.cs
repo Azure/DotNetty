@@ -4,26 +4,30 @@
 namespace DotNetty.Common
 {
     using System;
+    using System.Collections.Generic;
     using System.Runtime.CompilerServices;
     using System.Text;
     using System.Threading;
     using DotNetty.Common.Utilities;
 
     /// <summary>
-    ///     The internal data structure that stores the thread-local variables for Netty and all {@link FastThreadLocal}s.
-    ///     Note that this class is for internal use only and is subject to change at any time.  Use {@link FastThreadLocal}
-    ///     unless you know what you are doing.
+    /// The internal data structure that stores the thread-local variables for DotNetty and all
+    /// <see cref="FastThreadLocal"/>s. Note that this class is for internal use only and is subject to change at any
+    /// time. Use <see cref="FastThreadLocal"/> unless you know what you are doing.
     /// </summary>
     public sealed class InternalThreadLocalMap
     {
-        public static readonly object Unset = new object();
+        const int DefaultArrayListInitialCapacity = 8;
 
+        public static readonly object Unset = new object();
         [ThreadStatic]
         static InternalThreadLocalMap slowThreadLocalMap;
 
         static int nextIndex;
 
-        /// Used by {@link FastThreadLocal}
+        /// <summary>
+        /// Used by <see cref="FastThreadLocal"/>.
+        /// </summary>
         object[] indexedVariables;
 
         // Core thread-locals
@@ -32,6 +36,10 @@ namespace DotNetty.Common
 
         // String-related thread-locals
         StringBuilder stringBuilder;
+
+        // ArrayList-related thread-locals
+        List<ICharSequence> charSequences;
+        List<AsciiString> asciiStrings;
 
         internal static int NextVariableIndex()
         {
@@ -65,7 +73,9 @@ namespace DotNetty.Common
 
         // Cache line padding (must be public)
         // With CompressedOops enabled, an instance of this class should occupy at least 128 bytes.
+        // ReSharper disable InconsistentNaming
         public long rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8, rp9;
+        // ReSharper restore InconsistentNaming
 
         InternalThreadLocalMap()
         {
@@ -129,6 +139,36 @@ namespace DotNetty.Common
             }
         }
 
+        public List<ICharSequence> CharSequenceList(int minCapacity = DefaultArrayListInitialCapacity)
+        {
+            List<ICharSequence> localList = this.charSequences;
+            if (localList == null)
+            {
+                this.charSequences = new List<ICharSequence>(minCapacity);
+                return this.charSequences;
+            }
+
+            localList.Clear();
+            // ensureCapacity
+            localList.Capacity = minCapacity;
+            return localList;
+        }
+
+        public List<AsciiString> AsciiStringList(int minCapacity = DefaultArrayListInitialCapacity)
+        {
+            List<AsciiString> localList = this.asciiStrings;
+            if (localList == null)
+            {
+                this.asciiStrings = new List<AsciiString>(minCapacity);
+                return this.asciiStrings;
+            }
+
+            localList.Clear();
+            // ensureCapacity
+            localList.Capacity = minCapacity;
+            return localList;
+        }
+
         public int FutureListenerStackDepth
         {
             get => this.futureListenerStackDepth;
@@ -148,9 +188,12 @@ namespace DotNetty.Common
             return index < lookup.Length ? lookup[index] : Unset;
         }
 
-        /**
-          * @return {@code true} if and only if a new thread-local variable has been created
-         */
+        /// <summary>
+        /// Sets a value at the given index in this <see cref="InternalThreadLocalMap"/>.
+        /// </summary>
+        /// <param name="index">The desired index at which a value should be set.</param>
+        /// <param name="value">The value to set at the given index.</param>
+        /// <returns><c>true</c> if and only if a new thread-local variable has been created.</returns>
         public bool SetIndexedVariable(int index, object value)
         {
             object[] lookup = this.indexedVariables;

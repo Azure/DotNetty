@@ -156,7 +156,7 @@ namespace DotNetty.Common.Tests.Utilities
                 timer.NewTimeout(CreateNoOpTimerTask(), TimeSpan.FromMilliseconds(1));
                 Assert.True(false, "Timer allowed adding 3 timeouts when maxPendingTimeouts was 2");
             }
-            catch (RejectedExecutionException e)
+            catch (RejectedExecutionException)
             {
                 // Expected
             }

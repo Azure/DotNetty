@@ -6,6 +6,8 @@ namespace DotNetty.Common.Utilities
     using System;
     using System.Diagnostics.Contracts;
 
+    using static ByteProcessorUtils;
+
     /// <summary>
     ///     Provides a mechanism to iterate over a collection of bytes.
     /// </summary>
@@ -57,53 +59,63 @@ namespace DotNetty.Common.Utilities
         public static IByteProcessor FindNul = new IndexOfProcessor(0);
 
         /// <summary>
-        ///     Aborts on a non-{@code NUL (0x00)}.
+        ///     Aborts on a non-<c>NUL (0x00)</c>.
         /// </summary>
         public static IByteProcessor FindNonNul = new IndexNotOfProcessor(0);
 
         /// <summary>
-        ///     Aborts on a {@code CR ('\r')}.
+        ///     Aborts on a <c>CR ('\r')</c>.
         /// </summary>
-        public static IByteProcessor FindCR = new IndexOfProcessor((byte)'\r');
+        public static IByteProcessor FindCR = new IndexOfProcessor(CarriageReturn);
 
         /// <summary>
-        ///     Aborts on a non-{@code CR ('\r')}.
+        ///     Aborts on a non-<c>CR ('\r')</c>.
         /// </summary>
-        public static IByteProcessor FindNonCR = new IndexNotOfProcessor((byte)'\r');
+        public static IByteProcessor FindNonCR = new IndexNotOfProcessor(CarriageReturn);
 
         /// <summary>
-        ///     Aborts on a {@code LF ('\n')}.
+        ///     Aborts on a <c>LF ('\n')</c>.
         /// </summary>
-        public static IByteProcessor FindLF = new IndexOfProcessor((byte)'\n');
+        public static IByteProcessor FindLF = new IndexOfProcessor(LineFeed);
 
         /// <summary>
-        ///     Aborts on a non-{@code LF ('\n')}.
+        ///     Aborts on a non-<c>LF ('\n')</c>.
         /// </summary>
-        public static IByteProcessor FindNonLF = new IndexNotOfProcessor((byte)'\n');
+        public static IByteProcessor FindNonLF = new IndexNotOfProcessor(LineFeed);
 
         /// <summary>
-        ///     Aborts on a {@code CR (';')}.
+        ///     Aborts on a <c>CR (';')</c>.
         /// </summary>
-        public static IByteProcessor FindSemiCOLON = new IndexOfProcessor((byte)';');
+        public static IByteProcessor FindSemicolon = new IndexOfProcessor((byte)';');
 
         /// <summary>
-        ///     Aborts on a {@code CR ('\r')} or a {@code LF ('\n')}.
+        ///     Aborts on a comma <c>(',')</c>.
         /// </summary>
-        public static IByteProcessor FindCrlf = new ByteProcessor(new Func<byte, bool>(value => value != '\r' && value != '\n'));
+        public static IByteProcessor FindComma = new IndexOfProcessor((byte)',');
 
         /// <summary>
-        ///     Aborts on a byte which is neither a {@code CR ('\r')} nor a {@code LF ('\n')}.
+        ///     Aborts on a ascii space character (<c>' '</c>).
         /// </summary>
-        public static IByteProcessor FindNonCrlf = new ByteProcessor(new Func<byte, bool>(value => value == '\r' || value == '\n'));
+        public static IByteProcessor FindAsciiSpace = new IndexOfProcessor(Space);
 
         /// <summary>
-        ///     Aborts on a linear whitespace (a ({@code ' '} or a {@code '\t'}).
+        ///     Aborts on a <c>CR ('\r')</c> or a <c>LF ('\n')</c>.
         /// </summary>
-        public static IByteProcessor FindLinearWhitespace = new ByteProcessor(new Func<byte, bool>(value => value != ' ' && value != '\t'));
+        public static IByteProcessor FindCrlf = new ByteProcessor(new Func<byte, bool>(value => value != CarriageReturn && value != LineFeed));
 
         /// <summary>
-        ///     Aborts on a byte which is not a linear whitespace (neither {@code ' '} nor {@code '\t'}).
+        ///     Aborts on a byte which is neither a <c>CR ('\r')</c> nor a <c>LF ('\n')</c>.
         /// </summary>
-        public static IByteProcessor FindNonLinearWhitespace = new ByteProcessor(new Func<byte, bool>(value => value == ' ' || value == '\t'));
+        public static IByteProcessor FindNonCrlf = new ByteProcessor(new Func<byte, bool>(value => value == CarriageReturn || value == LineFeed));
+
+        /// <summary>
+        ///     Aborts on a linear whitespace (a <c>' '</c> or a <c>'\t'</c>).
+        /// </summary>
+        public static IByteProcessor FindLinearWhitespace = new ByteProcessor(new Func<byte, bool>(value => value != Space && value != HTab));
+
+        /// <summary>
+        ///     Aborts on a byte which is not a linear whitespace (neither <c>' '</c> nor <c>'\t'</c>).
+        /// </summary>
+        public static IByteProcessor FindNonLinearWhitespace = new ByteProcessor(new Func<byte, bool>(value => value == Space || value == HTab));
     }
 }

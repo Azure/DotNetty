@@ -6,8 +6,9 @@ namespace DotNetty.Transport.Channels
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
 
+    /// <inheritdoc />
     /// <summary>
-    /// <see cref="IEventExecutorGroup"/> specialized for handling <see cref="IEventLoop"/>s.
+    /// <see cref="IEventExecutorGroup" /> specialized for handling <see cref="IEventLoop" />s.
     /// </summary>
     public interface IEventLoopGroup : IEventExecutorGroup
     {

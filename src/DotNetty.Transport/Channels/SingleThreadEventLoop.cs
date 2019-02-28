@@ -63,6 +63,8 @@ namespace DotNetty.Transport.Channels
         {
         }
 
+        public new IEventLoop GetNext() => this;
+
         /// <inheritdoc />
         public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
 

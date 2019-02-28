@@ -8,10 +8,7 @@ namespace DotNetty.Codecs.Redis
 
     static class RedisConstants
     {
-        internal static readonly ByteOrder DefaultByteOrder =
-            BitConverter.IsLittleEndian
-                ? ByteOrder.LittleEndian
-                : ByteOrder.BigEndian;
+        static readonly ByteOrder DefaultByteOrder = BitConverter.IsLittleEndian ? ByteOrder.LittleEndian : ByteOrder.BigEndian;
 
         internal static readonly int MaximumInlineMessageLength = 1024 * 64;
 
@@ -23,14 +20,17 @@ namespace DotNetty.Codecs.Redis
 
         internal static readonly int NullValue = -1;
 
-        internal static readonly int MaximumMessageLength = 512 * 1024 * 1024; // 512MB
+        internal static readonly int RedisMessageMaxLength = 512 * 1024 * 1024; // 512MB
 
-        internal static readonly int PositiveLongValueMaximumLength = 19; // length of Long.MAX_VALUE
+        // 64KB is max inline length of current Redis server implementation.
+        internal static readonly int RedisInlineMessageMaxLength = 64 * 1024;
 
-        internal static readonly int LongValueMaximumLength = PositiveLongValueMaximumLength + 1; // +1 is sign
+        internal static readonly int PositiveLongMaxLength = 19; // length of Long.MAX_VALUE
 
-        internal static readonly short Null = RedisCodecUtil.ToShort('-', '1', DefaultByteOrder);
+        internal static readonly int LongMaxLength = PositiveLongMaxLength + 1; // +1 is sign
 
-        internal static readonly short EndOfLine = RedisCodecUtil.ToShort('\r', '\n', DefaultByteOrder);
+        internal static readonly short NullShort = RedisCodecUtil.MakeShort('-', '1', DefaultByteOrder);
+
+        internal static readonly short EndOfLineShort = RedisCodecUtil.MakeShort('\r', '\n', DefaultByteOrder);
     }
 }

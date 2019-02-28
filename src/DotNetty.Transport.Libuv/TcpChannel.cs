@@ -1,28 +1,23 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoPropertyWithPrivateSetter
 namespace DotNetty.Transport.Libuv
 {
     using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Net;
-    using DotNetty.Buffers;
-    using DotNetty.Common;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Libuv.Native;
 
     public sealed class TcpChannel : NativeChannel
     {
-        const int DefaultWriteRequestPoolSize = 1024;
-
-        static readonly ChannelMetadata TcpMetadata = new ChannelMetadata(false, 16);
-        static readonly ThreadLocalPool<WriteRequest> Recycler = new ThreadLocalPool<WriteRequest>(handle => new WriteRequest(handle), DefaultWriteRequestPoolSize);
+        static readonly ChannelMetadata TcpMetadata = new ChannelMetadata(false);
 
         readonly TcpChannelConfig config;
         Tcp tcp;
+        bool isBound;
 
-        public TcpChannel(): this(null, null)
+        public TcpChannel() : this(null, null)
         {
         }
 
@@ -30,17 +25,7 @@ namespace DotNetty.Transport.Libuv
         {
             this.config = new TcpChannelConfig(this);
             this.SetState(StateFlags.Open);
-
             this.tcp = tcp;
-            if (this.tcp != null)
-            {
-                if (this.config.TcpNoDelay)
-                {
-                    tcp.NoDelay(true);
-                }
-
-                this.OnConnected();
-            }
         }
 
         public override IChannelConfiguration Configuration => this.config;
@@ -55,71 +40,79 @@ namespace DotNetty.Transport.Libuv
 
         protected override void DoRegister()
         {
-            if (this.tcp != null)
+            if (this.tcp == null)
             {
-                ((TcpChannelUnsafe)this.Unsafe).ScheduleRead();
+                var loopExecutor = (LoopExecutor)this.EventLoop;
+                this.tcp = new Tcp(loopExecutor.UnsafeLoop);
             }
             else
             {
-                var loopExecutor = (ILoopExecutor)this.EventLoop;
-                Loop loop = loopExecutor.UnsafeLoop;
-                this.CreateHandle(loop);
+                this.OnConnected();
             }
         }
 
-        internal void CreateHandle(Loop loop)
-        {
-            Debug.Assert(this.tcp == null);
-
-            this.tcp = new Tcp(loop);
-            this.config.SetOptions(this.tcp);
-        }
-
-        internal override unsafe IntPtr GetLoopHandle()
+        internal override NativeHandle GetHandle()
         {
             if (this.tcp == null)
             {
                 throw new InvalidOperationException("Tcp handle not intialized");
             }
-
-            return ((uv_stream_t*)this.tcp.Handle)->loop;
+            return this.tcp;
         }
 
         protected override void DoBind(EndPoint localAddress)
         {
             this.tcp.Bind((IPEndPoint)localAddress);
+            this.config.Apply();
+            this.isBound = true;
             this.CacheLocalAddress();
+        }
+
+        internal bool IsBound => this.isBound;
+
+        protected override void OnConnected()
+        {
+            if (!this.isBound)
+            {
+                // Either channel is created by tcp server channel
+                // or connect to remote without bind first
+                this.config.Apply();
+                this.isBound = true;
+            }
+
+            base.OnConnected();
         }
 
         protected override void DoDisconnect() => this.DoClose();
 
         protected override void DoClose()
         {
-            if (this.TryResetState(StateFlags.Open | StateFlags.Active))
+            try
             {
-                this.tcp?.ReadStop();
-                this.tcp?.CloseHandle();
-                this.tcp = null;
+                if (this.TryResetState(StateFlags.Open | StateFlags.Active))
+                {
+                    if (this.tcp != null)
+                    {
+                        this.tcp.ReadStop();
+                        this.tcp.CloseHandle();
+                    }
+                    this.tcp = null;
+                }
+            }
+            finally
+            {
+                base.DoClose();
             }
         }
 
         protected override void DoBeginRead()
-        {
-            if (!this.Open || this.IsInState(StateFlags.ReadScheduled))
-            {
-                return;
-            }
-
-            ((TcpChannelUnsafe)this.Unsafe).ScheduleRead();
-        }
-
-        protected override void DoScheduleRead()
         {
             if (!this.Open)
             {
                 return;
             }
 
+            this.ReadPending = true;
             if (!this.IsInState(StateFlags.ReadScheduled))
             {
                 this.SetState(StateFlags.ReadScheduled);
@@ -127,82 +120,28 @@ namespace DotNetty.Transport.Libuv
             }
         }
 
+        protected override void DoStopRead()
+        {
+            if (!this.Open)
+            {
+                return;
+            }
+
+            if (this.IsInState(StateFlags.ReadScheduled))
+            {
+                this.ResetState(StateFlags.ReadScheduled);
+                this.tcp.ReadStop();
+            }
+        }
+
         protected override void DoWrite(ChannelOutboundBuffer input)
         {
-            if (this.EventLoop.InEventLoop)
+            if (input.Size > 0)
             {
-                this.Write(input);
-            }
-            else
-            {
-                this.EventLoop.Execute(WriteAction, this, input);
-            }
-        }
-
-        static readonly Action<object, object> WriteAction = (u, e) => ((TcpChannel)u).Write((ChannelOutboundBuffer)e);
-
-        void Write(ChannelOutboundBuffer input)
-        {
-            while (true)
-            {
-                int size = input.Count;
-                if (size == 0)
-                {
-                    break;
-                }
-
-                List<ArraySegment<byte>> nioBuffers = input.GetSharedBufferList();
-                int nioBufferCnt = nioBuffers.Count;
-                long expectedWrittenBytes = input.NioBufferSize;
-                if (nioBufferCnt == 0)
-                {
-                    this.WriteByteBuffers(input);
-                    return;
-                }
-                else
-                {
-                    WriteRequest writeRequest = Recycler.Take();
-                    writeRequest.Prepare((TcpChannelUnsafe)this.Unsafe, nioBuffers);
-                    this.tcp.Write(writeRequest);
-                    input.RemoveBytes(expectedWrittenBytes);
-                }
-            }
-        }
-
-        void WriteByteBuffers(ChannelOutboundBuffer input)
-        {
-            while (true)
-            {
-                object msg = input.Current;
-                if (msg == null)
-                {
-                    // Wrote all messages.
-                    break;
-                }
-
-                if (msg is IByteBuffer buf)
-                {
-                    int readableBytes = buf.ReadableBytes;
-                    if (readableBytes == 0)
-                    {
-                        input.Remove();
-                        continue;
-                    }
-
-                    var nioBuffers = new List<ArraySegment<byte>>();
-                    ArraySegment<byte> nioBuffer = buf.GetIoBuffer();
-                    nioBuffers.Add(nioBuffer);
-                    WriteRequest writeRequest = Recycler.Take();
-                    writeRequest.Prepare((TcpChannelUnsafe)this.Unsafe, nioBuffers);
-                    this.tcp.Write(writeRequest);
-
-                    input.Remove();
-                }
-                else
-                {
-                    // Should not reach here.
-                    throw new InvalidOperationException();
-                }
+                this.SetState(StateFlags.WriteScheduled);
+                var loopExecutor = (LoopExecutor)this.EventLoop;
+                WriteRequest request = loopExecutor.WriteRequestPool.Take();
+                request.DoWrite((TcpChannelUnsafe)this.Unsafe, input);
             }
         }
 

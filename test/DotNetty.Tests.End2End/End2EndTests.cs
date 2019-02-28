@@ -103,7 +103,7 @@ namespace DotNetty.Tests.End2End
             {
                 Task serverCloseTask = closeServerFunc();
                 clientChannel?.CloseAsync().Wait(TimeSpan.FromSeconds(5));
-                group.ShutdownGracefullyAsync();
+                group.ShutdownGracefullyAsync().Wait(TimeSpan.FromSeconds(5));
                 if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
                     this.Output.WriteLine("Didn't stop in time.");
@@ -170,7 +170,7 @@ namespace DotNetty.Tests.End2End
             {
                 Task serverCloseTask = closeServerFunc();
                 clientChannel?.CloseAsync().Wait(TimeSpan.FromSeconds(5));
-                group.ShutdownGracefullyAsync();
+                group.ShutdownGracefullyAsync().Wait(TimeSpan.FromSeconds(5));
                 if (!serverCloseTask.Wait(ShutdownTimeout))
                 {
                     this.Output.WriteLine("Didn't stop in time.");
