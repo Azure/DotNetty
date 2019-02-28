@@ -10,9 +10,18 @@ namespace DotNetty.Transport.Channels
     /// <summary>
     /// <see cref="IEventLoopGroup"/> that works as a wrapper for another <see cref="IEventLoopGroup"/> providing affinity on <see cref="GetNext"/> call.
     /// </summary>
-    public class AffinitizedEventLoopGroup : IEventLoopGroup
+    public class AffinitizedEventLoopGroup : AbstractEventExecutorGroup, IEventLoopGroup
     {
         readonly IEventLoopGroup innerGroup;
+
+        public override bool IsShutdown => this.innerGroup.IsShutdown;
+
+        public override bool IsTerminated => this.innerGroup.IsTerminated;
+
+        public override bool IsShuttingDown => this.innerGroup.IsShuttingDown;
+
+        /// <inheritdoc cref="IEventExecutorGroup"/>
+        public override Task TerminationCompletion => this.innerGroup.TerminationCompletion;
 
         /// <summary>
         /// Creates a new instance of <see cref="AffinitizedEventLoopGroup"/>.
@@ -23,24 +32,15 @@ namespace DotNetty.Transport.Channels
             this.innerGroup = innerGroup;
         }
 
-        /// <inheritdoc cref="IEventLoopGroup"/>
-        public Task TerminationCompletion => this.innerGroup.TerminationCompletion;
-
-        IEventExecutor IEventExecutorGroup.GetNext() => this.GetNext();
-
-        public Task RegisterAsync(IChannel channel) => this.GetNext().RegisterAsync(channel);
-
         /// <summary>
         /// If running in a context of an existing <see cref="IEventLoop"/>, this <see cref="IEventLoop"/> is returned.
         /// Otherwise, <see cref="IEventLoop"/> is retrieved from underlying <see cref="IEventLoopGroup"/>.
         /// </summary>
-        public IEventLoop GetNext()
+        public override IEventExecutor GetNext()
         {
-            IEventExecutor executor;
-            if (ExecutionEnvironment.TryGetCurrentExecutor(out executor))
+            if (ExecutionEnvironment.TryGetCurrentExecutor(out var executor))
             {
-                var loop = executor as IEventLoop;
-                if (loop != null && loop.Parent == this.innerGroup)
+                if (executor is IEventLoop loop && loop.Parent == this.innerGroup)
                 {
                     return loop;
                 }
@@ -48,10 +48,11 @@ namespace DotNetty.Transport.Channels
             return this.innerGroup.GetNext();
         }
 
-        /// <inheritdoc cref="IEventLoopGroup"/>
-        public Task ShutdownGracefullyAsync() => this.innerGroup.ShutdownGracefullyAsync();
+        IEventLoop IEventLoopGroup.GetNext() => (IEventLoop)this.GetNext();
 
-        /// <inheritdoc cref="IEventLoopGroup"/>
-        public Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout) => this.innerGroup.ShutdownGracefullyAsync(quietPeriod, timeout);
+        public Task RegisterAsync(IChannel channel) => ((IEventLoop)this.GetNext()).RegisterAsync(channel);
+
+        /// <inheritdoc cref="IEventExecutorGroup"/>
+        public override Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout) => this.innerGroup.ShutdownGracefullyAsync(quietPeriod, timeout);
     }
 }

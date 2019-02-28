@@ -12,11 +12,13 @@ namespace DotNetty.Handlers.Tests
     {
         readonly Func<ArraySegment<byte>, Task<int>> readDataFunc;
         readonly Func<ArraySegment<byte>, Task> writeDataFunc;
+        readonly Action disposeFunc;
 
-        public MediationStream(Func<ArraySegment<byte>, Task<int>> readDataFunc, Func<ArraySegment<byte>, Task> writeDataFunc)
+        public MediationStream(Func<ArraySegment<byte>, Task<int>> readDataFunc, Func<ArraySegment<byte>, Task> writeDataFunc, Action disposeFunc = null)
         {
             this.readDataFunc = readDataFunc;
             this.writeDataFunc = writeDataFunc;
+            this.disposeFunc = disposeFunc;
         }
 
         public override void Flush()
@@ -68,6 +70,15 @@ namespace DotNetty.Handlers.Tests
 
         public override void EndWrite(IAsyncResult asyncResult) => ((Task<int>)asyncResult).Wait();
 #endif
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                disposeFunc?.Invoke();
+            }
+        }
 
         public override int Read(byte[] buffer, int offset, int count)
         {

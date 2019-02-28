@@ -1,130 +1,221 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoPropertyWithPrivateSetter
+// ReSharper disable ConvertToAutoProperty
+// ReSharper disable ConvertToAutoPropertyWhenPossible
+// ReSharper disable ForCanBeConvertedToForeach
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using DotNetty.Buffers;
     using DotNetty.Common;
+    using DotNetty.Transport.Channels;
 
-    sealed class WriteRequest : NativeRequest
+    sealed class WriteRequest : NativeRequest, ChannelOutboundBuffer.IMessageProcessor
     {
-        internal static readonly uv_watcher_cb WriteCallback = OnWriteCallback;
+        static readonly int BufferSize;
+        static readonly uv_watcher_cb WriteCallback = OnWriteCallback;
 
+        const int MaximumBytes = int.MaxValue;
+        const int MaximumLimit = 64;
+
+        static WriteRequest()
+        {
+#if NETSTANDARD1_3
+            BufferSize = Marshal.SizeOf<uv_buf_t>();
+#else
+            BufferSize = Marshal.SizeOf(typeof(uv_buf_t));
+#endif
+        }
+
+        readonly int maxBytes;
         readonly ThreadLocalPool.Handle recyclerHandle;
         readonly List<GCHandle> handles;
 
-        INativeUnsafe nativeUnsafe;
-        uv_buf_t[] bufs;
-        int bufferCount;
-        GCHandle bufsPin;
+        IntPtr bufs;
+        GCHandle pin;
+        int count;
+        int size;
+
+        NativeChannel.INativeUnsafe nativeUnsafe;
 
         public WriteRequest(ThreadLocalPool.Handle recyclerHandle)
-            : base(uv_req_type.UV_WRITE, 0)
+            : base(uv_req_type.UV_WRITE, BufferSize * MaximumLimit)
         {
             this.recyclerHandle = recyclerHandle;
+
+            int offset = NativeMethods.GetSize(uv_req_type.UV_WRITE);
+            IntPtr addr = this.Handle;
+
+            this.maxBytes = MaximumBytes;
+            this.bufs = addr + offset;
+            this.pin = GCHandle.Alloc(addr, GCHandleType.Pinned);
             this.handles = new List<GCHandle>();
-            this.bufferCount = 32; // Default to 32 slots
-            this.bufs = new uv_buf_t[this.bufferCount];
-            this.bufsPin = GCHandle.Alloc(this.bufs, GCHandleType.Pinned);
         }
 
-        internal void Prepare(INativeUnsafe channelUnsafe, List<ArraySegment<byte>> nioBuffers)
+        internal void DoWrite(NativeChannel.INativeUnsafe channelUnsafe, ChannelOutboundBuffer input)
         {
-            if (nioBuffers.Count == 1)
-            {
-                ArraySegment<byte> buffer = nioBuffers[0];
-                GCHandle handle = GCHandle.Alloc(buffer.Array, GCHandleType.Pinned);
-                IntPtr arrayHandle = handle.AddrOfPinnedObject();
+            Debug.Assert(this.nativeUnsafe == null);
 
-                this.bufs[0] = new uv_buf_t(arrayHandle + buffer.Offset, buffer.Count);
-                this.handles.Add(handle);
+            this.nativeUnsafe = channelUnsafe;
+            input.ForEachFlushedMessage(this);
+            this.DoWrite();
+        }
+
+        bool Add(IByteBuffer buf)
+        {
+            if (this.count == MaximumLimit)
+            {
+                return false;
+            }
+
+            int len = buf.ReadableBytes;
+            if (len == 0)
+            {
+                return true;
+            }
+
+            if (this.maxBytes - len < this.size && this.count > 0)
+            {
+                return false;
+            }
+
+            IntPtr addr = IntPtr.Zero;
+            if (buf.HasMemoryAddress)
+            {
+                addr = buf.AddressOfPinnedMemory();
+            }
+
+            if (addr != IntPtr.Zero)
+            {
+                this.Add(addr, buf.ReaderIndex, len);
             }
             else
             {
-                if (this.bufs.Length < nioBuffers.Count)
+                int bufferCount = buf.IoBufferCount;
+                if (MaximumLimit - bufferCount < this.count)
                 {
-                    if (this.bufsPin.IsAllocated)
-                    {
-                        this.bufsPin.Free();
-                    }
-                    this.bufs = new uv_buf_t[nioBuffers.Count];
-                    this.bufsPin = GCHandle.Alloc(this.bufs, GCHandleType.Pinned);
+                    return false;
                 }
 
-                for (int i = 0; i < nioBuffers.Count; i++)
+                if (bufferCount == 1)
                 {
-                    GCHandle handle = GCHandle.Alloc(nioBuffers[i].Array, GCHandleType.Pinned);
-                    IntPtr arrayHandle = handle.AddrOfPinnedObject();
+                    ArraySegment<byte> arraySegment = buf.GetIoBuffer();
 
-                    this.bufs[i] = new uv_buf_t(arrayHandle + nioBuffers[i].Offset, nioBuffers[i].Count);
+                    byte[] array = arraySegment.Array;
+                    GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
                     this.handles.Add(handle);
+
+                    addr = handle.AddrOfPinnedObject();
+                    this.Add(addr, arraySegment.Offset, arraySegment.Count);
+                }
+                else
+                {
+                    ArraySegment<byte>[] segments = buf.GetIoBuffers();
+                    for (int i = 0; i < segments.Length; i++)
+                    {
+                        GCHandle handle = GCHandle.Alloc(segments[i].Array, GCHandleType.Pinned);
+                        this.handles.Add(handle);
+
+                        addr = handle.AddrOfPinnedObject();
+                        this.Add(addr, segments[i].Offset, segments[i].Count);
+                    }
                 }
             }
-
-            this.bufferCount = nioBuffers.Count;
-            this.nativeUnsafe = channelUnsafe;
+            return true;
         }
 
-        internal ref uv_buf_t[] Bufs => ref this.bufs;
-
-        internal ref int BufferCount => ref this.bufferCount;
-
-        internal OperationException Error { get; private set; }
-
-        internal void Release()
+        void Add(IntPtr addr, int offset, int len)
         {
-            this.ReleaseHandles();
+            IntPtr baseOffset = this.MemoryAddress(this.count);
+            this.size += len;
+            ++this.count;
+            uv_buf_t.InitMemory(baseOffset, addr + offset, len);
+        }
+
+        unsafe void DoWrite()
+        {
+            int result = NativeMethods.uv_write(
+                this.Handle,
+                this.nativeUnsafe.UnsafeHandle,
+                (uv_buf_t*)this.bufs,
+                this.count,
+                WriteCallback);
+
+            if (result < 0)
+            { 
+                this.Release();
+                NativeMethods.ThrowOperationException((uv_err_code)result);
+            }
+        }
+
+        public bool ProcessMessage(object msg) => msg is IByteBuffer buf && this.Add(buf);
+
+        void Release()
+        {
+            if (this.handles.Count > 0)
+            {
+                for (int i = 0; i < this.handles.Count; i++)
+                {
+                    if (this.handles[i].IsAllocated)
+                    {
+                        this.handles[i].Free();
+                    }
+                }
+                this.handles.Clear();
+            }
 
             this.nativeUnsafe = null;
-            this.Error = null;
+            this.count = 0;
+            this.size = 0;
             this.recyclerHandle.Release(this);
-        }
-
-        void ReleaseHandles()
-        {
-            this.bufferCount = 0;
-            if (this.handles.Count == 0)
-            {
-                return;
-            }
-
-            foreach (GCHandle handle in this.handles)
-            {
-                if (handle.IsAllocated)
-                {
-                    handle.Free();
-                }
-            }
-            this.handles.Clear();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (this.bufsPin.IsAllocated)
-            {
-                this.bufsPin.Free();
-            }
-            base.Dispose(disposing);
         }
 
         void OnWriteCallback(int status)
         {
-            this.ReleaseHandles();
+            NativeChannel.INativeUnsafe @unsafe = this.nativeUnsafe;
+            int bytesWritten = this.size;
+            this.Release();
 
+            OperationException error = null;
             if (status < 0)
             {
-                this.Error = NativeMethods.CreateError((uv_err_code)status);
+                error = NativeMethods.CreateError((uv_err_code)status);
             }
-
-            this.nativeUnsafe.FinishWrite(this);
+            @unsafe.FinishWrite(bytesWritten, error);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        IntPtr MemoryAddress(int offset) => this.bufs + BufferSize * offset;
 
         static void OnWriteCallback(IntPtr handle, int status)
         {
             var request = GetTarget<WriteRequest>(handle);
             request.OnWriteCallback(status);
+        }
+
+        void Free()
+        {
+            this.Release();
+            if (this.pin.IsAllocated)
+            {
+                this.pin.Free();
+            }
+            this.bufs = IntPtr.Zero;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (this.bufs != IntPtr.Zero)
+            {
+                this.Free();
+            }
+            base.Dispose(disposing);
         }
     }
 }

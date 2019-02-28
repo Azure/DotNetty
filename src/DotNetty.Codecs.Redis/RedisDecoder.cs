@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+// ReSharper disable ConvertToAutoPropertyWithPrivateSetter
 namespace DotNetty.Codecs.Redis
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.Contracts;
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Redis.Messages;
@@ -14,48 +14,52 @@ namespace DotNetty.Codecs.Redis
 
     public sealed class RedisDecoder : ByteToMessageDecoder
     {
-        readonly IRedisMessagePool messagePool;
-        readonly int maximumInlineMessageLength;
         readonly ToPositiveLongProcessor toPositiveLongProcessor = new ToPositiveLongProcessor();
+
+        readonly bool decodeInlineCommands;
+        readonly int maxInlineMessageLength;
+        readonly IRedisMessagePool messagePool;
+
+        // current decoding states
+        State state = State.DecodeType;
+        RedisMessageType type;
+        int remainingBulkLength;
 
         enum State
         {
             DecodeType,
             DecodeInline, // SIMPLE_STRING, ERROR, INTEGER
             DecodeLength, // BULK_STRING, ARRAY_HEADER
-            DecodeBulkStringEndOfLine,
+            DecodeBulkStringEol,
             DecodeBulkStringContent,
         }
 
-        // current decoding states
-        State state = State.DecodeType;
-        RedisMessageType messageType;
-        int remainingBulkLength;
-
-        public RedisDecoder()
-            : this(RedisConstants.MaximumInlineMessageLength, FixedRedisMessagePool.Default)
+        public RedisDecoder() : this(false)
         {
         }
 
-        public RedisDecoder(int maximumInlineMessageLength, IRedisMessagePool messagePool)
+        public RedisDecoder(bool decodeInlineCommands)
+            : this(RedisConstants.RedisInlineMessageMaxLength, FixedRedisMessagePool.Instance, decodeInlineCommands)
         {
-            Contract.Requires(maximumInlineMessageLength > 0
-                && maximumInlineMessageLength <= RedisConstants.MaximumMessageLength);
-            Contract.Requires(messagePool != null);
+        }
 
-            this.maximumInlineMessageLength = maximumInlineMessageLength;
+        public RedisDecoder(int maxInlineMessageLength, IRedisMessagePool messagePool, bool decodeInlineCommands)
+        {
+            if (maxInlineMessageLength <= 0 || maxInlineMessageLength > RedisConstants.RedisMessageMaxLength)
+            {
+                throw new RedisCodecException($"maxInlineMessageLength: {maxInlineMessageLength} (expected: <= {RedisConstants.RedisMessageMaxLength})");
+            }
+
+            this.maxInlineMessageLength = maxInlineMessageLength;
             this.messagePool = messagePool;
+            this.decodeInlineCommands = decodeInlineCommands;
         }
 
         protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(input != null);
-            Contract.Requires(output != null);
-
             try
             {
-                while (true)
+                for (;;)
                 {
                     switch (this.state)
                     {
@@ -64,30 +68,35 @@ namespace DotNetty.Codecs.Redis
                             {
                                 return;
                             }
+
                             break;
                         case State.DecodeInline:
                             if (!this.DecodeInline(input, output))
                             {
                                 return;
                             }
+
                             break;
                         case State.DecodeLength:
                             if (!this.DecodeLength(input, output))
                             {
                                 return;
                             }
+
                             break;
-                        case State.DecodeBulkStringEndOfLine:
+                        case State.DecodeBulkStringEol:
                             if (!this.DecodeBulkStringEndOfLine(input, output))
                             {
                                 return;
                             }
+
                             break;
                         case State.DecodeBulkStringContent:
                             if (!this.DecodeBulkStringContent(input, output))
                             {
                                 return;
                             }
+
                             break;
                         default:
                             throw new RedisCodecException($"Unknown state: {this.state}");
@@ -106,180 +115,116 @@ namespace DotNetty.Codecs.Redis
             }
         }
 
-        IRedisMessage ReadInlineMessage(RedisMessageType redisMessageType, IByteBuffer byteBuffer)
+        void ResetDecoder()
         {
-            Contract.Requires(byteBuffer != null);
-
-            switch (redisMessageType)
-            {
-                case RedisMessageType.SimpleString:
-                    return this.GetSimpleStringMessage(byteBuffer);
-                case RedisMessageType.Error:
-                    return this.GetErrorMessage(byteBuffer);
-                case RedisMessageType.Integer:
-                    return this.GetIntegerMessage(byteBuffer);
-                default:
-                    throw new RedisCodecException(
-                        $"Message type {redisMessageType} must be inline messageType of SimpleString, Error or Integer");
-            }
+            this.state = State.DecodeType;
+            this.remainingBulkLength = 0;
         }
 
-        SimpleStringRedisMessage GetSimpleStringMessage(IByteBuffer byteBuffer)
+        bool DecodeType(IByteBuffer input)
         {
-            Contract.Requires(byteBuffer != null);
-
-            SimpleStringRedisMessage message;
-            if (!this.messagePool.TryGetMessage(byteBuffer, out message))
-            {
-                message = new SimpleStringRedisMessage(byteBuffer.ToString(Encoding.UTF8));
-            }
-
-            return message;
-        }
-
-        ErrorRedisMessage GetErrorMessage(IByteBuffer byteBuffer)
-        {
-            Contract.Requires(byteBuffer != null);
-
-            ErrorRedisMessage message;
-            if (!this.messagePool.TryGetMessage(byteBuffer, out message))
-            {
-                message = new ErrorRedisMessage(byteBuffer.ToString(Encoding.UTF8));
-            }
-
-            return message;
-        }
-
-        IntegerRedisMessage GetIntegerMessage(IByteBuffer byteBuffer)
-        {
-            IntegerRedisMessage message;
-            if (!this.messagePool.TryGetMessage(byteBuffer, out message))
-            {
-                message = new IntegerRedisMessage(this.ParseNumber(byteBuffer));
-            }
-
-            return message;
-        }
-
-        bool DecodeType(IByteBuffer byteBuffer)
-        {
-            Contract.Requires(byteBuffer != null);
-
-            if (!byteBuffer.IsReadable())
+            if (!input.IsReadable())
             {
                 return false;
             }
 
-            RedisMessageType redisMessageType = RedisCodecUtil.ParseMessageType(byteBuffer.ReadByte());
-            this.state = IsInline(redisMessageType)
-                ? State.DecodeInline
-                : State.DecodeLength;
-            this.messageType = redisMessageType;
-
+            this.type = RedisMessageType.ReadFrom(input, this.decodeInlineCommands);
+            this.state = this.type.Inline ? State.DecodeInline : State.DecodeLength;
             return true;
         }
 
-        static bool IsInline(RedisMessageType messageType) =>
-            messageType == RedisMessageType.SimpleString
-            || messageType == RedisMessageType.Error
-            || messageType == RedisMessageType.Integer;
-
-        bool DecodeInline(IByteBuffer byteBuffer, ICollection<object> output)
+        bool DecodeInline(IByteBuffer input, List<object> output)
         {
-            Contract.Requires(byteBuffer != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer buffer = ReadLine(byteBuffer);
-            if (buffer == null)
+            IByteBuffer lineBytes = ReadLine(input);
+            if (lineBytes == null)
             {
-                if (byteBuffer.ReadableBytes > this.maximumInlineMessageLength)
+                if (input.ReadableBytes > this.maxInlineMessageLength)
                 {
-                    throw new RedisCodecException(
-                        $"Length: {byteBuffer.ReadableBytes} (expected: <= {this.maximumInlineMessageLength})");
+                    throw new RedisCodecException($"length: {input.ReadableBytes} (expected: <= {this.maxInlineMessageLength})");
                 }
 
                 return false;
             }
 
-            IRedisMessage message = this.ReadInlineMessage(this.messageType, buffer);
-            output.Add(message);
+            output.Add(this.NewInlineRedisMessage(this.type, lineBytes));
             this.ResetDecoder();
-
             return true;
         }
 
-        bool DecodeLength(IByteBuffer byteBuffer, ICollection<object> output)
+        bool DecodeLength(IByteBuffer input, List<object> output)
         {
-            Contract.Requires(byteBuffer != null);
-            Contract.Requires(output != null);
-
-            IByteBuffer lineByteBuffer = ReadLine(byteBuffer);
-            if (lineByteBuffer == null)
+            IByteBuffer lineByteBuf = ReadLine(input);
+            if (lineByteBuf == null)
             {
                 return false;
             }
 
-            long length = this.ParseNumber(lineByteBuffer);
+            long length = this.ParseRedisNumber(lineByteBuf);
             if (length < RedisConstants.NullValue)
             {
-                throw new RedisCodecException(
-                    $"Length: {length} (expected: >= {RedisConstants.NullValue})");
+                throw new RedisCodecException($"length: {length} (expected: >= {RedisConstants.NullValue})");
             }
 
-            switch (this.messageType)
+            if (this.type == RedisMessageType.ArrayHeader)
             {
-                case RedisMessageType.ArrayHeader:
-                    output.Add(new ArrayHeaderRedisMessage(length));
-                    this.ResetDecoder();
-
-                    return true;
-                case RedisMessageType.BulkString:
-                    if (length > RedisConstants.MaximumMessageLength)
-                    {
-                        throw new RedisCodecException(
-                            $"Length: {length} (expected: <= {RedisConstants.MaximumMessageLength})");
-                    }
-                    this.remainingBulkLength = (int)length; // range(int) is already checked.
-
-                    return this.DecodeBulkString(byteBuffer, output);
-                default:
-                    throw new RedisCodecException(
-                        $"Bad messageType: {this.messageType}, expecting ArrayHeader or BulkString.");
+                output.Add(new ArrayHeaderRedisMessage(length));
+                this.ResetDecoder();
+                return true;
             }
+
+            if (this.type == RedisMessageType.BulkString)
+            {
+                if (length > RedisConstants.RedisMessageMaxLength)
+                {
+                    throw new RedisCodecException($"length: {length} (expected: <= {RedisConstants.RedisMessageMaxLength})");
+                }
+                this.remainingBulkLength = (int)length; // range(int) is already checked.
+                return this.DecodeBulkString(input, output);
+            }
+
+            throw new RedisCodecException($"bad type: {this.type}");
         }
 
-        bool DecodeBulkString(IByteBuffer byteBuffer, ICollection<object> output)
+        bool DecodeBulkString(IByteBuffer input, List<object> output)
         {
-            Contract.Requires(byteBuffer != null);
-            Contract.Requires(output != null);
-
             if (this.remainingBulkLength == RedisConstants.NullValue) // $-1\r\n
             {
                 output.Add(FullBulkStringRedisMessage.Null);
                 this.ResetDecoder();
                 return true;
             }
-
-            if (this.remainingBulkLength == 0)
+            else if (this.remainingBulkLength == 0)
             {
-                this.state = State.DecodeBulkStringEndOfLine;
-                return this.DecodeBulkStringEndOfLine(byteBuffer, output);
+                this.state = State.DecodeBulkStringEol;
+                return this.DecodeBulkStringEndOfLine(input, output);
+
             }
 
             // expectedBulkLength is always positive.
             output.Add(new BulkStringHeaderRedisMessage(this.remainingBulkLength));
             this.state = State.DecodeBulkStringContent;
-
-            return this.DecodeBulkStringContent(byteBuffer, output);
+            return this.DecodeBulkStringContent(input, output);
         }
 
-        bool DecodeBulkStringContent(IByteBuffer byteBuffer, ICollection<object> output)
+        // $0\r\n <here> \r\n
+        bool DecodeBulkStringEndOfLine(IByteBuffer input, List<object> output)
         {
-            Contract.Requires(byteBuffer != null);
-            Contract.Requires(output != null);
+            if (input.ReadableBytes < RedisConstants.EndOfLineLength)
+            {
+                return false;
+            }
 
-            int readableBytes = byteBuffer.ReadableBytes;
-            if (readableBytes == 0)
+            ReadEndOfLine(input);
+            output.Add(FullBulkStringRedisMessage.Empty);
+            this.ResetDecoder();
+            return true;
+        }
+
+        // ${expectedBulkLength}\r\n <here> {data...}\r\n
+        bool DecodeBulkStringContent(IByteBuffer input, List<object> output)
+        {
+            int readableBytes = input.ReadableBytes;
+            if (readableBytes == 0 || this.remainingBulkLength == 0 && readableBytes < RedisConstants.EndOfLineLength)
             {
                 return false;
             }
@@ -287,121 +232,115 @@ namespace DotNetty.Codecs.Redis
             // if this is last frame.
             if (readableBytes >= this.remainingBulkLength + RedisConstants.EndOfLineLength)
             {
-                IByteBuffer content = byteBuffer.ReadSlice(this.remainingBulkLength);
-                ReadEndOfLine(byteBuffer);
-
+                IByteBuffer content = input.ReadSlice(this.remainingBulkLength);
+                ReadEndOfLine(input);
                 // Only call retain after readEndOfLine(...) as the method may throw an exception.
-                output.Add(new LastBulkStringRedisContent((IByteBuffer)content.Retain()));
+                output.Add(new DefaultLastBulkStringRedisContent((IByteBuffer)content.Retain()));
                 this.ResetDecoder();
-
                 return true;
             }
 
             // chunked write.
             int toRead = Math.Min(this.remainingBulkLength, readableBytes);
             this.remainingBulkLength -= toRead;
-            IByteBuffer buffer = byteBuffer.ReadSlice(toRead);
-            output.Add(new BulkStringRedisContent((IByteBuffer)buffer.Retain()));
-
+            output.Add(new DefaultBulkStringRedisContent((IByteBuffer)input.ReadSlice(toRead).Retain()));
             return true;
         }
 
-        // $0\r\n <here> \r\n
-        bool DecodeBulkStringEndOfLine(IByteBuffer byteBuffer, ICollection<object> output)
+        static void ReadEndOfLine(IByteBuffer input)
         {
-            Contract.Requires(byteBuffer != null);
-            Contract.Requires(output != null);
-
-            if (byteBuffer.ReadableBytes < RedisConstants.EndOfLineLength)
+            short delim = input.ReadShort();
+            if (RedisConstants.EndOfLineShort == delim)
             {
-                return false;
+                return;
+            }
+            byte[] bytes = RedisCodecUtil.ShortToBytes(delim);
+            throw new RedisCodecException($"delimiter: [{bytes[0]},{bytes[1]}] (expected: \\r\\n)");
+        }
+
+        IRedisMessage NewInlineRedisMessage(RedisMessageType messageType, IByteBuffer content)
+        {
+            if (messageType == RedisMessageType.InlineCommand)
+            {
+                return new InlineCommandRedisMessage(content.ToString(Encoding.UTF8));
+            }
+            else if (messageType == RedisMessageType.SimpleString)
+            {
+                if (this.messagePool.TryGetSimpleString(content, out SimpleStringRedisMessage cached))
+                {
+                    return cached;
+                }
+                return new SimpleStringRedisMessage(content.ToString(Encoding.UTF8));
+            }
+            else if (messageType == RedisMessageType.Error)
+            {
+                if (this.messagePool.TryGetError(content, out ErrorRedisMessage cached))
+                {
+                    return cached;
+                }
+                return new ErrorRedisMessage(content.ToString(Encoding.UTF8));
+            }
+            else if (messageType == RedisMessageType.Integer)
+            {
+                if (this.messagePool.TryGetInteger(content, out IntegerRedisMessage cached))
+                {
+                    return cached;
+                }
+                return new IntegerRedisMessage(this.ParseRedisNumber(content));
             }
 
-            ReadEndOfLine(byteBuffer);
-            output.Add(FullBulkStringRedisMessage.Empty);
-            this.ResetDecoder();
-
-            return true;
+            throw new RedisCodecException($"bad type: {messageType}");
         }
 
-        static IByteBuffer ReadLine(IByteBuffer byteBuffer)
+        static IByteBuffer ReadLine(IByteBuffer input)
         {
-            Contract.Requires(byteBuffer != null);
-
-            if (!byteBuffer.IsReadable(RedisConstants.EndOfLineLength))
+            if (!input.IsReadable(RedisConstants.EndOfLineLength))
             {
                 return null;
             }
 
-            int lfIndex = byteBuffer.ForEachByte(ByteProcessor.FindLF);
+            int lfIndex = input.ForEachByte(ByteProcessor.FindLF);
             if (lfIndex < 0)
             {
                 return null;
             }
 
-            IByteBuffer buffer = byteBuffer.ReadSlice(lfIndex - byteBuffer.ReaderIndex - 1);
-            ReadEndOfLine(byteBuffer);
-
-            return buffer;
+            IByteBuffer data = input.ReadSlice(lfIndex - input.ReaderIndex - 1); // `-1` is for CR
+            ReadEndOfLine(input); // validate CR LF
+            return data;
         }
 
-        static void ReadEndOfLine(IByteBuffer byteBuffer)
+        long ParseRedisNumber(IByteBuffer byteBuf)
         {
-            Contract.Requires(byteBuffer != null);
-
-            short delim = byteBuffer.ReadShort();
-            if (RedisConstants.EndOfLine == delim)
-            {
-                return;
-            }
-
-            byte[] bytes = RedisCodecUtil.GetBytes(delim);
-            throw new RedisCodecException($"delimiter: [{bytes[0]},{bytes[1]}] (expected: \\r\\n)");
-        }
-
-        void ResetDecoder()
-        {
-            this.state = State.DecodeType;
-            this.remainingBulkLength = 0;
-        }
-
-        long ParseNumber(IByteBuffer byteBuffer)
-        {
-            int readableBytes = byteBuffer.ReadableBytes;
-            bool negative = readableBytes > 0
-                && byteBuffer.GetByte(byteBuffer.ReaderIndex) == '-';
-
+            int readableBytes = byteBuf.ReadableBytes;
+            bool negative = readableBytes > 0 && byteBuf.GetByte(byteBuf.ReaderIndex) == '-';
             int extraOneByteForNegative = negative ? 1 : 0;
             if (readableBytes <= extraOneByteForNegative)
             {
-                throw new RedisCodecException(
-                    $"No number to parse: {byteBuffer.ToString(Encoding.ASCII)}");
+                throw new RedisCodecException($"no number to parse: {byteBuf.ToString(Encoding.ASCII)}");
             }
-
-            if (readableBytes > RedisConstants.PositiveLongValueMaximumLength + extraOneByteForNegative)
+            if (readableBytes > RedisConstants.PositiveLongMaxLength + extraOneByteForNegative)
             {
-                throw new RedisCodecException(
-                    $"Too many characters to be a valid RESP Integer: {byteBuffer.ToString(Encoding.ASCII)}");
+                throw new RedisCodecException($"too many characters to be a valid RESP Integer: {byteBuf.ToString(Encoding.ASCII)}");
             }
-
             if (negative)
             {
-                return -this.ParsePositiveNumber(byteBuffer.SkipBytes(extraOneByteForNegative));
+                return -this.ParsePositiveNumber(byteBuf.SkipBytes(extraOneByteForNegative));
             }
-
-            return this.ParsePositiveNumber(byteBuffer);
+            return this.ParsePositiveNumber(byteBuf);
         }
 
         long ParsePositiveNumber(IByteBuffer byteBuffer)
         {
             this.toPositiveLongProcessor.Reset();
             byteBuffer.ForEachByte(this.toPositiveLongProcessor);
-
             return this.toPositiveLongProcessor.Content;
         }
 
-        class ToPositiveLongProcessor : IByteProcessor
+        sealed class ToPositiveLongProcessor : IByteProcessor
         {
+            long result;
+
             public bool Process(byte value)
             {
                 if (!char.IsDigit((char)value))
@@ -409,13 +348,13 @@ namespace DotNetty.Codecs.Redis
                     throw new RedisCodecException($"Bad byte in number: {value}, expecting digits from 0 to 9");
                 }
 
-                this.Content = this.Content * 10 + (value - '0');
+                this.result = this.result * 10 + (value - '0');
                 return true;
             }
 
-            public long Content { get; private set; }
+            public long Content => this.result;
 
-            public void Reset() => this.Content = 0;
+            public void Reset() => this.result = 0;
         }
     }
 }

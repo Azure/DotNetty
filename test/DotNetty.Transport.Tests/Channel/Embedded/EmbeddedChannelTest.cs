@@ -166,12 +166,10 @@ namespace DotNetty.Transport.Tests.Channel.Embedded
 
         [Theory]
         [InlineData(1000)]
-        public void TestFireChannelInactiveAndUnregisteredOnDisconnect(int timeout)
-        {
+        public void TestFireChannelInactiveAndUnregisteredOnDisconnect(int timeout) =>
             this.TestFireChannelInactiveAndUnregisteredOnClose(channel => channel.DisconnectAsync(), timeout);
-        }
 
-        public void TestFireChannelInactiveAndUnregisteredOnClose(Func<IChannel, Task> action, int timeout)
+        void TestFireChannelInactiveAndUnregisteredOnClose(Func<IChannel, Task> action, int timeout)
         {
             var latch = new CountdownEvent(3);
             var channel = new EmbeddedChannel(new ChannelHandlerWithInactiveAndRegister(latch));

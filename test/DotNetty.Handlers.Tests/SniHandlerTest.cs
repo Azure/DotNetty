@@ -104,10 +104,11 @@ namespace DotNetty.Handlers.Tests
                 }
 
                 driverStream.Dispose();
+                Assert.False(ch.Finish());
             }
             finally
             {
-                await executor.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(300));
+                await executor.ShutdownGracefullyAsync(TimeSpan.Zero, TimeSpan.Zero);
             }
         }
 
@@ -180,10 +181,11 @@ namespace DotNetty.Handlers.Tests
                 }
 
                 driverStream.Dispose();
+                Assert.False(ch.Finish());
             }
             finally
             {
-                await executor.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(300));
+                await executor.ShutdownGracefullyAsync(TimeSpan.Zero, TimeSpan.Zero);
             }
         }
 
@@ -194,7 +196,7 @@ namespace DotNetty.Handlers.Tests
                 {
                     Assert.Equal(targetHost, certificate.Issuer.Replace("CN=", string.Empty));
                     return true;
-                }), new ClientTlsSettings(SslProtocols.Tls12, false, new List<X509Certificate>(), targetHost)) :
+                }), new ClientTlsSettings(protocol, false, new List<X509Certificate>(), targetHost)) :
                 new SniHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ServerTlsSniSettings(CertificateSelector));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
             var ch = new EmbeddedChannel(tlsHandler);
@@ -217,9 +219,9 @@ namespace DotNetty.Handlers.Tests
 
                 if (readResultBuffer.ReadableBytes < output.Count)
                 {
-                    await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), output.Count - readResultBuffer.ReadableBytes, readResultBuffer, TestTimeout);
+                    if (ch.Active)
+                        await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), output.Count - readResultBuffer.ReadableBytes, readResultBuffer, TestTimeout, readResultBuffer.ReadableBytes != 0 ? 0 : 1);
                 }
-                Assert.NotEqual(0, readResultBuffer.ReadableBytes);
                 int read = Math.Min(output.Count, readResultBuffer.ReadableBytes);
                 readResultBuffer.ReadBytes(output.Array, output.Offset, read);
                 return read;
@@ -234,7 +236,8 @@ namespace DotNetty.Handlers.Tests
             var driverStream = new SslStream(mediationStream, true, (_1, _2, _3, _4) => true);
             if (isClient)
             {
-                await Task.Run(() => driverStream.AuthenticateAsServerAsync(CertificateSelector(targetHost).Result.Certificate).WithTimeout(TimeSpan.FromSeconds(5)));
+                ServerTlsSettings serverTlsSettings = CertificateSelector(targetHost).Result;
+                await Task.Run(() => driverStream.AuthenticateAsServerAsync(serverTlsSettings.Certificate, false, protocol | serverTlsSettings.EnabledProtocols, false).WithTimeout(TimeSpan.FromSeconds(5)));
             }
             else
             {
@@ -252,10 +255,12 @@ namespace DotNetty.Handlers.Tests
             return Task.FromResult(SettingMap[hostName]);
         }
 
-        static Task ReadOutboundAsync(Func<Task<IByteBuffer>> readFunc, int expectedBytes, IByteBuffer result, TimeSpan timeout)
+        static Task ReadOutboundAsync(Func<Task<IByteBuffer>> readFunc, int expectedBytes, IByteBuffer result, TimeSpan timeout, int minBytes = -1)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             int remaining = expectedBytes;
+            if (minBytes < 0) minBytes = expectedBytes;
+            if (minBytes > expectedBytes) throw new ArgumentOutOfRangeException("minBytes can not greater than expectedBytes");
             return AssertEx.EventuallyAsync(
                 async () =>
                 {
@@ -265,13 +270,28 @@ namespace DotNetty.Handlers.Tests
                         return false;
                     }
 
-                    IByteBuffer output = await readFunc().WithTimeout(readTimeout);//inbound ? ch.ReadInbound<IByteBuffer>() : ch.ReadOutbound<IByteBuffer>();
-                    if (output != null)
+                    IByteBuffer output;
+                    while (true)
                     {
+                        output = await readFunc().WithTimeout(readTimeout);//inbound ? ch.ReadInbound<IByteBuffer>() : ch.ReadOutbound<IByteBuffer>();
+                        if (output == null)
+                            break;
+
+                        if (!output.IsReadable())
+                        {
+                            output.Release();
+                            return true;
+                        }
+
                         remaining -= output.ReadableBytes;
+                        minBytes -= output.ReadableBytes;
                         result.WriteBytes(output);
+                        output.Release();
+
+                        if (remaining <= 0)
+                            return true;
                     }
-                    return remaining <= 0;
+                    return minBytes <= 0;
                 },
                 TimeSpan.FromMilliseconds(10),
                 timeout);

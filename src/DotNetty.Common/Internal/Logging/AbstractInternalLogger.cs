@@ -7,18 +7,18 @@ namespace DotNetty.Common.Internal.Logging
     using System.Diagnostics.Contracts;
 
     /// <summary>
-    ///     A skeletal implementation of {@link IInternalLogger}.  This class implements
-    ///     all methods that have a { @link InternalLogLevel } parameter by default to call
-    ///     specific logger methods such as {@link #Info(String)} or {@link #isInfoEnabled()}.
+    /// A skeletal implementation of <see cref="IInternalLogger"/>. This class implements
+    /// all methods that have a <see cref="InternalLogLevel"/> parameter by default to call
+    /// specific logger methods such as <see cref="Info(string)"/> or <see cref="InfoEnabled"/>.
     /// </summary>
     public abstract class AbstractInternalLogger : IInternalLogger
     {
         static readonly string EXCEPTION_MESSAGE = "Unexpected exception:";
 
         /// <summary>
-        ///     Creates a new instance.
+        /// Creates a new instance.
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="name">A friendly name for the new logger instance.</param>
         protected AbstractInternalLogger(string name)
         {
             Contract.Requires(name != null);

@@ -20,8 +20,6 @@ namespace DotNetty.Common.Internal
     /// parameter are provided to allow the prevention of field reload after a
     /// LoadLoad barrier.
     /// <p />
-    /// @param
-    /// <E>
     abstract class ConcurrentCircularArrayQueue<T> : ConcurrentCircularArrayQueueL0Pad<T>
         where T : class
     {
@@ -36,34 +34,44 @@ namespace DotNetty.Common.Internal
             this.Buffer = new T[actualCapacity + RefArrayAccessUtil.RefBufferPad * 2];
         }
 
-        /// @param index desirable element index
-        /// @return the offset in bytes within the array for a given index.
+        /// <summary>
+        /// Calculates an element offset based on a given array index.
+        /// </summary>
+        /// <param name="index">The desirable element index.</param>
+        /// <returns>The offset in bytes within the array for a given index.</returns>
         protected long CalcElementOffset(long index) => RefArrayAccessUtil.CalcElementOffset(index, this.Mask);
 
-        /// A plain store (no ordering/fences) of an element to a given offset
-        /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
-        /// @param e a kitty
+        /// <summary>
+        /// A plain store (no ordering/fences) of an element to a given offset.
+        /// </summary>
+        /// <param name="offset">Computed via <see cref="CalcElementOffset"/>.</param>
+        /// <param name="e">A kitty.</param>
         protected void SpElement(long offset, T e) => RefArrayAccessUtil.SpElement(this.Buffer, offset, e);
 
-        /// An ordered store(store + StoreStore barrier) of an element to a given offset
-        /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
-        /// @param e an orderly kitty
+        /// <summary>
+        /// An ordered store(store + StoreStore barrier) of an element to a given offset.
+        /// </summary>
+        /// <param name="offset">Computed via <see cref="CalcElementOffset"/>.</param>
+        /// <param name="e">An orderly kitty.</param>
         protected void SoElement(long offset, T e) => RefArrayAccessUtil.SoElement(this.Buffer, offset, e);
 
+        /// <summary>
         /// A plain load (no ordering/fences) of an element from a given offset.
-        /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
-        /// @return the element at the offset
+        /// </summary>
+        /// <param name="offset">Computed via <see cref="CalcElementOffset"/>.</param>
+        /// <returns>The element at the offset.</returns>
         protected T LpElement(long offset) => RefArrayAccessUtil.LpElement(this.Buffer, offset);
 
+        /// <summary>
         /// A volatile load (load + LoadLoad barrier) of an element from a given offset.
-        /// @param offset computed via {@link ConcurrentCircularArrayQueue#calcElementOffset(long)}
-        /// @return the element at the offset
+        /// </summary>
+        /// <param name="offset">Computed via <see cref="CalcElementOffset"/>.</param>
+        /// <returns>The element at the offset.</returns>
         protected T LvElement(long offset) => RefArrayAccessUtil.LvElement(this.Buffer, offset);
 
         public override void Clear()
         {
-            T item;
-            while (this.TryDequeue(out item) || !this.IsEmpty)
+            while (this.TryDequeue(out T _) || !this.IsEmpty)
             {
                 // looping
             }

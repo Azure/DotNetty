@@ -648,7 +648,7 @@ namespace DotNetty.Buffers
                     .Append(i)
                     .Append(": ");
                 PoolSubpage<T> s = head.Next;
-                for (; ;)
+                for (; ; )
                 {
                     buf.Append(s);
                     s = s.Next;
@@ -706,7 +706,7 @@ namespace DotNetty.Buffers
             // Rely on GC.
         }
 
-        protected override PooledByteBuffer<byte[]> NewByteBuf(int maxCapacity) => 
+        protected override PooledByteBuffer<byte[]> NewByteBuf(int maxCapacity) =>
             PooledHeapByteBuffer.NewInstance(maxCapacity);
 
         protected override void MemoryCopy(byte[] src, int srcOffset, byte[] dst, int dstOffset, int length)
@@ -751,7 +751,7 @@ namespace DotNetty.Buffers
             return chunk;
         }
 
-        protected override PooledByteBuffer<byte[]> NewByteBuf(int maxCapacity) => 
+        protected override PooledByteBuffer<byte[]> NewByteBuf(int maxCapacity) =>
             PooledUnsafeDirectByteBuffer.NewInstance(maxCapacity);
 
         protected override unsafe void MemoryCopy(byte[] src, int srcOffset, byte[] dst, int dstOffset, int length) =>

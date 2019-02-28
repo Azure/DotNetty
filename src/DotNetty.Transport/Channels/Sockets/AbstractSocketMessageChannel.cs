@@ -9,13 +9,15 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Net.Sockets;
 
     /// <summary>
-    /// {@link AbstractNioChannel} base class for {@link Channel}s that operate on messages.
+    /// <see cref="AbstractSocketChannel"/> base class for <see cref="IChannel"/>s that operate on messages.
     /// </summary>
     public abstract class AbstractSocketMessageChannel : AbstractSocketChannel
     {
         /// <summary>
-        /// @see {@link AbstractNioChannel#AbstractNioChannel(Channel, SelectableChannel, int)}
+        /// Creates a new <see cref="AbstractSocketMessageChannel"/> instance.
         /// </summary>
+        /// <param name="parent">The parent <see cref="IChannel"/>. Pass <c>null</c> if there's no parent.</param>
+        /// <param name="socket">The <see cref="Socket"/> used by the <see cref="IChannel"/> for communication.</param>
         protected AbstractSocketMessageChannel(IChannel parent, Socket socket)
             : base(parent, socket)
         {
@@ -173,20 +175,23 @@ namespace DotNetty.Transport.Channels.Sockets
         protected abstract void ScheduleMessageWrite(object message);
 
         /// <summary>
-        /// Returns {@code true} if we should continue the write loop on a write error.
+        /// Returns <c>true</c> if we should continue the write loop on a write error.
         /// </summary>
         protected virtual bool ContinueOnWriteError => false;
 
         /// <summary>
-        /// Read messages into the given array and return the amount which was read.
+        /// Reads messages into the given list and returns the amount which was read.
         /// </summary>
+        /// <param name="buf">The list into which message objects should be inserted.</param>
+        /// <returns>The number of messages which were read.</returns>
         protected abstract int DoReadMessages(List<object> buf);
 
         /// <summary>
-        /// Write a message to the underlying {@link java.nio.channels.Channel}.
-        ///
-        /// @return {@code true} if and only if the message has been written
+        /// Writes a message to the underlying <see cref="IChannel"/>.
         /// </summary>
+        /// <param name="msg">The message to be written.</param>
+        /// <param name="input">The destination channel buffer for the message.</param>
+        /// <returns><c>true</c> if the message was successfully written, otherwise <c>false</c>.</returns>
         protected abstract bool DoWriteMessage(object msg, ChannelOutboundBuffer input);
     }
 }

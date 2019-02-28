@@ -1,31 +1,133 @@
-#!/bin/bash
+<#
+.SYNOPSIS
+This is a Powershell script to bootstrap a Cake build.
+.DESCRIPTION
+This Powershell script will download NuGet if missing, restore NuGet tools (including Cake)
+and execute your Cake build script with the parameters you provide.
+.PARAMETER Target
+The build script target to run.
+.PARAMETER Configuration
+The build configuration to use.
+.PARAMETER Verbosity
+Specifies the amount of information to be displayed.
+.PARAMETER WhatIf
+Performs a dry run of the build script.
+No tasks will be executed.
+.PARAMETER ScriptArgs
+Remaining arguments are added here.
+.LINK
+https://cakebuild.net
+#>
 
-SCRIPT_PATH="${BASH_SOURCE[0]}";
-if ([ -h "${SCRIPT_PATH}" ]) then
-  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
-fi
-pushd . > /dev/null
-cd `dirname ${SCRIPT_PATH}` > /dev/null
-SCRIPT_PATH=`pwd`;
-popd  > /dev/null
+[CmdletBinding()]
+Param(
+    [string]$Target = "Default",
+    [ValidateSet("Release", "Debug")]
+    [string]$Configuration = "Release",
+    [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
+    [string]$Verbosity = "Verbose",
+    [switch]$WhatIf,
+    [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
+    [string[]]$ScriptArgs
+)
 
-if ! [ -f $SCRIPT_PATH/.nuget/nuget.exe ] 
-    then
-        wget "https://www.nuget.org/nuget.exe" -P $SCRIPT_PATH/.nuget/
-fi
+$CakeVersion = "0.27.1"
+$DotNetChannel = "Current";
+$DotNetVersion = "2.1.101";
+$DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
+$NugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 
-mono $SCRIPT_PATH/.nuget/nuget.exe update -self
+# Temporarily skip verification of addins.
+$ENV:CAKE_SETTINGS_SKIPVERIFICATION='true'
 
-mono $SCRIPT_PATH/.nuget/nuget.exe install FAKE -OutputDirectory $SCRIPT_PATH/packages -ExcludeVersion -Version 4.25.4
+# Make sure tools folder exists
+$PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
+$ToolPath = Join-Path $PSScriptRoot "tools"
+if (!(Test-Path $ToolPath)) {
+    Write-Verbose "Creating tools directory..."
+    New-Item -Path $ToolPath -Type directory | out-null
+}
 
-mono $SCRIPT_PATH/.nuget/nuget.exe install xunit.runners -OutputDirectory $SCRIPT_PATH/packages/FAKE -ExcludeVersion -Version 2.1.0
-mono $SCRIPT_PATH/.nuget/nuget.exe install NBench.Runner -OutputDirectory packages -ExcludeVersion -Version 0.2.2
+###########################################################################
+# INSTALL .NET CORE CLI
+###########################################################################
 
-if ! [ -e $SCRIPT_PATH/packages/SourceLink.Fake/tools/SourceLink.fsx ] ; then
-	mono $SCRIPT_PATH/.nuget/nuget.exe install SourceLink.Fake -OutputDirectory $SCRIPT_PATH/packages -ExcludeVersion
+Function Remove-PathVariable([string]$VariableToRemove)
+{
+    $path = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($path -ne $null)
+    {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
+    }
 
-fi
+    $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
+    if ($path -ne $null)
+    {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
+    }
+}
 
-export encoding=utf-8
+# Get .NET Core CLI path if installed.
+$FoundDotNetCliVersion = $null;
+if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+    $FoundDotNetCliVersion = dotnet --version;
+}
 
-mono $SCRIPT_PATH/packages/FAKE/tools/FAKE.exe build.fsx "$@"
+if($FoundDotNetCliVersion -ne $DotNetVersion) {
+    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
+    if (!(Test-Path $InstallPath)) {
+        mkdir -Force $InstallPath | Out-Null;
+    }
+    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
+    & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetVersion -InstallDir $InstallPath;
+
+    Remove-PathVariable "$InstallPath"
+    $env:PATH = "$InstallPath;$env:PATH"
+}
+
+$env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+$env:DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+###########################################################################
+# INSTALL NUGET
+###########################################################################
+
+# Make sure nuget.exe exists.
+$NugetPath = Join-Path $ToolPath "nuget.exe"
+if (!(Test-Path $NugetPath)) {
+    Write-Host "Downloading NuGet.exe..."
+    (New-Object System.Net.WebClient).DownloadFile($NugetUrl, $NugetPath);
+}
+
+###########################################################################
+# INSTALL CAKE
+###########################################################################
+
+# Make sure Cake has been installed.
+$CakePath = Join-Path $ToolPath "Cake.$CakeVersion/Cake.exe"
+if (!(Test-Path $CakePath)) {
+    Write-Host "Installing Cake..."
+    Invoke-Expression "&`"$NugetPath`" install Cake -Version $CakeVersion -OutputDirectory `"$ToolPath`"" | Out-Null;
+    if ($LASTEXITCODE -ne 0) {
+        Throw "An error occurred while restoring Cake from NuGet."
+    }
+}
+
+###########################################################################
+# RUN BUILD SCRIPT
+###########################################################################
+
+# Build the argument list.
+$Arguments = @{
+    target=$Target;
+    configuration=$Configuration;
+    verbosity=$Verbosity;
+    dryrun=$WhatIf;
+}.GetEnumerator() | %{"--{0}=`"{1}`"" -f $_.key, $_.value };
+
+# Start Cake
+Write-Host "Running build script..."
+Invoke-Expression "& `"$CakePath`" `"build.cake`" $Arguments $ScriptArgs"
+exit $LASTEXITCODE

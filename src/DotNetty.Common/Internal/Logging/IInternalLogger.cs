@@ -32,10 +32,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level TRACE according to the specified format and
         ///     argument.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level TRACE.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arg">the argument</param>
@@ -44,10 +44,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level TRACE according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level TRACE.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="argA">the first argument</param>
@@ -57,7 +57,7 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level TRACE according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level TRACE. However, this variant incurs the hidden
         ///         (and relatively small) cost of creating an <c>object[]</c>
@@ -65,7 +65,7 @@ namespace DotNetty.Common.Internal.Logging
         ///         even if this logger is disabled for TRACE. The variants
         ///         <see cref="Trace(string, object)" /> and <see cref="Trace(string, object, object)" />
         ///         arguments exist solely to avoid this hidden cost.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arguments">an array of arguments</param>
@@ -99,10 +99,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level DEBUG according to the specified format and
         ///     argument.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level DEBUG.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arg">the argument</param>
@@ -111,10 +111,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level DEBUG according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level DEBUG.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="argA">the first argument</param>
@@ -124,7 +124,7 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level DEBUG according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level DEBUG. However, this variant incurs the hidden
         ///         (and relatively small) cost of creating an <c>object[]</c>
@@ -132,7 +132,7 @@ namespace DotNetty.Common.Internal.Logging
         ///         even if this logger is disabled for DEBUG. The variants
         ///         <see cref="Debug(string, object)" /> and <see cref="Debug(string, object, object)" />
         ///         arguments exist solely to avoid this hidden cost.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arguments">an array of arguments</param>
@@ -166,10 +166,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level INFO according to the specified format and
         ///     argument.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level INFO.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arg">the argument</param>
@@ -178,10 +178,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level INFO according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level INFO.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="argA">the first argument</param>
@@ -191,7 +191,7 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level INFO according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level INFO. However, this variant incurs the hidden
         ///         (and relatively small) cost of creating an <c>object[]</c>
@@ -199,7 +199,7 @@ namespace DotNetty.Common.Internal.Logging
         ///         even if this logger is disabled for INFO. The variants
         ///         <see cref="Info(string, object)" /> and <see cref="Info(string, object, object)" />
         ///         arguments exist solely to avoid this hidden cost.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arguments">an array of arguments</param>
@@ -233,10 +233,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level WARN according to the specified format and
         ///     argument.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level WARN.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arg">the argument</param>
@@ -245,7 +245,7 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level WARN according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level WARN. However, this variant incurs the hidden
         ///         (and relatively small) cost of creating an <c>object[]</c>
@@ -253,7 +253,7 @@ namespace DotNetty.Common.Internal.Logging
         ///         even if this logger is disabled for WARN. The variants
         ///         <see cref="Warn(string, object)" /> and <see cref="Warn(string, object, object)" />
         ///         arguments exist solely to avoid this hidden cost.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arguments">an array of arguments</param>
@@ -262,10 +262,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level WARN according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level WARN.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="argA">the first argument</param>
@@ -300,10 +300,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level ERROR according to the specified format and
         ///     argument.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level ERROR.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arg">the argument</param>
@@ -312,10 +312,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level ERROR according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level ERROR.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="argA">the first argument</param>
@@ -325,7 +325,7 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at level ERROR according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for level ERROR. However, this variant incurs the hidden
         ///         (and relatively small) cost of creating an <c>object[]</c>
@@ -333,7 +333,7 @@ namespace DotNetty.Common.Internal.Logging
         ///         even if this logger is disabled for ERROR. The variants
         ///         <see cref="Error(string, object)" /> and <see cref="Error(string, object, object)" />
         ///         arguments exist solely to avoid this hidden cost.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="format">the format string</param>
         /// <param name="arguments">an array of arguments</param>
@@ -353,10 +353,10 @@ namespace DotNetty.Common.Internal.Logging
         void Error(Exception t);
 
         /// <summary>
-        ///     Is the logger instance enabled for the specified {@code level}?
+        ///     Is the logger instance enabled for the specified <paramref name="level"/>?
         /// </summary>
         /// <param name="level">log level</param>
-        /// <returns>true if this Logger is enabled for the specified {@code level}, false otherwise.</returns>
+        /// <returns>true if this Logger is enabled for the specified <paramref name="level"/>, false otherwise.</returns>
         bool IsEnabled(InternalLogLevel level);
 
         /// <summary>
@@ -369,10 +369,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at a specified <see cref="InternalLogLevel" /> according to the specified format and
         ///     argument.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for the specified <see cref="InternalLogLevel" />.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="level">log level</param>
         /// <param name="format">the format string</param>
@@ -382,10 +382,10 @@ namespace DotNetty.Common.Internal.Logging
         /// <summary>
         ///     Log a message at a specified <see cref="InternalLogLevel" /> according to the specified format and
         ///     arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous object creation when the logger is disabled
         ///         for the specified <see cref="InternalLogLevel" />.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="level">log level</param>
         /// <param name="format">the format string</param>
@@ -394,17 +394,17 @@ namespace DotNetty.Common.Internal.Logging
         void Log(InternalLogLevel level, string format, object argA, object argB);
 
         /// <summary>
-        ///     Log a message at the specified {@code level} according to the specified format
+        ///     Log a message at the specified <paramref name="level"/> according to the specified format
         ///     and arguments.
-        ///     <p>
+        ///     <para>
         ///         This form avoids superfluous string concatenation when the logger
-        ///         is disabled for the specified {@code level}. However, this variant incurs the hidden
-        ///         (and relatively small) cost of creating an {@code Object[]} before invoking the method,
-        ///         even if this logger is disabled for the specified {@code level}. The variants
+        ///         is disabled for the specified <paramref name="level"/>. However, this variant incurs the hidden
+        ///         (and relatively small) cost of creating an <c>object[]</c> before invoking the method,
+        ///         even if this logger is disabled for the specified <paramref name="level"/>. The variants
         ///         <see cref="Log(InternalLogLevel, string, object)" /> and
         ///         <see cref="Log(InternalLogLevel, string, object, object)" /> arguments exist solely
         ///         in order to avoid this hidden cost.
-        ///     </p>
+        ///     </para>
         /// </summary>
         /// <param name="level">log level</param>
         /// <param name="format">the format string</param>

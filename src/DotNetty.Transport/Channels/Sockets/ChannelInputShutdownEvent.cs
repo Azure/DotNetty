@@ -4,15 +4,14 @@
 namespace DotNetty.Transport.Channels.Sockets
 {
     /// <summary>
-    ///     Special event which will be fired and passed to the
-    ///     {@link ChannelHandler#userEventTriggered(ChannelHandlerContext, Object)} methods once the input of
-    ///     a {@link SocketChannel} was shutdown and the {@link SocketChannelConfig#isAllowHalfClosure()} method returns
-    ///     {@code true}.
+    /// Special event which will be fired and passed to the <see cref="IChannelHandler.UserEventTriggered(IChannelHandlerContext,object)"/>
+    /// methods once the input of an <see cref="ISocketChannel"/> was shutdown and the
+    /// <see cref="ISocketChannelConfiguration.AllowHalfClosure"/> property returns <c>true</c>.
     /// </summary>
     public sealed class ChannelInputShutdownEvent
     {
         /// <summary>
-        ///     Instance to use
+        /// Singleton instance to use.
         /// </summary>
         public static readonly ChannelInputShutdownEvent Instance = new ChannelInputShutdownEvent();
 

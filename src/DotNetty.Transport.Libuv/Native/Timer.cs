@@ -4,7 +4,7 @@
 namespace DotNetty.Transport.Libuv.Native
 {
     using System;
-    using System.Diagnostics.Contracts;
+    using System.Diagnostics;
     using System.Runtime.InteropServices;
 
     sealed class Timer : NativeHandle
@@ -17,26 +17,20 @@ namespace DotNetty.Transport.Libuv.Native
         public unsafe Timer(Loop loop, Action<object> callback, object state) 
             : base(uv_handle_type.UV_TIMER)
         {
-            Contract.Requires(loop != null);
-            Contract.Requires(callback != null);
+            Debug.Assert(loop != null);
+            Debug.Assert(callback != null);
 
-            int size = NativeMethods.uv_handle_size(uv_handle_type.UV_TIMER).ToInt32();
-            IntPtr handle = Marshal.AllocHGlobal(size);
+            IntPtr handle = NativeMethods.Allocate(uv_handle_type.UV_TIMER);
 
-            int result;
             try
             {
-                result = NativeMethods.uv_timer_init(loop.Handle, handle);
+                int result = NativeMethods.uv_timer_init(loop.Handle, handle);
+                NativeMethods.ThrowIfError(result);
             }
-            catch (Exception)
+            catch
             {
-                Marshal.FreeHGlobal(handle);
+                NativeMethods.FreeMemory(handle);
                 throw;
-            }
-            if (result < 0)
-            {
-                Marshal.FreeHGlobal(handle);
-                throw NativeMethods.CreateError((uv_err_code)result);
             }
 
             GCHandle gcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
@@ -49,26 +43,22 @@ namespace DotNetty.Transport.Libuv.Native
 
         public Timer Start(long timeout, long repeat)
         {
-            Contract.Requires(timeout >= 0);
-            Contract.Requires(repeat >= 0);
+            Debug.Assert(timeout >= 0);
+            Debug.Assert(repeat >= 0);
 
             this.Validate();
             int result = NativeMethods.uv_timer_start(this.Handle, WorkCallback, timeout, repeat);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            NativeMethods.ThrowIfError(result);
 
             return this;
         }
 
         public Timer SetRepeat(long repeat)
         {
-            Contract.Requires(repeat >= 0);
+            Debug.Assert(repeat >= 0);
 
             this.Validate();
             NativeMethods.uv_timer_set_repeat(this.Handle, repeat);
-
             return this;
         }
 
@@ -82,11 +72,7 @@ namespace DotNetty.Transport.Libuv.Native
         {
             this.Validate();
             int result = NativeMethods.uv_timer_again(this.Handle);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
-
+            NativeMethods.ThrowIfError(result);
             return this;
         }
 
@@ -98,10 +84,7 @@ namespace DotNetty.Transport.Libuv.Native
             }
 
             int result = NativeMethods.uv_timer_stop(this.Handle);
-            if (result < 0)
-            {
-                throw NativeMethods.CreateError((uv_err_code)result);
-            }
+            NativeMethods.ThrowIfError(result);
         }
 
         void OnWorkCallback()

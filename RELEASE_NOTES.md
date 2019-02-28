@@ -1,3 +1,29 @@
+#### 0.6.0 October 9, 2018
+- Clearly marks Unsafe Buffer management routines as `unsafe`
+- Changes defaults for Unpooled and Pooled buffer allocators to safe versions
+- Fixes write buffer handling (#423)
+
+#### 0.5.0 August 14, 2018
+- Web Socket support
+- Aligned execution service model
+- Fix for synchronous socket connection establishment on .NET Core 2.1
+- TlsHandler fixes
+- Fix to scheduled task cancellation
+- XML Doc updates
+
+#### 0.4.8 April 24, 2018
+- Unsafe direct buffers
+- HTTP 1.1 codec
+- FlowControlHandler
+- Channel pool
+- Better Buffer-String integration
+- Better shutdown handling for sockets
+- Realigned Redis codec
+- Fixes to LenghtFieldPrepender, LengthFieldBasedDecoder
+- Fixes to libuv-based transport
+- Fixes to buffer management on flush for .NET Core
+- Fixes to ResourceLeakDetector
+
 #### 0.4.6 August 2 2017
 - Small fixes (#259, #260, #264, #266)
 - Properly handling handshake with AutoRead = false when Read is not issued by upstream handlers in pipeline (#263)

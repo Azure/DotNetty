@@ -4,6 +4,8 @@
 namespace DotNetty.Codecs.Redis.Messages
 {
     using System.Diagnostics.Contracts;
+    using System.Text;
+    using DotNetty.Common.Utilities;
 
     public abstract class AbstractStringRedisMessage : IRedisMessage
     {
@@ -15,5 +17,13 @@ namespace DotNetty.Codecs.Redis.Messages
         }
 
         public string Content { get; }
+
+        public override string ToString() =>
+            new StringBuilder(StringUtil.SimpleClassName(this))
+                .Append('[')
+                .Append("content=")
+                .Append(this.Content)
+                .Append(']')
+                .ToString();
     }
 }

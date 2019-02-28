@@ -2,6 +2,7 @@
 
 [![Join the chat at https://gitter.im/Azure/DotNetty](https://img.shields.io/gitter/room/Azure/DotNetty.js.svg?style=flat-square)](https://gitter.im/Azure/DotNetty?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Available on NuGet https://www.nuget.org/packages?q=DotNetty](https://img.shields.io/nuget/v/DotNetty.Common.svg?style=flat-square)](https://www.nuget.org/packages?q=DotNetty)
+[![AppVeyor](https://img.shields.io/appveyor/ci/nayato/dotnetty.svg?label=appveyor&style=flat-square)](https://ci.appveyor.com/project/nayato/dotnetty)
 
 DotNetty is a port of [Netty](https://github.com/netty/netty), asynchronous event-driven network application framework for rapid development of maintainable high performance protocol servers & clients.
 

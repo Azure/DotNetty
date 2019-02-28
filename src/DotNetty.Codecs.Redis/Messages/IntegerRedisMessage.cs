@@ -3,6 +3,9 @@
 
 namespace DotNetty.Codecs.Redis.Messages
 {
+    using System.Text;
+    using DotNetty.Common.Utilities;
+
     public sealed class IntegerRedisMessage : IRedisMessage
     {
         public IntegerRedisMessage(long value)
@@ -12,6 +15,12 @@ namespace DotNetty.Codecs.Redis.Messages
 
         public long Value { get; }
 
-        public override string ToString() => $"{nameof(IntegerRedisMessage)}[value={this.Value}]";
+        public override string ToString() =>
+            new StringBuilder(StringUtil.SimpleClassName(this))
+                .Append('[')
+                .Append("value=")
+                .Append(this.Value)
+                .Append(']')
+                .ToString();
     }
 }

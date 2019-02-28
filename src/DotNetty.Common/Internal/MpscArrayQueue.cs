@@ -6,20 +6,21 @@ namespace DotNetty.Common.Internal
     using System.Diagnostics.Contracts;
     using System.Threading;
 
-    /// Forked from
-    /// <a href="https://github.com/JCTools/JCTools">JCTools</a>
-    /// .
-    /// A Multi-Producer-Single-Consumer queue based on a {@link ConcurrentCircularArrayQueue}. This implies that
-    /// any thread may call the offer method, but only a single thread may call poll/peek for correctness to
+    /// <summary>
+    /// Forked from <a href="https://github.com/JCTools/JCTools">JCTools</a>.
+    /// A Multi-Producer-Single-Consumer queue based on a <see cref="ConcurrentCircularArrayQueue{T}"/>. This implies
+    /// that any thread may call the Enqueue methods, but only a single thread may call poll/peek for correctness to
     /// maintained.
-    /// <br />
+    /// <para>
     /// This implementation follows patterns documented on the package level for False Sharing protection.
-    /// <br />
-    /// This implementation is using the
-    /// <a href="http://sourceforge.net/projects/mc-fastflow/">Fast Flow</a>
+    /// </para>
+    /// <para>
+    /// This implementation is using the <a href="http://sourceforge.net/projects/mc-fastflow/">Fast Flow</a>
     /// method for polling from the queue (with minor change to correctly publish the index) and an extension of
     /// the Leslie Lamport concurrent queue algorithm (originated by Martin Thompson) on the producer side.
-    /// <br />
+    /// </para>
+    /// </summary>
+    /// <typeparam name="T">The type of each item in the queue.</typeparam>
     sealed class MpscArrayQueue<T> : MpscArrayQueueConsumerField<T>
         where T : class
     {
@@ -33,13 +34,13 @@ namespace DotNetty.Common.Internal
         {
         }
 
-        /// {@inheritDoc}
-        /// <br />
-        /// IMPLEMENTATION NOTES:
-        /// <br />
-        /// Lock free offer using a single CAS. As class name suggests access is permitted to many threads
-        /// concurrently.
-        /// @see java.util.Queue#offer(java.lang.Object)
+        /// <summary>
+        /// Lock free Enqueue operation, using a single compare-and-swap. As the class name suggests, access is
+        /// permitted to many threads concurrently.
+        /// </summary>
+        /// <param name="e">The item to enqueue.</param>
+        /// <returns><c>true</c> if the item was added successfully, otherwise <c>false</c>.</returns>
+        /// <seealso cref="IQueue{T}.TryEnqueue"/>
         public override bool TryEnqueue(T e)
         {
             Contract.Requires(e != null);
@@ -80,9 +81,11 @@ namespace DotNetty.Common.Internal
             return true; // AWESOME :)
         }
 
-        /// A wait free alternative to offer which fails on CAS failure.
-        /// @param e new element, not null
-        /// @return 1 if next element cannot be filled, -1 if CAS failed, 0 if successful
+        /// <summary>
+        /// A wait-free alternative to <see cref="TryEnqueue"/>, which fails on compare-and-swap failure.
+        /// </summary>
+        /// <param name="e">The item to enqueue.</param>
+        /// <returns><c>1</c> if next element cannot be filled, <c>-1</c> if CAS failed, and <c>0</c> if successful.</returns>
         public int WeakEnqueue(T e)
         {
             Contract.Requires(e != null);
@@ -117,12 +120,12 @@ namespace DotNetty.Common.Internal
             return 0; // AWESOME :)
         }
 
-        /// {@inheritDoc}
-        /// <p />
-        /// IMPLEMENTATION NOTES:
-        /// <br />
-        /// Lock free poll using ordered loads/stores. As class name suggests access is limited to a single thread.
-        /// @see java.util.Queue#poll()
+        /// <summary>
+        /// Lock free poll using ordered loads/stores. As class name suggests, access is limited to a single thread.
+        /// </summary>
+        /// <param name="item">The dequeued item.</param>
+        /// <returns><c>true</c> if an item was retrieved, otherwise <c>false</c>.</returns>
+        /// <seealso cref="IQueue{T}.TryDequeue"/>
         public override bool TryDequeue(out T item)
         {
             long consumerIndex = this.ConsumerIndex; // LoadLoad
@@ -159,12 +162,12 @@ namespace DotNetty.Common.Internal
             return true;
         }
 
-        /// {@inheritDoc}
-        /// <p />
-        /// IMPLEMENTATION NOTES:
-        /// <br />
+        /// <summary>
         /// Lock free peek using ordered loads. As class name suggests access is limited to a single thread.
-        /// @see java.util.Queue#poll()
+        /// </summary>
+        /// <param name="item">The peeked item.</param>
+        /// <returns><c>true</c> if an item was retrieved, otherwise <c>false</c>.</returns>
+        /// <seealso cref="IQueue{T}.TryPeek"/>
         public override bool TryPeek(out T item)
         {
             // Copy field to avoid re-reading after volatile load
@@ -194,10 +197,13 @@ namespace DotNetty.Common.Internal
                 }
             }
             item = e;
+
             return true;
         }
 
-        /// {@inheritDoc}
+        /// <summary>
+        /// Returns the number of items in this <see cref="MpscArrayQueue{T}"/>.
+        /// </summary>
         public override int Count
         {
             get

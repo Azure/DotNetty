@@ -16,7 +16,7 @@ namespace DotNetty.Transport.Channels.Sockets
     public class TcpServerSocketChannel : AbstractSocketChannel, IServerSocketChannel
     {
         static readonly IInternalLogger Logger = InternalLoggerFactory.GetInstance<TcpServerSocketChannel>();
-        static readonly ChannelMetadata METADATA = new ChannelMetadata(false, 16);
+        static readonly ChannelMetadata METADATA = new ChannelMetadata(false);
 
         static readonly Action<object, object> ReadCompletedSyncCallback = OnReadCompletedSync;
 

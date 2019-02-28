@@ -27,8 +27,8 @@ namespace Echo.Server
 
             if (ServerSettings.UseLibuv)
             {
-                var dispatcher = new DispatcherEventLoop();
-                bossGroup = new MultithreadEventLoopGroup(_ => dispatcher, 1);
+                var dispatcher = new DispatcherEventLoopGroup();
+                bossGroup = dispatcher;
                 workerGroup = new WorkerEventLoopGroup(dispatcher);
             }
             else
@@ -45,8 +45,7 @@ namespace Echo.Server
             try
             {
                 var bootstrap = new ServerBootstrap();
-                bootstrap
-                    .Group(bossGroup, workerGroup);
+                bootstrap.Group(bossGroup, workerGroup);
 
                 if (ServerSettings.UseLibuv)
                 {
