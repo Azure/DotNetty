@@ -8,7 +8,6 @@ namespace DotNetty.Codecs.HaProxy
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Common.Utilities;
-    using DotNetty.Util;
 
     using static DotNetty.Codecs.HaProxy.HAProxyProxiedProtocol;
 
