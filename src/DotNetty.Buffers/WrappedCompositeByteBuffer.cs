@@ -110,13 +110,13 @@ namespace DotNetty.Buffers
 
         public override int ForEachByteDesc(int index, int length, IByteProcessor processor) => this.wrapped.ForEachByteDesc(index, length, processor);
 
-        public override int GetHashCode() => this.wrapped.GetHashCode();
+        public sealed override int GetHashCode() => this.wrapped.GetHashCode();
 
-        public override bool Equals(IByteBuffer buf) => this.wrapped.Equals(buf);
+        public sealed override bool Equals(IByteBuffer buf) => this.wrapped.Equals(buf);
 
-        public override int CompareTo(IByteBuffer that) => this.wrapped.CompareTo(that);
+        public sealed override int CompareTo(IByteBuffer that) => this.wrapped.CompareTo(that);
 
-        public override int ReferenceCount => this.wrapped.ReferenceCount;
+        public sealed override int ReferenceCount => this.wrapped.ReferenceCount;
 
         public override IByteBuffer Duplicate() => this.wrapped.Duplicate();
 
@@ -669,5 +669,25 @@ namespace DotNetty.Buffers
         protected internal sealed override void Deallocate() => this.wrapped.Deallocate();
 
         public sealed override IByteBuffer Unwrap() => this.wrapped;
+
+        public sealed override IntPtr AddressOfPinnedMemory() => this.wrapped.AddressOfPinnedMemory();
+
+        public sealed override ref byte GetPinnableMemoryAddress() => ref this.wrapped.GetPinnableMemoryAddress();
+
+        public sealed override bool HasMemoryAddress => this.wrapped.HasMemoryAddress;
+
+        public sealed override bool IsWritable(int size) => this.wrapped.IsWritable(size);
+
+        public sealed override int MaxCapacity => this.wrapped.MaxCapacity;
+
+        public sealed override bool IsDirect => this.wrapped.IsDirect;
+
+        public override IByteBuffer ReadRetainedSlice(int length) => this.wrapped.ReadRetainedSlice(length);
+
+        public override IByteBuffer RetainedDuplicate() => this.wrapped.RetainedDuplicate();
+
+        public override IByteBuffer RetainedSlice() => this.wrapped.RetainedSlice();
+
+        public override IByteBuffer RetainedSlice(int index, int length) => this.wrapped.RetainedSlice(index, length);
     }
 }
