@@ -141,7 +141,13 @@ namespace DotNetty.Common
 
         void ReportLeak(DefaultResourceLeak resourceLeak)
         {
-            string records = resourceLeak.ToString();
+            if (!Logger.ErrorEnabled)
+            {
+                resourceLeak.Dispose();
+                return;
+            }
+
+            string records = resourceLeak.Dump();
             if (this.reportedLeaks.TryAdd(records, true))
             {
                 if (records.Length == 0)
@@ -203,6 +209,7 @@ namespace DotNetty.Common
                 while (!gcNotice.Arm(this, owner, referent));
                 this.gcNotice = new WeakReference<GCNotice>(gcNotice);
                 this.head = RecordEntry.Bottom;
+                Record();
             }
 
             public void Record() => this.Record0(null);
@@ -274,13 +281,13 @@ namespace DotNetty.Common
                 }
             }
 
-            public override string ToString()
+            public string Dump()
             {
                 RecordEntry oldHead = Interlocked.Exchange(ref this.head, null);
                 if (oldHead == null)
                 {
                     // Already closed
-                    return  string.Empty;
+                    return string.Empty;
                 }
 
                 long dropped = Interlocked.Read(ref this.droppedRecords);
