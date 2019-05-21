@@ -5,6 +5,7 @@ namespace DotNetty.Common.Concurrency
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using DotNetty.Common.Utilities;
 
     public sealed class ExecutorTaskScheduler : TaskScheduler
     {
@@ -18,7 +19,11 @@ namespace DotNetty.Common.Concurrency
 
         protected override void QueueTask(Task task)
         {
-            if (this.started)
+            if (!TaskEx.IsNettyTask(task))
+            {
+                TaskEx.DefaultQueueTask(task);
+            }
+            else if (this.started)
             {
                 this.executor.Execute(new TaskQueueNode(this, task));
             }

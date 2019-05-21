@@ -4,11 +4,16 @@
 namespace DotNetty.Common.Utilities
 {
     using System;
+    using System.Linq.Expressions;
+    using System.Reflection;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
 
     public static class TaskEx
     {
+        static Func<Task, Delegate> getTaskDelegate;
+        static Action<TaskScheduler, Task> defaultQueueTask;
+
         public static readonly Task<int> Zero = Task.FromResult(0);
 
         public static readonly Task<int> Completed = Zero;
@@ -18,6 +23,12 @@ namespace DotNetty.Common.Utilities
         public static readonly Task<bool> True = Task.FromResult(true);
 
         public static readonly Task<bool> False = Task.FromResult(false);
+
+        static TaskEx()
+        {
+            GenerateGetTaskDelegate();
+            GenerateDefaultQueueTask();
+        }
 
         static Task<int> CreateCancelledTask()
         {
@@ -141,6 +152,35 @@ namespace DotNetty.Common.Utilities
             }
 
             return exception;
+        }
+
+        static void GenerateGetTaskDelegate()
+        {
+            ParameterExpression param = Expression.Parameter(typeof(Task), "task");
+            MemberExpression filed = Expression.Field(param, "m_action");
+            LambdaExpression lambda = Expression.Lambda(typeof(Func<Task, Delegate>), filed, param);
+            getTaskDelegate = (Func<Task, Delegate>)lambda.Compile();
+        }
+
+        static void GenerateDefaultQueueTask()
+        {
+            ParameterExpression instance = Expression.Parameter(typeof(TaskScheduler), "scheduler");
+            ParameterExpression param = Expression.Parameter(typeof(Task), "task");
+            MethodInfo methodInfo = typeof(TaskScheduler).GetMethod("QueueTask", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodCallExpression method = Expression.Call(instance, methodInfo, param);
+            Expression<Action<TaskScheduler, Task>> lambda = Expression.Lambda<Action<TaskScheduler, Task>>(method, instance, param);
+            defaultQueueTask = lambda.Compile();
+        }
+
+        internal static bool IsNettyTask(Task task)
+        {
+            MethodInfo methodInfo = getTaskDelegate(task).GetMethodInfo();
+            return methodInfo.DeclaringType != null && methodInfo.DeclaringType.Namespace.StartsWith("DotNetty.");
+        }
+
+        internal static void DefaultQueueTask(Task task)
+        {
+            defaultQueueTask(TaskScheduler.Default, task);
         }
     }
 }
