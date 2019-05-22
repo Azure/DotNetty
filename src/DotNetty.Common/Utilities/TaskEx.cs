@@ -158,17 +158,31 @@ namespace DotNetty.Common.Utilities
         {
             ParameterExpression param = Expression.Parameter(typeof(Task), "task");
             MemberExpression filed = Expression.Field(param, "m_action");
-            LambdaExpression lambda = Expression.Lambda(typeof(Func<Task, Delegate>), filed, param);
-            getTaskDelegate = (Func<Task, Delegate>)lambda.Compile();
+            // netcore2.2.3 System.Private.CoreLib.dll m_action defined as Delegate
+            // net461 mscorlib.dll m_action defined as object
+            Expression<Func<Task, object>> lambda = Expression.Lambda<Func<Task, object>>(filed, param);
+            Func<Task, object> func = lambda.Compile();
+            getTaskDelegate = task =>
+            {
+                var dlt = func(task) as Delegate;
+                if (dlt == null)
+                {
+                    throw new FieldAccessException("Task m_action isn't a Delegate, please check Task source code");
+                }
+
+                return dlt;
+            };
         }
 
         static void GenerateDefaultQueueTask()
         {
             ParameterExpression instance = Expression.Parameter(typeof(TaskScheduler), "scheduler");
             ParameterExpression param = Expression.Parameter(typeof(Task), "task");
-            MethodInfo methodInfo = typeof(TaskScheduler).GetMethod("QueueTask", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo methodInfo =
+                typeof(TaskScheduler).GetMethod("QueueTask", BindingFlags.Instance | BindingFlags.NonPublic);
             MethodCallExpression method = Expression.Call(instance, methodInfo, param);
-            Expression<Action<TaskScheduler, Task>> lambda = Expression.Lambda<Action<TaskScheduler, Task>>(method, instance, param);
+            Expression<Action<TaskScheduler, Task>> lambda =
+                Expression.Lambda<Action<TaskScheduler, Task>>(method, instance, param);
             defaultQueueTask = lambda.Compile();
         }
 
