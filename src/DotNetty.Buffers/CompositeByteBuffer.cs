@@ -1135,7 +1135,7 @@ namespace DotNetty.Buffers
                 IByteBuffer s = c.Buffer;
                 int adjustment = c.Offset;
                 int localLength = Math.Min(length, s.Capacity - (index - adjustment));
-                int localReadBytes = await s.SetBytesAsync(index - adjustment, src, localLength, cancellationToken);
+                int localReadBytes = await s.SetBytesAsync(index - adjustment, src, localLength, cancellationToken).ConfigureAwait(false);
                 if (localReadBytes < 0)
                 {
                     if (readBytes == 0)
@@ -1361,7 +1361,7 @@ namespace DotNetty.Buffers
             }
 
             this.components.RemoveRange(cIndex, numComponents);
-            this.components.Insert(cIndex,new ComponentEntry(consolidated));
+            this.components.Insert(cIndex, new ComponentEntry(consolidated));
             this.UpdateComponentOffsets(cIndex);
             return this;
         }
@@ -1461,7 +1461,7 @@ namespace DotNetty.Buffers
             return this;
         }
 
-        IByteBuffer AllocateBuffer(int capacity) => 
+        IByteBuffer AllocateBuffer(int capacity) =>
             this.direct ? this.Allocator.DirectBuffer(capacity) : this.Allocator.HeapBuffer(capacity);
 
         public override string ToString()

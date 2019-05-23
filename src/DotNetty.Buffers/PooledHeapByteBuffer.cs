@@ -113,7 +113,7 @@ namespace DotNetty.Buffers
             int offset = this.ArrayOffset + index;
             do
             {
-                read = await src.ReadAsync(this.Array, offset + readTotal, length - readTotal, cancellationToken);
+                read = await src.ReadAsync(this.Array, offset + readTotal, length - readTotal, cancellationToken).ConfigureAwait(false);
                 readTotal += read;
             }
             while (read > 0 && readTotal < length);
