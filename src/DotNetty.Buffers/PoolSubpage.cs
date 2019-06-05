@@ -250,8 +250,8 @@ namespace DotNetty.Buffers
                 return "(" + this.memoryMapIdx + ": not in use)";
             }
 
-            return '(' + this.memoryMapIdx + ": " + (maxNumElems - numAvail) + '/' + maxNumElems +
-                ", offset: " + this.runOffset + ", length: " + this.pageSize + ", elemSize: " + elemSize + ')';
+            return "(" + this.memoryMapIdx + ": " + (maxNumElems - numAvail) + "/" + maxNumElems +
+                ", offset: " + this.runOffset + ", length: " + this.pageSize + ", elemSize: " + elemSize + ")";
         }
 
         public int MaxNumElements
