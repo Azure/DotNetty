@@ -274,7 +274,7 @@ namespace DotNetty.Buffers
 
         public static bool DefaultPreferDirect => PlatformDependent.DirectBufferPreferred;
 
-        public override bool IsDirectBufferPooled => this.heapArenas != null;
+        public override bool IsDirectBufferPooled => this.directArenas != null;
 
         sealed class PoolThreadLocalCache : FastThreadLocal<PoolThreadCache<byte[]>>
         {
