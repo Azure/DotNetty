@@ -8,9 +8,11 @@ namespace DotNetty.Buffers
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
+    using DotNetty.Common.Utilities;
 
     public unsafe class UnpooledUnsafeDirectByteBuffer : AbstractReferenceCountedByteBuffer
     {
@@ -295,8 +297,29 @@ namespace DotNetty.Buffers
         {
             this.CheckIndex(index, length);
             int read;
+            if (length == 0)
+            {
+                return TaskEx.Zero;
+            }
+            IByteBuffer tmpBuf = this.Allocator.HeapBuffer(length);
+            tmpBuf.WriteBytesAsync(src, length, cancellationToken);
+            try
+            {
+                byte[] tmp = tmpBuf.Array;
+                int offset = tmpBuf.ArrayOffset;
+                int readBytes = input.Read(tmp, offset, length);
+                if (readBytes > 0)
+                {
+                    PlatformDependent.CopyMemory(tmp, offset, addr, readBytes);
+                }
+
+                return readBytes;
+            }
+
             fixed (byte* addr = &this.Addr(index))
+            {
                 read = UnsafeByteBufferUtil.SetBytes(this, addr, index, src, length);
+            }
             return Task.FromResult(read);
         }
 
