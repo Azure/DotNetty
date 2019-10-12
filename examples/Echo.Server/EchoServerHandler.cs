@@ -18,6 +18,7 @@ namespace Echo.Server
                 Console.WriteLine("Received from client: " + buffer.ToString(Encoding.UTF8));
             }
             context.WriteAsync(message);
+            buffer.Release();
         }
 
         public override void ChannelReadComplete(IChannelHandlerContext context) => context.Flush();
