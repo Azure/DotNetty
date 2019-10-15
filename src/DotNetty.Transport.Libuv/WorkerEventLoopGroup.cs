@@ -6,6 +6,7 @@
 namespace DotNetty.Transport.Libuv
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Linq;
@@ -84,6 +85,8 @@ namespace DotNetty.Transport.Libuv
 
         internal string PipeName { get; }
 
+        IEnumerable<IEventLoop> IEventLoopGroup.Items => this.eventLoops;
+
         internal void Accept(NativeHandle handle)
         {
             Debug.Assert(this.dispatcherLoop != null);
@@ -125,6 +128,14 @@ namespace DotNetty.Transport.Libuv
                 eventLoop.ShutdownGracefullyAsync(quietPeriod, timeout);
             }
             return this.TerminationCompletion;
+        }
+
+        protected override IEnumerable<IEventExecutor> GetItems()
+        {
+            foreach (var loop in this.eventLoops)
+            {
+                yield return loop;
+            }
         }
     }
 }

@@ -6,6 +6,7 @@
 namespace DotNetty.Transport.Libuv
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -26,6 +27,8 @@ namespace DotNetty.Transport.Libuv
         public override bool IsShuttingDown => this.eventLoops.All(eventLoop => eventLoop.IsShuttingDown);
 
         public override Task TerminationCompletion { get; }
+
+        public new IEnumerable<IEventLoop> Items => this.eventLoops;
 
         public EventLoopGroup()
             : this(DefaultEventLoopCount)
@@ -118,6 +121,14 @@ namespace DotNetty.Transport.Libuv
                 eventLoop.ShutdownGracefullyAsync(quietPeriod, timeout);
             }
             return this.TerminationCompletion;
+        }
+
+        protected override IEnumerable<IEventExecutor> GetItems()
+        {
+            foreach (var loop in this.eventLoops)
+            {
+                yield return loop;
+            }
         }
     }
 }
