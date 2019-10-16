@@ -97,6 +97,11 @@ namespace DotNetty.Common.Concurrency
         /// </summary>
         public bool IsBacklogEmpty => this.taskQueue.IsEmpty;
 
+        /// <summary>
+        ///     Gets length of backlog of tasks queued for immediate execution.
+        /// </summary>
+        public int BacklogLength => this.taskQueue.Count;
+
         void Loop()
         {
             this.SetCurrentExecutor(this);
