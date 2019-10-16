@@ -31,13 +31,7 @@ namespace DotNetty.Transport.Channels
         public override Task TerminationCompletion { get; }
 
         /// <inheritdoc />
-        protected override IEnumerable<IEventExecutor> GetItems()
-        {
-            foreach (var loop in this.eventLoops)
-            {
-                yield return loop;
-            }
-        }
+        protected override IEnumerable<IEventExecutor> GetItems() => this.eventLoops;
 
         /// <inheritdoc />
         public new IEnumerable<IEventLoop> Items => this.eventLoops;

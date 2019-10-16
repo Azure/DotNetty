@@ -130,12 +130,6 @@ namespace DotNetty.Transport.Libuv
             return this.TerminationCompletion;
         }
 
-        protected override IEnumerable<IEventExecutor> GetItems()
-        {
-            foreach (var loop in this.eventLoops)
-            {
-                yield return loop;
-            }
-        }
+        protected override IEnumerable<IEventExecutor> GetItems() => this.eventLoops;
     }
 }
