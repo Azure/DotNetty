@@ -296,31 +296,8 @@ namespace DotNetty.Buffers
         public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
             this.CheckIndex(index, length);
-            int read;
-            if (length == 0)
-            {
-                return TaskEx.Zero;
-            }
-            IByteBuffer tmpBuf = this.Allocator.HeapBuffer(length);
-            tmpBuf.WriteBytesAsync(src, length, cancellationToken);
-            try
-            {
-                byte[] tmp = tmpBuf.Array;
-                int offset = tmpBuf.ArrayOffset;
-                int readBytes = input.Read(tmp, offset, length);
-                if (readBytes > 0)
-                {
-                    PlatformDependent.CopyMemory(tmp, offset, addr, readBytes);
-                }
-
-                return readBytes;
-            }
-
             fixed (byte* addr = &this.Addr(index))
-            {
-                read = UnsafeByteBufferUtil.SetBytes(this, addr, index, src, length);
-            }
-            return Task.FromResult(read);
+                return UnsafeByteBufferUtil.SetBytesAsync(this, addr, index, src, length, cancellationToken);
         }
 
         public override int IoBufferCount => 1;

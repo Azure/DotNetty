@@ -241,7 +241,7 @@ namespace DotNetty.Buffers
             }
         }
 
-        internal static Task<int> SetBytesAsync(AbstractByteBuffer buf, byte* addr, int index, Stream input, int length)
+        internal static Task<int> SetBytesAsync(AbstractByteBuffer buf, byte* addr, int index, Stream input, int length, CancellationToken cancellationToken)
         {
             if (length == 0)
             {
@@ -249,7 +249,7 @@ namespace DotNetty.Buffers
             }
 
             IByteBuffer tmpBuf = buf.Allocator.HeapBuffer(length);
-            return tmpBuf.SetBytesAsync(0, input, length, CancellationToken.None)
+            return tmpBuf.SetBytesAsync(0, input, length, cancellationToken)
                 .ContinueWith(t => {
                     try
                     {

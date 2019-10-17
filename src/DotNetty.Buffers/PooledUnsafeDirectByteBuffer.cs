@@ -124,7 +124,7 @@ namespace DotNetty.Buffers
         public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
             this.CheckIndex(index, length);
-            return UnsafeByteBufferUtil.SetBytesAsync(this, this.Addr(index), index, src, length);
+            return UnsafeByteBufferUtil.SetBytesAsync(this, this.Addr(index), index, src, length, cancellationToken);
         }
 
         public override IByteBuffer Copy(int index, int length)
