@@ -28,6 +28,10 @@ namespace DotNetty.Transport.Channels.Embedded
 
         public new IEventLoopGroup Parent => (IEventLoopGroup)base.Parent;
 
+        protected override IEnumerable<IEventExecutor> GetItems() => new[] { this };
+
+        public new IEnumerable<IEventLoop> Items => new[] { this };
+
         public override bool IsInEventLoop(Thread thread) => true;
 
         public override void Execute(IRunnable command)
@@ -48,7 +52,7 @@ namespace DotNetty.Transport.Channels.Embedded
 
         internal void RunTasks()
         {
-            for (;;)
+            for (; ; )
             {
                 // have to perform an additional check since Queue<T> throws upon empty dequeue in .NET
                 if (this.tasks.Count == 0)
@@ -67,7 +71,7 @@ namespace DotNetty.Transport.Channels.Embedded
         internal PreciseTimeSpan RunScheduledTasks()
         {
             PreciseTimeSpan time = GetNanos();
-            for (;;)
+            for (; ; )
             {
                 IRunnable task = this.PollScheduledTask(time);
                 if (task == null)
