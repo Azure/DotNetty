@@ -6,13 +6,10 @@ namespace DotNetty.Buffers
     using System;
     using System.Diagnostics;
     using System.Runtime.CompilerServices;
-    using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
     abstract class PooledByteBuffer<T> : AbstractReferenceCountedByteBuffer
     {
-        readonly ThreadLocalPool.Handle recyclerHandle;
-
         protected internal PoolChunk<T> Chunk;
         protected internal long Handle;
         protected internal T Memory;
@@ -22,10 +19,9 @@ namespace DotNetty.Buffers
         internal PoolThreadCache<T> Cache;
         PooledByteBufferAllocator allocator;
 
-        protected PooledByteBuffer(ThreadLocalPool.Handle recyclerHandle, int maxCapacity)
+        protected PooledByteBuffer(int maxCapacity)
             : base(maxCapacity)
         {
-            this.recyclerHandle = recyclerHandle;
         }
 
         internal virtual void Init(PoolChunk<T> chunk, long handle, int offset, int length, int maxLength, PoolThreadCache<T> cache) =>
@@ -51,14 +47,6 @@ namespace DotNetty.Buffers
         /**
           * Method must be called before reuse this {@link PooledByteBufAllocator}
           */
-        internal void Reuse(int maxCapacity)
-        {
-            this.SetMaxCapacity(maxCapacity);
-            this.SetReferenceCount(1);
-            this.SetIndex0(0, 0);
-            this.DiscardMarks();
-        }
-
         public override int Capacity
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,11 +131,8 @@ namespace DotNetty.Buffers
                 this.Memory = default(T);
                 this.Chunk.Arena.Free(this.Chunk, handle, this.MaxLength, this.Cache);
                 this.Chunk = null;
-                this.Recycle();
             }
         }
-
-        void Recycle() => this.recyclerHandle.Release(this);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected int Idx(int index) => this.Offset + index;
