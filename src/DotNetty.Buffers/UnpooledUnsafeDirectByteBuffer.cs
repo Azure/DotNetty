@@ -297,7 +297,9 @@ namespace DotNetty.Buffers
         {
             this.CheckIndex(index, length);
             fixed (byte* addr = &this.Addr(index))
+            {
                 return UnsafeByteBufferUtil.SetBytesAsync(this, addr, index, src, length, cancellationToken);
+            }
         }
 
         public override int IoBufferCount => 1;
