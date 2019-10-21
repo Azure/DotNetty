@@ -6,6 +6,7 @@
 namespace DotNetty.Transport.Libuv
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Transport.Channels;
@@ -28,6 +29,10 @@ namespace DotNetty.Transport.Libuv
         public override Task TerminationCompletion => this.dispatcherEventLoop.TerminationCompletion;
 
         internal DispatcherEventLoop Dispatcher => this.dispatcherEventLoop;
+
+        protected override IEnumerable<IEventExecutor> GetItems() => new[] { this.dispatcherEventLoop };
+
+        public new IEnumerable<IEventLoop> Items => new[] { this.dispatcherEventLoop };
 
         IEventLoop IEventLoopGroup.GetNext() => (IEventLoop)this.GetNext();
 

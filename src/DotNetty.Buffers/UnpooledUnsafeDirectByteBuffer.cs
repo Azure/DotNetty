@@ -8,9 +8,11 @@ namespace DotNetty.Buffers
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
+    using DotNetty.Common.Utilities;
 
     public unsafe class UnpooledUnsafeDirectByteBuffer : AbstractReferenceCountedByteBuffer
     {
@@ -294,13 +296,9 @@ namespace DotNetty.Buffers
         public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
             this.CheckIndex(index, length);
-            int read;
             fixed (byte* addr = &this.Addr(index))
             {
-                read = UnsafeByteBufferUtil.SetBytes(this, addr, index, src, length);
-
-                // See https://github.com/Azure/DotNetty/issues/436
-                return Task.FromResult(read);
+                return UnsafeByteBufferUtil.SetBytesAsync(this, addr, index, src, length, cancellationToken);
             }
         }
 
