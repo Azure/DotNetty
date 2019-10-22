@@ -94,6 +94,20 @@ namespace DotNetty.Codecs.Redis.Tests
         }
 
         [Fact]
+        public void EncodeNullFullBulkString()
+        {
+            
+            
+            var msg = FullBulkStringRedisMessage.Null;
+            Assert.True(this.channel.WriteOutbound(msg));
+
+            IByteBuffer written = ReadAll(this.channel);
+            Assert.Equal(BytesOf("$-1\r\n"), BytesOf(written));
+            
+        }
+
+
+        [Fact]
         public void EncodeSimpleArray()
         {
             var children = new List<IRedisMessage>();
