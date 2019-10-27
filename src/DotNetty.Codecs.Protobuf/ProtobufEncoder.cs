@@ -24,11 +24,6 @@ namespace DotNetty.Codecs.Protobuf
 
             try
             {
-                int size = message.CalculateSize();
-                if (size == 0)
-                {
-                    return;
-                }
                 //todo: Implement ByteBufferStream to avoid allocations.
                 buffer = Unpooled.WrappedBuffer(message.ToByteArray());
                 output.Add(buffer);

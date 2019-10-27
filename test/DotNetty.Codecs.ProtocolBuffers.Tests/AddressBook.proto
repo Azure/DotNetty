@@ -21,3 +21,5 @@ message Person {
 message AddressBook {
   repeated Person person = 1;
 }
+
+message EmptyMessage {}
