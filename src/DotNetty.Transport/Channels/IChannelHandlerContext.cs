@@ -70,6 +70,11 @@ namespace DotNetty.Transport.Channels
         Task WriteAsync(object message); // todo: optimize: add flag saying if handler is interested in task, do not produce task if it isn't needed
 
         IChannelHandlerContext Flush();
+        
+        /// <summary>
+        ///  Return the assigned <see cref="IChannelPipeline"/>
+        /// </summary>
+        IChannelPipeline Pipeline { get; }
 
         Task WriteAndFlushAsync(object message);
 
