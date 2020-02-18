@@ -103,7 +103,7 @@ namespace DotNetty.Transport.Channels.Sockets
                     do
                     {
                         byteBuf = allocHandle.Allocate(allocator);
-                        //int writable = byteBuf.WritableBytes;
+                        allocHandle.AttemptedBytesRead = byteBuf.WritableBytes;
                         allocHandle.LastBytesRead = ch.DoReadBytes(byteBuf);
                         if (allocHandle.LastBytesRead <= 0)
                         {
