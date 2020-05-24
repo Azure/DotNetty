@@ -959,15 +959,7 @@ namespace DotNetty.Handlers.Tls
                 Debug.Assert(this.readCompletionSource == null || this.readCompletionSource.Task == asyncResult);
                 Contract.Assert(!((Task<int>)asyncResult).IsCanceled);
 
-                try
-                {
-                    return ((Task<int>)asyncResult).Result;
-                }
-                catch (AggregateException ex)
-                {
-                    ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                    throw; // unreachable
-                }
+                return ((Task<int>)asyncResult).GetAwaiter().GetResult();
             }
 
             IAsyncResult PrepareSyncReadResult(int readBytes, object state)
@@ -1051,15 +1043,7 @@ namespace DotNetty.Handlers.Tls
                     return;
                 }
 
-                try
-                {
-                    ((Task)asyncResult).Wait();
-                }
-                catch (AggregateException ex)
-                {
-                    ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                    throw;
-                }
+                ((Task)asyncResult).GetAwaiter().GetResult();
             }
 #endif
 
