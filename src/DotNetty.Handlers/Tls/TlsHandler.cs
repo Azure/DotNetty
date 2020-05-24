@@ -319,7 +319,7 @@ namespace DotNetty.Handlers.Tls
             try
             {
                 ArraySegment<byte> inputIoBuffer = packet.GetIoBuffer(offset, length);
-                this.mediationStream.SetSource(inputIoBuffer.Array, inputIoBuffer.Offset);
+                this.mediationStream.SetSource(inputIoBuffer.Array, inputIoBuffer.Offset, ctx.Allocator);
 
                 int packetIndex = 0;
 
@@ -446,7 +446,7 @@ namespace DotNetty.Handlers.Tls
             }
             finally
             {
-                this.mediationStream.ResetSource();
+                this.mediationStream.ResetSource(ctx.Allocator);
                 if (!pending && outputBuffer != null)
                 {
                     if (outputBuffer.IsReadable())
@@ -668,6 +668,7 @@ namespace DotNetty.Handlers.Tls
         sealed class MediationStream : Stream
         {
             readonly TlsHandler owner;
+            IByteBuffer ownBuffer;
             byte[] input;
             int inputStartOffset;
             int inputOffset;
@@ -688,66 +689,112 @@ namespace DotNetty.Handlers.Tls
                 this.owner = owner;
             }
 
+            public int TotalReadableBytes => (this.ownBuffer?.ReadableBytes ?? 0) + SourceReadableBytes;
+
             public int SourceReadableBytes => this.inputLength - this.inputOffset;
 
-            public void SetSource(byte[] source, int offset)
+            public void SetSource(byte[] source, int offset, IByteBufferAllocator alloc)
             {
-                this.input = source;
-                this.inputStartOffset = offset;
-                this.inputOffset = 0;
-                this.inputLength = 0;
+                lock (this)
+                {
+                    ResetSource(alloc);
+
+                    this.input = source;
+                    this.inputStartOffset = offset;
+                    this.inputOffset = 0;
+                    this.inputLength = 0;
+                }
             }
 
-            public void ResetSource()
+            public void ResetSource(IByteBufferAllocator alloc)
             {
-                this.input = null;
-                this.inputLength = 0;
+                //Mono will run BeginRead in async and it's running with ResetSource at the same time
+                //net5.0 can also hit this with `leftLen > 0` while `!this.EnsureAuthenticated()`
+                lock (this)
+                {
+                    int leftLen = this.SourceReadableBytes;
+                    IByteBuffer buf = this.ownBuffer;
+
+                    if (leftLen > 0)
+                    {
+                        if (buf != null)
+                        {
+                            buf.DiscardSomeReadBytes();
+                        }
+                        else
+                        {
+                            buf = alloc.Buffer(leftLen);
+                            this.ownBuffer = buf;
+                        }
+                        buf.WriteBytes(this.input, this.inputStartOffset + this.inputOffset, leftLen);
+                    }
+                    else if (buf != null)
+                    {
+                        if (!buf.IsReadable())
+                        {
+                            buf.SafeRelease();
+                            this.ownBuffer = null;
+                        }
+                        else
+                        {
+                            buf.DiscardSomeReadBytes();
+                        }
+                    }
+
+                    this.input = null;
+                    this.inputStartOffset = 0;
+                    this.inputOffset = 0;
+                    this.inputLength = 0;
+                }
             }
 
             public void ExpandSource(int count)
             {
                 Contract.Assert(this.input != null);
 
-                this.inputLength += count;
-
-                ArraySegment<byte> sslBuffer = this.sslOwnedBuffer;
-                if (sslBuffer.Array == null)
+                lock (this)
                 {
-                    // there is no pending read operation - keep for future
-                    return;
-                }
-                this.sslOwnedBuffer = default(ArraySegment<byte>);
+                    this.inputLength += count;
+
+                    ArraySegment<byte> sslBuffer = this.sslOwnedBuffer;
+                    if (sslBuffer.Array == null)
+                    {
+                        // there is no pending read operation - keep for future
+                        return;
+                    }
+                    this.sslOwnedBuffer = default(ArraySegment<byte>);
 
 #if NETSTANDARD1_3
-                this.readByteCount = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
-                // hack: this tricks SslStream's continuation to run synchronously instead of dispatching to TP. Remove once Begin/EndRead are available. 
-                new Task(
-                    ms =>
-                    {
-                        var self = (MediationStream)ms;
-                        TaskCompletionSource<int> p = self.readCompletionSource;
-                        self.readCompletionSource = null;
-                        p.TrySetResult(self.readByteCount);
-                    },
-                    this)
-                    .RunSynchronously(TaskScheduler.Default);
+                    this.readByteCount = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
+                    // hack: this tricks SslStream's continuation to run synchronously instead of dispatching to TP. Remove once Begin/EndRead are available. 
+                    new Task(
+                        ms =>
+                        {
+                            var self = (MediationStream)ms;
+                            TaskCompletionSource<int> p = self.readCompletionSource;
+                            self.readCompletionSource = null;
+                            p.TrySetResult(self.readByteCount);
+                        },
+                        this)
+                        .RunSynchronously(TaskScheduler.Default);
 #else
-                int read = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
+                    int read = this.ReadFromInput(sslBuffer.Array, sslBuffer.Offset, sslBuffer.Count);
 
-                TaskCompletionSource<int> promise = this.readCompletionSource;
-                this.readCompletionSource = null;
-                promise.TrySetResult(read);
+                    TaskCompletionSource<int> promise = this.readCompletionSource;
+                    this.readCompletionSource = null;
+                    promise.TrySetResult(read);
 
-                AsyncCallback callback = this.readCallback;
-                this.readCallback = null;
-                callback?.Invoke(promise.Task);
+                    AsyncCallback callback = this.readCallback;
+                    this.readCallback = null;
+                    callback?.Invoke(promise.Task);
 #endif
+                }
             }
 
 #if NETSTANDARD1_3
             public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
-                if (this.SourceReadableBytes > 0)
+                if (this.TotalReadableBytes > 0)
                 {
                     // we have the bytes available upfront - write out synchronously
                     int read = this.ReadFromInput(buffer, offset, count);
@@ -763,7 +810,7 @@ namespace DotNetty.Handlers.Tls
 #else
             public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
             {
-                if (this.SourceReadableBytes > 0)
+                if (this.TotalReadableBytes > 0)
                 {
                     // we have the bytes available upfront - write out synchronously
                     int read = this.ReadFromInput(buffer, offset, count);
@@ -899,12 +946,45 @@ namespace DotNetty.Handlers.Tls
             {
                 Contract.Assert(destination != null);
 
-                byte[] source = this.input;
-                int readableBytes = this.SourceReadableBytes;
-                int length = Math.Min(readableBytes, destinationCapacity);
-                Buffer.BlockCopy(source, this.inputStartOffset + this.inputOffset, destination, destinationOffset, length);
-                this.inputOffset += length;
-                return length;
+                lock (this)
+                {
+                    int length = 0;
+                    do
+                    {
+                        int readableBytes;
+                        IByteBuffer buf = this.ownBuffer;
+                        if (buf != null)
+                        {
+                            readableBytes = buf.ReadableBytes;
+                            if (readableBytes > 0)
+                            {
+                                readableBytes = Math.Min(readableBytes, destinationCapacity);
+                                buf.ReadBytes(destination, destinationOffset, readableBytes);
+                                length += readableBytes;
+                                destinationCapacity -= readableBytes;
+
+                                if (destinationCapacity == 0)
+                                    break;
+                            }
+                        }
+
+                        byte[] source = this.input;
+                        if (source != null)
+                        {
+                            readableBytes = this.SourceReadableBytes;
+                            if (readableBytes > 0)
+                            {
+                                readableBytes = Math.Min(readableBytes, destinationCapacity);
+                                Buffer.BlockCopy(source, this.inputStartOffset + this.inputOffset, destination, destinationOffset, readableBytes);
+                                length += readableBytes;
+                                destinationCapacity -= readableBytes;
+
+                                this.inputOffset += readableBytes;
+                            }
+                        }
+                    } while (false);
+                    return length;
+                }
             }
 
             public override void Flush()
