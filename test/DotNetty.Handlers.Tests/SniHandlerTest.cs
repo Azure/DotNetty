@@ -94,7 +94,10 @@ namespace DotNetty.Handlers.Tests
                 await Task.WhenAll(writeTasks).WithTimeout(TimeSpan.FromSeconds(5));
                 IByteBuffer finalReadBuffer = Unpooled.Buffer(16 * 1024);
                 await ReadOutboundAsync(async () => ch.ReadInbound<IByteBuffer>(), expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
-                Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                if (!ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer))
+                {
+                    Assert.True(false, $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                }
 
                 if (!isClient)
                 {
@@ -171,7 +174,10 @@ namespace DotNetty.Handlers.Tests
                         return Unpooled.WrappedBuffer(readBuffer, 0, read);
                     },
                     expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
-                Assert.True(ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer), $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                if (!ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer))
+                {
+                    Assert.True(false, $"---Expected:\n{ByteBufferUtil.PrettyHexDump(expectedBuffer)}\n---Actual:\n{ByteBufferUtil.PrettyHexDump(finalReadBuffer)}");
+                }
 
                 if (!isClient)
                 {
