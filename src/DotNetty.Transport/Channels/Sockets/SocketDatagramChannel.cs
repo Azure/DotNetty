@@ -114,22 +114,8 @@ namespace DotNetty.Transport.Channels.Sockets
             ArraySegment<byte> bytes = buffer.GetIoBuffer(0, buffer.WritableBytes);
             operation.SetBuffer(bytes.Array, bytes.Offset, bytes.Count);
 
-            bool pending;
-#if NETSTANDARD1_3
-            pending = this.Socket.ReceiveFromAsync(operation);
-#else
-            if (ExecutionContext.IsFlowSuppressed())
-            {
-                pending = this.Socket.ReceiveFromAsync(operation);
-            }
-            else
-            {
-                using (ExecutionContext.SuppressFlow())
-                {
-                    pending = this.Socket.ReceiveFromAsync(operation);
-                }
-            }
-#endif
+            bool pending = this.Socket.ReceiveFromAsync(operation);
+
             if (!pending)
             {
                 this.EventLoop.Execute(ReceiveFromCompletedSyncCallback, this.Unsafe, operation);

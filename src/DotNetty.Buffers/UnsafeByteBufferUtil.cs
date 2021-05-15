@@ -386,14 +386,7 @@ namespace DotNetty.Buffers
 
         internal static string GetString(byte* src, int length, Encoding encoding)
         {
-#if NETSTANDARD1_3
             return encoding.GetString(src, length);
-#else
-            int charCount = encoding.GetCharCount(src, length);
-            char* chars = stackalloc char[charCount];
-            encoding.GetChars(src, length, chars, charCount);
-            return new string(chars, 0, charCount);
-#endif
         }
 
         internal static UnpooledUnsafeDirectByteBuffer NewUnsafeDirectByteBuffer(IByteBufferAllocator alloc, int initialCapacity, int maxCapacity) =>  

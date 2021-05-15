@@ -1,16 +1,18 @@
 {
-    "version": "0.1.0",
+    "version": "2.0.0",
     "command": "dotnet",
-    "isShellCommand": true,
     "args": [],
     "tasks": [
         {
-            "taskName": "msbuild",
+            "label": "msbuild",
+            "type": "shell",
+            "command": "dotnet",
             "args": [
+                "msbuild",
                 "dotnetty.sln"
             ],
-            "isBuildCommand": true,
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "group": "build"
         }
     ]
 }

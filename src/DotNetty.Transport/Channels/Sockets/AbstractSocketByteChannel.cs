@@ -153,22 +153,8 @@ namespace DotNetty.Transport.Channels.Sockets
         protected override void ScheduleSocketRead()
         {
             SocketChannelAsyncOperation operation = this.ReadOperation;
-            bool pending;
-#if NETSTANDARD1_3
-            pending = this.Socket.ReceiveAsync(operation);
-#else
-            if (ExecutionContext.IsFlowSuppressed())
-            {
-                pending = this.Socket.ReceiveAsync(operation);
-            }
-            else
-            {
-                using (ExecutionContext.SuppressFlow())
-                {
-                    pending = this.Socket.ReceiveAsync(operation);
-                }
-            }
-#endif
+            bool pending = this.Socket.ReceiveAsync(operation);
+
             if (!pending)
             {
                 // todo: potential allocation / non-static field?
@@ -306,23 +292,7 @@ namespace DotNetty.Transport.Channels.Sockets
             if (scheduleAsync)
             {
                 this.SetState(StateFlags.WriteScheduled);
-                bool pending;
-
-#if NETSTANDARD1_3
-                pending = this.Socket.SendAsync(operation);
-#else
-                if (ExecutionContext.IsFlowSuppressed())
-                {
-                    pending = this.Socket.SendAsync(operation);
-                }
-                else
-                {
-                    using (ExecutionContext.SuppressFlow())
-                    {
-                        pending = this.Socket.SendAsync(operation);
-                    }
-                }
-#endif
+                bool pending = this.Socket.SendAsync(operation);
 
                 if (!pending)
                 {
