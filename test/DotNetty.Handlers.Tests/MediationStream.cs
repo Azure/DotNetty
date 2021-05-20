@@ -39,6 +39,36 @@ namespace DotNetty.Handlers.Tests
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => this.writeDataFunc(new ArraySegment<byte>(buffer, offset, count));
 
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            var tcs = new TaskCompletionSource<int>(state);
+            this.ReadAsync(buffer, offset, count, CancellationToken.None).ContinueWith(
+                t =>
+                {
+                    tcs.TrySetResult(t.Result);
+                    callback?.Invoke(tcs.Task);
+                },
+                TaskContinuationOptions.ExecuteSynchronously);
+            return tcs.Task;
+        }
+
+        public override int EndRead(IAsyncResult asyncResult) => ((Task<int>)asyncResult).Result;
+
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            var tcs = new TaskCompletionSource<int>(state);
+            this.WriteAsync(buffer, offset, count, CancellationToken.None).ContinueWith(
+                t =>
+                {
+                    tcs.TrySetResult(0);
+                    callback?.Invoke(tcs.Task);
+                },
+                TaskContinuationOptions.ExecuteSynchronously);
+            return tcs.Task;
+        }
+
+        public override void EndWrite(IAsyncResult asyncResult) => ((Task<int>)asyncResult).Wait();
+
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
