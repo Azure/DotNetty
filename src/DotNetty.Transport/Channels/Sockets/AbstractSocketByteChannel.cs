@@ -153,19 +153,7 @@ namespace DotNetty.Transport.Channels.Sockets
         protected override void ScheduleSocketRead()
         {
             SocketChannelAsyncOperation operation = this.ReadOperation;
-            bool pending;
-
-            if (ExecutionContext.IsFlowSuppressed())
-            {
-                pending = this.Socket.ReceiveAsync(operation);
-            }
-            else
-            {
-                using (ExecutionContext.SuppressFlow())
-                {
-                    pending = this.Socket.ReceiveAsync(operation);
-                }
-            }
+            bool pending = this.Socket.ReceiveAsync(operation);
 
             if (!pending)
             {
@@ -304,19 +292,7 @@ namespace DotNetty.Transport.Channels.Sockets
             if (scheduleAsync)
             {
                 this.SetState(StateFlags.WriteScheduled);
-                bool pending;
-
-                if (ExecutionContext.IsFlowSuppressed())
-                {
-                    pending = this.Socket.SendAsync(operation);
-                }
-                else
-                {
-                    using (ExecutionContext.SuppressFlow())
-                    {
-                        pending = this.Socket.SendAsync(operation);
-                    }
-                }
+                bool pending = this.Socket.SendAsync(operation);
 
                 if (!pending)
                 {
