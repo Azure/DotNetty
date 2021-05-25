@@ -48,7 +48,7 @@ namespace DotNetty.Handlers.Tests
                 {
                     tcs.TrySetResult(t.Result);
                     callback?.Invoke(tcs.Task);
-                }, 
+                },
                 TaskContinuationOptions.ExecuteSynchronously);
             return tcs.Task;
         }

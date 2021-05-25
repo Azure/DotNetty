@@ -4,10 +4,10 @@
 namespace DotNetty.Microbench.Internal
 {
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
+    using BenchmarkDotNet.Jobs;
     using DotNetty.Common.Internal;
 
-    [CoreJob]
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     [BenchmarkCategory("Internal")]
     public class PlatformDependentBenchmark
     {

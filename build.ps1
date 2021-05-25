@@ -33,7 +33,7 @@ Param(
 
 $CakeVersion = "0.27.1"
 $DotNetChannel = "Current";
-$DotNetVersion = "2.1.101";
+$DotNetVersion = "3.1.402";
 $DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 # Temporarily skip verification of addins.
@@ -74,17 +74,17 @@ if (Get-Command dotnet -ErrorAction SilentlyContinue) {
     $FoundDotNetCliVersion = dotnet --version;
 }
 
-if($FoundDotNetCliVersion -ne $DotNetVersion) {
-    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
-    if (!(Test-Path $InstallPath)) {
-        mkdir -Force $InstallPath | Out-Null;
-    }
-    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
-    & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetVersion -InstallDir $InstallPath;
+# if($FoundDotNetCliVersion -ne $DotNetVersion) {
+#     $InstallPath = Join-Path $PSScriptRoot ".dotnet"
+#     if (!(Test-Path $InstallPath)) {
+#         mkdir -Force $InstallPath | Out-Null;
+#     }
+#     (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
+#     & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetVersion -InstallDir $InstallPath;
 
-    Remove-PathVariable "$InstallPath"
-    $env:PATH = "$InstallPath;$env:PATH"
-}
+#     Remove-PathVariable "$InstallPath"
+#     $env:PATH = "$InstallPath;$env:PATH"
+# }
 
 $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 $env:DOTNET_CLI_TELEMETRY_OPTOUT=1

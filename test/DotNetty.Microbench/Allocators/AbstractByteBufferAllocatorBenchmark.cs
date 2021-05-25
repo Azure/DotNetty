@@ -5,11 +5,11 @@ namespace DotNetty.Microbench.Allocators
 {
     using System;
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
+    using BenchmarkDotNet.Jobs;
     using DotNetty.Buffers;
     using DotNetty.Common;
 
-    [CoreJob]
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     [BenchmarkCategory("ByteBufferAllocator")]
     [MemoryDiagnoser]
     public abstract class AbstractByteBufferAllocatorBenchmark

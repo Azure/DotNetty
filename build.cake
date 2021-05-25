@@ -23,8 +23,7 @@ var csProjectFiles = GetFiles("./src/**/*.csproj");
 var nuget = Directory("tools");
 var output = Directory("build");
 var outputBinaries = output + Directory("binaries");
-var outputBinariesNet45 = outputBinaries + Directory("net45");
-var outputBinariesNetstandard = outputBinaries + Directory("netstandard1.3");
+var outputBinariesNetstandard = outputBinaries + Directory("netstandard2.0");
 var outputPackages = output + Directory("packages");
 var outputNuGet = output + Directory("nuget");
 var outputPerfResults = Directory("perfResults");
@@ -37,7 +36,7 @@ Task("Clean")
   // Clean artifact directories.
   CleanDirectories(new DirectoryPath[] {
     output, outputBinaries, outputPackages, outputNuGet,
-    outputBinariesNet45, outputBinariesNetstandard
+    outputBinariesNetstandard
   });
 
   if(!skipClean) {
@@ -104,24 +103,12 @@ Task("Test")
 
     //   // DotNetCoreTest(project.GetDirectory().FullPath, new DotNetCoreTestSettings {
     //   //   Configuration = configuration,
-    //   //   Framework = "netstandard1.3",
+    //   //   Framework = "netstandard2.0",
     //   //   Runtime = "unix-64"
     //   // });
 
     //   var dirPath = project.GetDirectory().FullPath;
     //   var testFile = project.GetFilenameWithoutExtension();
-
-    //   using(var process = StartAndReturnProcess("mono", new ProcessSettings{Arguments =
-    //     dirPath + "/bin/" + configuration + "/net451/unix-x64/dotnet-test-xunit.exe" + " " +
-    //     dirPath + "/bin/" + configuration + "/net451/unix-x64/" + testFile + ".dll"}))
-    //   {
-    //     process.WaitForExit();
-    //     if (process.GetExitCode() != 0)
-    //     {
-    //       throw new Exception("Mono tests failed");
-    //     }
-    //   }
-    // }
   }
 });
 

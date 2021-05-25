@@ -331,11 +331,7 @@ namespace DotNetty.Transport.Libuv.Native
         {
             Debug.Assert(handle != IntPtr.Zero);
 
-#if NETSTANDARD1_3
             int namelen = Marshal.SizeOf<sockaddr>();
-#else
-            int namelen = Marshal.SizeOf(typeof(sockaddr));
-#endif
             uv_tcp_getsockname(handle, out sockaddr sockaddr, ref namelen);
             return sockaddr.GetIPEndPoint();
         }
@@ -344,25 +340,15 @@ namespace DotNetty.Transport.Libuv.Native
         {
             Debug.Assert(handle != IntPtr.Zero);
 
-#if NETSTANDARD1_3
             int namelen = Marshal.SizeOf<sockaddr>();
-#else
-            int namelen = Marshal.SizeOf(typeof(sockaddr));
-#endif
             int result = uv_tcp_getpeername(handle, out sockaddr sockaddr, ref namelen);
             ThrowIfError(result);
             return sockaddr.GetIPEndPoint();
         }
 
-#if NETSTANDARD1_3
         internal static IntPtr Allocate(int size) => Marshal.AllocCoTaskMem(size);
 
         internal static void FreeMemory(IntPtr ptr) => Marshal.FreeCoTaskMem(ptr);
-#else
-        internal static IntPtr Allocate(int size) => Marshal.AllocHGlobal(size);
-
-        internal static void FreeMemory(IntPtr ptr) => Marshal.FreeHGlobal(ptr);
-#endif
 
         internal static IntPtr Allocate(uv_handle_type handleType)
         {

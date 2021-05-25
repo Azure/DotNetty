@@ -6,19 +6,11 @@ namespace DotNetty.Microbench.Common
     using System;
     using System.Text;
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
+    using BenchmarkDotNet.Jobs;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Utilities;
-#if NET46
-    using BenchmarkDotNet.Diagnostics.Windows.Configs;
-#endif
 
-#if !NET46
-    [CoreJob]
-#else
-    [ClrJob]
-    [InliningDiagnoser]
-#endif
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     [BenchmarkCategory("Common")]
     public class AsciiStringBenchmark
     {
