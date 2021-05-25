@@ -69,7 +69,9 @@ namespace DotNetty.Transport.Channels.Sockets
 
         public bool IsOutputShutdown
         {
-            get { throw new NotImplementedException(); } // todo: impl with stateflags
+            get { 
+                throw new NotImplementedException(); 
+            } // todo: impl with stateflags
         }
 
         public Task ShutdownOutputAsync()
