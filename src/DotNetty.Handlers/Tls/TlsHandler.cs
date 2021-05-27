@@ -26,7 +26,7 @@ namespace DotNetty.Handlers.Tls
         const int UnencryptedWriteBatchSize = 14 * 1024;
 
         static readonly Exception ChannelClosedException = new IOException("Channel is closed");
-        static readonly Action<Task, object> HandshakeCompletionCallback = new Action<Task, object>(HandleHandshakeCompleted);
+        static readonly Action<object, object> HandshakeCompletionCallback = new Action<object, object>(HandleHandshakeCompleted);
         static readonly Action<Task<int>, object> UnwrapCompletedCallback = new Action<Task<int>, object>(UnwrapCompleted);
 
         readonly SslStream sslStream;
@@ -118,9 +118,16 @@ namespace DotNetty.Handlers.Tls
             return false;
         }
 
-        static void HandleHandshakeCompleted(Task task, object state)
+        static void HandleHandshakeCompleted(object context, object state)
         {
             var self = (TlsHandler)state;
+            var capturedContext = self.capturedContext;
+            if (!capturedContext.Executor.InEventLoop)
+            {
+                capturedContext.Executor.Execute(HandshakeCompletionCallback, context, state);
+                return;
+            }
+            var task = (Task)context;
             switch (task.Status)
             {
                 case TaskStatus.RanToCompletion:
