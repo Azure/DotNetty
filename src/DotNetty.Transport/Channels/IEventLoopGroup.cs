@@ -3,6 +3,7 @@
 
 namespace DotNetty.Transport.Channels
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
 
@@ -13,7 +14,12 @@ namespace DotNetty.Transport.Channels
     public interface IEventLoopGroup : IEventExecutorGroup
     {
         /// <summary>
-        /// Returns <see cref="IEventLoop"/>.
+        /// Returns list of owned event loops.
+        /// </summary>
+        new IEnumerable<IEventLoop> Items { get; }
+
+        /// <summary>
+        /// Returns one of owned event loops.
         /// </summary>
         new IEventLoop GetNext();
 

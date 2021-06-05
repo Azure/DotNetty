@@ -4,6 +4,7 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -11,6 +12,11 @@ namespace DotNetty.Common.Concurrency
     /// </summary>
     public interface IEventExecutorGroup : IScheduledExecutorService
     {
+        /// <summary>
+        /// Returns list of owned event executors.
+        /// </summary>
+        IEnumerable<IEventExecutor> Items { get; }
+
         /// <summary>
         ///     Returns <c>true</c> if and only if this executor is being shut down via <see cref="ShutdownGracefullyAsync()" />.
         /// </summary>

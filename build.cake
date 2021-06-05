@@ -13,9 +13,10 @@ var version = Argument<string>("targetversion", $"{releaseNote.Version}.{buildNu
 var skipClean = Argument<bool>("skipclean", false);
 var skipTests = Argument<bool>("skiptests", false);
 var nogit = Argument<bool>("nogit", false);
+var config =  Argument<string>("configuration", "Release");
 
 // Variables
-var configuration = IsRunningOnWindows() ? "Release" : "MonoRelease";
+var configuration = IsRunningOnWindows() ? config : "MonoRelease";
 var csProjectFiles = GetFiles("./src/**/*.csproj");
 
 // Directories

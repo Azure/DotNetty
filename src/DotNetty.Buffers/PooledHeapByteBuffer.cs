@@ -7,22 +7,17 @@ namespace DotNetty.Buffers
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-    using DotNetty.Common;
     using DotNetty.Common.Internal;
 
     sealed class PooledHeapByteBuffer : PooledByteBuffer<byte[]>
     {
-        static readonly ThreadLocalPool<PooledHeapByteBuffer> Recycler = new ThreadLocalPool<PooledHeapByteBuffer>(handle => new PooledHeapByteBuffer(handle, 0));
-
         internal static PooledHeapByteBuffer NewInstance(int maxCapacity)
         {
-            PooledHeapByteBuffer buf = Recycler.Take();
-            buf.Reuse(maxCapacity);
-            return buf;
+            return new PooledHeapByteBuffer(maxCapacity);
         }
 
-        internal PooledHeapByteBuffer(ThreadLocalPool.Handle recyclerHandle, int maxCapacity)
-            : base(recyclerHandle, maxCapacity)
+        internal PooledHeapByteBuffer(int maxCapacity)
+            : base(maxCapacity)
         {
         }
 
@@ -108,6 +103,11 @@ namespace DotNetty.Buffers
 
         public override async Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
+            if (length == 0)
+            {
+                return 0;
+            }
+
             int readTotal = 0;
             int read;
             int offset = this.ArrayOffset + index;

@@ -7,6 +7,7 @@
 namespace DotNetty.Transport.Libuv
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Threading.Tasks;
@@ -17,7 +18,6 @@ namespace DotNetty.Transport.Libuv
     using System.Threading;
     using DotNetty.Common;
     using DotNetty.Transport.Libuv.Native;
-
     using Timer = Native.Timer;
 
     class LoopExecutor : AbstractScheduledEventExecutor
@@ -297,7 +297,7 @@ namespace DotNetty.Transport.Libuv
             long runTasks = 0;
             long executionTime;
             this.wakeUp = false;
-            for (;;)
+            for (; ; )
             {
                 SafeExecute(task);
 
@@ -402,7 +402,7 @@ namespace DotNetty.Transport.Libuv
             {
                 return false;
             }
-            for (;;)
+            for (; ; )
             {
                 SafeExecute(task);
                 task = PollTaskFrom(taskQueue);
@@ -488,7 +488,7 @@ namespace DotNetty.Transport.Libuv
             bool inEventLoop = this.InEventLoop;
             bool wakeUpLoop;
             int oldState;
-            for (;;)
+            for (; ; )
             {
                 if (this.IsShuttingDown)
                 {
@@ -540,5 +540,7 @@ namespace DotNetty.Transport.Libuv
 
             return this.TerminationCompletion;
         }
+
+        protected override IEnumerable<IEventExecutor> GetItems() => new[] { this };
     }
 }

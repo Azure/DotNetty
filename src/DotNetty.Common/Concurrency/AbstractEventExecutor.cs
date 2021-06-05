@@ -4,6 +4,7 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Internal.Logging;
@@ -45,6 +46,11 @@ namespace DotNetty.Common.Concurrency
 
         /// <inheritdoc cref="IEventExecutor"/>
         public bool InEventLoop => this.IsInEventLoop(Thread.CurrentThread);
+
+        /// <inheritdoc cref="IEventExecutor" />
+        public IEnumerable<IEventExecutor> Items => this.GetItems();
+
+        protected abstract IEnumerable<IEventExecutor> GetItems();
 
         /// <inheritdoc cref="IEventExecutor"/>
         public abstract bool IsInEventLoop(Thread thread);
