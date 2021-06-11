@@ -6,7 +6,7 @@ namespace Examples.Common
     using System;
     using DotNetty.Common.Internal.Logging;
     using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging.Console;
+    using Microsoft.Extensions.Logging;
 
     public static class ExampleHelper
     {
@@ -22,7 +22,7 @@ namespace Examples.Common
         {
             get
             {
-#if NETSTANDARD1_3
+#if NETSTANDARD2_0
                 return AppContext.BaseDirectory;
 #else
                 return AppDomain.CurrentDomain.BaseDirectory;
@@ -32,6 +32,6 @@ namespace Examples.Common
 
         public static IConfigurationRoot Configuration { get; }
 
-        public static void SetConsoleLogger() => InternalLoggerFactory.DefaultFactory.AddProvider(new ConsoleLoggerProvider((s, level) => true, false));
+        public static void SetConsoleLogger() => InternalLoggerFactory.DefaultFactory = LoggerFactory.Create(builder => builder.AddConsole());
     }
 }

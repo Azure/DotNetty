@@ -6,7 +6,6 @@ namespace DotNetty.Microbench.Concurrency
     using System;
     using System.Threading;
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
     using BenchmarkDotNet.Engines;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal;

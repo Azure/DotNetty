@@ -115,7 +115,7 @@ namespace DotNetty.Transport.Channels.Sockets
             operation.SetBuffer(bytes.Array, bytes.Offset, bytes.Count);
 
             bool pending;
-#if NETSTANDARD1_3
+#if NETSTANDARD2_0
             pending = this.Socket.ReceiveFromAsync(operation);
 #else
             if (ExecutionContext.IsFlowSuppressed())
