@@ -41,7 +41,7 @@ namespace DotNetty.Transport.Libuv.Native
             IntPtr socket = IntPtr.Zero;
             NativeMethods.uv_fileno(handle.Handle, ref socket);
 
-#if NETSTANDARD1_3
+#if NETSTANDARD2_0
             uint len = (uint)Marshal.SizeOf<FILE_COMPLETION_INFORMATION>();
 #else
             uint len = (uint)Marshal.SizeOf(typeof(FILE_COMPLETION_INFORMATION));

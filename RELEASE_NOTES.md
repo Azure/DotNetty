@@ -1,3 +1,8 @@
+#### 0.7.0 June 11, 2021
+- target net472 and netstandard2.0 
+- microsoft.extensions.logging 5.0.0
+- microsoft.extensions.configuration 5.0.0
+
 #### 0.6.0 October 9, 2018
 - Clearly marks Unsafe Buffer management routines as `unsafe`
 - Changes defaults for Unpooled and Pooled buffer allocators to safe versions

@@ -173,7 +173,7 @@ Task("Benchmark")
 {
   StartProcess(nuget.ToString() + "/nuget.exe", "install NBench.Runner -OutputDirectory tools -ExcludeVersion -Version 1.0.0");
 
-  var libraries = GetFiles("./test/**/bin/" + configuration + "/net452/*.Performance.dll");
+  var libraries = GetFiles("./test/**/bin/" + configuration + "/net472/*.Performance.dll");
   CreateDirectory(outputPerfResults);
 
   foreach (var lib in libraries)
@@ -181,7 +181,7 @@ Task("Benchmark")
     Information("Using NBench.Runner: {0}", lib);
 
 	// Make sure libuv.dll exists in performance test folder
-    CopyFiles("./test/DotNetty.Transport.Libuv.Tests/bin/"  + configuration + "/net452/win-x64/libuv.dll", lib.GetDirectory(), false);
+    CopyFiles("./test/DotNetty.Transport.Libuv.Tests/bin/"  + configuration + "/net472/win-x64/libuv.dll", lib.GetDirectory(), false);
     CopyFiles("./tools/NBench.Runner*/**/NBench.Runner.exe", lib.GetDirectory(), false);
     
     var nbenchArgs = new StringBuilder()
