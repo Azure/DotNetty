@@ -4,18 +4,18 @@
 namespace DotNetty.Microbench.Buffers
 {
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
+    using BenchmarkDotNet.Jobs;
     using DotNetty.Buffers;
     using DotNetty.Common;
-#if NET46
+#if NET472
     using BenchmarkDotNet.Diagnostics.Windows.Configs;
 #endif
 
-#if !NET46
-    [CoreJob]
+#if !NET472
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
 #else
-    [ClrJob]
-    [InliningDiagnoser]
+    [SimpleJob(RuntimeMoniker.Net472)]
+    [InliningDiagnoser(true, true)]
 #endif
     [BenchmarkCategory("ByteBuffer")]
     public class UnpooledByteBufferBenchmark

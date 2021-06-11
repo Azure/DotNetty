@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?><Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="NuGet">
-    <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <PackageId>DotNetty.Codecs.Mqtt</PackageId>
     <Description>MQTT codec for DotNetty</Description>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <AssemblyTitle>DotNetty: MQTT codec</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.6.0</VersionPrefix>
+    <VersionPrefix>0.7.0</VersionPrefix>
     <Authors>Microsoft</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -22,7 +22,7 @@
     <RequireLicenseAcceptance>true</RequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
-    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.1</NetStandardImplicitPackageVersion>
+    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard2.0' ">2.0.3</NetStandardImplicitPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\shared\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
@@ -32,12 +32,5 @@
     <ProjectReference Include="..\DotNetty.Buffers\DotNetty.Buffers.csproj" />
     <ProjectReference Include="..\DotNetty.Codecs\DotNetty.Codecs.csproj" />
     <ProjectReference Include="..\DotNetty.Transport\DotNetty.Transport.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
-    <PackageReference Include="System.Diagnostics.Contracts" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 </Project>

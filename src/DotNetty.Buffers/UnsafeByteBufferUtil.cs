@@ -386,7 +386,7 @@ namespace DotNetty.Buffers
 
         internal static string GetString(byte* src, int length, Encoding encoding)
         {
-#if NETSTANDARD1_3
+#if NETSTANDARD2_0
             return encoding.GetString(src, length);
 #else
             int charCount = encoding.GetCharCount(src, length);

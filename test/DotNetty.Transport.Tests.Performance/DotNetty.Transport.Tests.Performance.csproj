@@ -4,14 +4,14 @@
   </PropertyGroup>
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="NBench" Version="1.0.4" />
+    <PackageReference Include="NBench" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetty.Common\DotNetty.Common.csproj" />
