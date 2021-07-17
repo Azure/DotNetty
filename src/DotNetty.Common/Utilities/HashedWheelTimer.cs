@@ -27,7 +27,7 @@ namespace DotNetty.Common.Utilities
         const int InstanceCountLimit = 64;
 
         readonly Worker worker;
-        readonly XThread workerThread;
+        readonly Thread workerThread;
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         const int WorkerStateInit = 0;
@@ -98,7 +98,7 @@ namespace DotNetty.Common.Utilities
                         tickInterval,
                         long.MaxValue / this.wheel.Length));
             }
-            this.workerThread = new XThread(st => this.worker.Run());
+            this.workerThread = new Thread(st => this.worker.Run());
 
             this.maxPendingTimeouts = maxPendingTimeouts;
 
@@ -187,7 +187,7 @@ namespace DotNetty.Common.Utilities
         {
             GC.SuppressFinalize(this);
 
-            if (XThread.CurrentThread == this.workerThread)
+            if (Thread.CurrentThread == this.workerThread)
             {
                 throw new InvalidOperationException($"{nameof(HashedWheelTimer)}.stop() cannot be called from timer task.");
             }

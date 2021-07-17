@@ -23,14 +23,13 @@ namespace DotNetty.Common.Tests
             ThreadLocalPool<HandledObject> pool = NewPool(1024);
             HandledObject reference = null;
             WeakReference<Thread> threadRef = null;
-            WeakReference<XThread> xThreadRef = null;
 
             var thread1 = new Thread(() =>
             {
                 //Don't know the reason, but thread2 will not be collected without wrapped with thread1
                 var thread2 = new Thread(() =>
                 {
-                    Volatile.Write(ref xThreadRef, new WeakReference<XThread>(XThread.CurrentThread));
+                    Volatile.Write(ref threadRef, new WeakReference<Thread>(Thread.CurrentThread));
                     HandledObject data = pool.Take();
                     // Store a reference to the HandledObject to ensure it is not collected when the run method finish.
                     Volatile.Write(ref reference, data);
@@ -39,7 +38,6 @@ namespace DotNetty.Common.Tests
                 thread2.Start();
                 thread2.Join();
                 Assert.True(Volatile.Read(ref threadRef)?.TryGetTarget(out _));
-                Assert.True(Volatile.Read(ref xThreadRef)?.TryGetTarget(out _));
 
                 GC.KeepAlive(thread2);
                 // Null out so it can be collected.
@@ -53,12 +51,11 @@ namespace DotNetty.Common.Tests
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
                 GC.WaitForPendingFinalizers();
 
-                if (Volatile.Read(ref threadRef)?.TryGetTarget(out _) == true || Volatile.Read(ref xThreadRef)?.TryGetTarget(out _) == true)
+                if (Volatile.Read(ref threadRef)?.TryGetTarget(out _) == true || Volatile.Read(ref threadRef)?.TryGetTarget(out _) == true)
                     Thread.Sleep(100);
             }
 
             Assert.False(Volatile.Read(ref threadRef)?.TryGetTarget(out _));
-            Assert.False(Volatile.Read(ref xThreadRef)?.TryGetTarget(out _));
 
             // Now call recycle after the Thread was collected to ensure this still works...
             reference.Release();

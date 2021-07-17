@@ -5,10 +5,10 @@ namespace DotNetty.Transport.Channels.Embedded
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common;
     using DotNetty.Common.Concurrency;
-    using Thread = DotNetty.Common.Concurrency.XThread;
 
     sealed class EmbeddedEventLoop : AbstractScheduledEventExecutor, IEventLoop
     {

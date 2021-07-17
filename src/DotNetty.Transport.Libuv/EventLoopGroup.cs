@@ -74,7 +74,7 @@ namespace DotNetty.Transport.Libuv
         public override IEventExecutor GetNext()
         {
             // Attempt to select event loop based on thread first
-            int threadId = XThread.CurrentThread.Id;
+            int threadId = Thread.CurrentThread.ManagedThreadId;
             int i;
             for (i = 0; i < this.eventLoops.Length; i++)
             {
