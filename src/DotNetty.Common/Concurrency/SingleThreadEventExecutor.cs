@@ -12,7 +12,6 @@ namespace DotNetty.Common.Concurrency
     using System.Threading.Tasks;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using Thread = XThread;
 
     /// <summary>
     /// <see cref="IEventExecutor"/> backed by a single thread.

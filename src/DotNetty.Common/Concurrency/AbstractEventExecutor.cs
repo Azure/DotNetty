@@ -8,7 +8,6 @@ namespace DotNetty.Common.Concurrency
     using System.Threading;
     using System.Threading.Tasks;
     using DotNetty.Common.Internal.Logging;
-    using Thread = XThread;
 
     /// <summary>
     ///     Abstract base class for <see cref="IEventExecutor" /> implementations

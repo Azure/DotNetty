@@ -6,7 +6,6 @@ namespace DotNetty.Common.Utilities
     using System;
     using System.Threading;
     using DotNetty.Common.Internal.Logging;
-    using Thread = DotNetty.Common.Concurrency.XThread;
 
     public static class ReferenceCountUtil
     {
