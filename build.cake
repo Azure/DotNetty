@@ -23,8 +23,8 @@ var csProjectFiles = GetFiles("./src/**/*.csproj");
 var nuget = Directory("tools");
 var output = Directory("build");
 var outputBinaries = output + Directory("binaries");
-var outputBinariesNet45 = outputBinaries + Directory("net45");
-var outputBinariesNetstandard = outputBinaries + Directory("netstandard1.3");
+var outputBinariesNet = outputBinaries + Directory("net472");
+var outputBinariesNetStandard = outputBinaries + Directory("netstandard2.0");
 var outputPackages = output + Directory("packages");
 var outputNuGet = output + Directory("nuget");
 var outputPerfResults = Directory("perfResults");
@@ -37,7 +37,7 @@ Task("Clean")
   // Clean artifact directories.
   CleanDirectories(new DirectoryPath[] {
     output, outputBinaries, outputPackages, outputNuGet,
-    outputBinariesNet45, outputBinariesNetstandard
+    outputBinariesNet, outputBinariesNetStandard
   });
 
   if(!skipClean) {
@@ -311,7 +311,7 @@ Task("Mono")
 Task("PR")
   //.IsDependentOn("Update-Version")
   .IsDependentOn("Test")
-  .IsDependentOn("Benchmark")
+  //.IsDependentOn("Benchmark")
   .IsDependentOn("Package-NuGet");
 
 Task("Nightly")

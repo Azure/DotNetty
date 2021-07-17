@@ -1,9 +1,9 @@
-version: 0.4.{build}
-image: Visual Studio 2017 RC
+version: 0.7.0.{build}
 pull_requests:
   do_not_increment_build_number: true
+image: Visual Studio 2019
 build_script:
-- cmd: powershell .\build.ps1 --target=PR
+- cmd: powershell .\build.ps1 -target PR
 test: off
 deploy: off
 notifications:
