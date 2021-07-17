@@ -9,5 +9,5 @@ using System.Reflection;
 [assembly: AssemblyProduct("DotNetty")]
 [assembly: AssemblyVersion("0.7.0")]
 [assembly: AssemblyFileVersion("0.7.0")]
-[assembly: AssemblyCopyright("(c) Microsoft 2015 - 2018")]
+[assembly: AssemblyCopyright("(c) Microsoft 2015 - 2021")]
 
