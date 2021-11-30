@@ -78,6 +78,7 @@ namespace DotNetty.Common.Concurrency
             {
                 this.thread.Name = threadName;
             }
+            this.thread.IsBackground = true;
             this.thread.Start();
         }
 
