@@ -8,7 +8,7 @@
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <AssemblyTitle>DotNetty: common routines</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.7.0</VersionPrefix>
+    <VersionPrefix>0.7.1</VersionPrefix>
     <Authors>Microsoft</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
