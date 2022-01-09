@@ -30,7 +30,7 @@ namespace DotNetty.Codecs.Http.WebSockets.Handshaker
         protected abstract bool Selected(ICharSequence version);
 
 
-        public bool Selector(ICharSequence version, WebSocketServerHandshaker handshaker)
+        public bool Selector(ICharSequence version, out WebSocketServerHandshaker handshaker)
         {
             handshaker = null;
             if (!this.Selected(version))
