@@ -59,7 +59,10 @@ namespace DotNetty.Common
 
             if (Interlocked.CompareExchange(ref started, 1, 0) == 0)
             {
-                var watcherThread = new Thread(s => ((IRunnable)s).Run());
+                var watcherThread = new Thread(s => ((IRunnable)s).Run())
+                {
+                    IsBackground = true
+                };
                 watcherThread.Start(watcher);
                 ThreadDeathWatcher.watcherThread = watcherThread;
             }
