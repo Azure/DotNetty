@@ -1,8 +1,11 @@
+#### 0.7.2 February 14, 2022
+- Start threads as background in HashedWheelTimer, LoopExecutor, ThreadDeathWatcher
+
 #### 0.7.1 December 15, 2021
 - Revert to use background threads
 
 #### 0.7.0 June 11, 2021
-- Target net472 and netstandard2.0 
+- Target net472 and netstandard2.0
 - Microsoft.Extensions.Logging 5.0.0
 - Microsoft.Extensions.Configuration 5.0.0
 
@@ -129,13 +132,13 @@
 - Channel ID
 - Complete `LengthFieldBasedFrameDecoder` and `LengthFieldPrepender`
 - Resource leak detection support (basic is on by default for pooled byte buffers)
-- Proper internal logging 
+- Proper internal logging
 - Reacher byte buffer API
 - Proper utilities set for byte buffers, strings, system properties
-- Performance improvements in SingleThreadEventExecutor 
+- Performance improvements in SingleThreadEventExecutor
 
 #### 0.1.3 September 21 2015
-- Fixed `TcpSocketChannel` closure on graceful socket closure 
+- Fixed `TcpSocketChannel` closure on graceful socket closure
 - Better alignment of IChannel implementations to netty's expected behavior for `Open`, `Active`, `LocalAddress`, `RemoteAddress`
 - Proper port of `Default/IChannelPipeline` and `AbstractChannelHandlerContext` to enable channel handlers to run on different invoker.
 

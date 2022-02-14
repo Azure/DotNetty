@@ -98,7 +98,10 @@ namespace DotNetty.Common.Utilities
                         tickInterval,
                         long.MaxValue / this.wheel.Length));
             }
-            this.workerThread = new Thread(st => this.worker.Run());
+            this.workerThread = new Thread(st => this.worker.Run())
+            {
+                IsBackground = true
+            };
 
             this.maxPendingTimeouts = maxPendingTimeouts;
 

@@ -80,7 +80,11 @@ namespace DotNetty.Transport.Libuv
             {
                 name = $"{name}({threadName})";
             }
-            this.thread = new Thread(Run) { Name = name };
+            this.thread = new Thread(Run)
+            {
+                Name = name, 
+                IsBackground = true
+            };
             this.loopRunStart = new ManualResetEventSlim(false, 1);
         }
 
