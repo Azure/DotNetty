@@ -1,5 +1,6 @@
 #### 0.7.2 February 14, 2022
 - Start threads as background in HashedWheelTimer, LoopExecutor, ThreadDeathWatcher
+- Google.Protobuf 3.19.4 (latest) 
 
 #### 0.7.1 December 15, 2021
 - Revert to use background threads
