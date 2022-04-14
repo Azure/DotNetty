@@ -429,6 +429,13 @@ namespace DotNetty.Handlers.Tls
                             break;
                         }
                         int read = currentReadFuture.Result;
+                        
+                        if (read == 0)
+                        {
+                            //Stream closed
+                            return;
+                        }
+                        
                         AddBufferToOutput(outputBuffer, read, output);
                     }
                     outputBuffer = ctx.Allocator.Buffer(FallbackReadBufferSize);
