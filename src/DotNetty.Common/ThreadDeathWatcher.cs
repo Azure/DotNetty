@@ -66,14 +66,10 @@ namespace DotNetty.Common
                     watcherThread.Start(watcher);
                     ThreadDeathWatcher.watcherThread = watcherThread;
                 }
-                catch (Exception t)
+                catch (Exception e)
                 {
-                    Logger.Warn("Thread death watcher raised an exception while trying to start the thread:", t);
-                    if (!watcherThread.IsAlive)
-                    {
-                        bool stopped = Interlocked.CompareExchange(ref started, 0, 1) == 1;
-                        Contract.Assert(stopped);
-                    }
+                    bool stopped = !watcherThread.IsAlive && Interlocked.CompareExchange(ref started, 0, 1) == 1;
+                    Logger.Warn($"Thread death watcher stopped: {stopped} and raised an exception while trying to start the thread:", e);
                 }
             }
         }
@@ -107,47 +103,56 @@ namespace DotNetty.Common
 
             public void Run()
             {
-                for (;;)
+                try
                 {
-                    this.FetchWatchees();
-                    this.NotifyWatchees();
-
-                    // Try once again just in case notifyWatchees() triggered watch() or unwatch().
-                    this.FetchWatchees();
-                    this.NotifyWatchees();
-
-                    Thread.Sleep(1000);
-
-                    if (this.watchees.Count == 0 && PendingEntries.IsEmpty)
+                    for (;;)
                     {
-                        // Mark the current worker thread as stopped.
-                        // The following CAS must always success and must be uncontended,
-                        // because only one watcher thread should be running at the same time.
-                        bool stopped = Interlocked.CompareExchange(ref started, 0, 1) == 1;
-                        Contract.Assert(stopped);
+                        this.FetchWatchees();
+                        this.NotifyWatchees();
 
-                        // Check if there are pending entries added by watch() while we do CAS above.
-                        if (PendingEntries.IsEmpty)
+                        // Try once again just in case notifyWatchees() triggered watch() or unwatch().
+                        this.FetchWatchees();
+                        this.NotifyWatchees();
+
+                        Thread.Sleep(1000);
+
+                        if (this.watchees.Count == 0 && PendingEntries.IsEmpty)
                         {
-                            // A) watch() was not invoked and thus there's nothing to handle
-                            //    -> safe to terminate because there's nothing left to do
-                            // B) a new watcher thread started and handled them all
-                            //    -> safe to terminate the new watcher thread will take care the rest
-                            break;
-                        }
+                            // Mark the current worker thread as stopped.
+                            // The following CAS must always success and must be uncontended,
+                            // because only one watcher thread should be running at the same time.
+                            bool stopped = Interlocked.CompareExchange(ref started, 0, 1) == 1;
+                            Contract.Assert(stopped);
 
-                        // There are pending entries again, added by watch()
-                        if (Interlocked.CompareExchange(ref started, 1, 0) != 0)
-                        {
-                            // watch() started a new watcher thread and set 'started' to true.
-                            // -> terminate this thread so that the new watcher reads from pendingEntries exclusively.
-                            break;
-                        }
+                            // Check if there are pending entries added by watch() while we do CAS above.
+                            if (PendingEntries.IsEmpty)
+                            {
+                                // A) watch() was not invoked and thus there's nothing to handle
+                                //    -> safe to terminate because there's nothing left to do
+                                // B) a new watcher thread started and handled them all
+                                //    -> safe to terminate the new watcher thread will take care the rest
+                                break;
+                            }
 
-                        // watch() added an entry, but this worker was faster to set 'started' to true.
-                        // i.e. a new watcher thread was not started
-                        // -> keep this thread alive to handle the newly added entries.
+                            // There are pending entries again, added by watch()
+                            if (Interlocked.CompareExchange(ref started, 1, 0) != 0)
+                            {
+                                // watch() started a new watcher thread and set 'started' to true.
+                                // -> terminate this thread so that the new watcher reads from pendingEntries exclusively.
+                                break;
+                            }
+
+                            // watch() added an entry, but this worker was faster to set 'started' to true.
+                            // i.e. a new watcher thread was not started
+                            // -> keep this thread alive to handle the newly added entries.
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    // unexpected event, try mark thread as stopped
+                    bool stopped = Interlocked.CompareExchange(ref started, 0, 1) == 1;
+                    Logger.Error($"Thread death watcher was stopped: {stopped} and raised an fatal exception while processing:", e);
                 }
             }
 
