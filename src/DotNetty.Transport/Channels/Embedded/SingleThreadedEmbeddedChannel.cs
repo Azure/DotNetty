@@ -14,7 +14,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
-    public class EmbeddedChannel : AbstractChannel, IEmbeddedChannel
+    public class SingleThreadedEmbeddedChannel : AbstractChannel, IEmbeddedChannel
     {
         static readonly EndPoint LOCAL_ADDRESS = new EmbeddedSocketAddress();
         static readonly EndPoint REMOTE_ADDRESS = new EmbeddedSocketAddress();
@@ -33,7 +33,7 @@ namespace DotNetty.Transport.Channels.Embedded
         static readonly ChannelMetadata METADATA_NO_DISCONNECT = new ChannelMetadata(false);
         static readonly ChannelMetadata METADATA_DISCONNECT = new ChannelMetadata(true);
 
-        readonly EmbeddedEventLoop loop = new EmbeddedEventLoop();
+        readonly IEventLoop loop = new SingleThreadEventLoop();
 
         Queue<object> inboundMessages;
         Queue<object> outboundMessages;
@@ -43,8 +43,8 @@ namespace DotNetty.Transport.Channels.Embedded
         /// <summary>
         ///     Create a new instance with an empty pipeline.
         /// </summary>
-        public EmbeddedChannel()
-            : this(EmbeddedChannelId.Instance, EMPTY_HANDLERS)
+        public SingleThreadedEmbeddedChannel(IEventLoop eventLoop = null)
+            : this(EmbeddedChannelId.Instance, eventLoop, EMPTY_HANDLERS)
         {
         }
 
@@ -52,8 +52,8 @@ namespace DotNetty.Transport.Channels.Embedded
         ///     Create a new instance with an empty pipeline with the specified <see cref="IChannelId" />.
         /// </summary>
         /// <param name="channelId">The <see cref="IChannelId" /> of this channel. </param>
-        public EmbeddedChannel(IChannelId channelId)
-            : this(channelId, EMPTY_HANDLERS)
+        public SingleThreadedEmbeddedChannel(IChannelId channelId, IEventLoop eventLoop = null)
+            : this(channelId, eventLoop, EMPTY_HANDLERS)
         {
         }
 
@@ -63,13 +63,13 @@ namespace DotNetty.Transport.Channels.Embedded
         /// <param name="handlers">
         ///     The <see cref="IChannelHandler" />s that will be added to the <see cref="IChannelPipeline" />
         /// </param>
-        public EmbeddedChannel(params IChannelHandler[] handlers)
-            : this(EmbeddedChannelId.Instance, handlers)
+        public SingleThreadedEmbeddedChannel(IEventLoop eventLoop = null, params IChannelHandler[] handlers)
+            : this(EmbeddedChannelId.Instance, eventLoop, handlers)
         {
         }
 
-        public EmbeddedChannel(IChannelId id, params IChannelHandler[] handlers)
-            : this(id, false, handlers)
+        public SingleThreadedEmbeddedChannel(IChannelId id, IEventLoop eventLoop = null, params IChannelHandler[] handlers)
+            : this(id, false, eventLoop, handlers)
         {
         }
 
@@ -82,24 +82,33 @@ namespace DotNetty.Transport.Channels.Embedded
         /// <param name="handlers">
         ///     The <see cref="IChannelHandler" />s that will be added to the <see cref="IChannelPipeline" />
         /// </param>
-        public EmbeddedChannel(IChannelId id, bool hasDisconnect, params IChannelHandler[] handlers)
-            : this(id, hasDisconnect, true, handlers)
+        public SingleThreadedEmbeddedChannel(IChannelId id, bool hasDisconnect, IEventLoop eventLoop = null, params IChannelHandler[] handlers)
+            : this(id, hasDisconnect, true, eventLoop, handlers)
         { }
 
-        public EmbeddedChannel(IChannelId id, bool hasDisconnect, bool register, params IChannelHandler[] handlers)
+        public SingleThreadedEmbeddedChannel(IChannelId id, bool hasDisconnect, bool register, IEventLoop eventLoop = null, params IChannelHandler[] handlers)
             : base(null, id)
         {
+            if (eventLoop != null)
+            {
+                this.loop = eventLoop;
+            }
+
             this.Metadata = GetMetadata(hasDisconnect);
             this.Configuration = new DefaultChannelConfiguration(this);
             this.Setup(register, handlers);
         }
 
-        public EmbeddedChannel(IChannelId id, bool hasDisconnect, IChannelConfiguration config, 
+        public SingleThreadedEmbeddedChannel(IChannelId id, bool hasDisconnect, IChannelConfiguration config, IEventLoop eventLoop = null,
             params IChannelHandler[] handlers)
             : base(null, id)
         {
             Contract.Requires(config != null);
 
+            if (eventLoop != null)
+            {
+                this.loop = eventLoop;
+            }
             this.Metadata = GetMetadata(hasDisconnect);
             this.Configuration = config;
             this.Setup(true, handlers);
@@ -129,6 +138,7 @@ namespace DotNetty.Transport.Channels.Embedded
             if (register)
             {
                 Task future = this.loop.RegisterAsync(this);
+                future.GetAwaiter().GetResult();
                 Debug.Assert(future.IsCompleted);
             }
         }
@@ -136,11 +146,12 @@ namespace DotNetty.Transport.Channels.Embedded
         public void Register()
         {
             Task future = this.loop.RegisterAsync(this);
-            Debug.Assert(future.IsCompleted);
+            // Debug.Assert(future.IsCompleted);
             this.Pipeline.AddLast(new LastInboundHandler(this.InboundMessages, this.RecordException));
+            future.GetAwaiter().GetResult();
         }
 
-        protected sealed override DefaultChannelPipeline NewChannelPipeline() => new EmbeddedChannelPipeline(this);
+        protected sealed override DefaultChannelPipeline NewChannelPipeline() => new SingleThreadedEmbeddedChannelPipeline(this);
 
         public override ChannelMetadata Metadata { get; }
 
@@ -174,7 +185,7 @@ namespace DotNetty.Transport.Channels.Embedded
 
         protected override IChannelUnsafe NewUnsafe() => new DefaultUnsafe(this);
 
-        protected override bool IsCompatible(IEventLoop eventLoop) => eventLoop is EmbeddedEventLoop;
+        protected override bool IsCompatible(IEventLoop eventLoop) => true;
 
         protected override void DoBind(EndPoint localAddress)
         {
@@ -213,51 +224,6 @@ namespace DotNetty.Transport.Channels.Embedded
         public override bool Active => this.state == State.Active;
 
         /// <summary>
-        ///     Run all tasks (which also includes scheduled tasks) that are pending in the <see cref="IEventLoop" />
-        ///     for this <see cref="IChannel" />.
-        /// </summary>
-        public void RunPendingTasks()
-        {
-            try
-            {
-                this.loop.RunTasks();
-            }
-            catch (Exception ex)
-            {
-                this.RecordException(ex);
-            }
-
-            try
-            {
-                this.loop.RunScheduledTasks();
-            }
-            catch (Exception ex)
-            {
-                this.RecordException(ex);
-            }
-        }
-
-        /// <summary>
-        ///     Run all pending scheduled tasks in the <see cref="IEventLoop" /> for this <see cref="IChannel" />.
-        /// </summary>
-        /// <returns>
-        ///     The <see cref="PreciseTimeSpan" /> when the next scheduled task is ready to run. If no other task is
-        ///     scheduled then it will return <see cref="PreciseTimeSpan.Zero" />.
-        /// </returns>
-        public PreciseTimeSpan RunScheduledPendingTasks()
-        {
-            try
-            {
-                return this.loop.RunScheduledTasks();
-            }
-            catch (Exception ex)
-            {
-                this.RecordException(ex);
-                return this.loop.NextScheduledTask();
-            }
-        }
-
-        /// <summary>
         ///     Write messages to the inbound of this <see cref="IChannel" />
         /// </summary>
         /// <param name="msgs">The messages to be written.</param>
@@ -276,7 +242,6 @@ namespace DotNetty.Transport.Channels.Embedded
                 p.FireChannelRead(m);
             }
             p.FireChannelReadComplete();
-            this.RunPendingTasks();
             this.CheckException();
             return IsNotEmpty(this.inboundMessages);
         }
@@ -304,9 +269,6 @@ namespace DotNetty.Transport.Channels.Embedded
                 }
                 futures.Add(this.WriteAsync(m));
             }
-            // We need to call RunPendingTasks first as a IChannelHandler may have used IEventLoop.Execute(...) to
-            // delay the write on the next event loop run.
-            this.RunPendingTasks();
             this.Flush();
 
             int size = futures.Count;
@@ -325,7 +287,6 @@ namespace DotNetty.Transport.Channels.Embedded
             }
             futures.Return();
 
-            this.RunPendingTasks();
             this.CheckException();
             return IsNotEmpty(this.outboundMessages);
         }
@@ -421,32 +382,17 @@ namespace DotNetty.Transport.Channels.Embedded
             return false;
         }
 
-        void FinishPendingTasks(bool cancel)
-        {
-            this.RunPendingTasks();
-            if (cancel)
-            {
-                // Cancel all scheduled tasks that are left.
-                this.loop.CancelScheduledTasks();
-            }
-        }
-
         public override Task CloseAsync()
         {
             // We need to call RunPendingTasks() before calling super.CloseAsync() as there may be something in the queue
             // that needs to be run before the actual close takes place.
-            this.RunPendingTasks();
             Task future = base.CloseAsync();
-
-            // Now finish everything else and cancel all scheduled tasks that were not ready set.
-            this.FinishPendingTasks(true);
             return future;
         }
 
         public override Task DisconnectAsync()
         {
             Task future = base.DisconnectAsync();
-            this.FinishPendingTasks(false); // todo
             return future;
         }
 
@@ -507,16 +453,16 @@ namespace DotNetty.Transport.Channels.Embedded
             public override void ExceptionCaught(IChannelHandlerContext context, Exception exception) => this.recordException(exception);
         }
 
-        sealed class EmbeddedChannelPipeline : DefaultChannelPipeline
+        sealed class SingleThreadedEmbeddedChannelPipeline : DefaultChannelPipeline
         {
-            public EmbeddedChannelPipeline(EmbeddedChannel channel)
+            public SingleThreadedEmbeddedChannelPipeline(SingleThreadedEmbeddedChannel channel)
                 : base(channel)
             {
             }
 
-            protected override void OnUnhandledInboundException(Exception cause) => ((EmbeddedChannel)this.Channel).RecordException(cause);
+            protected override void OnUnhandledInboundException(Exception cause) => ((SingleThreadedEmbeddedChannel)this.Channel).RecordException(cause);
 
-            protected override void OnUnhandledInboundMessage(object msg) => ((EmbeddedChannel)this.Channel).InboundMessages.Enqueue(msg);
+            protected override void OnUnhandledInboundMessage(object msg) => ((SingleThreadedEmbeddedChannel)this.Channel).InboundMessages.Enqueue(msg);
         }
     }
 }

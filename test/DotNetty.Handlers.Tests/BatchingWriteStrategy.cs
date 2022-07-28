@@ -14,7 +14,7 @@ namespace DotNetty.Handlers.Tests
         readonly TimeSpan timeWindow;
         readonly bool forceSizing;
         IByteBuffer pendingBuffer;
-        EmbeddedChannel channel;
+        IEmbeddedChannel channel;
 
         public BatchingWriteStrategy(int maxBatchSize, TimeSpan timeWindow, bool forceSizing)
         {
@@ -23,7 +23,7 @@ namespace DotNetty.Handlers.Tests
             this.forceSizing = forceSizing;
         }
 
-        public async Task WriteToChannelAsync(EmbeddedChannel ch, ArraySegment<byte> input)
+        public async Task WriteToChannelAsync(IEmbeddedChannel ch, ArraySegment<byte> input)
         {
             this.channel = ch;
 

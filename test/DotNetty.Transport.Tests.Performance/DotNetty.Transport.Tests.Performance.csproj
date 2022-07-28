@@ -4,11 +4,13 @@
   </PropertyGroup>
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFrameworks>netcoreapp3.1;net472;net5;net6</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>
     <StartupObject />
+    <Configurations>Debug;Release;Package</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NBench" Version="2.0.1" />

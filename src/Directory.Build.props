@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Build Settings -->
+    <Configurations>Debug;Release;Package</Configurations>
+    <Platforms>AnyCPU</Platforms>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <DebugType Condition="'$(Configuration)'=='Release'">pdbonly</DebugType>
+    <DebugSymbols>True</DebugSymbols>
+    <Deterministic>true</Deterministic>
+   
+    <!-- Package Settings -->
+    <DebugType Condition="'$(Configuration)'=='Package'">pdbonly</DebugType>
+    <Optimize Condition="'$(Configuration)'=='Package'">true</Optimize>
+    <PackageOutputPath>$(SolutionDir)build_output\packages</PackageOutputPath>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Package'">True</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    
+    <PackageVersion>0.7.3</PackageVersion>
+    <Version>$(PackageVersion)</Version>
+  </PropertyGroup>
+  
+</Project>
