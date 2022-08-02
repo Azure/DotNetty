@@ -9,7 +9,7 @@
     <AssemblyTitle>DotNetty: common routines</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
     <VersionPrefix>0.7.3</VersionPrefix>
-	<VersionSuffix>preview1</VersionSuffix>
+	<VersionSuffix>neth</VersionSuffix>
     <Authors>Microsoft</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
