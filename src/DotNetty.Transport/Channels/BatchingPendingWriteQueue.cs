@@ -11,6 +11,7 @@ namespace DotNetty.Transport.Channels
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     /// <summary>
     ///     A queue of write operations which are pending for later execution. It also updates the

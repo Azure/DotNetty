@@ -17,6 +17,7 @@ namespace DotNetty.Codecs.Http.Tests
     using Xunit;
 
     using HttpVersion = DotNetty.Codecs.Http.HttpVersion;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public sealed class HttpClientCodecTest
     {

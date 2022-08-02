@@ -22,7 +22,7 @@ namespace Examples.Common
         {
             get
             {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETCOREAPP3_1_OR_GREATER || NET5_0_OR_GREATER
                 return AppContext.BaseDirectory;
 #else
                 return AppDomain.CurrentDomain.BaseDirectory;

@@ -33,7 +33,7 @@ Param(
 
 $CakeVersion = "0.27.1"
 $DotNetChannel = "Current";
-$DotNetVersion = "3.1.411";
+$DotNetVersion = "6.0.302";
 $DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 # Temporarily skip verification of addins.

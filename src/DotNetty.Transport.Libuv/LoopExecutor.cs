@@ -19,6 +19,7 @@ namespace DotNetty.Transport.Libuv
     using DotNetty.Common;
     using DotNetty.Transport.Libuv.Native;
     using Timer = Native.Timer;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     class LoopExecutor : AbstractScheduledEventExecutor
     {

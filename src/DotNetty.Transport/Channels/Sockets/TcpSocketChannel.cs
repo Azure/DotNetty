@@ -10,6 +10,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     /// <summary>
     ///     <see cref="ISocketChannel" /> which uses Socket-based implementation.

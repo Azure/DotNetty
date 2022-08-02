@@ -214,7 +214,7 @@ namespace DotNetty.Handlers.Tls
                                                 };
 
                                                 hostname = idn.GetAscii(hostname);
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0 || NETCOREAPP3_1_OR_GREATER || NET5_0_OR_GREATER
                                                 // TODO: netcore does not have culture sensitive tolower()
                                                 hostname = hostname.ToLowerInvariant();
 #else

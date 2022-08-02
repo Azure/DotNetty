@@ -13,6 +13,7 @@ namespace DotNetty.Transport.Tests.Performance.Transport
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using NBench;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public abstract class AbstractPingPongPerfSpecs<TServer, TClient>
         where TServer : IServerChannel, new()

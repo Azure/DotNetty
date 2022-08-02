@@ -69,7 +69,6 @@ namespace DotNetty.Handlers.Tests
                 select new object[] { frameLengths, isClient, writeStrategyFactory(), protocol.Item1, protocol.Item2 };
         }
 
-
         [Theory]
         [MemberData(nameof(GetTlsReadTestData))]
         public async Task TlsRead(int[] frameLengths, bool isClient, IWriteStrategy writeStrategy, SslProtocols serverProtocol, SslProtocols clientProtocol)
@@ -80,15 +79,15 @@ namespace DotNetty.Handlers.Tests
             this.Output.WriteLine($"serverProtocol: {serverProtocol}");
             this.Output.WriteLine($"clientProtocol: {clientProtocol}");
 
-            var executor = new SingleThreadEventExecutor("test executor", TimeSpan.FromMilliseconds(10));
+            var executor = new SingleThreadEventLoop("test executor", TimeSpan.FromMilliseconds(10));
 
             try
             {
                 var writeTasks = new List<Task>();
                 var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, serverProtocol, clientProtocol, writeTasks).WithTimeout(TimeSpan.FromSeconds(10));
-                EmbeddedChannel ch = pair.Item1;
+                IEmbeddedChannel ch = pair.Item1;
                 SslStream driverStream = pair.Item2;
-
+                
                 int randomSeed = Environment.TickCount;
                 var random = new Random(randomSeed);
                 IByteBuffer expectedBuffer = Unpooled.Buffer(16 * 1024);
@@ -101,6 +100,7 @@ namespace DotNetty.Handlers.Tests
                 }
                 await Task.WhenAll(writeTasks).WithTimeout(TimeSpan.FromSeconds(5));
                 IByteBuffer finalReadBuffer = Unpooled.Buffer(16 * 1024);
+                
                 await ReadOutboundAsync(async () => ch.ReadInbound<IByteBuffer>(), expectedBuffer.ReadableBytes, finalReadBuffer, TestTimeout);
                 bool isEqual = ByteBufferUtil.Equals(expectedBuffer, finalReadBuffer);
                 if (!isEqual)
@@ -160,15 +160,15 @@ namespace DotNetty.Handlers.Tests
             var writeStrategy = new AsIsWriteStrategy();
             this.Output.WriteLine($"writeStrategy: {writeStrategy}");
 
-            var executor = new SingleThreadEventExecutor("test executor", TimeSpan.FromMilliseconds(10));
+            var executor = new SingleThreadEventLoop("test executor", TimeSpan.FromMilliseconds(10));
 
             try
             {
                 var writeTasks = new List<Task>();
                 var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, serverProtocol, clientProtocol, writeTasks);
-                EmbeddedChannel ch = pair.Item1;
+                IEmbeddedChannel ch = pair.Item1;
                 SslStream driverStream = pair.Item2;
-
+                
                 int randomSeed = Environment.TickCount;
                 var random = new Random(randomSeed);
                 IByteBuffer expectedBuffer = Unpooled.Buffer(16 * 1024);
@@ -182,7 +182,7 @@ namespace DotNetty.Handlers.Tests
                         return (object)Unpooled.WrappedBuffer(data);
                     }).ToArray());
                 }
-
+                
                 IByteBuffer finalReadBuffer = Unpooled.Buffer(16 * 1024);
                 var readBuffer = new byte[16 * 1024 * 10];
                 await ReadOutboundAsync(
@@ -206,7 +206,7 @@ namespace DotNetty.Handlers.Tests
             }
         }
 
-        static async Task<Tuple<EmbeddedChannel, SslStream>> SetupStreamAndChannelAsync(bool isClient, IEventExecutor executor, IWriteStrategy writeStrategy, SslProtocols serverProtocol, SslProtocols clientProtocol, List<Task> writeTasks)
+        static async Task<Tuple<IEmbeddedChannel, SslStream>> SetupStreamAndChannelAsync(bool isClient, IEventLoop executor, IWriteStrategy writeStrategy, SslProtocols serverProtocol, SslProtocols clientProtocol, List<Task> writeTasks)
         {
             X509Certificate2 tlsCertificate = TestResourceHelper.GetTestCertificate();
             string targetHost = tlsCertificate.GetNameInfo(X509NameType.DnsName, false);
@@ -214,7 +214,12 @@ namespace DotNetty.Handlers.Tests
                 new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ClientTlsSettings(clientProtocol, false, new List<X509Certificate>(), targetHost)) :
                 new TlsHandler(new ServerTlsSettings(tlsCertificate, false, false, serverProtocol));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
-            var ch = new EmbeddedChannel(tlsHandler);
+
+#if NET5_0_OR_GREATER
+            IEmbeddedChannel ch = new SingleThreadedEmbeddedChannel(executor, tlsHandler);
+#else
+            IEmbeddedChannel ch = new EmbeddedChannel(tlsHandler);
+#endif
 
             IByteBuffer readResultBuffer = Unpooled.Buffer(4 * 1024);
             Func<ArraySegment<byte>, Task<int>> readDataFunc = async output =>
@@ -228,21 +233,40 @@ namespace DotNetty.Handlers.Tests
                 if (readResultBuffer.ReadableBytes < output.Count)
                 {
                     if (ch.Active)
-                        await ReadOutboundAsync(async () => ch.ReadOutbound<IByteBuffer>(), output.Count - readResultBuffer.ReadableBytes, readResultBuffer, TestTimeout, readResultBuffer.ReadableBytes != 0 ? 0 : 1);
+                    {
+                        await ReadOutboundAsync(
+                            async () => ch.ReadOutbound<IByteBuffer>(),
+                            output.Count - readResultBuffer.ReadableBytes,
+                            readResultBuffer,
+                            TestTimeout,
+                            readResultBuffer.ReadableBytes != 0 ? 0 : 1
+                        );
+                    }
                 }
                 int read = Math.Min(output.Count, readResultBuffer.ReadableBytes);
                 readResultBuffer.ReadBytes(output.Array, output.Offset, read);
                 return read;
             };
-            var mediationStream = new MediationStream(readDataFunc, input =>
-            {
-                Task task = executor.SubmitAsync(() => writeStrategy.WriteToChannelAsync(ch, input)).Unwrap();
-                writeTasks.Add(task);
-                return task;
-            }, () =>
-            {
-                ch.CloseAsync();
-            });
+            var mediationStream = new MediationStream(
+                output =>
+                {
+                    Task<int> task = executor.SubmitAsync(
+                        () => readDataFunc(output)
+                    ).Unwrap();
+                    return task;
+                },
+                input =>
+                {
+                    Task task = executor.SubmitAsync(
+                        () => writeStrategy.WriteToChannelAsync(ch, input)
+                    ).Unwrap();
+                    writeTasks.Add(task);
+                    return task;
+                },
+                () =>
+                {
+                    ch.CloseAsync();
+                });
 
             var driverStream = new SslStream(mediationStream, true, (_1, _2, _3, _4) => true);
             if (isClient)

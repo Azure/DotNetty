@@ -11,7 +11,7 @@ namespace DotNetty.Handlers.Tests
 
     class AsIsWriteStrategy : IWriteStrategy
     {
-        public Task WriteToChannelAsync(EmbeddedChannel channel, ArraySegment<byte> input)
+        public Task WriteToChannelAsync(IEmbeddedChannel channel, ArraySegment<byte> input)
         {
             channel.WriteInbound(Unpooled.WrappedBuffer(input.Array, input.Offset, input.Count));
             return TaskEx.Completed;

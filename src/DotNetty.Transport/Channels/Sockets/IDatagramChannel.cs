@@ -7,6 +7,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Net.NetworkInformation;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public interface IDatagramChannel : IChannel
     {
