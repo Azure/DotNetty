@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <TargetFrameworks>netcoreapp3.1;net472;net5;net6</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net472;net5.0;net6.0</TargetFrameworks>
     <AssemblyOriginatorKeyFile>../../DotNetty.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <Configurations>Debug;Release;Package</Configurations>
