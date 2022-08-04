@@ -1,3 +1,6 @@
+#### 0.7.4 August 04, 2022
+- target fix: net5 -> net5.0, net6 -> net6.0
+
 #### 0.7.3 July 28, 2022
 - target net5 and net6
 - Adopted TlsHandler for the case when Handshake completion callback is dispatched asynchronously to thread pool

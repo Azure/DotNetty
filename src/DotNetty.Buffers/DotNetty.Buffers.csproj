@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?><Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="NuGet">
-    <TargetFrameworks>netstandard2.0;net472;net5;net6</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472;net5.0;net6.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <Description>Buffer management in DotNetty</Description>
     <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <AssemblyTitle>DotNetty: buffer management</AssemblyTitle>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <VersionPrefix>0.7.3</VersionPrefix>
+    <VersionPrefix>0.7.4</VersionPrefix>
     <Authors>Microsoft</Authors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -19,7 +19,7 @@
     <PackageId>DotNetty.Buffers</PackageId>
     <PackageTags>socket;tcp;protocol;netty;dotnetty;network</PackageTags>
     <PackageProjectUrl>https://github.com/Azure/DotNetty/</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/Azure/DotNetty/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RequireLicenseAcceptance>true</RequireLicenseAcceptance>
     <RepositoryUrl>https://github.com/Azure/DotNetty/</RepositoryUrl>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard2.0' ">2.0.3</NetStandardImplicitPackageVersion>
