@@ -506,6 +506,13 @@ namespace DotNetty.Handlers.Tls
                         }
 
                         int read = currentReadFuture.Result;
+                        
+                        if (read == 0)
+                        {
+                            //Stream closed
+                            return;
+                        }
+                        
                         AddBufferToOutput(outputBuffer, read, output);
                     }
 
