@@ -1,3 +1,6 @@
+#### 0.7.5 August 31, 2022
+- Fix infinite loop caused by TlsHandler
+
 #### 0.7.4 August 04, 2022
 - target fix: net5 -> net5.0, net6 -> net6.0
 
