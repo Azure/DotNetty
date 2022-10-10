@@ -24,10 +24,6 @@ namespace DotNetty.Codecs.ProtocolBuffers
             try
             {
                 int size = message.SerializedSize;
-                if (size <= 0)
-                {
-                    return;
-                }
 
                 buffer = context.Allocator.Buffer(size);
                 ArraySegment<byte> data = buffer.GetIoBuffer(buffer.WriterIndex, size);
