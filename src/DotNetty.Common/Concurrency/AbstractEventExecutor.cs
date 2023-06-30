@@ -79,6 +79,30 @@ namespace DotNetty.Common.Concurrency
         }
 
         /// <inheritdoc cref="IScheduledExecutorService"/>
+        public virtual IScheduledTask ScheduleAtFixedRate(Action action, TimeSpan initialDelay, TimeSpan period)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <inheritdoc cref="IScheduledExecutorService"/>
+        public virtual IScheduledTask ScheduleAtFixedRate(IRunnable action, TimeSpan initialDelay, TimeSpan period)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <inheritdoc cref="IScheduledExecutorService"/>
+        public virtual IScheduledTask ScheduleWithFixedDelay(Action action, TimeSpan initialDelay, TimeSpan delay)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <inheritdoc cref="IScheduledExecutorService"/>
+        public virtual IScheduledTask ScheduleWithFixedDelay(IRunnable action, TimeSpan initialDelay, TimeSpan delay)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <inheritdoc cref="IScheduledExecutorService"/>
         public virtual Task ScheduleAsync(Action action, TimeSpan delay) =>
             this.ScheduleAsync(action, delay, CancellationToken.None);
 
