@@ -1,7 +1,7 @@
 version: 0.7.0.{build}
 pull_requests:
   do_not_increment_build_number: true
-image: Visual Studio 2019
+image: Visual Studio 2022
 build_script:
 - cmd: powershell .\build.ps1 -target PR
 test: off
