@@ -88,7 +88,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
         }
 
         static readonly byte[] Data = { 0, 1, 2, 3 };
-        static readonly bool[] BindClientOption = { true, false };
+        static readonly bool[] BindClientOption = { false, true };
 
         public static IEnumerable<object[]> GetData()
         {
@@ -189,9 +189,14 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
                         channel.Pipeline.AddLast("Dummy", new NetUtil.DummyHandler());
                     }));
 
+                this.Output.WriteLine($"Unicast client AddressFamily:({addressFamily})");
+                this.Output.WriteLine($"Unicast client Address:({address})");
                 var clientEndPoint = new IPEndPoint(
                     addressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any,
                     IPEndPoint.MinPort);
+                this.Output.WriteLine($"Unicast client ClientEndPoint:({cientEndPoint})");
+                this.Output.WriteLine($"Unicast client endPoint:({endPoint})");
+                this.Output.WriteLine($"Unicast client endPointPort:({endPoint.Port})");
 
                 clientBootstrap
                     .LocalAddress(clientEndPoint)
