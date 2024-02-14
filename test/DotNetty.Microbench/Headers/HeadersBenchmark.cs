@@ -5,7 +5,6 @@ namespace DotNetty.Microbench.Headers
 {
     using System.Collections.Generic;
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
     using BenchmarkDotNet.Engines;
     using DotNetty.Codecs;
     using DotNetty.Codecs.Http;

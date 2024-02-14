@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
 
@@ -22,6 +23,10 @@ namespace DotNetty.Transport.Channels
 
         /// <inheritdoc cref="IEventExecutorGroup"/>
         public override Task TerminationCompletion => this.innerGroup.TerminationCompletion;
+
+        protected override IEnumerable<IEventExecutor> GetItems() => this.innerGroup.Items;
+
+        public new IEnumerable<IEventLoop> Items => ((IEventLoopGroup)this.innerGroup).Items;
 
         /// <summary>
         /// Creates a new instance of <see cref="AffinitizedEventLoopGroup"/>.

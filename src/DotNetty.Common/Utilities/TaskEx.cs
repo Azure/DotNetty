@@ -6,6 +6,7 @@ namespace DotNetty.Common.Utilities
     using System;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public static class TaskEx
     {

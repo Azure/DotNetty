@@ -1,3 +1,29 @@
+#### 0.7.6 February 9, 2024
+- Fix TLS handshake for net8
+
+#### 0.7.5 August 31, 2022
+- Fix infinite loop caused by TlsHandler
+
+#### 0.7.4 August 04, 2022
+- target fix: net5 -> net5.0, net6 -> net6.0
+
+#### 0.7.3 July 28, 2022
+- target net5 and net6
+- Adopted TlsHandler for the case when Handshake completion callback is dispatched asynchronously to thread pool
+- Introduced SingleThreadedEmbededChannel for TlsHandler and SniHandler tests 
+
+#### 0.7.2 February 14, 2022
+- Start threads as background in HashedWheelTimer, LoopExecutor, ThreadDeathWatcher
+- Google.Protobuf 3.19.4 (latest) 
+
+#### 0.7.1 December 15, 2021
+- Revert to use background threads
+
+#### 0.7.0 June 11, 2021
+- Target net472 and netstandard2.0
+- Microsoft.Extensions.Logging 5.0.0
+- Microsoft.Extensions.Configuration 5.0.0
+
 #### 0.6.0 October 9, 2018
 - Clearly marks Unsafe Buffer management routines as `unsafe`
 - Changes defaults for Unpooled and Pooled buffer allocators to safe versions
@@ -121,13 +147,13 @@
 - Channel ID
 - Complete `LengthFieldBasedFrameDecoder` and `LengthFieldPrepender`
 - Resource leak detection support (basic is on by default for pooled byte buffers)
-- Proper internal logging 
+- Proper internal logging
 - Reacher byte buffer API
 - Proper utilities set for byte buffers, strings, system properties
-- Performance improvements in SingleThreadEventExecutor 
+- Performance improvements in SingleThreadEventExecutor
 
 #### 0.1.3 September 21 2015
-- Fixed `TcpSocketChannel` closure on graceful socket closure 
+- Fixed `TcpSocketChannel` closure on graceful socket closure
 - Better alignment of IChannel implementations to netty's expected behavior for `Open`, `Active`, `LocalAddress`, `RemoteAddress`
 - Proper port of `Default/IChannelPipeline` and `AbstractChannelHandlerContext` to enable channel handlers to run on different invoker.
 

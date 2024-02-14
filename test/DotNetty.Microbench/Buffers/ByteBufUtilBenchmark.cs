@@ -5,7 +5,6 @@ namespace DotNetty.Microbench.Buffers
 {
     using System.Text;
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
     using DotNetty.Buffers;
     using DotNetty.Common;
 

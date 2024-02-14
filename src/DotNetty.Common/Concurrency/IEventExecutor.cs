@@ -3,8 +3,8 @@
 
 namespace DotNetty.Common.Concurrency
 {
-    using Thread = DotNetty.Common.Concurrency.XThread;
-
+    using System.Threading;
+ 
     public interface IEventExecutor : IEventExecutorGroup
     {
         /// <summary>

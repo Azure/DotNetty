@@ -10,6 +10,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using System.Threading.Tasks;
     using DotNetty.Buffers;
     using DotNetty.Common.Concurrency;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     /// <summary>
     ///     <see cref="ISocketChannel" /> which uses Socket-based implementation.
@@ -170,9 +171,12 @@ namespace DotNetty.Transport.Channels.Sockets
         {
             try
             {
-                if (this.TryResetState(StateFlags.Open | StateFlags.Active))
+                if (this.TryResetState(StateFlags.Open))
                 {
-                    this.Socket.Shutdown(SocketShutdown.Both);
+                    if (this.TryResetState(StateFlags.Active))
+                    {
+                        this.Socket.Shutdown(SocketShutdown.Both);
+                    }
                     this.Socket.Dispose();
                 }
             }

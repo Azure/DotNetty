@@ -8,7 +8,10 @@ namespace DotNetty.Buffers
     using System.IO;
     using System.Runtime.CompilerServices;
     using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
     using DotNetty.Common.Internal;
+    using DotNetty.Common.Utilities;
 
     static unsafe class UnsafeByteBufferUtil
     {
@@ -214,6 +217,11 @@ namespace DotNetty.Buffers
 
         internal static int SetBytes(AbstractByteBuffer buf, byte* addr, int index, Stream input, int length)
         {
+            if (length == 0)
+            {
+                return 0;
+            }
+
             IByteBuffer tmpBuf = buf.Allocator.HeapBuffer(length);
             try
             {
@@ -231,6 +239,32 @@ namespace DotNetty.Buffers
             {
                 tmpBuf.Release();
             }
+        }
+
+        internal static Task<int> SetBytesAsync(AbstractByteBuffer buf, byte* addr, int index, Stream input, int length, CancellationToken cancellationToken)
+        {
+            if (length == 0)
+            {
+                return TaskEx.Zero;
+            }
+
+            IByteBuffer tmpBuf = buf.Allocator.HeapBuffer(length);
+            return tmpBuf.SetBytesAsync(0, input, length, cancellationToken)
+                .ContinueWith(t => {
+                    try
+                    {
+                        var read = t.Result;
+                        if (read > 0)
+                        {
+                            PlatformDependent.CopyMemory(tmpBuf.Array, tmpBuf.ArrayOffset, addr, read);
+                        }
+                        return read;
+                    }
+                    finally
+                    {
+                        tmpBuf.Release();
+                    }
+                });
         }
 
         internal static void GetBytes(AbstractByteBuffer buf, byte* addr, int index, IByteBuffer dst, int dstIndex, int length)
@@ -352,7 +386,7 @@ namespace DotNetty.Buffers
 
         internal static string GetString(byte* src, int length, Encoding encoding)
         {
-#if NETSTANDARD1_3
+#if NETSTANDARD2_0 || NETCOREAPP3_1_OR_GREATER || NET5_0_OR_GREATER
             return encoding.GetString(src, length);
 #else
             int charCount = encoding.GetCharCount(src, length);

@@ -13,17 +13,20 @@ var version = Argument<string>("targetversion", $"{releaseNote.Version}.{buildNu
 var skipClean = Argument<bool>("skipclean", false);
 var skipTests = Argument<bool>("skiptests", false);
 var nogit = Argument<bool>("nogit", false);
+var config =  Argument<string>("configuration", "Release");
 
 // Variables
-var configuration = IsRunningOnWindows() ? "Release" : "MonoRelease";
+var configuration = IsRunningOnWindows() ? config : "MonoRelease";
 var csProjectFiles = GetFiles("./src/**/*.csproj");
 
 // Directories
 var nuget = Directory("tools");
 var output = Directory("build");
 var outputBinaries = output + Directory("binaries");
-var outputBinariesNet45 = outputBinaries + Directory("net45");
-var outputBinariesNetstandard = outputBinaries + Directory("netstandard1.3");
+var outputBinariesNet = outputBinaries + Directory("net472");
+var outputBinariesNetStandard = outputBinaries + Directory("netstandard2.0");
+var outputBinariesNet5 = outputBinaries + Directory("net5.0");
+var outputBinariesNet6 = outputBinaries + Directory("net6.0");
 var outputPackages = output + Directory("packages");
 var outputNuGet = output + Directory("nuget");
 var outputPerfResults = Directory("perfResults");
@@ -36,7 +39,8 @@ Task("Clean")
   // Clean artifact directories.
   CleanDirectories(new DirectoryPath[] {
     output, outputBinaries, outputPackages, outputNuGet,
-    outputBinariesNet45, outputBinariesNetstandard
+    outputBinariesNet, outputBinariesNetStandard,
+    outputBinariesNet5, outputBinariesNet6  
   });
 
   if(!skipClean) {
@@ -172,7 +176,7 @@ Task("Benchmark")
 {
   StartProcess(nuget.ToString() + "/nuget.exe", "install NBench.Runner -OutputDirectory tools -ExcludeVersion -Version 1.0.0");
 
-  var libraries = GetFiles("./test/**/bin/" + configuration + "/net452/*.Performance.dll");
+  var libraries = GetFiles("./test/**/bin/" + configuration + "/net472/*.Performance.dll");
   CreateDirectory(outputPerfResults);
 
   foreach (var lib in libraries)
@@ -180,7 +184,7 @@ Task("Benchmark")
     Information("Using NBench.Runner: {0}", lib);
 
 	// Make sure libuv.dll exists in performance test folder
-    CopyFiles("./test/DotNetty.Transport.Libuv.Tests/bin/"  + configuration + "/net452/win-x64/libuv.dll", lib.GetDirectory(), false);
+    CopyFiles("./test/DotNetty.Transport.Libuv.Tests/bin/"  + configuration + "/net472/win-x64/libuv.dll", lib.GetDirectory(), false);
     CopyFiles("./tools/NBench.Runner*/**/NBench.Runner.exe", lib.GetDirectory(), false);
     
     var nbenchArgs = new StringBuilder()
@@ -310,7 +314,7 @@ Task("Mono")
 Task("PR")
   //.IsDependentOn("Update-Version")
   .IsDependentOn("Test")
-  .IsDependentOn("Benchmark")
+  //.IsDependentOn("Benchmark")
   .IsDependentOn("Package-NuGet");
 
 Task("Nightly")

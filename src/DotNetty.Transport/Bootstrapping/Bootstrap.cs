@@ -13,6 +13,7 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     /// <summary>
     /// A <see cref="Bootstrap"/> that makes it easy to bootstrap an <see cref="IChannel"/> to use for clients.

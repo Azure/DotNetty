@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal;
@@ -70,5 +71,7 @@ namespace DotNetty.Transport.Channels
 
         /// <inheritdoc />
         public new IEventLoopGroup Parent => (IEventLoopGroup)base.Parent;
+
+        public new IEnumerable<IEventLoop> Items => new[] { this };
     }
 }

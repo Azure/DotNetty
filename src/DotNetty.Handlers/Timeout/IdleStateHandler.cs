@@ -96,7 +96,12 @@ namespace DotNetty.Handlers.Timeout
     {
         static readonly TimeSpan MinTimeout = TimeSpan.FromMilliseconds(1);
 
-        readonly Action<Task> writeListener;
+        static readonly Action<Task, object> writeListener = (antecedent, state) =>
+            {
+                var self = (IdleStateHandler)state;
+                self.lastWriteTime = self.Ticks();
+                self.firstWriterIdleEvent = self.firstAllIdleEvent = true;
+            };
 
         readonly bool observeOutput;
         readonly TimeSpan readerIdleTime;
@@ -200,12 +205,6 @@ namespace DotNetty.Handlers.Timeout
             this.allIdleTime = allIdleTime > TimeSpan.Zero
                 ? TimeUtil.Max(allIdleTime, IdleStateHandler.MinTimeout)
                 : TimeSpan.Zero;
-
-            this.writeListener = new Action<Task>(antecedent =>
-                {
-                    this.lastWriteTime = this.Ticks();
-                    this.firstWriterIdleEvent = this.firstAllIdleEvent = true;
-                });
         }
 
         /// <summary>
@@ -308,7 +307,7 @@ namespace DotNetty.Handlers.Timeout
             if (this.writerIdleTime.Ticks > 0 || this.allIdleTime.Ticks > 0)
             {
                 Task task = context.WriteAsync(message);
-                task.ContinueWith(this.writeListener, TaskContinuationOptions.ExecuteSynchronously);
+                task.ContinueWith(writeListener, this, TaskContinuationOptions.ExecuteSynchronously);
 
                 return task;
             }

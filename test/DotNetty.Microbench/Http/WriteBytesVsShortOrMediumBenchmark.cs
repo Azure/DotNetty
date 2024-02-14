@@ -4,13 +4,13 @@
 namespace DotNetty.Microbench.Http
 {
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
+    using BenchmarkDotNet.Jobs;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Http;
     using DotNetty.Common;
     using DotNetty.Common.Utilities;
 
-    [CoreJob]
+    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     [BenchmarkCategory("Http")]
     public class WriteBytesVsShortOrMediumBenchmark
     {

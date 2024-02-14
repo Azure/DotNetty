@@ -9,6 +9,6 @@ namespace DotNetty.Handlers.Tests
 
     public interface IWriteStrategy
     {
-        Task WriteToChannelAsync(EmbeddedChannel channel, ArraySegment<byte> input);
+        Task WriteToChannelAsync(IEmbeddedChannel channel, ArraySegment<byte> input);
     }
 }

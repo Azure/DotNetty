@@ -4,6 +4,7 @@
 namespace DotNetty.Buffers
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Text;
     using System.Threading;
@@ -593,6 +594,156 @@ namespace DotNetty.Buffers
             return base.GetBytes(index, destination, length);
         }
 
+        public override CompositeByteBuffer AddComponent(bool increaseWriterIndex, IByteBuffer buffer)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponent(increaseWriterIndex, buffer);
+        }
+
+        public override CompositeByteBuffer AddComponent(bool increaseWriterIndex, int cIndex, IByteBuffer buffer)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponent(increaseWriterIndex, cIndex, buffer);
+        }
+
+        public override CompositeByteBuffer AddComponent(IByteBuffer buffer)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponent(buffer);
+        }
+
+        public override CompositeByteBuffer AddComponent(int cIndex, IByteBuffer buffer)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponent(cIndex, buffer);
+        }
+
+        public override CompositeByteBuffer AddComponents(bool increaseWriterIndex, params IByteBuffer[] buffers)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponents(increaseWriterIndex, buffers);
+        }
+
+        public override CompositeByteBuffer AddComponents(bool increaseWriterIndex, IEnumerable<IByteBuffer> buffers)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponents(increaseWriterIndex, buffers);
+        }
+
+        public override CompositeByteBuffer AddComponents(IEnumerable<IByteBuffer> buffers)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponents(buffers);
+        }
+
+        public override CompositeByteBuffer AddComponents(int cIndex, IEnumerable<IByteBuffer> buffers)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponents(cIndex, buffers);
+        }
+
+        public override CompositeByteBuffer AddComponents(int cIndex, params IByteBuffer[] buffers)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponents(cIndex, buffers);
+        }
+
+        public override CompositeByteBuffer AddComponents(params IByteBuffer[] buffers)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.AddComponents(buffers);
+        }
+
+        public override CompositeByteBuffer RemoveComponent(int cIndex)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RemoveComponent(cIndex);
+        }
+
+        public override CompositeByteBuffer RemoveComponents(int cIndex, int numComponents)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RemoveComponents(cIndex, numComponents);
+        }
+
+        public override CompositeByteBuffer Consolidate()
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.Consolidate();
+        }
+
+        public override CompositeByteBuffer Consolidate(int cIndex, int numComponents)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.Consolidate(cIndex, numComponents);
+        }
+
+        public override CompositeByteBuffer DiscardReadComponents()
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.DiscardReadComponents();
+        }
+
+        public override IList<IByteBuffer> Decompose(int offset, int length)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.Decompose(offset, length);
+        }
+
+        public override ICharSequence GetCharSequence(int index, int length, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.GetCharSequence(index, length, encoding);
+        }
+
+        public override ICharSequence ReadCharSequence(int length, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.ReadCharSequence(length, encoding);
+        }
+
+        public override int SetCharSequence(int index, ICharSequence sequence, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.SetCharSequence(index, sequence, encoding);
+        }
+
+        public override int WriteCharSequence(ICharSequence sequence, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.WriteCharSequence(sequence, encoding);
+        }
+
+        public override string GetString(int index, int length, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.GetString(index, length, encoding);
+        }
+
+        public override string ReadString(int length, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.ReadString(length, encoding);
+        }
+
+        public override int SetString(int index, string value, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.SetString(index, value, encoding);
+        }
+
+        public override int WriteString(string value, Encoding encoding)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.WriteString(value, encoding);
+        }
+
+        public override IEnumerator<IByteBuffer> GetEnumerator()
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.GetEnumerator();
+        }
+
         public override IReferenceCounted Retain()
         {
             this.Leak.Record();
@@ -603,6 +754,30 @@ namespace DotNetty.Buffers
         {
             this.Leak.Record();
             return base.Retain(increment);
+        }
+
+        public override IByteBuffer RetainedSlice()
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RetainedSlice();
+        }
+
+        public override IByteBuffer RetainedSlice(int index, int length)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RetainedSlice(index, length);
+        }
+
+        public override IByteBuffer RetainedDuplicate()
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RetainedDuplicate();
+        }
+
+        public override IByteBuffer ReadRetainedSlice(int length)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.ReadRetainedSlice(length);
         }
 
         public override bool Release()

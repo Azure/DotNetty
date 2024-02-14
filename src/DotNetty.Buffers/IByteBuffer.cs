@@ -959,7 +959,7 @@ namespace DotNetty.Buffers
 
         /// <summary>
         ///     Transfers bytes from this buffer's data into the specified destination buffer
-        ///     starting at the curent <see cref="ReaderIndex" /> until the destination becomes
+        ///     starting at the current <see cref="ReaderIndex" /> until the destination becomes
         ///     non-writable and increases the <see cref="ReaderIndex" /> by the number of transferred bytes.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException">
