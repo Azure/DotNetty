@@ -122,6 +122,35 @@ namespace DotNetty.Common.Concurrency
             return this.Schedule(new StateActionWithContextScheduledTask(this, action, context, state, PreciseTimeSpan.Deadline(delay)));
         }
 
+        public override IScheduledTask ScheduleAtFixedRate(Action action, TimeSpan initialDelay, TimeSpan period)
+        {
+            Contract.Requires(action != null);
+
+            return this.Schedule(new FixedRateScheduledTask(this, action, PreciseTimeSpan.Deadline(initialDelay), PreciseTimeSpan.FromTimeSpan(period)));
+        }
+
+        public override IScheduledTask ScheduleAtFixedRate(IRunnable action, TimeSpan initialDelay, TimeSpan period)
+        {
+            Contract.Requires(action != null);
+
+            return this.Schedule(new FixedRateScheduledTask(this, action, PreciseTimeSpan.Deadline(initialDelay), PreciseTimeSpan.FromTimeSpan(period)));
+
+        }
+
+        public override IScheduledTask ScheduleWithFixedDelay(Action action, TimeSpan initialDelay, TimeSpan delay)
+        {
+            Contract.Requires(action != null);
+
+            return this.Schedule(new FixedDelayScheduledTask(this, action, PreciseTimeSpan.Deadline(initialDelay), PreciseTimeSpan.FromTimeSpan(delay)));
+        }
+
+        public override IScheduledTask ScheduleWithFixedDelay(IRunnable action, TimeSpan initialDelay, TimeSpan delay)
+        {
+            Contract.Requires(action != null);
+
+            return this.Schedule(new FixedDelayScheduledTask(this, action, PreciseTimeSpan.Deadline(initialDelay), PreciseTimeSpan.FromTimeSpan(delay)));
+        }
+
         public override Task ScheduleAsync(Action action, TimeSpan delay, CancellationToken cancellationToken)
         {
             Contract.Requires(action != null);
@@ -169,7 +198,7 @@ namespace DotNetty.Common.Concurrency
             return this.Schedule(new StateActionWithContextScheduledAsyncTask(this, action, context, state, PreciseTimeSpan.Deadline(delay), cancellationToken)).Completion;
         }
 
-        protected IScheduledRunnable Schedule(IScheduledRunnable task)
+        internal IScheduledRunnable Schedule(IScheduledRunnable task)
         {
             if (this.InEventLoop)
             {

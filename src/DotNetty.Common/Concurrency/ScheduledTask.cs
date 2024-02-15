@@ -25,7 +25,7 @@ namespace DotNetty.Common.Concurrency
             this.Deadline = deadline;
         }
 
-        public PreciseTimeSpan Deadline { get; }
+        public PreciseTimeSpan Deadline { get; protected set; }
 
         public bool Cancel()
         {
