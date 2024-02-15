@@ -4,6 +4,7 @@
 namespace DotNetty.Codecs.Http.WebSockets
 {
     using System.Threading.Tasks;
+    using DotNetty.Codecs.Http.WebSockets.Handshaker;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
 
@@ -18,6 +19,8 @@ namespace DotNetty.Codecs.Http.WebSockets
         readonly int maxFramePayloadLength;
 
         readonly bool allowMaskMismatch;
+
+        readonly WebsocketHandshakerVersionSelector[] selectors;
 
         public WebSocketServerHandshakerFactory(string webSocketUrl, string subprotocols, bool allowExtensions)
             : this(webSocketUrl, subprotocols, allowExtensions, 65536)
@@ -38,53 +41,50 @@ namespace DotNetty.Codecs.Http.WebSockets
             this.allowExtensions = allowExtensions;
             this.maxFramePayloadLength = maxFramePayloadLength;
             this.allowMaskMismatch = allowMaskMismatch;
+
+            this.selectors = new WebsocketHandshakerVersionSelector[]
+            {
+                new WebsocketHandshaker00Selector(
+                    this.subprotocols,
+                    this.subprotocols,
+                    this.allowExtensions,
+                    this.maxFramePayloadLength,
+                    this.allowMaskMismatch),
+                new WebsocketHandshaker07Selector(
+                    this.subprotocols,
+                    this.subprotocols,
+                    this.allowExtensions,
+                    this.maxFramePayloadLength,
+                    this.allowMaskMismatch),
+                new WebsocketHandshaker08Selector(
+                    this.subprotocols,
+                    this.subprotocols,
+                    this.allowExtensions,
+                    this.maxFramePayloadLength,
+                    this.allowMaskMismatch),
+                new WebsocketHandshaker13Selector(
+                    this.subprotocols,
+                    this.subprotocols,
+                    this.allowExtensions,
+                    this.maxFramePayloadLength,
+                    this.allowMaskMismatch)
+            };
         }
 
         public WebSocketServerHandshaker NewHandshaker(IHttpRequest req)
         {
-            if (req.Headers.TryGet(HttpHeaderNames.SecWebsocketVersion, out ICharSequence version)
-                && version != null)
+            req.Headers.TryGet(HttpHeaderNames.SecWebsocketVersion, out ICharSequence version);
+
+            WebSocketServerHandshaker result = null;
+            foreach (WebsocketHandshakerVersionSelector selector in this.selectors)
             {
-                if (version.Equals(WebSocketVersion.V13.ToHttpHeaderValue()))
+                if (selector.Selector(version, out result))
                 {
-                    // Version 13 of the wire protocol - RFC 6455 (version 17 of the draft hybi specification).
-                    return new WebSocketServerHandshaker13(
-                        this.webSocketUrl,
-                        this.subprotocols,
-                        this.allowExtensions,
-                        this.maxFramePayloadLength,
-                        this.allowMaskMismatch);
-                }
-                else if (version.Equals(WebSocketVersion.V08.ToHttpHeaderValue()))
-                {
-                    // Version 8 of the wire protocol - version 10 of the draft hybi specification.
-                    return new WebSocketServerHandshaker08(
-                        this.webSocketUrl,
-                        this.subprotocols,
-                        this.allowExtensions,
-                        this.maxFramePayloadLength,
-                        this.allowMaskMismatch);
-                }
-                else if (version.Equals(WebSocketVersion.V07.ToHttpHeaderValue()))
-                {
-                    // Version 8 of the wire protocol - version 07 of the draft hybi specification.
-                    return new WebSocketServerHandshaker07(
-                        this.webSocketUrl,
-                        this.subprotocols,
-                        this.allowExtensions,
-                        this.maxFramePayloadLength,
-                        this.allowMaskMismatch);
-                }
-                else
-                {
-                    return null;
+                    break;
                 }
             }
-            else
-            {
-                // Assume version 00 where version header was not specified
-                return new WebSocketServerHandshaker00(this.webSocketUrl, this.subprotocols, this.maxFramePayloadLength);
-            }
+
+            return result;
         }
 
         public static Task SendUnsupportedVersionResponse(IChannel channel)
