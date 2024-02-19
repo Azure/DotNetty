@@ -1,3 +1,6 @@
+#### 0.7.6 February 9, 2024
+- Fix TLS handshake for net8
+
 #### 0.7.5 August 31, 2022
 - Fix infinite loop caused by TlsHandler
 
