@@ -69,6 +69,11 @@ namespace DotNetty.Handlers.Tls
                     int read = this.ReadFromInput(buffer);
                     return new ValueTask<int>(read);
                 }
+                //.NET8 sslStream will return 0 sometimes.like:https://github.com/dotnet/wcf/issues/5205
+                if (buffer.IsEmpty)
+                {
+                    return new ValueTask<int>(0);
+                }
 
                 Contract.Assert(this.sslOwnedMemory.IsEmpty);
                 // take note of buffer - we will pass bytes there once available
@@ -87,6 +92,12 @@ namespace DotNetty.Handlers.Tls
                             // we have the bytes available upfront - write out synchronously
                             int read = this.ReadFromInput(buffer);
                             return Task.FromResult(read);
+                        }
+
+                        //.NET8 sslStream will return 0 sometimes.like:https://github.com/dotnet/wcf/issues/5205
+                        if (buffer.IsEmpty)
+                        {
+                            return Task.FromResult(0);
                         }
 
                         Contract.Assert(this.sslOwnedMemory.IsEmpty);

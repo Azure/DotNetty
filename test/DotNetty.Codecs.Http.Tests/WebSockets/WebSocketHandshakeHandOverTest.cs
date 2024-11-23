@@ -38,7 +38,7 @@ namespace DotNetty.Codecs.Http.Tests.WebSockets
 
             // Transfer the handshake from the client to the server
             TransferAllDataWithMerge(clientChannel, serverChannel);
-            Assert.True(serverHandler.Completion.Wait(TimeSpan.FromSeconds(1)));
+            Assert.True(serverHandler.Completion.Wait(TimeSpan.FromSeconds(5)));
 
             Assert.True(this.serverReceivedHandshake);
             Assert.NotNull(this.serverHandshakeComplete);

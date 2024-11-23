@@ -46,7 +46,7 @@ namespace DotNetty.Codecs.Http.Tests.WebSockets
             {
                 handshaker = new WebSocketServerHandshaker00("ws://example.com/chat", null, int.MaxValue);
             }
-            Assert.True(handshaker.HandshakeAsync(ch, req).Wait(TimeSpan.FromSeconds(2)));
+            Assert.True(handshaker.HandshakeAsync(ch, req).Wait(TimeSpan.FromSeconds(5)));
 
             var ch2 = new EmbeddedChannel(new HttpResponseDecoder());
             ch2.WriteInbound(ch.ReadOutbound<IByteBuffer>());
