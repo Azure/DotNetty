@@ -27,6 +27,7 @@ var outputBinariesNet = outputBinaries + Directory("net472");
 var outputBinariesNetStandard = outputBinaries + Directory("netstandard2.0");
 var outputBinariesNet5 = outputBinaries + Directory("net5.0");
 var outputBinariesNet6 = outputBinaries + Directory("net6.0");
+var outputBinariesNet8 = outputBinaries + Directory("net8.0");
 var outputPackages = output + Directory("packages");
 var outputNuGet = output + Directory("nuget");
 var outputPerfResults = Directory("perfResults");
@@ -40,7 +41,7 @@ Task("Clean")
   CleanDirectories(new DirectoryPath[] {
     output, outputBinaries, outputPackages, outputNuGet,
     outputBinariesNet, outputBinariesNetStandard,
-    outputBinariesNet5, outputBinariesNet6  
+    outputBinariesNet5, outputBinariesNet6, outputBinariesNet8
   });
 
   if(!skipClean) {

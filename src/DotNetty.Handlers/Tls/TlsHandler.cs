@@ -127,6 +127,31 @@ namespace DotNetty.Handlers.Tls
             }
         }
 
+        static void ProcessPendingDataPackets(object state)
+        {
+            var self = (TlsHandler)state;
+            if (self.pendingDataPackets != null && self.pendingDataPackets.Count > 0)
+            {
+                ThreadLocalObjectList output = ThreadLocalObjectList.NewInstance();
+                try
+                {
+                    self.Unwrap(self.capturedContext, Unpooled.Empty, 0, 0, new List<(int packetLength, byte packetContentType)>(0), output);
+                    for (int i = 0; i < output.Count; i++)
+                    {
+                        self.capturedContext.FireChannelRead(output[i]);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new DecoderException(ex);
+                }
+                finally
+                {
+                    output.Return();
+                }
+            }
+        }
+
         static void HandleHandshakeCompletedInternal(Task task, TlsHandler self)
         {
             switch (task.Status)
@@ -144,34 +169,32 @@ namespace DotNetty.Handlers.Tls
                     // Unwrap any pending app data packets in case, when read completed and no more messages in the channel.
                     if (self.pendingDataPackets != null && self.pendingDataPackets.Count > 0)
                     {
-                        ThreadLocalObjectList output = ThreadLocalObjectList.NewInstance();
-                        try
-                        {
-                            self.Unwrap(self.capturedContext, Unpooled.Empty, 0, 0, new List<(int packetLength, byte packetContentType)>(0), output);
-                            for (int i = 0; i < output.Count; i++)
-                            {
-                                self.capturedContext.FireChannelRead(output[i]);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            throw new DecoderException(ex);
-                        }
-                        finally
-                        {
-                            output.Return();
-                        }
+                        self.capturedContext.Executor.Execute(() => ProcessPendingDataPackets(self));
                     }
 
-                    if (oldState.Has(TlsHandlerState.ReadRequestedBeforeAuthenticated) && !self.capturedContext.Channel.Configuration.AutoRead)
-                    {
-                        self.capturedContext.Read();
-                    }
-
+                    // Process flushed data before triggering reads (if any was queued before handshake)
                     if (oldState.Has(TlsHandlerState.FlushedBeforeHandshake))
                     {
                         self.Wrap(self.capturedContext);
                         self.capturedContext.Flush();
+                    }
+
+                    // Ensure any pending reads are processed after handshake completion
+                    // This prevents MQTT connection timing issues where application data
+                    // is available but not read due to handshake completion timing
+                    self.ReadIfNeededDuringHandshake(self.capturedContext);
+
+                    // Post-handshake read trigger - moved to END (after all data unwrapping)
+                    // This ensures application data is fully processed before triggering the next read
+                    // Matches Netty's behavior in setHandshakeSuccess() (SslHandler.java lines 2018-2023)
+                    if (oldState.Has(TlsHandlerState.ReadDuringHandshake))
+                    {
+                        // Clear the flag and trigger read if auto-read is disabled
+                        self.state &= ~TlsHandlerState.ReadDuringHandshake;
+                        if (!self.capturedContext.Channel.Configuration.AutoRead)
+                        {
+                            self.capturedContext.Read();
+                        }
                     }
 
                     break;
@@ -306,6 +329,12 @@ namespace DotNetty.Handlers.Tls
                     // previous decode(...) call.
                     this.firedChannelRead = output.Count > 0;
                 }
+
+                // Also set state flag for readIfNeeded logic (Netty compatibility)
+                if (output.Count > 0)
+                {
+                    this.state |= TlsHandlerState.FiredChannelRead;
+                }
             }
 
             if (nonSslRecord)
@@ -327,17 +356,33 @@ namespace DotNetty.Handlers.Tls
             this.ReadIfNeeded(ctx);
 
             this.firedChannelRead = false;
+            this.state &= ~TlsHandlerState.FiredChannelRead;  // Clear state flag (Netty compatibility)
             ctx.FireChannelReadComplete();
         }
 
         void ReadIfNeeded(IChannelHandlerContext ctx)
         {
             // if handshake is not finished yet, we need more data
-            if (!ctx.Channel.Configuration.AutoRead && (!this.firedChannelRead || !this.state.HasAny(TlsHandlerState.AuthenticationCompleted)))
+            if (!ctx.Channel.Configuration.AutoRead && (!this.state.Has(TlsHandlerState.FiredChannelRead) || !this.state.HasAny(TlsHandlerState.AuthenticationCompleted)))
             {
                 // No auto-read used and no message was passed through the ChannelPipeline or the handshake was not completed
                 // yet, which means we need to trigger the read to ensure we will not stall
                 ctx.Read();
+            }
+        }
+
+        void ReadIfNeededDuringHandshake(IChannelHandlerContext ctx)
+        {
+            // Enhanced read management during handshake to prevent MQTT connection timing issues
+            if (!ctx.Channel.Configuration.AutoRead)
+            {
+                // Always trigger read during handshake when auto-read is disabled to prevent stalls
+                // This ensures MQTT connections don't timeout waiting for TLS handshake completion
+                if (!this.state.HasAny(TlsHandlerState.AuthenticationCompleted) || 
+                    (this.state.Has(TlsHandlerState.ReadRequestedBeforeAuthenticated) && this.firedChannelRead))
+                {
+                    ctx.Read();
+                }
             }
         }
         
@@ -563,7 +608,9 @@ namespace DotNetty.Handlers.Tls
             TlsHandlerState oldState = this.state;
             if (!oldState.HasAny(TlsHandlerState.AuthenticationCompleted))
             {
-                this.state = oldState | TlsHandlerState.ReadRequestedBeforeAuthenticated;
+                // Track both that read was requested and that it happened during handshake (Netty compatibility)
+                this.state = oldState | TlsHandlerState.ReadRequestedBeforeAuthenticated |
+                                        TlsHandlerState.ReadDuringHandshake;
             }
 
             context.Read();
@@ -699,7 +746,8 @@ namespace DotNetty.Handlers.Tls
         Task FinishWrapNonAppDataAsync(byte[] buffer, int offset, int count)
         {
             var future = this.capturedContext.WriteAndFlushAsync(Unpooled.WrappedBuffer(buffer, offset, count));
-            this.ReadIfNeeded(this.capturedContext);
+            // Use enhanced read management during handshake to prevent timing issues
+            this.ReadIfNeededDuringHandshake(this.capturedContext);
             return future;
         }
 
@@ -760,6 +808,8 @@ namespace DotNetty.Handlers.Tls
         FailedAuthentication = 1 << 2,
         ReadRequestedBeforeAuthenticated = 1 << 3,
         FlushedBeforeHandshake = 1 << 4,
+        FiredChannelRead = 1 << 5,              // Track if channelRead was fired (Netty STATE_FIRE_CHANNEL_READ)
+        ReadDuringHandshake = 1 << 6,           // Track read() called during handshake (Netty STATE_READ_DURING_HANDSHAKE)
         AuthenticationStarted = Authenticating | Authenticated | FailedAuthentication,
         AuthenticationCompleted = Authenticated | FailedAuthentication
     }

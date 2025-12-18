@@ -1,3 +1,8 @@
+#### 0.7.7 December 17, 2025
+- Updated all projects to target net8.0
+- Ported TLS fixes from Java Netty
+- TLS event loop packet handling fix to prevent dropped connections
+
 #### 0.7.6 February 9, 2024
 - Fix TLS handshake for net8
 
