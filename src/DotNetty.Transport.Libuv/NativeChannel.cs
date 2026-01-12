@@ -13,6 +13,7 @@ namespace DotNetty.Transport.Libuv
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Libuv.Native;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public abstract class NativeChannel : AbstractChannel
     {

@@ -4,6 +4,7 @@
 namespace DotNetty.Transport.Channels
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -28,6 +29,12 @@ namespace DotNetty.Transport.Channels
 
         /// <inheritdoc />
         public override Task TerminationCompletion { get; }
+
+        /// <inheritdoc />
+        protected override IEnumerable<IEventExecutor> GetItems() => this.eventLoops;
+
+        /// <inheritdoc />
+        public new IEnumerable<IEventLoop> Items => this.eventLoops;
 
         /// <summary>Creates a new instance of <see cref="MultithreadEventLoopGroup"/>.</summary>
         public MultithreadEventLoopGroup()

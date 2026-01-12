@@ -11,6 +11,7 @@ namespace DotNetty.Transport.Libuv.Tests
     using Xunit;
     using Xunit.Abstractions;
     using static TestUtil;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public sealed class EventLoopTests : TestBase, IDisposable
     {

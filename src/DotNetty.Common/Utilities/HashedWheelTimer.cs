@@ -15,6 +15,7 @@ namespace DotNetty.Common.Utilities
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public sealed class HashedWheelTimer : ITimer
     {
@@ -27,7 +28,7 @@ namespace DotNetty.Common.Utilities
         const int InstanceCountLimit = 64;
 
         readonly Worker worker;
-        readonly XThread workerThread;
+        readonly Thread workerThread;
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         const int WorkerStateInit = 0;
@@ -98,7 +99,9 @@ namespace DotNetty.Common.Utilities
                         tickInterval,
                         long.MaxValue / this.wheel.Length));
             }
-            this.workerThread = new XThread(st => this.worker.Run());
+
+            this.workerThread = new Thread(st => this.worker.Run());
+            this.workerThread.IsBackground = true;
 
             this.maxPendingTimeouts = maxPendingTimeouts;
 
@@ -187,7 +190,7 @@ namespace DotNetty.Common.Utilities
         {
             GC.SuppressFinalize(this);
 
-            if (XThread.CurrentThread == this.workerThread)
+            if (Thread.CurrentThread == this.workerThread)
             {
                 throw new InvalidOperationException($"{nameof(HashedWheelTimer)}.stop() cannot be called from timer task.");
             }
@@ -353,7 +356,7 @@ namespace DotNetty.Common.Utilities
                         continue;
                     }
 
-                    long calculated = (timeout.Deadline.Ticks + this.owner.tickDuration - 1) / this.owner.tickDuration; // ceiling to timeout later rather than earlier
+                    long calculated = timeout.Deadline.Ticks / this.owner.tickDuration;
                     timeout.RemainingRounds = (calculated - this.tick) / this.owner.wheel.Length;
 
                     long ticks = Math.Max(calculated, this.tick); // Ensure we don't schedule for past.
@@ -615,7 +618,7 @@ namespace DotNetty.Common.Utilities
                             // The timeout was placed into a wrong slot. This should never happen.
                             throw new InvalidOperationException(
                                 string.Format(
-                                    "timeout.deadline (%d) > deadline (%d)",
+                                    "timeout.deadline {0} > deadline {1}",
                                     timeout.Deadline,
                                     deadline));
                         }

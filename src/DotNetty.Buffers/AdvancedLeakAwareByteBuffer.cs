@@ -771,6 +771,30 @@ namespace DotNetty.Buffers
             return base.Retain(increment);
         }
 
+        public override IByteBuffer RetainedSlice()
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RetainedSlice();
+        }
+
+        public override IByteBuffer RetainedSlice(int index, int length)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RetainedSlice(index, length);
+        }
+
+        public override IByteBuffer RetainedDuplicate()
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.RetainedDuplicate();
+        }
+
+        public override IByteBuffer ReadRetainedSlice(int length)
+        {
+            RecordLeakNonRefCountingOperation(this.Leak);
+            return base.ReadRetainedSlice(length);
+        }
+
         public override IReferenceCounted Touch()
         {
             this.Leak.Record();

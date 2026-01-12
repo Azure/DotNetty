@@ -5,6 +5,18 @@ namespace DotNetty.Common.Utilities
 {
     using System;
 
+    internal static class AttributeKey
+    {
+        // Keep the instance of AttributeConstantPool out of generic classes, to make it an really singleton for different generic types.
+        // see https://github.com/Azure/DotNetty/issues/498
+        public static readonly ConstantPool Pool = new AttributeConstantPool();
+
+        sealed class AttributeConstantPool : ConstantPool
+        {
+            protected override IConstant NewConstant<TValue>(int id, string name) => new AttributeKey<TValue>(id, name);
+        };
+    }
+
     /// <summary>
     ///     Key which can be used to access <seealso cref="Attribute" /> out of the <see cref="IAttributeMap" />. Be aware that
     ///     it is not be possible to have multiple keys with the same name.
@@ -14,12 +26,7 @@ namespace DotNetty.Common.Utilities
     /// </typeparam>
     public sealed class AttributeKey<T> : AbstractConstant<AttributeKey<T>>
     {
-        public static readonly ConstantPool Pool = new AttributeConstantPool();
-
-        sealed class AttributeConstantPool : ConstantPool
-        {
-            protected override IConstant NewConstant<TValue>(int id, string name) => new AttributeKey<TValue>(id, name);
-        };
+        public static readonly ConstantPool Pool = AttributeKey.Pool;
 
         /// <summary>Returns the singleton instance of the {@link AttributeKey} which has the specified <c>name</c>.</summary>
         public static AttributeKey<T> ValueOf(string name) => (AttributeKey<T>)Pool.ValueOf<T>(name);

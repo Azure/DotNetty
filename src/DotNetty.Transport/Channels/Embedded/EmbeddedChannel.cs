@@ -14,7 +14,7 @@ namespace DotNetty.Transport.Channels.Embedded
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
 
-    public class EmbeddedChannel : AbstractChannel
+    public class EmbeddedChannel : AbstractChannel, IEmbeddedChannel
     {
         static readonly EndPoint LOCAL_ADDRESS = new EmbeddedSocketAddress();
         static readonly EndPoint REMOTE_ADDRESS = new EmbeddedSocketAddress();

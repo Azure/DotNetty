@@ -12,6 +12,7 @@ namespace DotNetty.Transport.Channels.Sockets
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public abstract class AbstractSocketChannel : AbstractChannel
     {

@@ -560,16 +560,20 @@ namespace DotNetty.Buffers
 
         protected internal abstract void _SetShortLE(int index, int value);
 
-        public virtual IByteBuffer SetUnsignedShort(int index, ushort value)
+        public IByteBuffer SetUnsignedShort(int index, ushort value)
         {
-            this.SetShort(index, value);
-            return this;
+            unchecked
+            {
+                return this.SetShort(index, (short)value);
+            }
         }
 
-        public virtual IByteBuffer SetUnsignedShortLE(int index, ushort value)
+        public IByteBuffer SetUnsignedShortLE(int index, ushort value)
         {
-            this.SetShortLE(index, value);
-            return this;
+            unchecked
+            {
+                return this.SetShortLE(index, (short)value);
+            }
         }
 
         public virtual IByteBuffer SetChar(int index, char value)

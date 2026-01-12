@@ -8,23 +8,18 @@ namespace DotNetty.Buffers
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
-    using DotNetty.Common;
 
     sealed unsafe class PooledUnsafeDirectByteBuffer : PooledByteBuffer<byte[]>
     {
-        static readonly ThreadLocalPool<PooledUnsafeDirectByteBuffer> Recycler = new ThreadLocalPool<PooledUnsafeDirectByteBuffer>(handle => new PooledUnsafeDirectByteBuffer(handle, 0));
-
         byte* memoryAddress;
 
         internal static PooledUnsafeDirectByteBuffer NewInstance(int maxCapacity)
         {
-            PooledUnsafeDirectByteBuffer buf = Recycler.Take();
-            buf.Reuse(maxCapacity);
-            return buf;
+            return new PooledUnsafeDirectByteBuffer(maxCapacity);
         }
 
-        PooledUnsafeDirectByteBuffer(ThreadLocalPool.Handle recyclerHandle, int maxCapacity)
-            : base(recyclerHandle, maxCapacity)
+        PooledUnsafeDirectByteBuffer(int maxCapacity)
+            : base(maxCapacity)
         {
         }
 
@@ -47,6 +42,14 @@ namespace DotNetty.Buffers
         }
 
         public override bool IsDirect => true;
+
+        internal void Reuse(int maxCapacity)
+        {
+            this.SetMaxCapacity(maxCapacity);
+            this.SetReferenceCount(1);
+            this.SetIndex0(0, 0);
+            this.DiscardMarks();
+        }
 
         protected internal override byte _GetByte(int index) => *(this.memoryAddress + index);
 
@@ -121,8 +124,7 @@ namespace DotNetty.Buffers
         public override Task<int> SetBytesAsync(int index, Stream src, int length, CancellationToken cancellationToken)
         {
             this.CheckIndex(index, length);
-            int read = UnsafeByteBufferUtil.SetBytes(this, this.Addr(index), index, src, length);
-            return Task.FromResult(read);
+            return UnsafeByteBufferUtil.SetBytesAsync(this, this.Addr(index), index, src, length, cancellationToken);
         }
 
         public override IByteBuffer Copy(int index, int length)

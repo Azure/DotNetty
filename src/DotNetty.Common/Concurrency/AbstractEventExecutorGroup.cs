@@ -4,6 +4,7 @@
 namespace DotNetty.Common.Concurrency
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -19,6 +20,8 @@ namespace DotNetty.Common.Concurrency
         public abstract bool IsShuttingDown { get; }
 
         public abstract Task TerminationCompletion { get; }
+
+        public IEnumerable<IEventExecutor> Items => this.GetItems();
 
         public abstract IEventExecutor GetNext();
 
@@ -65,5 +68,7 @@ namespace DotNetty.Common.Concurrency
         public Task ShutdownGracefullyAsync() => this.ShutdownGracefullyAsync(DefaultShutdownQuietPeriod, DefaultShutdownTimeout);
 
         public abstract Task ShutdownGracefullyAsync(TimeSpan quietPeriod, TimeSpan timeout);
+
+        protected abstract IEnumerable<IEventExecutor> GetItems();
     }
 }

@@ -13,6 +13,7 @@ namespace DotNetty.Common.Tests.Concurrency
     using DotNetty.Tests.Common;
     using Xunit;
     using Xunit.Abstractions;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public class SingleThreadEventExecutorTests : TestBase
     {

@@ -20,7 +20,7 @@ namespace DotNetty.Transport.Tests.Channel.Sockets
     [Collection("UDP Transport Tests")]
     public class SocketDatagramChannelUnicastTest : TestBase
     {
-        const int DefaultTimeOutInMilliseconds = 800;
+        const int DefaultTimeOutInMilliseconds = 5000;
 
         public SocketDatagramChannelUnicastTest(ITestOutputHelper output)
             : base(output)

@@ -14,6 +14,7 @@ namespace DotNetty.Transport.Bootstrapping
     using DotNetty.Common.Internal.Logging;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     /// <summary>
     /// This is a helper class that makes it easy to bootstrap an <see cref="IChannel"/>. It supports method-

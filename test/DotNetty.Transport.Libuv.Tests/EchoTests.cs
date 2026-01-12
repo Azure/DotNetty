@@ -14,6 +14,7 @@ namespace DotNetty.Transport.Libuv.Tests
     using Xunit.Abstractions;
 
     using static TestUtil;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     [Collection(LibuvTransport)]
     public sealed class EchoTests : IDisposable

@@ -398,7 +398,7 @@ namespace DotNetty.Codecs
         /// <param name="length">The length of the framelenght field. Expected: 1, 2, 3, 4, or 8.</param>
         /// <param name="order">The preferred <see cref="ByteOrder" /> of buffer.</param>
         /// <returns>A long integer that represents the unadjusted length of the next frame.</returns>
-        protected long GetUnadjustedFrameLength(IByteBuffer buffer, int offset, int length, ByteOrder order)
+        protected virtual long GetUnadjustedFrameLength(IByteBuffer buffer, int offset, int length, ByteOrder order)
         {
             long frameLength;
             switch (length)

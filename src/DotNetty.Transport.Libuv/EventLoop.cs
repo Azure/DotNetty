@@ -3,6 +3,7 @@
 
 namespace DotNetty.Transport.Libuv
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using DotNetty.Transport.Channels;
 
@@ -19,5 +20,7 @@ namespace DotNetty.Transport.Libuv
         public Task RegisterAsync(IChannel channel) => channel.Unsafe.RegisterAsync(this);
 
         public new IEventLoopGroup Parent => (IEventLoopGroup)base.Parent;
+
+        public new IEnumerable<IEventLoop> Items => new[] { this };
     }
 }

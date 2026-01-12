@@ -11,6 +11,7 @@ namespace DotNetty.Common.Tests.Utilities
     using DotNetty.Tests.Common;
     using Xunit;
     using Xunit.Abstractions;
+    using ITimer = DotNetty.Common.Utilities.ITimer;
 
     public class HashedWheelTimerTest : TestBase
     {

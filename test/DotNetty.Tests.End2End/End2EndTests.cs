@@ -23,6 +23,7 @@ namespace DotNetty.Tests.End2End
     using DotNetty.Transport.Channels.Sockets;
     using Xunit;
     using Xunit.Abstractions;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public class End2EndTests : TestBase
     {

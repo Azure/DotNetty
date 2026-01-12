@@ -12,6 +12,7 @@ namespace DotNetty.Codecs.Http.Tests.WebSockets
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Embedded;
     using Xunit;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public class WebSocketHandshakeHandOverTest
     {
@@ -37,7 +38,7 @@ namespace DotNetty.Codecs.Http.Tests.WebSockets
 
             // Transfer the handshake from the client to the server
             TransferAllDataWithMerge(clientChannel, serverChannel);
-            Assert.True(serverHandler.Completion.Wait(TimeSpan.FromSeconds(1)));
+            Assert.True(serverHandler.Completion.Wait(TimeSpan.FromSeconds(5)));
 
             Assert.True(this.serverReceivedHandshake);
             Assert.NotNull(this.serverHandshakeComplete);

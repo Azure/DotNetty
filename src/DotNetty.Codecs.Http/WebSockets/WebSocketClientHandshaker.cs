@@ -11,6 +11,7 @@ namespace DotNetty.Codecs.Http.WebSockets
     using DotNetty.Common.Concurrency;
     using DotNetty.Common.Utilities;
     using DotNetty.Transport.Channels;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public abstract class WebSocketClientHandshaker
     {

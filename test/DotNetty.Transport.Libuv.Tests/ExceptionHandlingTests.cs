@@ -15,6 +15,7 @@ namespace DotNetty.Transport.Libuv.Tests
     using Xunit;
 
     using static TestUtil;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     [Collection(LibuvTransport)]
     public sealed class ExceptionHandlingTests : IDisposable

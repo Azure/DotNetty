@@ -6,10 +6,10 @@ namespace DotNetty.Buffers
     using System;
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
+    using System.Threading;
     using DotNetty.Common;
     using DotNetty.Common.Internal;
     using DotNetty.Common.Internal.Logging;
-    using Thread = DotNetty.Common.Concurrency.XThread;
 
     /// <summary>
     ///     Acts a Thread cache for allocations. This implementation is moduled after

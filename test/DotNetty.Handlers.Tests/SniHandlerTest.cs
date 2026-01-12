@@ -72,13 +72,13 @@ namespace DotNetty.Handlers.Tests
             this.Output.WriteLine($"protocol: {protocol}");
             this.Output.WriteLine($"targetHost: {targetHost}");
 
-            var executor = new SingleThreadEventExecutor("test executor", TimeSpan.FromMilliseconds(10));
+            var executor = new SingleThreadEventLoop("test executor", TimeSpan.FromMilliseconds(10));
 
             try
             {
                 var writeTasks = new List<Task>();
                 var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, protocol, writeTasks, targetHost).WithTimeout(TimeSpan.FromSeconds(10));
-                EmbeddedChannel ch = pair.Item1;
+                IEmbeddedChannel ch = pair.Item1;
                 SslStream driverStream = pair.Item2;
 
                 int randomSeed = Environment.TickCount;
@@ -139,13 +139,13 @@ namespace DotNetty.Handlers.Tests
             this.Output.WriteLine($"targetHost: {targetHost}");
 
             var writeStrategy = new AsIsWriteStrategy();
-            var executor = new SingleThreadEventExecutor("test executor", TimeSpan.FromMilliseconds(10));
+            var executor = new SingleThreadEventLoop("test executor", TimeSpan.FromMilliseconds(10));
 
             try
             {
                 var writeTasks = new List<Task>();
                 var pair = await SetupStreamAndChannelAsync(isClient, executor, writeStrategy, protocol, writeTasks, targetHost);
-                EmbeddedChannel ch = pair.Item1;
+                IEmbeddedChannel ch = pair.Item1;
                 SslStream driverStream = pair.Item2;
 
                 int randomSeed = Environment.TickCount;
@@ -189,7 +189,7 @@ namespace DotNetty.Handlers.Tests
             }
         }
 
-        static async Task<Tuple<EmbeddedChannel, SslStream>> SetupStreamAndChannelAsync(bool isClient, IEventExecutor executor, IWriteStrategy writeStrategy, SslProtocols protocol, List<Task> writeTasks, string targetHost)
+        static async Task<Tuple<IEmbeddedChannel, SslStream>> SetupStreamAndChannelAsync(bool isClient, IEventLoop executor, IWriteStrategy writeStrategy, SslProtocols protocol, List<Task> writeTasks, string targetHost)
         {
             IChannelHandler tlsHandler = isClient ?
                 (IChannelHandler)new TlsHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) =>
@@ -199,13 +199,19 @@ namespace DotNetty.Handlers.Tests
                 }), new ClientTlsSettings(protocol, false, new List<X509Certificate>(), targetHost)) :
                 new SniHandler(stream => new SslStream(stream, true, (sender, certificate, chain, errors) => true), new ServerTlsSniSettings(CertificateSelector));
             //var ch = new EmbeddedChannel(new LoggingHandler("BEFORE"), tlsHandler, new LoggingHandler("AFTER"));
-            var ch = new EmbeddedChannel(tlsHandler);
-
+#if NET5_0_OR_GREATER
+            IEmbeddedChannel ch = new SingleThreadedEmbeddedChannel(executor, tlsHandler);
+#else
+            IEmbeddedChannel ch = new EmbeddedChannel(tlsHandler);
+#endif
             if (!isClient)
             {
                 // check if in the beginning snihandler exists in the pipeline, but not tls handler
-                Assert.NotNull(ch.Pipeline.Get<SniHandler>());
-                Assert.Null(ch.Pipeline.Get<TlsHandler>());
+                await AssertEx.EventuallyAsync(
+                    () => ch.Pipeline.Get<SniHandler>() != null && ch.Pipeline.Get<TlsHandler>() == null,
+                    TimeSpan.FromMilliseconds(10),
+                    TimeSpan.FromSeconds(5)
+                );
             }
 
             IByteBuffer readResultBuffer = Unpooled.Buffer(4 * 1024);

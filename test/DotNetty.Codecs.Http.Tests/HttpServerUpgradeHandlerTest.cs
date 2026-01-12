@@ -13,6 +13,7 @@ namespace DotNetty.Codecs.Http.Tests
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Embedded;
     using Xunit;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     public class HttpServerUpgradeHandlerTest
     {

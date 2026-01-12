@@ -7,6 +7,7 @@
 namespace DotNetty.Transport.Libuv
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Threading.Tasks;
@@ -17,8 +18,8 @@ namespace DotNetty.Transport.Libuv
     using System.Threading;
     using DotNetty.Common;
     using DotNetty.Transport.Libuv.Native;
-
     using Timer = Native.Timer;
+    using TaskCompletionSource = DotNetty.Common.Concurrency.TaskCompletionSource;
 
     class LoopExecutor : AbstractScheduledEventExecutor
     {
@@ -36,7 +37,7 @@ namespace DotNetty.Transport.Libuv
         readonly ThreadLocalPool<WriteRequest> writeRequestPool = new ThreadLocalPool<WriteRequest>(handle => new WriteRequest(handle));
         readonly long preciseBreakoutInterval;
         readonly IQueue<IRunnable> taskQueue;
-        readonly XThread thread;
+        readonly Thread thread;
         readonly TaskScheduler scheduler;
         readonly ManualResetEventSlim loopRunStart;
         readonly TaskCompletionSource terminationCompletionSource;
@@ -80,7 +81,11 @@ namespace DotNetty.Transport.Libuv
             {
                 name = $"{name}({threadName})";
             }
-            this.thread = new XThread(Run) { Name = name };
+            this.thread = new Thread(Run)
+            {
+                Name = name, 
+                IsBackground = true
+            };
             this.loopRunStart = new ManualResetEventSlim(false, 1);
         }
 
@@ -97,7 +102,7 @@ namespace DotNetty.Transport.Libuv
 
         internal Loop UnsafeLoop => this.loop;
 
-        internal int LoopThreadId => this.thread.Id;
+        internal int LoopThreadId => this.thread.ManagedThreadId;
 
         static void Run(object state)
         {
@@ -297,7 +302,7 @@ namespace DotNetty.Transport.Libuv
             long runTasks = 0;
             long executionTime;
             this.wakeUp = false;
-            for (;;)
+            for (; ; )
             {
                 SafeExecute(task);
 
@@ -402,7 +407,7 @@ namespace DotNetty.Transport.Libuv
             {
                 return false;
             }
-            for (;;)
+            for (; ; )
             {
                 SafeExecute(task);
                 task = PollTaskFrom(taskQueue);
@@ -424,7 +429,7 @@ namespace DotNetty.Transport.Libuv
 
         public override bool IsTerminated => this.executionState == TerminatedState;
 
-        public override bool IsInEventLoop(XThread t) => this.thread == t;
+        public override bool IsInEventLoop(Thread t) => this.thread == t;
 
         void WakeUp(bool inEventLoop)
         {
@@ -488,7 +493,7 @@ namespace DotNetty.Transport.Libuv
             bool inEventLoop = this.InEventLoop;
             bool wakeUpLoop;
             int oldState;
-            for (;;)
+            for (; ; )
             {
                 if (this.IsShuttingDown)
                 {
@@ -540,5 +545,7 @@ namespace DotNetty.Transport.Libuv
 
             return this.TerminationCompletion;
         }
+
+        protected override IEnumerable<IEventExecutor> GetItems() => new[] { this };
     }
 }

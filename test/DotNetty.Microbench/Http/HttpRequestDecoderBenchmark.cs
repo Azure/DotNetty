@@ -5,7 +5,6 @@ namespace DotNetty.Microbench.Http
 {
     using System.Text;
     using BenchmarkDotNet.Attributes;
-    using BenchmarkDotNet.Attributes.Jobs;
     using BenchmarkDotNet.Engines;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Http;
