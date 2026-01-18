@@ -4,6 +4,8 @@
 namespace DotNetty.Codecs.Http.Tests
 {
     using System;
+    using System.Collections.Generic;
+    using System.Runtime.InteropServices;
     using System.Text;
     using DotNetty.Buffers;
     using DotNetty.Codecs.Compression;
@@ -13,6 +15,30 @@ namespace DotNetty.Codecs.Http.Tests
 
     public sealed class HttpContentCompressorTest
     {
+        // GZIPHeader
+        public static IEnumerable<object[]> GetGZipHeader()
+        {
+            string gzipHeaderHex = "";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                gzipHeaderHex = "1f8b080000000000000b";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                gzipHeaderHex = "1f8b0800000000000003";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                gzipHeaderHex = "1f8b0800000000000007";
+            }
+            else
+            {
+                gzipHeaderHex = "1f8b08000000000000ff";
+            }
+
+            yield return new object[] { gzipHeaderHex };
+        }
+        
         [Fact]
         public void GetTargetContentEncoding()
         {
@@ -56,8 +82,9 @@ namespace DotNetty.Codecs.Http.Tests
             }
         }
 
-        [Fact]
-        public void SplitContent()
+        [Theory]
+        [MemberData(nameof(GetGZipHeader))]
+        public void SplitContent(string gzipHeaderHex)
         {
             var ch = new EmbeddedChannel(new HttpContentCompressor());
             ch.WriteInbound(NewRequest());
@@ -70,7 +97,7 @@ namespace DotNetty.Codecs.Http.Tests
             AssertEncodedResponse(ch);
 
             var chunk = ch.ReadOutbound<IHttpContent>();
-            Assert.Equal("1f8b080000000000000bf248cdc901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
+            Assert.Equal(gzipHeaderHex + "f248cdc901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
             chunk.Release();
 
             chunk = ch.ReadOutbound<IHttpContent>();
@@ -94,8 +121,9 @@ namespace DotNetty.Codecs.Http.Tests
             Assert.Null(last);
         }
 
-        [Fact]
-        public void ChunkedContent()
+        [Theory]
+        [MemberData(nameof(GetGZipHeader))]
+        public void ChunkedContent(string gzipHeaderHex)
         {
             var ch = new EmbeddedChannel(new HttpContentCompressor());
             ch.WriteInbound(NewRequest());
@@ -111,7 +139,7 @@ namespace DotNetty.Codecs.Http.Tests
             ch.WriteOutbound(new DefaultLastHttpContent(Unpooled.CopiedBuffer(Encoding.ASCII.GetBytes("orld"))));
 
             var chunk = ch.ReadOutbound<IHttpContent>();
-            Assert.Equal("1f8b080000000000000bf248cdc901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
+            Assert.Equal(gzipHeaderHex + "f248cdc901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
             chunk.Release();
 
             chunk = ch.ReadOutbound<IHttpContent>();
@@ -135,8 +163,9 @@ namespace DotNetty.Codecs.Http.Tests
             Assert.Null(last);
         }
 
-        [Fact]
-        public void ChunkedContentWithTrailingHeader()
+        [Theory]
+        [MemberData(nameof(GetGZipHeader))]
+        public void ChunkedContentWithTrailingHeader(string gzipHeaderHex)
         {
             var ch = new EmbeddedChannel(new HttpContentCompressor());
             ch.WriteInbound(NewRequest());
@@ -154,7 +183,7 @@ namespace DotNetty.Codecs.Http.Tests
             ch.WriteOutbound(content);
 
             var chunk = ch.ReadOutbound<IHttpContent>();
-            Assert.Equal("1f8b080000000000000bf248cdc901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
+            Assert.Equal(gzipHeaderHex + "f248cdc901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
             chunk.Release();
 
             chunk = ch.ReadOutbound<IHttpContent>();
@@ -178,8 +207,9 @@ namespace DotNetty.Codecs.Http.Tests
             Assert.Null(last);
         }
 
-        [Fact]
-        public void FullContentWithContentLength()
+        [Theory]
+        [MemberData(nameof(GetGZipHeader))]
+        public void FullContentWithContentLength(string gzipHeaderHex)
         {
             var ch = new EmbeddedChannel(new HttpContentCompressor());
             ch.WriteInbound(NewRequest());
@@ -203,7 +233,7 @@ namespace DotNetty.Codecs.Http.Tests
 
             var c = ch.ReadOutbound<IHttpContent>();
             observedLength += c.Content.ReadableBytes;
-            Assert.Equal("1f8b080000000000000bf248cdc9c9d75108cf2fca4901000000ffff", ByteBufferUtil.HexDump(c.Content));
+            Assert.Equal(gzipHeaderHex + "f248cdc9c9d75108cf2fca4901000000ffff", ByteBufferUtil.HexDump(c.Content));
             c.Release();
 
             c = ch.ReadOutbound<IHttpContent>();
@@ -220,8 +250,9 @@ namespace DotNetty.Codecs.Http.Tests
             Assert.Equal(contentLengthHeaderValue, observedLength);
         }
 
-        [Fact]
-        public void FullContent()
+        [Theory]
+        [MemberData(nameof(GetGZipHeader))]
+        public void FullContent(string gzipHeaderHex)
         {
             var ch = new EmbeddedChannel(new HttpContentCompressor());
             ch.WriteInbound(NewRequest());
@@ -233,7 +264,7 @@ namespace DotNetty.Codecs.Http.Tests
             AssertEncodedResponse(ch);
 
             var chunk = ch.ReadOutbound<IHttpContent>();
-            Assert.Equal("1f8b080000000000000bf248cdc9c9d75108cf2fca4901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
+            Assert.Equal(gzipHeaderHex + "f248cdc9c9d75108cf2fca4901000000ffff", ByteBufferUtil.HexDump(chunk.Content));
             chunk.Release();
 
             chunk = ch.ReadOutbound<IHttpContent>();
@@ -249,8 +280,9 @@ namespace DotNetty.Codecs.Http.Tests
             Assert.Null(last);
         }
 
-        [Fact]
-        public void EmptySplitContent()
+        [Theory]
+        [MemberData(nameof(GetGZipHeader))]
+        public void EmptySplitContent(string gzipHeaderHex)
         {
             var ch = new EmbeddedChannel(new HttpContentCompressor());
             ch.WriteInbound(NewRequest());
@@ -260,7 +292,7 @@ namespace DotNetty.Codecs.Http.Tests
 
             ch.WriteOutbound(EmptyLastHttpContent.Default);
             var chunk = ch.ReadOutbound<IHttpContent>();
-            Assert.Equal("1f8b080000000000000b03000000000000000000", ByteBufferUtil.HexDump(chunk.Content));
+            Assert.Equal(gzipHeaderHex + "03000000000000000000", ByteBufferUtil.HexDump(chunk.Content));
             chunk.Release();
 
             chunk = ch.ReadOutbound<IHttpContent>();
