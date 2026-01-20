@@ -1,133 +1,117 @@
-<#
-.SYNOPSIS
-This is a Powershell script to bootstrap a Cake build.
-.DESCRIPTION
-This Powershell script will download NuGet if missing, restore NuGet tools (including Cake)
-and execute your Cake build script with the parameters you provide.
-.PARAMETER Target
-The build script target to run.
-.PARAMETER Configuration
-The build configuration to use.
-.PARAMETER Verbosity
-Specifies the amount of information to be displayed.
-.PARAMETER WhatIf
-Performs a dry run of the build script.
-No tasks will be executed.
-.PARAMETER ScriptArgs
-Remaining arguments are added here.
-.LINK
-https://cakebuild.net
-#>
+#!/usr/bin/env bash
 
-[CmdletBinding()]
-Param(
-    [string]$Target = "Default",
-    [ValidateSet("Release", "Debug")]
-    [string]$Configuration = "Release",
-    [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
-    [string]$Verbosity = "Verbose",
-    [switch]$WhatIf,
-    [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
-    [string[]]$ScriptArgs
-)
+##########################################################################
+# This is the Cake bootstrapper script for Linux and OS X.
+# This file was downloaded from https://github.com/cake-build/resources
+# Feel free to change this file to fit your needs.
+##########################################################################
 
-$CakeVersion = "0.27.1"
-$DotNetChannel = "Current";
-$DotNetVersion = "2.1.101";
-$DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
-$NugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+# Define directories.
+SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+TOOLS_DIR=$SCRIPT_DIR/tools
+ADDINS_DIR=$TOOLS_DIR/Addins
+MODULES_DIR=$TOOLS_DIR/Modules
+NUGET_EXE=$TOOLS_DIR/nuget.exe
+CAKE_EXE=$TOOLS_DIR/Cake/Cake.exe
+PACKAGES_CONFIG=$TOOLS_DIR/packages.config
+PACKAGES_CONFIG_MD5=$TOOLS_DIR/packages.config.md5sum
+ADDINS_PACKAGES_CONFIG=$ADDINS_DIR/packages.config
+MODULES_PACKAGES_CONFIG=$MODULES_DIR/packages.config
 
-# Temporarily skip verification of addins.
-$ENV:CAKE_SETTINGS_SKIPVERIFICATION='true'
+# Define md5sum or md5 depending on Linux/OSX
+MD5_EXE=
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    MD5_EXE="md5 -r"
+else
+    MD5_EXE="md5sum"
+fi
 
-# Make sure tools folder exists
-$PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
-$ToolPath = Join-Path $PSScriptRoot "tools"
-if (!(Test-Path $ToolPath)) {
-    Write-Verbose "Creating tools directory..."
-    New-Item -Path $ToolPath -Type directory | out-null
-}
+# Define default arguments.
+SCRIPT="build.cake"
+CAKE_ARGUMENTS=()
 
-###########################################################################
-# INSTALL .NET CORE CLI
-###########################################################################
+# Parse arguments.
+for i in "$@"; do
+    case $1 in
+        -s|--script) SCRIPT="$2"; shift ;;
+        --) shift; CAKE_ARGUMENTS+=("$@"); break ;;
+        *) CAKE_ARGUMENTS+=("$1") ;;
+    esac
+    shift
+done
 
-Function Remove-PathVariable([string]$VariableToRemove)
-{
-    $path = [Environment]::GetEnvironmentVariable("PATH", "User")
-    if ($path -ne $null)
-    {
-        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
-        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
-    }
+# Make sure the tools folder exist.
+if [ ! -d "$TOOLS_DIR" ]; then
+  mkdir "$TOOLS_DIR"
+fi
 
-    $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
-    if ($path -ne $null)
-    {
-        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
-        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
-    }
-}
+# Make sure that packages.config exist.
+if [ ! -f "$TOOLS_DIR/packages.config" ]; then
+    echo "Downloading packages.config..."
+    curl -Lsfo "$TOOLS_DIR/packages.config" https://cakebuild.net/download/bootstrapper/packages
+    if [ $? -ne 0 ]; then
+        echo "An error occurred while downloading packages.config."
+        exit 1
+    fi
+fi
 
-# Get .NET Core CLI path if installed.
-$FoundDotNetCliVersion = $null;
-if (Get-Command dotnet -ErrorAction SilentlyContinue) {
-    $FoundDotNetCliVersion = dotnet --version;
-}
+# Download NuGet if it does not exist.
+if [ ! -f "$NUGET_EXE" ]; then
+    echo "Downloading NuGet..."
+    curl -Lsfo "$NUGET_EXE" https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+    if [ $? -ne 0 ]; then
+        echo "An error occurred while downloading nuget.exe."
+        exit 1
+    fi
+fi
 
-if($FoundDotNetCliVersion -ne $DotNetVersion) {
-    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
-    if (!(Test-Path $InstallPath)) {
-        mkdir -Force $InstallPath | Out-Null;
-    }
-    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
-    & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetVersion -InstallDir $InstallPath;
+# Restore tools from NuGet.
+pushd "$TOOLS_DIR" >/dev/null
+if [ ! -f "$PACKAGES_CONFIG_MD5" ] || [ "$( cat "$PACKAGES_CONFIG_MD5" | sed 's/\r$//' )" != "$( $MD5_EXE "$PACKAGES_CONFIG" | awk '{ print $1 }' )" ]; then
+    find . -type d ! -name . ! -name 'Cake.Bakery' | xargs rm -rf
+fi
 
-    Remove-PathVariable "$InstallPath"
-    $env:PATH = "$InstallPath;$env:PATH"
-}
+mono "$NUGET_EXE" install -ExcludeVersion
+if [ $? -ne 0 ]; then
+    echo "Could not restore NuGet tools."
+    exit 1
+fi
 
-$env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-$env:DOTNET_CLI_TELEMETRY_OPTOUT=1
+$MD5_EXE "$PACKAGES_CONFIG" | awk '{ print $1 }' >| "$PACKAGES_CONFIG_MD5"
 
-###########################################################################
-# INSTALL NUGET
-###########################################################################
+popd >/dev/null
 
-# Make sure nuget.exe exists.
-$NugetPath = Join-Path $ToolPath "nuget.exe"
-if (!(Test-Path $NugetPath)) {
-    Write-Host "Downloading NuGet.exe..."
-    (New-Object System.Net.WebClient).DownloadFile($NugetUrl, $NugetPath);
-}
+# Restore addins from NuGet.
+if [ -f "$ADDINS_PACKAGES_CONFIG" ]; then
+    pushd "$ADDINS_DIR" >/dev/null
 
-###########################################################################
-# INSTALL CAKE
-###########################################################################
+    mono "$NUGET_EXE" install -ExcludeVersion
+    if [ $? -ne 0 ]; then
+        echo "Could not restore NuGet addins."
+        exit 1
+    fi
 
-# Make sure Cake has been installed.
-$CakePath = Join-Path $ToolPath "Cake.$CakeVersion/Cake.exe"
-if (!(Test-Path $CakePath)) {
-    Write-Host "Installing Cake..."
-    Invoke-Expression "&`"$NugetPath`" install Cake -Version $CakeVersion -OutputDirectory `"$ToolPath`"" | Out-Null;
-    if ($LASTEXITCODE -ne 0) {
-        Throw "An error occurred while restoring Cake from NuGet."
-    }
-}
+    popd >/dev/null
+fi
 
-###########################################################################
-# RUN BUILD SCRIPT
-###########################################################################
+# Restore modules from NuGet.
+if [ -f "$MODULES_PACKAGES_CONFIG" ]; then
+    pushd "$MODULES_DIR" >/dev/null
 
-# Build the argument list.
-$Arguments = @{
-    target=$Target;
-    configuration=$Configuration;
-    verbosity=$Verbosity;
-    dryrun=$WhatIf;
-}.GetEnumerator() | %{"--{0}=`"{1}`"" -f $_.key, $_.value };
+    mono "$NUGET_EXE" install -ExcludeVersion
+    if [ $? -ne 0 ]; then
+        echo "Could not restore NuGet modules."
+        exit 1
+    fi
+
+    popd >/dev/null
+fi
+
+# Make sure that Cake has been installed.
+if [ ! -f "$CAKE_EXE" ]; then
+    echo "Could not find Cake.exe at '$CAKE_EXE'."
+    exit 1
+fi
 
 # Start Cake
-Write-Host "Running build script..."
-Invoke-Expression "& `"$CakePath`" `"build.cake`" $Arguments $ScriptArgs"
-exit $LASTEXITCODE
+exec mono "$CAKE_EXE" $SCRIPT "${CAKE_ARGUMENTS[@]}"
