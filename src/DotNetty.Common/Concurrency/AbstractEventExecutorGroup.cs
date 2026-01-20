@@ -53,6 +53,14 @@ namespace DotNetty.Common.Concurrency
 
         public IScheduledTask Schedule(Action<object, object> action, object context, object state, TimeSpan delay) => this.GetNext().Schedule(action, context, state, delay);
 
+        public IScheduledTask ScheduleAtFixedRate(Action action, TimeSpan initialDelay, TimeSpan period) => this.GetNext().ScheduleAtFixedRate(action, initialDelay, period);
+
+        public IScheduledTask ScheduleAtFixedRate(IRunnable action, TimeSpan initialDelay, TimeSpan period) => this.GetNext().ScheduleAtFixedRate(action, initialDelay, period);
+
+        public IScheduledTask ScheduleWithFixedDelay(Action action, TimeSpan initialDelay, TimeSpan delay) => this.GetNext().ScheduleWithFixedDelay(action, initialDelay, delay);
+
+        public IScheduledTask ScheduleWithFixedDelay(IRunnable action, TimeSpan initialDelay, TimeSpan delay) => this.GetNext().ScheduleWithFixedDelay(action, initialDelay, delay);
+
         public Task ScheduleAsync(Action<object> action, object state, TimeSpan delay, CancellationToken cancellationToken) => this.GetNext().ScheduleAsync(action, state, delay, cancellationToken);
 
         public Task ScheduleAsync(Action<object> action, object state, TimeSpan delay) => this.GetNext().ScheduleAsync(action, state, delay);
