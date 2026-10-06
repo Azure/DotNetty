@@ -5,6 +5,7 @@ namespace DotNetty.Codecs.Redis
 {
     using System;
     using DotNetty.Buffers;
+    using DotNetty.Common.Internal;
 
     static class RedisConstants
     {
@@ -24,6 +25,9 @@ namespace DotNetty.Codecs.Redis
 
         // 64KB is max inline length of current Redis server implementation.
         internal static readonly int RedisInlineMessageMaxLength = 64 * 1024;
+
+        internal static readonly int RedisMaxArrayLength =
+            SystemPropertyUtil.GetInt("io.netty.handler.codec.redis.maxArrayLength", 1000000);
 
         internal static readonly int PositiveLongMaxLength = 19; // length of Long.MAX_VALUE
 
